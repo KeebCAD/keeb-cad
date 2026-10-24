@@ -1,0 +1,477 @@
+<title>keeb-cad Layout Model</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a machinist's plate drawing. A single reading column; each concept is a "station" with its live drawing beside the text. */
+:root{
+  --plate:#e7e8e6; --sheet:#f5f5f2; --ink:#1d2121; --muted:#5c6463; --line:#c6cac7;
+  --cut:#2b3130; --cap:#fbfbf8; --gold:#b98a17; --gold-soft:#b98a1733; --signal:#2f6f8f; --warn:#b4532a;
+  --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --plate:#161918; --sheet:#1d2120; --ink:#e8ebe7; --muted:#9aa39f; --line:#343a38;
+  --cut:#0b0d0c; --cap:#2a302e; --gold:#e0b44a; --gold-soft:#e0b44a2e; --signal:#7fbcd8; --warn:#e98a5f; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --plate:#161918; --sheet:#1d2120; --ink:#e8ebe7; --muted:#9aa39f; --line:#343a38;
+  --cut:#0b0d0c; --cap:#2a302e; --gold:#e0b44a; --gold-soft:#e0b44a2e; --signal:#7fbcd8; --warn:#e98a5f; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--plate);color:var(--ink);font:16px/1.6 var(--body);
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.wrap{max-width:1040px;margin:0 auto;padding-block:40px 64px;display:grid;gap:56px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(2.2rem,5vw,3.6rem);font-weight:700;letter-spacing:-.02em}
+h2{font-size:clamp(1.5rem,3vw,2rem);font-weight:700}
+h3{font-size:1.1rem;font-weight:700}
+p{margin:0;max-width:65ch}
+.eyebrow{font:600 .72rem/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.lede{font-size:1.15rem;color:var(--muted);max-width:60ch}
+code,.mono{font-family:var(--mono);font-size:.88em}
+header.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:32px;align-items:center}
+@media (max-width:820px){header.hero{grid-template-columns:1fr}}
+.hero-text{display:grid;gap:16px}
+.principles{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.chip{font:600 .78rem var(--mono);padding:5px 10px;border:1px solid var(--line);border-radius:4px;background:var(--sheet)}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0}
+svg.draw{width:100%;height:auto;display:block}
+.station{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:28px;align-items:start;padding-top:28px;border-top:1px solid var(--line)}
+@media (max-width:820px){.station{grid-template-columns:1fr}}
+.station .text{display:grid;gap:12px}
+.rule{font-family:var(--mono);font-size:.85rem;background:var(--gold-soft);border-left:3px solid var(--gold);padding:8px 12px;border-radius:0 4px 4px 0;max-width:65ch}
+.controls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:10px;font-size:.88rem}
+.controls label{display:flex;gap:8px;align-items:center}
+input[type=range]{accent-color:var(--gold);width:140px}
+button.seg{font:600 .8rem var(--mono);padding:6px 10px;border:1px solid var(--line);background:var(--plate);color:var(--ink);border-radius:4px;cursor:pointer}
+button.seg[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.readout{font:.8rem var(--mono);color:var(--muted)}
+.boards{display:grid;gap:28px}
+.board{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:820px){.board{grid-template-columns:1fr}}
+pre{margin:0;background:var(--cut);color:#dfe6e2;font:12.5px/1.55 var(--mono);padding:14px;border-radius:6px;overflow-x:auto}
+pre .k{color:#e8c062}pre .s{color:#9fd3b7}pre .c{color:#7d8a85}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+.tw{overflow-x:auto}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .72rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td:first-child{font-family:var(--mono);font-weight:600;white-space:nowrap}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:-1px;border-radius:2px;background:var(--c)}
+.note{font-size:.85rem;color:var(--muted)}
+footer{font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);padding-top:16px;display:grid;gap:6px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="hero-text">
+      <span class="eyebrow">keeb-cad · architecture · layout model v1</span>
+      <h1>One tree. Six ideas. Every key accounted for.</h1>
+      <p class="lede">This is how keeb-cad describes a keyboard. You drag keys, and the plate, PCB, case and firmware are recalculated from this one description. Nothing is drawn twice.</p>
+      <div class="principles"><span class="chip">explicit over terse</span><span class="chip">one way to do each thing</span><span class="chip">small, coherent concepts</span></div>
+    </div>
+    <div class="sheet">
+      <svg class="draw" id="hero" viewBox="0 0 400 260" role="img" aria-label="A split keyboard half whose columns and thumb cluster respond to the slider"></svg>
+      <div class="controls">
+        <label for="heroSplay">Splay <input id="heroSplay" type="range" min="-12" max="12" step="1" value="0"></label>
+        <label for="heroStagger">Ring stagger <input id="heroStagger" type="range" min="0" max="10" step="0.5" value="4.75"></label>
+        <span class="readout" id="heroRead"></span>
+      </div>
+    </div>
+  </header>
+
+  <section class="station" id="tree">
+    <div class="text">
+      <span class="eyebrow">Idea 1 · tree</span>
+      <h2>The tree says what belongs to what</h2>
+      <p>A design is a tree. A side holds the matrix and the thumbs. The matrix holds columns, and columns hold slots. Moving a branch moves everything on it.</p>
+      <div class="rule">position = anchor frame + local offset</div>
+      <p class="note">That's the only placement rule. Stagger is a column's offset. Splay is a column's rotation.</p>
+    </div>
+    <div class="sheet"><pre id="treeView"></pre></div>
+  </section>
+
+  <section class="station" id="sequence">
+    <div class="text">
+      <span class="eyebrow">Idea 2 · sequence and free</span>
+      <h2>Things placed one after another</h2>
+      <p>A <b>sequence</b> places each child after the previous one: one pitch along its direction, plus a <b>gap</b>, then the child's own offset and turn. A column is a sequence, a row of columns is a sequence, and a thumb fan is a sequence with turns.</p>
+      <p>Drag a key and the keys after it follow. Hold Alt and only that key moves, because the next key's gap absorbs the change.</p>
+      <div class="rule">step = pitch + gap → then offset (x, y, turn about pivot)</div>
+      <p class="note">The other arrangement is <b>free</b>, where each child is placed on its own.</p>
+    </div>
+    <div class="sheet">
+      <svg class="draw" id="seqSvg" viewBox="0 0 400 240" role="img" aria-label="A column of four keys; changing the gap of the second key moves the keys above it"></svg>
+      <div class="controls">
+        <label for="seqGap">Gap before key 2 <input id="seqGap" type="range" min="0" max="12" step="0.5" value="0"></label>
+        <button class="seg" id="seqAlt" aria-pressed="false">Alt-drag: off</button>
+        <span class="readout" id="seqRead"></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="station" id="anchor">
+    <div class="text">
+      <span class="eyebrow">Idea 3 · anchor</span>
+      <h2>Owned by the side, positioned against a key</h2>
+      <p>The thumb cluster belongs to the side, but it hangs off the bottom key of the inner column. Its <b>anchor</b> is that key, and it follows the key's full frame: position and rotation.</p>
+      <p>To keep the thumbs level, give them a cancelling turn. There's no "position only" switch.</p>
+      <div class="rule">anchor = reference node (by id) + attach point · full frame · no cycles</div>
+    </div>
+    <div class="sheet">
+      <svg class="draw" id="ancSvg" viewBox="0 0 400 260" role="img" aria-label="Rotating the inner column carries the anchored thumb cluster with it"></svg>
+      <div class="controls">
+        <label for="ancRot">Inner column turn <input id="ancRot" type="range" min="-20" max="20" step="1" value="-5"></label>
+        <button class="seg" id="ancLevel" aria-pressed="false">Keep thumbs level: off</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="station" id="pitch">
+    <div class="text">
+      <span class="eyebrow">Idea 4 · slot, part, pitch</span>
+      <h2>Swap switches without redrawing</h2>
+      <p>Every leaf is a <b>slot</b> holding one <b>part</b>: a switch cell, an encoder, an MCU, a screw, or nothing. Positions are written in <code>u</code>, and <b>pitch</b> decides how big a <code>u</code> is.</p>
+      <p>Switch type only sets the footprint and the minimum pitch. Corney Island uses Choc switches at 19 mm, so pitch has to be its own setting.</p>
+      <div class="rule">"1u" on x = pitch-x · "1u" on y = pitch-y</div>
+    </div>
+    <div class="sheet">
+      <svg class="draw" id="pitchSvg" viewBox="0 0 400 220" role="img" aria-label="The same five-column layout at three pitches"></svg>
+      <div class="controls tabs" role="group" aria-label="Switch and pitch">
+        <button class="seg" data-p="mx" aria-pressed="true">MX · 19.05 × 19.05</button>
+        <button class="seg" data-p="choc19" aria-pressed="false">Choc · 19 × 19</button>
+        <button class="seg" data-p="choc" aria-pressed="false">Choc tight · 18 × 17</button>
+      </div>
+      <p class="readout" id="pitchRead"></p>
+    </div>
+  </section>
+
+  <section class="station" id="side">
+    <div class="text">
+      <span class="eyebrow">Idea 5 · side mode</span>
+      <h2>Reversible, or mirrored with overrides</h2>
+      <p><b>Reversible</b>: one PCB, flipped for the other hand. All three reference boards work this way. Only which parts are fitted can differ.</p>
+      <p><b>Mirrored</b>: the right side is derived by mirroring the left across the centre line, then applying named <b>overrides</b>. Spacing and angle are just the left side's offset from the centre.</p>
+      <div class="rule">right = mirror(left) + overrides → ids "mirror:&lt;left-id&gt;"</div>
+    </div>
+    <div class="sheet">
+      <svg class="draw" id="sideSvg" viewBox="0 0 400 230" role="img" aria-label="A unibody board mirrored across a centre line, with an optional encoder override on the right"></svg>
+      <div class="controls">
+        <label for="sideGap">Spacing <input id="sideGap" type="range" min="10" max="60" step="1" value="26"></label>
+        <label for="sideAng">Angle <input id="sideAng" type="range" min="0" max="25" step="1" value="12"></label>
+        <button class="seg" id="sideOv" aria-pressed="false">Override: encoder on right</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="station" id="matrix">
+    <div class="text">
+      <span class="eyebrow">Idea 6 · the matrix</span>
+      <h2>Wiring comes from the same tree</h2>
+      <p>The PCB and the firmware must agree on which key sits on which row and column. So the model works it out once, and both read it.</p>
+      <div class="rule">nearest x-sequence → column · nearest y-sequence → row</div>
+      <p>The rule follows direction, not names, so column-staggered and row-staggered boards both work. You can override any key's row or column.</p>
+    </div>
+    <div class="sheet">
+      <svg class="draw" id="mxSvg" viewBox="0 0 400 220" role="img" aria-label="Row and column labels on a column-staggered or row-staggered layout"></svg>
+      <div class="controls tabs" role="group" aria-label="Board style">
+        <button class="seg" data-m="col" aria-pressed="true">Column-staggered</button>
+        <button class="seg" data-m="row" aria-pressed="false">Row-staggered</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="boards" class="boards" style="padding-top:28px;border-top:1px solid var(--line)">
+    <div style="display:grid;gap:10px">
+      <span class="eyebrow">Paper test</span>
+      <h2>Three real boards, rewritten in the model</h2>
+      <p>Before writing any code, we described three public Ergogen boards with these six ideas. Each drawing below is calculated live on this page from the model's rules. They are close to the originals, but this page hasn't checked them against Ergogen's output; the golden tests in the build will.</p>
+      <div class="legend"><span style="--c:var(--cap)">switch</span><span style="--c:var(--gold)">pivot / anchor</span><span style="--c:var(--signal)">MCU · encoder</span></div>
+    </div>
+    <div class="tabs" role="group" aria-label="Reference board">
+      <button class="seg" data-b="corney" aria-pressed="true">Corney Island</button>
+      <button class="seg" data-b="lamb" aria-pressed="false">LambBT</button>
+      <button class="seg" data-b="corax" aria-pressed="false">Corax56</button>
+    </div>
+    <div class="board">
+      <div class="sheet"><svg class="draw" id="boardSvg" viewBox="0 0 400 300" role="img" aria-label="Selected reference board"></svg></div>
+      <div style="display:grid;gap:12px;min-width:0">
+        <p id="boardNote"></p>
+        <pre id="boardKdl"></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="glossary" style="padding-top:28px;border-top:1px solid var(--line);display:grid;gap:14px">
+    <span class="eyebrow">Glossary</span>
+    <h2>Each word means one thing</h2>
+    <div class="tw"><table>
+      <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>design</td><td>One keyboard document. The only source of truth.</td></tr>
+        <tr><td>anchor</td><td>The node and attach point whose full frame (position and rotation) a node is positioned in.</td></tr>
+        <tr><td>offset</td><td>A node's own x, y and rotation, applied in its anchor's frame.</td></tr>
+        <tr><td>pivot</td><td>The point a rotation turns around. Used for nothing else.</td></tr>
+        <tr><td>sequence</td><td>Children placed one after another by steps: pitch, gap, then offset.</td></tr>
+        <tr><td>free</td><td>Children placed independently.</td></tr>
+        <tr><td>gap</td><td>Extra distance before a child in a sequence.</td></tr>
+        <tr><td>slot</td><td>A leaf with a size that holds one part.</td></tr>
+        <tr><td>part</td><td>A switch cell, encoder, MCU module, battery, power switch, reset, screw, or empty.</td></tr>
+        <tr><td>switch cell</td><td>Your key template: switch, diode, LED, stabiliser and per-key tracks.</td></tr>
+        <tr><td>pitch</td><td>Centre-to-centre key distance (pitch-x, pitch-y). Independent of switch type.</td></tr>
+        <tr><td>side mode</td><td>Reversible (one geometry) or mirrored (copy plus overrides).</td></tr>
+        <tr><td>override</td><td>A named change on the derived side: swap, remove, offset, populate.</td></tr>
+        <tr><td>matrix</td><td>Row, column, diode direction, nets and MCU pins, worked out once by the model.</td></tr>
+        <tr><td>block</td><td>A reusable, versioned piece from the library, copied into your design with its origin and licence.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <footer>
+    <span>keeb-cad layout model v1 · drafted 24 October 2026</span>
+    <span>Source of truth for builders: <code>_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md</code> (AD-1 to AD-15)</span>
+    <span>Reference boards: Corney Island (ceoloide, MIT) · LambBT (johnlamb, CC0) · Corax56 (dnlbauer, MIT)</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const NS="http://www.w3.org/2000/svg";
+const rad=d=>d*Math.PI/180;
+// frame math, y up
+const F=(x=0,y=0,r=0)=>({x,y,r});
+const rot=(v,r)=>({x:v.x*Math.cos(rad(r))-v.y*Math.sin(rad(r)),y:v.x*Math.sin(rad(r))+v.y*Math.cos(rad(r))});
+function apply(f,off){ // translate (in f's frame), then rotate about pivot (in node frame)
+  const t=rot({x:off.x||0,y:off.y||0},f.r);
+  let o={x:f.x+t.x,y:f.y+t.y}; const dr=off.r||0;
+  if(dr){ const p={x:off.px||0,y:off.py||0}; const a=rot(p,f.r), b=rot(rot(p,dr),f.r); o={x:o.x+a.x-b.x,y:o.y+a.y-b.y}; }
+  return F(o.x,o.y,f.r+dr);
+}
+// resolver: node = {id, kind:'seq'|'slot', dir, children:[{node,gap,off}], w,h,part, anchor, off}
+function resolve(root,P){
+  const out=[], byId={};
+  function place(node,frame){
+    if(node.kind==="slot"){ const s={id:node.id,f:frame,w:(node.w||1),h:(node.h||1),part:node.part||"switch",rot:node.rot||0}; out.push(s); byId[node.id]=s; return; }
+    byId[node.id]={f:frame};
+    let prev=null;
+    node.children.forEach((c,i)=>{
+      let f;
+      if(i===0) f=apply(frame,c.off||{});
+      else{ const step=(node.dir==="x"?P.x:P.y)+(c.gap||0); const mv=node.dir==="x"?{x:step,y:0}:{x:0,y:step}; f=apply(apply(prev,mv),c.off||{}); }
+      prev=f; place(c.node,f);
+    });
+  }
+  place(root.main,root.frame||F());
+  (root.anchored||[]).forEach(a=>{ const ref=byId[a.anchor]; place(a.node,apply(ref.f,a.off||{})); a.pivotAt=ref.f; });
+  (root.extras||[]).forEach(e=>{ const ref=byId[e.anchor]; const f=apply(ref.f,e.off||{}); out.push({id:e.id,f,w:e.w,h:e.h,part:e.part,mm:true,rot:0}); });
+  return out;
+}
+const col=(id,n,opts={})=>({id,kind:"seq",dir:"y",children:Array.from({length:n},(_,i)=>({node:{id:id+"-"+i,kind:"slot",part:(opts.empty||[]).includes(i)?"empty":"switch"},gap:(opts.gaps||{})[i]||0}))});
+function draw(svg,slots,P,opts={}){
+  svg.textContent="";
+  const pts=[];
+  slots.forEach(s=>{ if(s.part==="empty") return; const w=s.mm?s.w:s.w*P.x, h=s.mm?s.h:s.h*P.y; [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([a,b])=>{const v=rot(rot({x:a*w/2,y:b*h/2},s.rot),s.f.r);pts.push({x:s.f.x+v.x,y:s.f.y+v.y});}); });
+  (opts.marks||[]).forEach(m=>pts.push(m));
+  const vb=svg.viewBox.baseVal, pad=opts.pad??16;
+  const minx=Math.min(...pts.map(p=>p.x)),maxx=Math.max(...pts.map(p=>p.x)),miny=Math.min(...pts.map(p=>p.y)),maxy=Math.max(...pts.map(p=>p.y));
+  const sc=opts.scale||Math.min((vb.width-2*pad)/(maxx-minx),(vb.height-2*pad)/(maxy-miny));
+  const ox=(vb.width-(maxx-minx)*sc)/2-minx*sc, oy=(vb.height-(maxy-miny)*sc)/2+maxy*sc;
+  const X=x=>ox+x*sc, Y=y=>oy-y*sc; // y-up model -> y-down SVG (AD-7: convert at the boundary)
+  const g=document.createElementNS(NS,"g"); svg.appendChild(g);
+  if(opts.axis!=null){ const l=el("line",{x1:X(opts.axis),x2:X(opts.axis),y1:4,y2:vb.height-4,stroke:"var(--gold)","stroke-dasharray":"4 4","stroke-width":1.2}); g.appendChild(l); }
+  slots.forEach(s=>{
+    if(s.part==="empty") return;
+    const w=(s.mm?s.w:s.w*P.x)*sc, h=(s.mm?s.h:s.h*P.y)*sc;
+    const t=`translate(${X(s.f.x)} ${Y(s.f.y)}) rotate(${-(s.f.r+s.rot)})`;
+    const gg=el("g",{transform:t}); g.appendChild(gg);
+    if(s.part==="encoder"){ gg.appendChild(el("circle",{r:Math.min(w,h)*0.42,fill:"var(--signal)",opacity:.9})); gg.appendChild(el("circle",{r:Math.min(w,h)*0.16,fill:"var(--sheet)"})); }
+    else if(s.part==="mcu"){ gg.appendChild(el("rect",{x:-w/2,y:-h/2,width:w,height:h,rx:3,fill:"none",stroke:"var(--signal)","stroke-width":1.6})); }
+    else{
+      gg.appendChild(el("rect",{x:-w/2+0.6,y:-h/2+0.6,width:w-1.2,height:h-1.2,rx:Math.max(2,sc*1.2),fill:s.hl?"var(--gold-soft)":"var(--cap)",stroke:s.hl?"var(--gold)":"var(--line)","stroke-width":1}));
+      const c=14*sc; gg.appendChild(el("rect",{x:-c/2,y:-c/2,width:c,height:c,rx:1,fill:"var(--cut)",opacity:.85}));
+    }
+    if(opts.label){ const tx=opts.label(s); if(tx){ const txt=el("text",{x:0,y:4,"text-anchor":"middle","font-size":Math.max(8,sc*4.2),"font-family":"var(--mono)",fill:"#f1efe6",transform:`rotate(${s.f.r+s.rot})`}); txt.textContent=tx; gg.appendChild(txt);} }
+  });
+  (opts.marks||[]).forEach(m=>{ g.appendChild(el("circle",{cx:X(m.x),cy:Y(m.y),r:4,fill:"var(--gold)"})); if(m.to){ g.appendChild(el("line",{x1:X(m.x),y1:Y(m.y),x2:X(m.to.x),y2:Y(m.to.y),stroke:"var(--gold)","stroke-width":1.2,"stroke-dasharray":"3 3"})); } });
+}
+function el(n,a){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+
+// ---------- hero
+const heroS=document.getElementById("hero");
+function heroModel(splay,stag){
+  const P={x:19,y:19};
+  const st=[0,0,stag,2.375,-2.375,-2.375];
+  const cols=["outer","pinky","ring","middle","index","inner"].map((n,i)=>({node:col(n,3),off:{y:st[i],r:i>1?splay/4:0,px:0,py:-19}}));
+  return {P,root:{main:{id:"matrix",kind:"seq",dir:"x",children:cols},
+    anchored:[{anchor:"middle-0",off:{x:9.5,y:-22},node:{id:"thumbs",kind:"seq",dir:"x",children:[
+      {node:{id:"near",kind:"slot"}},{node:{id:"mid",kind:"slot"},gap:2,off:{y:-2.75,r:-15}},{node:{id:"far",kind:"slot",w:1.5,rot:90},gap:3.46,off:{y:2.12,r:-15}}]}}]}};
+}
+function renderHero(){
+  const sp=+document.getElementById("heroSplay").value, sg=+document.getElementById("heroStagger").value;
+  const m=heroModel(sp,sg); draw(heroS,resolve(m.root,m.P),m.P);
+  document.getElementById("heroRead").textContent=`ring y "${sg}mm" · turn "${(sp/4).toFixed(1)}deg" per column`;
+}
+["heroSplay","heroStagger"].forEach(id=>document.getElementById(id).addEventListener("input",renderHero));
+
+// ---------- tree
+document.getElementById("treeView").innerHTML=
+`<span class="k">side</span> <span class="s">"left"</span>
+├─ <span class="k">sequence</span> <span class="s">"matrix"</span>  dir=x
+│  ├─ <span class="k">sequence</span> <span class="s">"pinky"</span>  dir=y
+│  │  ├─ <span class="k">slot</span> <span class="s">"pinky-bottom"</span>  part=switch
+│  │  ├─ <span class="k">slot</span> <span class="s">"pinky-home"</span>
+│  │  └─ <span class="k">slot</span> <span class="s">"pinky-top"</span>
+│  ├─ <span class="k">sequence</span> <span class="s">"ring"</span>  offset y=<span class="s">"0.25u"</span>
+│  └─ …
+├─ <span class="k">sequence</span> <span class="s">"thumbs"</span>
+│     <span class="k">anchor</span> <span class="s">"middle-bottom"</span> attach=<span class="s">"center"</span>
+│     <span class="k">offset</span> x=<span class="s">"0.5u"</span> y=<span class="s">"-22mm"</span>
+└─ <span class="k">slot</span> <span class="s">"mcu"</span>  part=mcu  <span class="c">// free child, own anchor</span>`;
+
+// ---------- sequence demo
+const seqS=document.getElementById("seqSvg"); let alt=false;
+function renderSeq(){
+  const g=+document.getElementById("seqGap").value; const P={x:19,y:19};
+  const gaps={1:g}; if(alt) gaps[2]=-g;
+  const c={id:"c",kind:"seq",dir:"y",children:[0,1,2,3].map(i=>({node:{id:"k"+i,kind:"slot"},gap:gaps[i]||0}))};
+  const s=resolve({main:c},P);
+  s.forEach(k=>{ if(k.id==="k1") k.hl=true; });
+  draw(seqS,s,P,{scale:2.4,label:k=>"#"+(+k.id.slice(1)+1)});
+  document.getElementById("seqRead").textContent=alt?`key 2 gap "${g}mm" · key 3 gap "${-g}mm" → keys 3–4 stay put`:`key 2 gap "${g}mm" → keys 3–4 follow`;
+}
+document.getElementById("seqGap").addEventListener("input",renderSeq);
+document.getElementById("seqAlt").addEventListener("click",e=>{alt=!alt;e.currentTarget.setAttribute("aria-pressed",alt);e.currentTarget.textContent="Alt-drag: "+(alt?"on":"off");renderSeq();});
+
+// ---------- anchor demo
+const ancS=document.getElementById("ancSvg"); let level=false;
+function renderAnc(){
+  const r=+document.getElementById("ancRot").value, P={x:18,y:17};
+  const cols=["index","inner"].map((n,i)=>({node:col(n,3),off:i===1?{r,px:0,py:-17}:{}}));
+  const root={main:{id:"m",kind:"seq",dir:"x",children:cols},
+    anchored:[{anchor:"inner-0",off:{x:0,y:-26,r:level?-r:0},node:{id:"t",kind:"seq",dir:"x",children:[{node:{id:"t1",kind:"slot"},off:{r:-12}},{node:{id:"t2",kind:"slot"},off:{r:-10,px:-9,py:-9.5}}]}}]};
+  const s=resolve(root,P); s.forEach(k=>{if(k.id==="inner-0")k.hl=true;});
+  const a=root.anchored[0].pivotAt; const t=s.find(k=>k.id==="t1");
+  draw(ancS,s,P,{marks:[{x:a.x,y:a.y,to:{x:t.f.x,y:t.f.y}}]});
+}
+document.getElementById("ancRot").addEventListener("input",renderAnc);
+document.getElementById("ancLevel").addEventListener("click",e=>{level=!level;e.currentTarget.setAttribute("aria-pressed",level);e.currentTarget.textContent="Keep thumbs level: "+(level?"on":"off");renderAnc();});
+
+// ---------- pitch demo
+const pitchS=document.getElementById("pitchSvg");
+const PITCH={mx:{x:19.05,y:19.05,t:"MX · minimum pitch 19.05 mm"},choc19:{x:19,y:19,t:"Choc v2 at 19 mm, as Corney Island does it"},choc:{x:18,y:17,t:"Choc tight spacing: 18 × 17 mm, the board shrinks"}};
+let pk="mx";
+function renderPitch(){
+  const P=PITCH[pk]; const st=[0,0.25,0.375,0.25,0.125];
+  const m={id:"m",kind:"seq",dir:"x",children:st.map((y,i)=>({node:col("c"+i,3),off:{y:y*P.y}}))};
+  const s=resolve({main:m},P);
+  const w=(4*P.x+P.x).toFixed(1);
+  draw(pitchS,s,P,{scale:3.2});
+  document.getElementById("pitchRead").textContent=`${P.t} · width ≈ ${w} mm · the design file didn't change`;
+}
+document.querySelectorAll("[data-p]").forEach(b=>b.addEventListener("click",()=>{pk=b.dataset.p;document.querySelectorAll("[data-p]").forEach(x=>x.setAttribute("aria-pressed",x===b));renderPitch();}));
+
+// ---------- side mode demo
+const sideS=document.getElementById("sideSvg"); let ov=false;
+function renderSide(){
+  const gap=+document.getElementById("sideGap").value, ang=+document.getElementById("sideAng").value, P={x:19,y:19};
+  const half=(pre)=>({id:pre,kind:"seq",dir:"x",children:[0,1,2,3].map(i=>({node:col(pre+i,3),off:{y:[0,4,6,3][i]}}))});
+  const left=resolve({main:half("L"),frame:F(0,0,0)},P);
+  // place left relative to centre: offset x=-(gap/2), rotate +ang about its inner-bottom corner
+  const innerX=3*P.x+P.x/2, place=f=>{ const p0=rot({x:f.x-innerX,y:f.y+P.y/2},ang); return F(p0.x-gap/2,p0.y,f.r+ang); };
+  const L=left.map(k=>({...k,f:place(k.f)}));
+  const R=L.map(k=>({...k,id:"mirror:"+k.id,f:F(-k.f.x,k.f.y,-k.f.r)}));
+  if(ov){ const t=R.find(k=>k.id==="mirror:L0-2"); if(t){t.part="encoder";} }
+  draw(sideS,L.concat(R),P,{axis:0});
+}
+["sideGap","sideAng"].forEach(id=>document.getElementById(id).addEventListener("input",renderSide));
+document.getElementById("sideOv").addEventListener("click",e=>{ov=!ov;e.currentTarget.setAttribute("aria-pressed",ov);renderSide();});
+
+// ---------- matrix demo
+const mxS=document.getElementById("mxSvg"); let mk="col";
+function renderMx(){
+  const P={x:19,y:19}; let s;
+  if(mk==="col"){
+    const m={id:"m",kind:"seq",dir:"x",children:[0,1,2,3,4].map(i=>({node:col("c"+i,3),off:{y:[0,3,6,3,1][i]}}))};
+    s=resolve({main:m},P); s.forEach(k=>{const [c,r]=k.id.slice(1).split("-");k.lab=`R${2-r} C${c}`;});
+  } else {
+    const row=(id,n,shift)=>({id,kind:"seq",dir:"x",children:Array.from({length:n},(_,i)=>({node:{id:id+"-"+i,kind:"slot"}}))});
+    const m={id:"m",kind:"seq",dir:"y",children:[0,1,2].map(i=>({node:row("r"+i,5),off:{x:[0.5,0.25,0][i]*19}}))};
+    s=resolve({main:m},P); s.forEach(k=>{const [r,c]=k.id.slice(1).split("-");k.lab=`R${2-r} C${c}`;});
+  }
+  draw(mxS,s,P,{label:k=>k.lab});
+}
+document.querySelectorAll("[data-m]").forEach(b=>b.addEventListener("click",()=>{mk=b.dataset.m;document.querySelectorAll("[data-m]").forEach(x=>x.setAttribute("aria-pressed",x===b));renderMx();}));
+
+// ---------- reference boards
+const B={
+ corney:{P:{x:19,y:19},note:"Corney Island: a Corne clone with Choc switches at 19 mm pitch. Six columns with cumulative stagger, and a three-key thumb fan anchored to the middle column's bottom key. The far thumb key is 1.5u, turned 90° on top of the fan.",
+  model:()=>{const st=[0,0,4.75,2.375,-2.375,-2.375];return {main:{id:"matrix",kind:"seq",dir:"x",children:["outer","pinky","ring","middle","index","inner"].map((n,i)=>({node:col(n,3),off:{y:st[i]}}))},
+   anchored:[{anchor:"middle-0",off:{x:9.5,y:-22},node:{id:"thumbs",kind:"seq",dir:"x",children:[{node:{id:"near",kind:"slot"}},{node:{id:"mid",kind:"slot"},gap:2,off:{y:-2.75,r:-15}},{node:{id:"far",kind:"slot",w:1.5,rot:90},gap:3.46,off:{y:2.12,r:-15}}]}}]};},
+  kdl:`<span class="k">sequence</span> <span class="s">"matrix"</span> dir=<span class="s">"x"</span> {
+    <span class="k">sequence</span> <span class="s">"ring"</span> dir=<span class="s">"y"</span> {
+        <span class="k">offset</span> y=<span class="s">"4.75mm"</span>   <span class="c">// stagger = offset in the step</span>
+        <span class="k">slot</span> <span class="s">"ring-bottom"</span> part=<span class="s">"choc-cell"</span>
+        …
+    }
+}
+<span class="k">sequence</span> <span class="s">"thumbfan"</span> dir=<span class="s">"x"</span> {
+    <span class="k">anchor</span> <span class="s">"middle-bottom"</span>
+    <span class="k">offset</span> x=<span class="s">"0.5u"</span> y=<span class="s">"-22mm"</span>
+    <span class="k">slot</span> <span class="s">"near"</span>
+    <span class="k">slot</span> <span class="s">"mid"</span> gap=<span class="s">"2mm"</span> y=<span class="s">"-2.75mm"</span> turn=<span class="s">"-15deg"</span>
+    <span class="k">slot</span> <span class="s">"far"</span> w=<span class="s">"1.5u"</span> gap=<span class="s">"3.46mm"</span> turn=<span class="s">"-15deg"</span> part-turn=<span class="s">"90deg"</span>
+}`},
+ lamb:{P:{x:18,y:17},note:"LambBT: Choc at 18 × 17 mm with the Absolem-lineage splay of +15°, −10°, −5° and −5°. Each column turns about a pivot 1u below its bottom key, and every turn carries into the columns after it. This board is why a sequence step has a pivot.",
+  model:()=>({main:{id:"matrix",kind:"seq",dir:"x",children:[
+     {node:col("pinky",3),off:{r:15}},{node:col("ring",3),off:{y:17,r:-10,px:0,py:-17}},{node:col("middle",3),off:{y:17/3,r:-5,px:0,py:-17}},{node:col("index",3),off:{y:-17/3,r:-5,px:0,py:-17}},{node:col("inner",3),off:{y:-17/6}}]},
+   anchored:[{anchor:"inner-0",off:{x:0,y:-24},node:{id:"thumbs",kind:"seq",dir:"x",children:[{node:{id:"t-inner",kind:"slot"},off:{r:-15}},{node:{id:"t-outer",kind:"slot"},off:{r:-10,px:-9,py:-9.5}}]}}]}),
+  kdl:`<span class="k">sequence</span> <span class="s">"matrix"</span> dir=<span class="s">"x"</span> {
+    <span class="k">sequence</span> <span class="s">"pinky"</span>  turn=<span class="s">"15deg"</span>
+    <span class="k">sequence</span> <span class="s">"ring"</span>   y=<span class="s">"1u"</span>     turn=<span class="s">"-10deg"</span> pivot-y=<span class="s">"-1u"</span>
+    <span class="k">sequence</span> <span class="s">"middle"</span> y=<span class="s">"0.333u"</span> turn=<span class="s">"-5deg"</span>  pivot-y=<span class="s">"-1u"</span>
+    <span class="k">sequence</span> <span class="s">"index"</span>  y=<span class="s">"-0.333u"</span> turn=<span class="s">"-5deg"</span> pivot-y=<span class="s">"-1u"</span>
+    <span class="k">sequence</span> <span class="s">"inner"</span>  y=<span class="s">"-0.167u"</span>
+}
+<span class="k">sequence</span> <span class="s">"thumbs"</span> dir=<span class="s">"x"</span> {
+    <span class="k">anchor</span> <span class="s">"inner-bottom"</span>     <span class="c">// inherits its -5° frame</span>
+    <span class="k">offset</span> y=<span class="s">"-24mm"</span>
+    <span class="k">slot</span> <span class="s">"t-inner"</span> turn=<span class="s">"-15deg"</span>
+    <span class="k">slot</span> <span class="s">"t-outer"</span> turn=<span class="s">"-10deg"</span> pivot-x=<span class="s">"-9mm"</span> pivot-y=<span class="s">"-9.5mm"</span>
+}`},
+ corax:{P:{x:18,y:17},note:"Corax56: five rows where some slots are empty but still take up space, a −5° turn from the ring column on, a 1.5u space key turned about 60°, and an MCU and scroll wheel each anchored to a key. The whole board is turned +5° at the root.",
+  model:()=>{const E=(n,empty,o)=>({node:col(n,5,{empty}),off:o||{}});return {frame:F(0,0,5),main:{id:"matrix",kind:"seq",dir:"x",children:[
+     E("outer2",[0,1,3,4]),E("outer",[0,4]),E("pinky",[0]),E("ring",[0],{y:11.22,r:-5,px:0,py:8}),E("middle",[],{y:5.61}),E("index",[],{y:-5.61}),E("inner",[0],{y:-2.5})]},
+   anchored:[{anchor:"middle-2",off:{x:38,y:-44},node:{id:"thumbs",kind:"seq",dir:"x",children:[{node:{id:"layer",kind:"slot"},off:{r:-15}},{node:{id:"space",kind:"slot",w:1.5},off:{x:-5,y:-3,r:75}}]}}],
+   extras:[{id:"mcu",anchor:"inner-4",off:{x:19.5,y:-9.3},w:18,h:34,part:"mcu"},{id:"wheel",anchor:"inner-1",off:{x:18.25,y:0},w:14,h:14,part:"encoder"}]};},
+  kdl:`<span class="k">design</span> <span class="s">"corax56"</span> {
+    <span class="k">offset</span> turn=<span class="s">"5deg"</span>          <span class="c">// root turn</span>
+    <span class="k">sequence</span> <span class="s">"outer2"</span> dir=<span class="s">"y"</span> {
+        <span class="k">slot</span> <span class="s">"outer2-mod"</span> part=<span class="s">"empty"</span>   <span class="c">// still advances</span>
+        <span class="k">slot</span> <span class="s">"outer2-home"</span> part=<span class="s">"choc-cell"</span>
+        …
+    }
+    <span class="k">sequence</span> <span class="s">"thumbs"</span> dir=<span class="s">"x"</span> {
+        <span class="k">anchor</span> <span class="s">"middle-home"</span>
+        <span class="k">slot</span> <span class="s">"space"</span> w=<span class="s">"1.5u"</span> turn=<span class="s">"75deg"</span> x=<span class="s">"-5mm"</span> y=<span class="s">"-3mm"</span>
+    }
+    <span class="k">slot</span> <span class="s">"mcu"</span> part=<span class="s">"mcu-wireless"</span> { <span class="k">anchor</span> <span class="s">"inner-num"</span> }
+    <span class="k">slot</span> <span class="s">"wheel"</span> part=<span class="s">"encoder"</span> { <span class="k">anchor</span> <span class="s">"inner-bottom"</span> }
+}`}
+};
+const boardS=document.getElementById("boardSvg"); let bk="corney";
+function renderBoard(){
+  const b=B[bk]; const root=b.model(); const s=resolve(root,b.P);
+  const marks=(root.anchored||[]).map(a=>({x:a.pivotAt.x,y:a.pivotAt.y}));
+  draw(boardS,s,b.P,{marks});
+  document.getElementById("boardNote").textContent=b.note;
+  document.getElementById("boardKdl").innerHTML=b.kdl;
+}
+document.querySelectorAll("[data-b]").forEach(btn=>btn.addEventListener("click",()=>{bk=btn.dataset.b;document.querySelectorAll("[data-b]").forEach(x=>x.setAttribute("aria-pressed",x===btn));renderBoard();}));
+
+renderHero();renderSeq();renderAnc();renderPitch();renderSide();renderMx();renderBoard();
+})();
+</script>
