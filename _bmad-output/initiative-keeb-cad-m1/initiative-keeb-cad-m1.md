@@ -76,6 +76,12 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
   - accounts and sharing
   - bare-chip routing; user-imported parts
 - Out: editor views, panels and drag semantics. They are decided in a separate UX session (`bmad-ux`) before the editor stories.
+- Touch point: Ergogen reference output (Corney Island) — golden comparison; owner: epic-risk-spikes
+- Touch point: routing engine (tscircuit capacity-autorouter or Freerouting via CheerpJ) — runs in a worker; owner: epic-routing-and-fab
+- Touch point: KiCad 10 — opens the board export; owner: epic-parts-and-pcb
+- Touch point: fab gerber checker — accepts gerbers + drill; owner: epic-routing-and-fab
+- Touch point: ZMK v0.3.0 build toolchain — builds the exported config; owner: epic-firmware-and-keymap
+- Touch point: static host — serves the app and WASM; owner: epic-platform-baseline
 - Tracer path: a blank canvas → Corney's layout, shapes and outline → plates → PCB placement and nets → browser routing → DRC → gerbers, alongside the case and ZMK firmware, all from one design file.
 
 ## References
@@ -92,3 +98,8 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
 - Open question: Live latency target (prd §8 Q3). Measure once the live stages exist. Owner Sergii.
 - Open question: Construction point kinds beyond line intersection (prd §8 Q4). Settle during the Corney rebuild.
 - Open question: Footprint licence (prd §8 Q6). Confirm that ceoloide's licence allows derivation with attribution. Owner Sergii; before footprint library work.
+- Decision: 2026-10-25 sliced into 10 epics by capability (one static deploy, so no package is an epic boundary); risk first: platform baseline and risk spikes open, milestone acceptance closes.
+- Decision: 2026-10-25 the catalogue schema with the Choc v2 switch and M2 screw cutouts moves into epic-layout so plates get part cutouts before epic-parts-and-pcb.
+- Decision: 2026-10-25 epic-design-document owns the worker harness, every AD-8 section skeleton and the export registry, so routing, case and firmware don't collide in `model`.
+- Decision: 2026-10-25 the UX session runs inside epic-platform-baseline; epic-layout waits on it.
+- Decision: 2026-10-25 Corney's TRRS nets are derived unchanged in epic-parts-and-pcb; a later rewire changes only the jack's catalogue pin roles.

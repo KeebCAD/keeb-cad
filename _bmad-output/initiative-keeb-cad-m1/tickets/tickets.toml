@@ -1,0 +1,79 @@
+# Epics of initiative-keeb-cad-m1, approved 2026-10-25. Table order is build order.
+
+[[epic]]
+id = 1
+slug = "epic-platform-baseline"
+title = "Monorepo builds, checks boundaries and deploys"
+description = "The pnpm monorepo with the create-vue editor builds, CI enforces the AD-10 dependency rules, and an empty app is deployed to static hosting. The UX session (editor views, drag semantics, key-cell and expression UI) has run and its result is adopted."
+covers = []
+
+[[epic]]
+id = 2
+slug = "epic-risk-spikes"
+title = "Routing and geometry risks answered"
+description = "Corney Island golden fixtures (Ergogen reference output for wired and wireless, plus a comparison harness) exist. The routing spike, run on Corney's Ergogen-generated PCB, has picked a browser engine that routes incrementally around fixed routes and a pre-routed module zone, or triggered the SM-3 KiCad fallback, and fixed the connection split rule. The geometry spike has confirmed makerjs against Corney's outline (or switched to clipper2) and fixed the flatten tolerance."
+covers = []
+
+[[epic]]
+id = 3
+slug = "epic-design-document"
+title = "A design file that saves, reopens and undoes"
+description = "A design opens, autosaves, saves to a file and reopens byte-identical, and Save As records provenance. Every change is a named command with undo/redo. Parameters and expressions evaluate. The pipeline tags outputs by revision, marks stale ones, and runs background workers with progress and cancel. Every AD-8 section has its schema skeleton and the export registry exists, so later epics fill sections in without colliding."
+covers = ["R5", "R17", "R18"]
+after = [{ epic = 1, needs = "the monorepo scaffold and CI" }]
+
+[[epic]]
+id = 4
+slug = "epic-layout"
+title = "Corney Island's keys and parts placed from a blank canvas"
+description = "Groups, slots, anchors, chains, pitch, slot size, key-cell references and the split-reversible form place Corney Island's keys and parts within ±0.05 mm of Ergogen, shown live in the 2D preview with overlap, anchor-cycle and pitch warnings. The catalogue schema exists with the Choc v2 switch and M2 screw entries and their cutouts. Provides resolved per-side slot frames for vertices and footprints."
+covers = ["R1", "R2", "R3", "R4", "R8", "R17"]
+after = [{ epic = 1, needs = "the UX session result" }, { epic = 2, needs = "the Corney golden fixtures" }, { epic = 3, needs = "commands, the design file and the revision-tagged pipeline" }]
+
+[[epic]]
+id = 5
+slug = "epic-shapes-and-plates"
+title = "Outline and plates follow the layout"
+description = "Anchored shapes and construction points reproduce Corney Island's outline, and its switch plate, backplate and MCU cover with part cutouts, within ±0.05 mm. They update live and export DXF and SVG. Provides the outline shape for the PCB edge and the case."
+covers = ["R6", "R7", "R9", "R10"]
+after = [{ epic = 2, needs = "the geometry spike verdict and flatten tolerance" }, { epic = 4, needs = "resolved slot frames and part cutouts" }]
+
+[[epic]]
+id = 6
+slug = "epic-parts-and-pcb"
+title = "Parts, netlist and PCB placement for both designs"
+description = "The rest of Corney Island's catalogue and footprints, and the key cell's components, place every footprint and keep-out. Changing the key cell updates every key's footprints. The netlist, matrix and connections are derived, with matrix, pin and LED-order overrides. The PCB follows key moves live and exports a KiCad 10 board, the escape hatch and the SM-3 fallback. The wireless design is built as a copy of the wired one. Provides connections for routing and case cutouts for the case."
+covers = ["R3", "R5", "R8", "R9", "R11", "R13"]
+after = [{ epic = 2, needs = "the connection split rule" }, { epic = 4, needs = "per-side placements and the catalogue schema" }, { epic = 5, needs = "the outline as board edge" }]
+
+[[epic]]
+id = 7
+slug = "epic-routing-and-fab"
+title = "Browser routing, DRC and fab files"
+description = "Both designs route incrementally in the browser with saved routes, pass the single DRC with design rules, and export PCB and plate gerbers + drill that pass the fab's checks. Unrouted connections and DRC violations are always shown. If the spike failed, the SM-3 fallback applies instead."
+covers = ["R10", "R12", "R13", "R17"]
+after = [{ epic = 2, needs = "the routing spike verdict" }, { epic = 6, needs = "PCB placement, netlist and connections" }]
+
+[[epic]]
+id = 8
+slug = "epic-tray-case"
+title = "Tray case from an editable template"
+description = "The tray template builds Corney Island's case within ±0.05 mm in the background, with part case cutouts. Its parameters stay in effect after its operations are edited. It exports STL and STEP."
+covers = ["R9", "R14"]
+after = [{ epic = 3, needs = "parameters, expressions and the worker harness" }, { epic = 5, needs = "the outline shape" }, { epic = 6, needs = "part case cutouts" }]
+
+[[epic]]
+id = 9
+slug = "epic-firmware-and-keymap"
+title = "ZMK firmware and keymap"
+description = "Corney Island's own keymap is authored in keeb-cad, and a ZMK configuration builds for both designs, with RGB on the wired one."
+covers = ["R15", "R16"]
+after = [{ epic = 6, needs = "the netlist, matrix and both designs" }]
+
+[[epic]]
+id = 10
+slug = "epic-milestone-acceptance"
+title = "Milestone 1 accepted end to end"
+description = "On the deployed app, Corney Island is rebuilt from a blank canvas and SM-1 to SM-5 pass, including the edit script with zero manual fix-ups."
+covers = ["R17"]
+after = [{ epic = 7, needs = "fab files" }, { epic = 8, needs = "the case" }, { epic = 9, needs = "firmware" }]
