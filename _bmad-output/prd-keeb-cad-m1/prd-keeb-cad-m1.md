@@ -9,7 +9,7 @@ updated: 2026-10-25
 
 ## 0. Document Purpose
 
-This PRD defines milestone 1 of keeb-cad for Sergii (builder and sole user) and for the downstream UX, architecture and story work. It builds on the forge brief (`forge-keeb-cad-preserve-work`), the competitor research, the layout-model paper test (v1 model) and the architecture spine (`architecture-keeb-cad-layout-model`, context only). Its main job is to close the brief's gap: for every output, what the user controls and how it follows layout changes (§4.0). Glossary terms (§3) are used exactly. All assumptions were confirmed on 2026-10-25; none remain open. Technical detail lives in `addendum.md`.
+This PRD defines milestone 1 of keeb-cad for Sergii (builder and sole user) and for the downstream UX, architecture and story work. It builds on the forge brief (`forge-keeb-cad-preserve-work`), the competitor research, the layout-model paper test (v1 model) and the architecture spine (`architecture-keeb-cad-layout-model`, updated 2026-10-25 to match this PRD). Its main job is to close the brief's gap: for every output, what the user controls and how it follows layout changes (§4.0). Glossary terms (§3) are used exactly. All assumptions were confirmed on 2026-10-25 and reconciled with the architecture spine the same day. Technical detail lives in `addendum.md`.
 
 ## 1. Vision
 
@@ -17,7 +17,7 @@ keeb-cad is a visual keyboard design tool where the layout is the single source 
 
 Today a builder who wants to change an existing design (move a thumb cluster, swap MX for Choc, go wireless) faces a chain of manual edits across Ergogen config, KiCad, a CAD case and firmware, and every one of them has to agree with the others. Knowing that even a small change costs that much is what makes builders stall or fall back to handwiring. keeb-cad removes that cost. Simple changes update all outputs live; heavy work (routing and case solids) runs in the background with visible progress, and the tool never pretends routing is solved.
 
-Milestone 1 proves the whole pipeline on one board: an existing Ergogen board (Corney Island v0.3, wired and wireless variants) rebuilt visually from a blank canvas, matching its points, outline, plate and case, and carried through PCB, routing and firmware to files ready for production. LambBT and Corax56 serve as paper checks for generality: their configs are expressed in the model on paper, not rebuilt. Done means the files pass fab checks and the ZMK firmware builds; ordering and building a physical board is not required.
+Milestone 1 proves the whole pipeline on one board: an existing Ergogen board (Corney Island v0.3, wired and wireless, as two designs) rebuilt visually from a blank canvas, matching its points, outline, plate and case, and carried through PCB, routing and firmware to files ready for production. LambBT and Corax56 serve as paper checks for generality: their configs are expressed in the model on paper, not rebuilt. Done means the files pass fab checks and the ZMK firmware builds; ordering and building a physical board is not required.
 
 Positioning: *"Ergogen's power with a visual editor, all the way to gerbers, case and firmware"* (milestone 1) and *"Remix any keyboard: Choc, wireless, your thumb cluster, and everything updates live"* (milestone 2).
 
@@ -35,9 +35,9 @@ Positioning: *"Ergogen's power with a visual editor, all the way to gerbers, cas
 
 ## 3. Glossary
 
-- **Design** — the single file that holds everything about one keyboard. Every output is computed from it.
+- **Design** — the single file that holds everything about one keyboard with one electronics setup. Every output is computed from it. A different electronics setup on the same layout is a separate design, made by copying.
 - **Layout** — the tree of nodes in a design that places keys and parts. The tree sets which node owns which; the anchor sets where each node is placed.
-- **Node** — an element of the layout: a group, a key, or a slot. Placed by **anchor + offset** (offset, then rotate about a pivot).
+- **Node** — an element of the layout: a group or a slot; a key is a slot holding the key cell. Placed by **anchor + offset** (offset, then rotate about a pivot); a node has one rotation.
 - **Anchor** — the node (default: parent) a node or geometry point is positioned from.
 - **Arrangement** — how a group places its children: a chain (each child relative to the previous sibling) or free.
 - **Slot** — a place in the layout that holds a part. Has a size (for example 1.5u).
@@ -46,8 +46,9 @@ Positioning: *"Ergogen's power with a visual editor, all the way to gerbers, cas
 - **Key cell** — the template for what every key carries (switch footprint, diodes, LED placement and their local tracks). Can be overridden for a group of keys.
 - **Module** — a ready-made board used as a part (nice!nano, nice!view).
 - **Pitch** — key spacing, a layout setting separate from the switch type (which sets only the footprint and minimum pitch).
-- **Side mode** — `reversible` (one geometry; one PCB, flipped for the other half) or `mirrored` (two geometries with overrides).
-- **Variant** — one electronics setup (parts populated, PCB, firmware) on the shared layout. A design can hold several variants.
+- **Form** — `split-reversible` (one geometry; one PCB, flipped for the other half), `split-mirrored` (right half derived from the left, with overrides) or `unibody`.
+- **Parameter** — a named value with a unit (for example `wall = 1.2mm`), usable in any length or angle.
+- **Expression** — a length or angle written with numbers, units, parameters and `+ - * / ( )` (for example `wall + gap`).
 - **Shape** — a named 2D geometry built from **geometry operations**: key outline, primitive (rectangle, circle, polygon), boolean (add, subtract, intersect) and offset (expand/shrink with corner style). Shapes can reference other shapes.
 - **Outline** — the shape that defines the board edge. Plate, PCB edge and case derive from it.
 - **Cutout** — geometry removed from a plate, PCB or case. Either part-owned (comes with a part) or user-drawn.
@@ -67,11 +68,11 @@ What the user shapes in each output, and what happens when the layout changes.
 
 | Output | User controls | Follows a layout change by | Update | FRs |
 |---|---|---|---|---|
-| Layout | Nodes, anchors, offsets, rotations and pivots; arrangements; pitch; switch type; side mode; key cell; slots and parts | — (source of truth) | live | FR-1–5 |
+| Layout | Nodes, anchors, offsets, rotations and pivots; arrangements; pitch; switch type; form; key cell; slots and parts; parameters | — (source of truth) | live | FR-1–4 |
 | Outline | Shapes built from geometry operations; every primitive and polygon vertex anchored to a node | Anchored geometry moves with its anchor; only what is anchored to the changed nodes moves | live | FR-6–7 |
 | Plate | Which shapes form each plate; extra user cutouts | Recomputed from its shapes plus part-owned cutouts (switch holes, screws) | live | FR-9–10 |
-| PCB | Parts in slots; key cell and group overrides; variant population; matrix, pin and LED-order overrides | Footprints and key-cell tracks move with their nodes live; nets and matrix re-derived; saved routes kept where still valid, broken connections rerouted in the background | placement + key-cell tracks live; routing background | FR-8, FR-11–13 |
-| Case | Tray template parameters and the 3D operations underneath | Recomputed from the outline plus part-owned cutouts (USB/MCU wall window, screws) | background | FR-14 |
+| PCB | Parts in slots; key cell and group overrides; per-side population; matrix, pin and LED-order overrides | Footprints and key-cell tracks move with their nodes live; nets and matrix re-derived; saved routes kept where still valid, broken connections rerouted in the background | placement + key-cell tracks live; routing background | FR-8, FR-11–13 |
+| Case | Tray template parameters and the 3D operations underneath (parameters stay in effect after the operations are edited) | Recomputed from the outline plus part-owned cutouts (USB/MCU wall window, screws) | background | FR-14 |
 | Firmware | Keymap (keys, layers) | Matrix, pins and ZMK physical layout re-derived; keymap entries stay attached to their keys | live | FR-15–16 |
 | Editor | Views and gestures (decided in the UX session) | Shows every output updating; background stages show progress | — | FR-17–18 |
 
@@ -87,21 +88,21 @@ The user can create a design from nothing and add groups, keys and slots placed 
 #### FR-2: Arrangements
 The user can arrange a group's children freely, or as a chain: each child is placed relative to the previous sibling with its own offset, rotation and pivot, which expresses cumulative stagger and splay.
 - Corney Island's cumulative column stagger and 3-key thumb fan are expressible without per-key absolute coordinates.
-- Placement follows one documented frame rule: a child's offset is applied in the frame of the previous sibling, then rotated about its pivot; a node's own slot rotation (for example the far thumb key's 90°) does not propagate to later siblings. The rule must reproduce Ergogen's placement within ±0.05 mm.
+- Placement follows one documented frame rule: a child's offset is applied in the frame of the previous sibling, then rotated about its pivot. A node has one rotation, and it carries to later siblings; a turn in the middle of a chain that must not carry is expressed by anchoring the next sibling explicitly (Corney Island's 90° far thumb key is last in its fan, so it is unaffected). The rule must reproduce Ergogen's placement within ±0.05 mm.
 
 #### FR-3: Pitch, switch type, key size and key cell
 The user can set pitch independently of switch type, set key/slot size (1u, 1.5u, …), define a key cell (switch, diodes, LED placement) that applies to every key, and override settings for a group of keys or parts (for example the outer column's switch pads, screw-hole sizes per output).
 - Changing the key cell updates every key's footprints on the PCB.
 - Choc v2 at 19 mm pitch (Corney Island) is expressible.
 
-#### FR-4: Side mode: reversible now, ready for mirrored and unibody
+#### FR-4: Form: split-reversible now, ready for mirrored and unibody
 The user can design a reversible split board: one geometry and one PCB for both halves, with per-side population differences only.
-- The design model must not assume a reversible split board: mirrored side mode and unibody boards are deferred but must not require a model change. [NON-GOAL for milestone 1: mirrored and unibody editing]
+- The design model must not assume a reversible split board: the `split-mirrored` and `unibody` forms are deferred but must not require a model change. [NON-GOAL for milestone 1: mirrored and unibody editing]
 
-#### FR-5: Variants
-The user can define several variants on one layout (Corney Island: wired and wireless) and switch between them.
-- A layout change updates every variant's PCB, case and firmware.
-- A variant can populate different parts at different positions (Corney Island: reset button and display differ between wired and wireless).
+#### FR-5: Second design from a copy [REVISED 2026-10-25]
+The user can save a copy of a design as a new design (Save As) and change its electronics: Corney Island wireless is a copy of Corney Island wired with different parts, positions and population (reset button, display, battery, power switch).
+- The copy records which design and revision it came from, so milestone 2 can pull later layout changes into it (remix).
+- In milestone 1, a layout change made after the copy is made in each design separately. [NON-GOAL for milestone 1: several electronics setups in one design; layout changes propagating between designs]
 
 ### 4.2 Shapes and outline
 
@@ -121,7 +122,7 @@ Every primitive and polygon vertex is anchored to a node (key, group or board or
 ### 4.3 Parts and cutouts
 
 #### FR-8: Parts in slots
-The user can place catalogue parts in slots anchored to any node. Milestone 1's catalogue covers everything Corney Island needs: Choc v2 hotswap switch footprint, diode, per-key and underglow LEDs (wired variant), nice!nano, OLED, nice!view, TRRS jack, battery connector, power switch, reset button, solder jumpers for the reversible PCB, M2 screws/standoffs. The catalogue is curated.
+The user can place catalogue parts in slots anchored to any node. Milestone 1's catalogue covers everything Corney Island needs: Choc v2 hotswap switch footprint, diode, per-key and underglow LEDs (wired design), nice!nano, OLED, nice!view, TRRS jack, battery connector, power switch, reset button, solder jumpers for the reversible PCB, M2 screws/standoffs. The catalogue is curated.
 - A part moves with its anchor.
 - Footprints come from keeb-cad's own library, likely derived from ceoloide's footprints with attribution (licence: §8 Q6).
 
@@ -138,7 +139,7 @@ The user can define one or more plates (Corney Island: front/switch plate, backp
 ### 4.5 PCB and routing
 
 #### FR-11: PCB from the design
-The PCB edge comes from the outline; footprints come from key cells and slot parts; nets and the matrix are derived from the layout and variant.
+The PCB edge comes from the outline; footprints come from key cells and slot parts; nets and the matrix are derived from the layout and population.
 - Moving a key moves its footprints and updates nets without user action.
 - The user can override derived matrix rows/columns, MCU pin assignment and LED chain order (Corney Island sets all three by hand).
 
@@ -147,7 +148,7 @@ Key-cell tracks move with their key live. Connections between key cells, modules
 - A route is still valid when both its endpoints are unchanged and it still passes DRC against the changed board.
 - The router connects to modules only (nice!nano), not bare chips; a pre-routed zone around a module is allowed.
 - Connections the router cannot complete are reported as unrouted, never hidden.
-- Routing obeys design rules: power/battery net widths, module keep-outs (nice!nano antenna on the wireless variant), edge clearance.
+- Routing obeys design rules: power/battery net widths, module keep-outs (nice!nano antenna on the wireless design), edge clearance.
 - No manual trace editing in milestone 1. [NON-GOAL]
 - Fallback if the routing spike fails: see SM-3.
 
@@ -159,14 +160,14 @@ When routing completes, keeb-cad exports fab-ready gerbers and drill files direc
 ### 4.6 Case
 
 #### FR-14: Tray case template
-The user can add a tray case from a template with parameters (wall thickness, PCB-to-wall gap, floor thickness, height), and open it to edit the 3D operations it is built from (extrude, offset, boolean, z-position). The user can export it as STL and STEP.
+The user can add a tray case from a template with parameters (wall thickness, PCB-to-wall gap, floor thickness, height), and open it to edit the 3D operations it is built from (extrude, offset, boolean, z-position). The parameters stay in effect after the operations are edited: changing `wall` still updates every operation that uses it. The user can export it as STL and STEP.
 - The case follows the outline and part-owned cutouts, rebuilding in the background with visible progress.
 - The 3D operation set is extensible (tilt, chamfer, loft later); the model does not assume straight extrusion.
 
 ### 4.7 Firmware and keymap
 
 #### FR-15: Derived firmware
-Matrix, pin mapping and ZMK physical layout are derived from the design and variant, and update when the design or variant changes. Milestone 1 exports a ZMK configuration for each variant, including LED (RGB) support for the wired variant.
+Matrix, pin mapping and ZMK physical layout are derived from the design and update when it changes. Milestone 1 exports a ZMK configuration for each design, including LED (RGB) support for the wired design.
 - The firmware model is firmware-neutral so QMK can be added later without design changes.
 
 #### FR-16: Keymap editor
@@ -192,7 +193,8 @@ The user can save and open a design as one file, and undo/redo every edit (every
 ## 5. Non-Goals (Explicit)
 - Remixing and the block library of known boards (milestone 2).
 - Choc v1, MX and Sofle thumb cluster as built references (milestone 2).
-- Unibody and mirrored side mode editing (model must be ready, editing deferred).
+- Unibody and split-mirrored editing (model must be ready, editing deferred).
+- Several electronics setups (variants) in one design; propagating layout changes between designs (milestone 2 remix).
 - Manual trace editing or locking.
 - QMK output.
 - Ergogen config import.
@@ -213,9 +215,9 @@ The user can save and open a design as one file, and undo/redo every edit (every
 **Primary (check 1)**
 - **SM-1:** Corney Island rebuilt in keeb-cad from a blank canvas, without config: key centres, outline vertices and plate cutouts within ±0.05 mm of its Ergogen output (footprint geometry may differ; see FR-8). Validates FR-1–FR-10.
 - **SM-2:** The tray case matches Corney Island's case within ±0.05 mm on: wall thickness, PCB-to-wall gap, floor thickness, wall height, screw-hole positions and radii, and the MCU/USB wall cutout position and size (see the addendum, Tray case reference numbers). Validates FR-14.
-- **SM-3:** Both variants route fully in the browser, pass DRC, and export gerbers + drill directly from keeb-cad that pass the fab's checks. If the routing spike shows that browser routing is not achievable, milestone 1 is re-scoped: it counts as done when the KiCad export, routed outside keeb-cad, produces fab-ready files. The PCB is compared with Corney Island's by parts and nets, not by copper, because keeb-cad uses its own footprint library. Validates FR-11–FR-13.
-- **SM-4:** ZMK firmware for both variants builds from the export. Validates FR-15–FR-16.
-- **SM-5:** A short edit script runs with zero manual fix-ups in any output: move one thumb-fan key; rotate the thumb fan; shift one column's stagger; change pitch; switch between the wired and wireless variants. After each step, the outline, plate, PCB, case and firmware are current (or visibly updating). Validates FR-17.
+- **SM-3:** Both designs (wired and wireless) route fully in the browser, pass DRC, and export gerbers + drill directly from keeb-cad that pass the fab's checks. If the routing spike shows that browser routing is not achievable, milestone 1 is re-scoped: it counts as done when the KiCad export, routed outside keeb-cad, produces fab-ready files. The PCB is compared with Corney Island's by parts and nets, not by copper, because keeb-cad uses its own footprint library. Validates FR-11–FR-13.
+- **SM-4:** ZMK firmware for both designs builds from the export (wired design: see §8 Q2). Validates FR-15–FR-16.
+- **SM-5:** A short edit script runs with zero manual fix-ups in any output: move one thumb-fan key; rotate the thumb fan; shift one column's stagger; change pitch; change a case parameter. After each step, the outline, plate, PCB, case and firmware of the edited design are current (or visibly updating). One layout change updating both boards is a milestone-2 metric. Validates FR-17.
 
 **Counter-metrics (do not optimise)**
 - **SM-C1:** Corney Island-specific shortcuts. Passing SM-1 by hard-coding Corney Island shapes defeats the point; LambBT and Corax56 stay as paper checks for generality.
@@ -223,9 +225,9 @@ The user can save and open a design as one file, and undo/redo every edit (every
 
 ## 8. Open Questions and Risks
 1. **Browser routing (risk):** can any engine route incrementally in the browser? Spike candidates: tscircuit capacity-autorouter (TypeScript), Freerouting via CheerpJ.
-2. **ZMK wired split:** which ZMK version supports a TRRS split for the wired variant? Milestone 1 targets that version (not necessarily ZMK v0.3.0, named in the architecture spine).
+2. **ZMK wired split (blocks SM-4 for the wired design):** Corney Island's TRRS link is single-wire (`R2: DAT`, tip and ring 1 joined to VCC). ZMK v0.3.0 supports only two-wire full-duplex UART wired split; half-duplex is experimental. Options: rewire the jack for TX/RX (nets then differ from Corney Island), test half-duplex on hardware, or use BLE split for the wired build. Decide before firmware work.
 3. **Live latency:** measure, then set a target.
 4. **Construction points:** which kinds are needed beyond line intersection (Corney Island uses intersect; averaged anchors are a candidate)?
 5. **Demand from others** is unproven (research confidence medium-low; no interviews). Milestone 2 tests it.
 6. **Footprint licence:** confirm the licence of ceoloide's footprints allows deriving keeb-cad's library with attribution.
-7. **Mirrored side mode:** which reference board to use when it is built (Heatwave is a candidate)?
+7. **Split-mirrored form:** which reference board to use when it is built (Heatwave is a candidate)?

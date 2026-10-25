@@ -14,11 +14,12 @@ Shapes: rectangle, circle, polygon, outline-reference. Ops: add, subtract, inter
 ## Milestone 2 (remix) context
 Source: Corne (crkbd) MX wired. Target: Choc (v1 and v2) wireless with the Sofle thumb cluster. Sofle v2 angles are unpublished; measure from its KiCad files. Corney Island's Choc wireless PCB is a comparison reference.
 
-## Architecture impact (from input reconciliation)
-The PRD departs from the architecture spine in ways that require an architecture update (see `reconcile-architecture.md`):
-- Outline is authored from anchored shapes and construction points, not computed (spine: derived outline); any node may anchor to any node (spine AD-3 restricts this).
-- Variants: one layout, several electronics setups → per-variant matrix, netlist, stage inputs, cache keys and exports.
-- Routes are saved in the design file and reused incrementally (spine: routing is a pure derivation).
-- Gerber + drill export in-app, DRC-gated, in milestone 1 (spine AD-15: gerbers via KiCad until milestone 2).
-- Design file gains sections for shapes, keymap and editable case operations.
-- Firmware: ZMK only in milestone 1 with RGB; firmware-neutral keymap model (spine includes QMK).
+## Architecture impact (resolved 2026-10-25)
+The architecture spine (`architecture-keeb-cad-layout-model`) was updated on 2026-10-25 and resolves every conflict listed in `reconcile-architecture.md`:
+- Authored, anchored shapes and construction points, evaluated once in the model (AD-16); any node may anchor to any node, and the chain step is the default anchor (AD-3, AD-4).
+- Variants dropped: one design = one electronics setup; wired and wireless are two designs linked by copy provenance (AD-21, AD-9). The PRD was revised to match (FR-5, SM-3–SM-5).
+- Routes saved in a routing section outside undo, re-validated after every committed edit (AD-12).
+- Gerber + drill in-app behind a single DRC (AD-15, AD-20).
+- Design file sections for shapes, parameters, keymap and case operations (AD-8, AD-17, AD-18, AD-19).
+- ZMK only, firmware-neutral keymap (AD-19); the single-wire TRRS gap is PRD §8 Q2.
+- One rotation per node, carried along the chain (AD-4); the PRD was revised to match (FR-2).
