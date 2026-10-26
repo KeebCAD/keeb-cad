@@ -7,7 +7,7 @@ paradigm: 'single source of truth with derived views (functional core / imperati
 scope: 'keeb-cad milestone 1: layout model, authored geometry, parameters, electrical model, keymap, case operations, routing state, design file format, generation pipeline, package boundaries, stack'
 status: final
 created: '2026-10-24'
-updated: '2026-10-25'
+updated: '2026-10-26'
 binds: [FR-1, FR-2, FR-3, FR-4, FR-6, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13, FR-14, FR-15, FR-16, FR-17, FR-18]
 sources:
   - _bmad-output/prd-keeb-cad-m1/prd-keeb-cad-m1.md
@@ -367,7 +367,7 @@ graph TD
 | Stable outputs | Same file + same app version → same bytes for every export. No clocks, randomness, locale or random UUIDs in outputs; tool-generated ids (KiCad UUIDs) are derived from design ids. Only routes are history-dependent, and they are saved. |
 | Testing | Golden fixtures: Corney Island v0.3 wired and wireless, as two designs (`fixtures/`, from `layout-model/sources/`). Internal: key positions within 0.01 mm of Ergogen. Acceptance: key centres, outline vertices, plate cutouts and case dimensions within ±0.05 mm. Every stage has golden-file tests. KiCad output opens in KiCad 10; ZMK output builds. A cross-stage netlist test enforces AD-14. LambBT and Corax56 are paper checks. |
 | Editor state | UI state (selection, viewport, panels, gesture in progress) lives in Pinia, never in the design. The design store exposes `dispatch(command)`, the gesture API and read access only. |
-| Monorepo | pnpm workspaces and TypeScript project references. dependency-cruiser enforces AD-10 in CI. |
+| Monorepo | pnpm workspaces and TypeScript project references. Libraries in `packages/`, the editor app in `app/`. dependency-cruiser enforces AD-10 in CI. One root ESLint/Oxlint and Prettier config covers every package. |
 | Licences | `replicad-opencascadejs` is LGPL-2.1, served as an unmodified, dynamically loaded WASM; the notice ships with the app. Footprints derived from third-party libraries carry attribution. Remix provenance carries the source licence (AD-9). |
 
 ## Stack
@@ -385,6 +385,7 @@ Verified 2026-10-24 (`stack-research.md`) and 2026-10-25 (gate re-check).
 | Vitest | ^4.1 (as the starter ships) |
 | pnpm | 12.15.0 |
 | dependency-cruiser | 18.7.0 |
+| Prettier | 3.9.10 |
 | makerjs (maintenance mode; geometry unchanged since 0.18.1, which Ergogen uses) | 0.19.2 |
 | replicad / replicad-opencascadejs | 1.2.0 / 1.1.0 |
 | @bgotink/kdl (KDL v2) | 0.4.1 |
@@ -411,7 +412,7 @@ keeb-cad/
     pipeline/   # orchestration, caching, workers, revision tagging, routing-section writer, export gate
     storage/    # storage interface + browser/file backends
     library/    # versioned catalogue data, footprints + attribution, case templates
-    editor/     # Vue app (create-vue)
+  app/          # editor: Vue app (create-vue), package @keeb-cad/editor
   fixtures/     # Corney Island wired + wireless designs, Ergogen reference output
 ```
 
