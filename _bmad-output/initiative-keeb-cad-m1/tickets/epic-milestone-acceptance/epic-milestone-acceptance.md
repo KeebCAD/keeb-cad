@@ -14,15 +14,15 @@ risk: low
 
 ## Description
 
-On the deployed app, Corney Island is rebuilt from a blank canvas and SM-1 to SM-5 pass, including the edit script with zero manual fix-ups.
+On the locally served static build, Corney Island is rebuilt from a blank canvas and SM-1 to SM-5 pass, including the edit script with zero manual fix-ups.
 
 ## Outcome
 
-Milestone 1 is shown done on the deployed app.
+Milestone 1 is shown done on the locally served static build.
 
 ## Done when
 
-- SM-1 to SM-5 pass on the deployed app.
+- SM-1 to SM-5 pass on the locally served static build.
 - The SM-5 edit script runs with zero manual fix-ups.
 
 ## Boundaries
@@ -39,3 +39,4 @@ Milestone 1 is shown done on the deployed app.
 - Waits on epic 7 because: fab files
 - Waits on epic 8 because: the case
 - Waits on epic 9 because: firmware
+- Decision (2026-10-26): "deployed app" now reads "locally served static build". Milestone 1 runs locally only (epic-platform-baseline Decision 2026-10-26).

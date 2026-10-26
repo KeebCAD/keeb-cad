@@ -81,7 +81,7 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
 - Touch point: KiCad 10 — opens the board export; owner: epic-parts-and-pcb
 - Touch point: fab gerber checker — accepts gerbers + drill; owner: epic-routing-and-fab
 - Touch point: ZMK v0.3.0 build toolchain — builds the exported config; owner: epic-firmware-and-keymap
-- Touch point: static host — serves the app and WASM; owner: epic-platform-baseline
+- Touch point: static host — serves the app and WASM; deferred to the first public preview (milestone 1 runs locally only, epic-platform-baseline Decision 2026-10-26)
 - Tracer path: a blank canvas → Corney's layout, shapes and outline → plates → PCB placement and nets → browser routing → DRC → gerbers, alongside the case and ZMK firmware, all from one design file.
 
 ## References

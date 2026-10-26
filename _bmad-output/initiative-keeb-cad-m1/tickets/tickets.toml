@@ -3,8 +3,8 @@
 [[epic]]
 id = 1
 slug = "epic-platform-baseline"
-title = "Monorepo builds, checks boundaries and deploys"
-description = "The pnpm monorepo with the create-vue editor builds, CI enforces the AD-10 dependency rules, and an empty app is deployed to static hosting. The UX session (editor views, drag semantics, key-cell and expression UI) has run and its result is adopted."
+title = "Monorepo builds and checks boundaries"
+description = "The pnpm monorepo with the create-vue editor builds, one pnpm check (locally and in GitHub Actions) enforces the AD-10 dependency rules, and the empty app runs locally. The UX session (editor views, drag semantics, key-cell and expression UI) has run and its result is adopted."
 covers = []
 
 [[epic]]
@@ -75,6 +75,6 @@ after = [{ epic = 6, needs = "the netlist, matrix and both designs" }]
 id = 10
 slug = "epic-milestone-acceptance"
 title = "Milestone 1 accepted end to end"
-description = "On the deployed app, Corney Island is rebuilt from a blank canvas and SM-1 to SM-5 pass, including the edit script with zero manual fix-ups."
+description = "On the locally served static build, Corney Island is rebuilt from a blank canvas and SM-1 to SM-5 pass, including the edit script with zero manual fix-ups."
 covers = ["R17"]
 after = [{ epic = 7, needs = "fab files" }, { epic = 8, needs = "the case" }, { epic = 9, needs = "firmware" }]
