@@ -69,3 +69,5 @@ Sergii builds Corney Island's key layout from a blank canvas in the Layout works
 - Decision (2026-10-26): the 2D canvas rendering technology (SVG, Canvas 2D or WebGL) goes to bmad-architecture as a Stack entry, in the same run as the 3D library question (initiative item 3). It should not wait for the 3D scope decision.
 - Unknown: the 2D canvas rendering technology, from that architecture run. Every canvas story of this epic waits on it.
 - Decision (2026-10-26): the Outline context line moves to epic-shapes-and-plates, since no outline exists before that epic; the inspector's `Edit key cell` link moves to epic-parts-and-pcb, with isolated cell mode.
+- Decision (2026-10-26): tracer bullet is entry 1 (the Layout canvas shows resolved keys and adds groups and slots). Entry 2, the chain-rule drag with Alt compensation, is the least certain and comes next. Violations and both halves run late because they wait on epic-layout 4.7 and 4.6.
+- Decision (2026-10-26): the Part picker's rows preview the part's envelope outline and cutouts (entry 5); epic-parts-and-pcb swaps in the footprint preview.
