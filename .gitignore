@@ -3,3 +3,11 @@ _bmad-output/party-mode/
 
 # Rendered BMad skill snapshots (regenerated on every activation, path-specific)
 _bmad/render/
+
+# Build and test output
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+test-results/
+playwright-report/

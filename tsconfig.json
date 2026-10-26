@@ -1,0 +1,19 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/model" },
+    { "path": "./packages/plates" },
+    { "path": "./packages/pcb" },
+    { "path": "./packages/routing" },
+    { "path": "./packages/drc" },
+    { "path": "./packages/case" },
+    { "path": "./packages/firmware" },
+    { "path": "./packages/exports" },
+    { "path": "./packages/pipeline" },
+    { "path": "./packages/storage" },
+    { "path": "./packages/library" },
+    { "path": "./fixtures" },
+    { "path": "./app" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}

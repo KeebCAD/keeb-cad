@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.base.json",
+  // Tests live beside the code under src/ (e.g. src/**/*.test.ts), so this covers both.
+  "include": ["src/**/*"],
+  "compilerOptions": {
+    "composite": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "types": ["node"]
+  }
+}

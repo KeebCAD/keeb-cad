@@ -1,0 +1,13 @@
+packages:
+  - packages/*
+  - app
+  - fixtures
+
+catalog:
+  typescript: ~6.0.0
+  vitest: ^4.1.11
+  vue-tsc: ^3.3.11
+
+strictPeerDependencies: true
+hoist: false
+publicHoistPattern: []
