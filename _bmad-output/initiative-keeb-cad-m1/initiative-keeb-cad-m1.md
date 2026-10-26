@@ -77,7 +77,7 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
   - bare-chip routing; user-imported parts
 - Out: editor views, panels and drag semantics. They are decided in a separate UX session (`bmad-ux`) before the editor stories.
 - Touch point: Ergogen reference output (Corney Island) — golden comparison; owner: epic-risk-spikes
-- Touch point: routing engine (tscircuit capacity-autorouter or Freerouting via CheerpJ) — runs in a worker; owner: epic-routing-and-fab
+- Touch point: routing engine (tscircuit capacity-autorouter or a custom keyboard router, chosen by epic-risk-spikes) — runs in a worker; owner: epic-routing-and-fab
 - Touch point: KiCad 10 — opens the board export; owner: epic-parts-and-pcb
 - Touch point: fab gerber checker — accepts gerbers + drill; owner: epic-routing-and-fab
 - Touch point: ZMK v0.3.0 build toolchain — builds the exported config; owner: epic-firmware-and-keymap
@@ -93,7 +93,7 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
 
 ## Notes
 
-- Open question: Routing engine (prd §8 Q1). The spike compares tscircuit capacity-autorouter with Freerouting via CheerpJ. If it fails, SM-3 is re-scoped to the KiCad export routed outside keeb-cad. Owner Sergii; first work item.
+- Open question: Routing engine (prd §8 Q1). Epic-risk-spikes compares tscircuit capacity-autorouter with a custom keyboard router. Freerouting is dropped as a runtime engine (see that epic's research). If it fails, SM-3 is re-scoped to the KiCad export routed outside keeb-cad. Owner Sergii; first work item.
 - Open question: ZMK wired split (prd §8 Q2). Corney Island's single-wire TRRS vs ZMK v0.3.0's two-wire UART split. The options are rewiring, testing half-duplex on hardware, or BLE split. This blocks SM-4 for the wired design. Owner Sergii; decide before the firmware epic.
 - Open question: Live latency target (prd §8 Q3). Measure once the live stages exist. Owner Sergii.
 - Open question: Construction point kinds beyond line intersection (prd §8 Q4). Settle during the Corney rebuild.
