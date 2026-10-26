@@ -40,3 +40,4 @@ Both designs produce ZMK firmware that builds, with Corney Island's own keymap (
 - Waits on epic 6 because: the netlist, matrix and both designs
 - Waits on Corney Island's own ZMK keymap source (not in layout-model/sources), owner Sergii.
 - Waits on the ZMK wired-split decision (initiative Open question) for the wired design.
+- Unknown: keymap layer stable ids (F-14), from the bmad-architecture queue in the initiative's Notes. Layer stories wait on it.
