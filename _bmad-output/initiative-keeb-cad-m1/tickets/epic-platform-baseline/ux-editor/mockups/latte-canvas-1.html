@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Latte canvas options</title>
+<style>
+/* Latte: base #eff1f5 mantle #e6e9ef crust #dce0e8 surface0 #ccd0da surface1 #bcc0cc surface2 #acb0be
+   overlay0 #9ca0b0 overlay1 #8c8fa1 overlay2 #7c7f93 subtext0 #6c6f85 subtext1 #5c5f77 text #4c4f69
+   mauve #8839ef peach #fe640b blue #1e66f5 red #d20f39 teal #179299
+   Frappé (for option c canvas): surface0 #414559 surface1 #51576d surface2 #626880 overlay1 #838ba7 mauve #ca9ee6 peach #ef9f76 blue #8caaee teal #81c8be red #e78284 */
+body{margin:0;padding:24px;background:#dce0e8;color:#4c4f69;font:14px system-ui,sans-serif}
+h1{font-size:18px;margin:0 0 4px}
+p.note{color:#5c5f77;margin:0 0 20px;max-width:900px}
+.row{display:flex;gap:20px;flex-wrap:wrap}
+.opt h2{font-size:15px;margin:0 0 4px}
+.opt .k{color:#5c5f77;font-size:13px;margin-bottom:8px;max-width:400px}
+.frame{border:1px solid #bcc0cc;border-radius:6px;overflow:hidden;background:#e6e9ef;width:400px}
+.bar{height:26px;background:#e6e9ef;border-bottom:1px solid #bcc0cc;font-size:12px;display:flex;align-items:center;gap:10px;padding:0 8px;color:#5c5f77}
+.bar b{color:#4c4f69;font-weight:600;box-shadow:inset 0 -2px #8839ef}
+svg{display:block}
+</style>
+</head>
+<body>
+<h1>Light theme (Latte): canvas options</h1>
+<p class="note">Same scene: keys, thumb group frame, selected thumb-home, anchor link, and a PCB strip with F.Cu (Peach) and B.Cu (Blue). Chrome is Latte in all three.</p>
+<div class="row">
+
+<div class="opt"><h2>(a) As drafted: canvas on Surface0</h2>
+<div class="k">Light strokes on a mid-grey canvas. Key edges, frame and copper fall below 3:1.</div>
+<div class="frame"><div class="bar"><b>Layout</b><span>Shapes</span><span>PCB</span></div>
+<svg width="400" height="250" viewBox="0 0 400 250"><rect width="400" height="250" fill="#ccd0da"/>
+<g fill="#bcc0cc"><rect x="30" y="30" width="56" height="56" rx="5"/><rect x="92" y="22" width="56" height="56" rx="5"/></g>
+<g fill="#acb0be"><rect x="36" y="34" width="44" height="42" rx="4"/><rect x="98" y="26" width="44" height="42" rx="4"/></g>
+<rect x="160" y="20" width="220" height="100" rx="6" fill="none" stroke="#acb0be" stroke-dasharray="4 4"/>
+<rect x="175" y="45" width="56" height="56" rx="5" fill="#bcc0cc"/>
+<g transform="rotate(-15 270 75)"><rect x="242" y="47" width="56" height="56" rx="5" fill="#bcc0cc" stroke="#8839ef" stroke-width="3"/></g>
+<line x1="203" y1="73" x2="270" y2="75" stroke="#179299" stroke-dasharray="3 3" stroke-width="1.5"/>
+<path d="M30 170 H200 V200 H370" stroke="#fe640b" stroke-width="4" fill="none"/>
+<path d="M30 215 H370" stroke="#1e66f5" stroke-width="4" fill="none"/>
+</svg></div></div>
+
+<div class="opt"><h2>(b) Canvas on Base, darker strokes</h2>
+<div class="k">Near-white canvas; keys get a 1px Overlay2 edge, frame and links use darker tones, copper uses deeper shades. Passes 3:1.</div>
+<div class="frame"><div class="bar"><b>Layout</b><span>Shapes</span><span>PCB</span></div>
+<svg width="400" height="250" viewBox="0 0 400 250"><rect width="400" height="250" fill="#eff1f5"/>
+<g fill="#ccd0da" stroke="#7c7f93"><rect x="30" y="30" width="56" height="56" rx="5"/><rect x="92" y="22" width="56" height="56" rx="5"/></g>
+<g fill="#dce0e8"><rect x="36" y="34" width="44" height="42" rx="4"/><rect x="98" y="26" width="44" height="42" rx="4"/></g>
+<rect x="160" y="20" width="220" height="100" rx="6" fill="none" stroke="#6c6f85" stroke-dasharray="4 4"/>
+<rect x="175" y="45" width="56" height="56" rx="5" fill="#ccd0da" stroke="#7c7f93"/>
+<g transform="rotate(-15 270 75)"><rect x="242" y="47" width="56" height="56" rx="5" fill="#ccd0da" stroke="#8839ef" stroke-width="3"/></g>
+<line x1="203" y1="73" x2="270" y2="75" stroke="#0f6f75" stroke-dasharray="3 3" stroke-width="1.5"/>
+<path d="M30 170 H200 V200 H370" stroke="#c4500a" stroke-width="4" fill="none"/>
+<path d="M30 215 H370" stroke="#1e66f5" stroke-width="4" fill="none"/>
+</svg></div></div>
+
+<div class="opt"><h2>(c) Light chrome, dark canvas</h2>
+<div class="k">Panels and text go light; the canvas stays Frappé dark in both themes (common in CAD tools). One canvas palette to maintain.</div>
+<div class="frame"><div class="bar"><b>Layout</b><span>Shapes</span><span>PCB</span></div>
+<svg width="400" height="250" viewBox="0 0 400 250"><rect width="400" height="250" fill="#414559"/>
+<g fill="#626880"><rect x="30" y="30" width="56" height="56" rx="5"/><rect x="92" y="22" width="56" height="56" rx="5"/></g>
+<g fill="#737994"><rect x="36" y="34" width="44" height="42" rx="4"/><rect x="98" y="26" width="44" height="42" rx="4"/></g>
+<rect x="160" y="20" width="220" height="100" rx="6" fill="none" stroke="#838ba7" stroke-dasharray="4 4"/>
+<rect x="175" y="45" width="56" height="56" rx="5" fill="#626880"/>
+<g transform="rotate(-15 270 75)"><rect x="242" y="47" width="56" height="56" rx="5" fill="#626880" stroke="#ca9ee6" stroke-width="3"/></g>
+<line x1="203" y1="73" x2="270" y2="75" stroke="#81c8be" stroke-dasharray="3 3" stroke-width="1.5"/>
+<path d="M30 170 H200 V200 H370" stroke="#ef9f76" stroke-width="4" fill="none"/>
+<path d="M30 215 H370" stroke="#8caaee" stroke-width="4" fill="none"/>
+</svg></div></div>
+
+</div>
+</body>
+</html>

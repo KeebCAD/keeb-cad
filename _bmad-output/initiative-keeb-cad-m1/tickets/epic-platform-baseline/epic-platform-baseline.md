@@ -4,7 +4,7 @@ title: "Monorepo builds and checks boundaries"
 parent: initiative-keeb-cad-m1
 covers: []
 sources: [_bmad-output/initiative-keeb-cad-m1/initiative-keeb-cad-m1.md, _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md]
-companions: []
+companions: [_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md, _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md]
 after: []
 refined: true
 risk: low

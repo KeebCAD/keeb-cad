@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Selection accent options</title>
+<style>
+/* Catppuccin Frappé: base #303446 mantle #292c3c crust #232634 surface0 #414559 surface1 #51576d
+   overlay0 #737994 text #c6d0f5 subtext0 #a5adce
+   peach #ef9f76 lavender #babbf1 mauve #ca9ee6 red #e78284 maroon #ea999c blue #8caaee yellow #e5c890 green #a6d189 teal #81c8be */
+body{margin:0;padding:24px;background:#232634;color:#c6d0f5;font:14px system-ui,sans-serif}
+h1{font-size:18px;margin:0 0 4px}
+p{color:#a5adce;margin:0 0 20px}
+.row{display:flex;gap:20px;flex-wrap:wrap}
+.opt{background:#292c3c;border:1px solid #51576d;border-radius:6px;padding:14px;width:430px}
+.opt h2{font-size:15px;margin:0 0 4px}
+.opt .k{color:#a5adce;font-size:13px;margin-bottom:10px}
+.lbl{font-size:12px;color:#a5adce;margin:8px 0 4px}
+svg{display:block;background:#414559;border-radius:4px}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;margin-top:8px;color:#a5adce}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+</style>
+</head>
+<body>
+<h1>Selection accent: three options, Frappé, calm density</h1>
+<p>Each option shows the same Layout crop (thumb-home selected, overlap error with thumb-tucky) and PCB crop (selected footprint, F.Cu, B.Cu, DRC error).</p>
+<div class="row">
+
+<!-- (a) Peach selection, Maroon F.Cu -->
+<div class="opt">
+<h2>(a) Peach selection</h2>
+<div class="k">F.Cu becomes Maroon, next to error Red</div>
+<div class="lbl">Layout</div>
+<svg width="400" height="150" viewBox="0 0 400 150">
+<g fill="#51576d" stroke="#737994"><rect x="40" y="30" width="60" height="60" rx="4"/></g>
+<g transform="rotate(-15 190 60)"><rect x="140" y="35" width="60" height="60" rx="4" fill="#51576d" stroke="#ef9f76" stroke-width="3"/></g>
+<rect x="90" y="40" width="22" height="42" fill="#e78284" opacity=".35" stroke="#e78284"/>
+<g transform="rotate(-30 290 80)"><rect x="250" y="50" width="60" height="60" rx="4" fill="#51576d" stroke="#737994"/></g>
+<text x="150" y="130" fill="#ef9f76" font-size="12">thumb-home</text>
+<text x="60" y="130" fill="#e78284" font-size="12">● overlap</text>
+</svg>
+<div class="lbl">PCB</div>
+<svg width="400" height="150" viewBox="0 0 400 150">
+<rect x="40" y="30" width="80" height="80" fill="none" stroke="#ef9f76" stroke-width="3"/>
+<rect x="220" y="30" width="80" height="80" fill="none" stroke="#737994"/>
+<path d="M120 70 H170 V50 H220" stroke="#ea999c" stroke-width="4" fill="none"/>
+<path d="M80 110 V130 H260 V110" stroke="#8caaee" stroke-width="4" fill="none"/>
+<path d="M300 70 H360" stroke="#ea999c" stroke-width="4" fill="none"/>
+<circle cx="340" cy="70" r="9" fill="none" stroke="#e78284" stroke-width="3"/>
+<text x="300" y="100" fill="#e78284" font-size="12">● clearance</text>
+</svg>
+<div class="legend"><span><i class="sw" style="background:#ef9f76"></i>selection</span><span><i class="sw" style="background:#ea999c"></i>F.Cu</span><span><i class="sw" style="background:#8caaee"></i>B.Cu</span><span><i class="sw" style="background:#e78284"></i>error</span></div>
+</div>
+
+<!-- (b) Lavender selection, Peach F.Cu -->
+<div class="opt">
+<h2>(b) Lavender selection</h2>
+<div class="k">F.Cu is Peach (warm, KiCad-like)</div>
+<div class="lbl">Layout</div>
+<svg width="400" height="150" viewBox="0 0 400 150">
+<g fill="#51576d" stroke="#737994"><rect x="40" y="30" width="60" height="60" rx="4"/></g>
+<g transform="rotate(-15 190 60)"><rect x="140" y="35" width="60" height="60" rx="4" fill="#51576d" stroke="#babbf1" stroke-width="3"/></g>
+<rect x="90" y="40" width="22" height="42" fill="#e78284" opacity=".35" stroke="#e78284"/>
+<g transform="rotate(-30 290 80)"><rect x="250" y="50" width="60" height="60" rx="4" fill="#51576d" stroke="#737994"/></g>
+<text x="150" y="130" fill="#babbf1" font-size="12">thumb-home</text>
+<text x="60" y="130" fill="#e78284" font-size="12">● overlap</text>
+</svg>
+<div class="lbl">PCB</div>
+<svg width="400" height="150" viewBox="0 0 400 150">
+<rect x="40" y="30" width="80" height="80" fill="none" stroke="#babbf1" stroke-width="3"/>
+<rect x="220" y="30" width="80" height="80" fill="none" stroke="#737994"/>
+<path d="M120 70 H170 V50 H220" stroke="#ef9f76" stroke-width="4" fill="none"/>
+<path d="M80 110 V130 H260 V110" stroke="#8caaee" stroke-width="4" fill="none"/>
+<path d="M300 70 H360" stroke="#ef9f76" stroke-width="4" fill="none"/>
+<circle cx="340" cy="70" r="9" fill="none" stroke="#e78284" stroke-width="3"/>
+<text x="300" y="100" fill="#e78284" font-size="12">● clearance</text>
+</svg>
+<div class="legend"><span><i class="sw" style="background:#babbf1"></i>selection</span><span><i class="sw" style="background:#ef9f76"></i>F.Cu</span><span><i class="sw" style="background:#8caaee"></i>B.Cu</span><span><i class="sw" style="background:#e78284"></i>error</span></div>
+</div>
+
+<!-- (c) Mauve selection, Peach F.Cu -->
+<div class="opt">
+<h2>(c) Mauve selection</h2>
+<div class="k">F.Cu is Peach</div>
+<div class="lbl">Layout</div>
+<svg width="400" height="150" viewBox="0 0 400 150">
+<g fill="#51576d" stroke="#737994"><rect x="40" y="30" width="60" height="60" rx="4"/></g>
+<g transform="rotate(-15 190 60)"><rect x="140" y="35" width="60" height="60" rx="4" fill="#51576d" stroke="#ca9ee6" stroke-width="3"/></g>
+<rect x="90" y="40" width="22" height="42" fill="#e78284" opacity=".35" stroke="#e78284"/>
+<g transform="rotate(-30 290 80)"><rect x="250" y="50" width="60" height="60" rx="4" fill="#51576d" stroke="#737994"/></g>
+<text x="150" y="130" fill="#ca9ee6" font-size="12">thumb-home</text>
+<text x="60" y="130" fill="#e78284" font-size="12">● overlap</text>
+</svg>
+<div class="lbl">PCB</div>
+<svg width="400" height="150" viewBox="0 0 400 150">
+<rect x="40" y="30" width="80" height="80" fill="none" stroke="#ca9ee6" stroke-width="3"/>
+<rect x="220" y="30" width="80" height="80" fill="none" stroke="#737994"/>
+<path d="M120 70 H170 V50 H220" stroke="#ef9f76" stroke-width="4" fill="none"/>
+<path d="M80 110 V130 H260 V110" stroke="#8caaee" stroke-width="4" fill="none"/>
+<path d="M300 70 H360" stroke="#ef9f76" stroke-width="4" fill="none"/>
+<circle cx="340" cy="70" r="9" fill="none" stroke="#e78284" stroke-width="3"/>
+<text x="300" y="100" fill="#e78284" font-size="12">● clearance</text>
+</svg>
+<div class="legend"><span><i class="sw" style="background:#ca9ee6"></i>selection</span><span><i class="sw" style="background:#ef9f76"></i>F.Cu</span><span><i class="sw" style="background:#8caaee"></i>B.Cu</span><span><i class="sw" style="background:#e78284"></i>error</span></div>
+</div>
+
+</div>
+</body>
+</html>

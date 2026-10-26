@@ -1,6 +1,9 @@
 # Party-mode room memory (personal, not project knowledge)
 _bmad-output/party-mode/
 
+# BMad run scratch (exploration audit trail; keepers are promoted to mockups/)
+_bmad-output/**/.working/
+
 # Rendered BMad skill snapshots (regenerated on every activation, path-specific)
 _bmad/render/
 

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PCB override editing</title>
+<style>
+/* Frappé: base #303446 mantle #292c3c surface0 #414559 surface1 #51576d overlay0 #737994 overlay1 #838ba7
+   text #c6d0f5 subtext0 #a5adce mauve #ca9ee6 peach #ef9f76 blue #8caaee yellow #e5c890 teal #81c8be */
+:root{--mono:"JetBrains Mono",ui-monospace,monospace}
+body{margin:0;padding:24px;background:#232634;color:#c6d0f5;font:14px system-ui,sans-serif}
+h1{font-size:18px;margin:0 0 4px}
+p.note{color:#a5adce;margin:0 0 20px}
+.opt{margin-bottom:28px}
+.opt h2{font-size:15px;margin:0 0 6px}
+.screen{width:820px;height:360px;display:flex;border:1px solid #51576d;border-radius:6px;overflow:hidden;background:#303446}
+.canvas{flex:1;background:#414559;position:relative}
+.panel{width:280px;border-left:1px solid #51576d;padding:10px;font-size:13px;overflow:hidden}
+.h{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#a5adce;margin:0 0 6px}
+.fld{display:flex;align-items:center;gap:8px;height:30px}
+.fld label{width:70px;color:#a5adce}
+.fld .v{flex:1;font-family:var(--mono);font-size:12px;background:#292c3c;border:1px solid #51576d;border-radius:4px;padding:3px 6px}
+.btn{display:inline-block;margin-top:8px;padding:5px 10px;border:1px solid #ca9ee6;color:#ca9ee6;border-radius:4px;font-size:12px}
+table{border-collapse:collapse;font-family:var(--mono);font-size:10px;width:100%}
+td,th{border:1px solid #51576d;padding:2px 3px;text-align:center;color:#a5adce}
+th{color:#c6d0f5;font-weight:normal}
+td.sel{background:#ca9ee6;color:#232634}
+td.ov{color:#e5c890}
+.seg{display:flex;gap:4px;margin-bottom:8px}
+.seg span{padding:3px 8px;border-radius:4px;font-size:12px;color:#a5adce;border:1px solid #51576d}
+.seg span.on{border-color:#ca9ee6;color:#c6d0f5}
+.led{font-family:var(--mono);font-size:11px;padding:3px 6px;border-bottom:1px solid #414559;color:#a5adce}
+.led b{color:#c6d0f5;font-weight:normal}
+.mono{font-family:var(--mono)}
+</style>
+</head>
+<body>
+<h1>PCB overrides: matrix, MCU pins, LED order</h1>
+<p class="note">Left half of Corney (6 columns × 3 rows + 3 thumbs). Keys drawn as faint outlines, as decided for the PCB workspace. ring-home is selected and has an override (shown in Yellow).</p>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="keys" viewBox="0 0 500 330">
+<g fill="none" stroke="#838ba7" stroke-width="1">
+<!-- columns x: outer 30, pinky 85, ring 140, middle 195, index 250, inner 305; stagger -->
+<rect x="30" y="70" width="50" height="50" rx="4"/><rect x="85" y="60" width="50" height="50" rx="4"/><rect x="140" y="35" width="50" height="50" rx="4"/><rect x="195" y="25" width="50" height="50" rx="4"/><rect x="250" y="35" width="50" height="50" rx="4"/><rect x="305" y="42" width="50" height="50" rx="4"/>
+<rect x="30" y="125" width="50" height="50" rx="4"/><rect x="85" y="115" width="50" height="50" rx="4"/><rect x="140" y="90" width="50" height="50" rx="4" stroke="#ca9ee6" stroke-width="2.5"/><rect x="195" y="80" width="50" height="50" rx="4"/><rect x="250" y="90" width="50" height="50" rx="4"/><rect x="305" y="97" width="50" height="50" rx="4"/>
+<rect x="30" y="180" width="50" height="50" rx="4"/><rect x="85" y="170" width="50" height="50" rx="4"/><rect x="140" y="145" width="50" height="50" rx="4"/><rect x="195" y="135" width="50" height="50" rx="4"/><rect x="250" y="145" width="50" height="50" rx="4"/><rect x="305" y="152" width="50" height="50" rx="4"/>
+<rect x="245" y="235" width="50" height="50" rx="4"/><rect x="300" y="245" width="50" height="50" rx="4" transform="rotate(-15 325 270)"/><rect x="355" y="262" width="50" height="50" rx="4" transform="rotate(-30 380 287)"/>
+</g>
+<rect x="400" y="30" width="80" height="150" rx="4" fill="#51576d" stroke="#838ba7"/><text x="412" y="110" font-size="12" fill="#c6d0f5" font-family="JetBrains Mono,monospace">mcu</text>
+</symbol></defs></svg>
+
+<!-- (a) canvas overlay -->
+<div class="opt"><h2>(a) On the canvas: labels on keys, LED chain as a numbered path</h2>
+<div class="screen"><div class="canvas"><svg width="100%" height="100%" viewBox="0 0 500 330">
+<use href="#keys"/>
+<g font-family="JetBrains Mono,monospace" font-size="10" fill="#a5adce" text-anchor="middle">
+<text x="55" y="99">R0·C0</text><text x="110" y="89">R0·C1</text><text x="165" y="64">R0·C2</text><text x="220" y="54">R0·C3</text><text x="275" y="64">R0·C4</text><text x="330" y="71">R0·C5</text>
+<text x="55" y="154">R1·C0</text><text x="110" y="144">R1·C1</text><text x="165" y="119" fill="#e5c890">R1·C5*</text><text x="220" y="109">R1·C3</text><text x="275" y="119">R1·C4</text><text x="330" y="126">R1·C5</text>
+<text x="55" y="209">R2·C0</text><text x="110" y="199">R2·C1</text><text x="165" y="174">R2·C2</text><text x="220" y="164">R2·C3</text><text x="275" y="174">R2·C4</text><text x="330" y="181">R2·C5</text>
+<text x="270" y="264">R3·C3</text><text x="325" y="274">R3·C4</text><text x="380" y="291">R3·C5</text>
+</g>
+<path d="M330 80 L275 72 L220 62 L165 72 L110 97 L55 107 L55 162 L110 152 L165 127 L220 117" fill="none" stroke="#81c8be" stroke-width="1.5" stroke-dasharray="4 3"/>
+<g fill="#81c8be" font-size="9" font-family="JetBrains Mono,monospace"><circle cx="330" cy="80" r="7"/><text x="327" y="83" fill="#232634">1</text><circle cx="275" cy="72" r="7"/><text x="272" y="75" fill="#232634">2</text><circle cx="220" cy="62" r="7"/><text x="217" y="65" fill="#232634">3</text><circle cx="165" cy="72" r="7"/><text x="162" y="75" fill="#232634">4</text></g>
+</svg></div>
+<div class="panel"><div class="h">Matrix · ring-home</div>
+<div class="fld"><label>row</label><div class="v">1 <span style="color:#737994">(derived)</span></div></div>
+<div class="fld"><label>column</label><div class="v" style="color:#e5c890">5 · override</div></div>
+<div class="h" style="margin-top:12px">LED order</div>
+<div style="color:#a5adce;font-size:12px">Chain drawn on canvas. Reorder by picking keys in sequence.</div>
+<span class="btn">Pick LED order</span>
+<div class="h" style="margin-top:12px">MCU pins</div>
+<div style="color:#a5adce;font-size:12px">Hover the mcu to see pin → net labels; click a pin to reassign.</div>
+</div></div></div>
+
+<!-- (b) tables -->
+<div class="opt"><h2>(b) Tables in the right panel</h2>
+<div class="screen"><div class="canvas"><svg width="100%" height="100%" viewBox="0 0 500 330"><use href="#keys"/></svg></div>
+<div class="panel" style="width:340px">
+<div class="seg"><span class="on">Matrix</span><span>Pins</span><span>LED order</span></div>
+<table><tr><th></th><th>C0</th><th>C1</th><th>C2</th><th>C3</th><th>C4</th><th>C5</th></tr>
+<tr><th>R0</th><td>outer-top</td><td>pinky-top</td><td>ring-top</td><td>mid-top</td><td>idx-top</td><td>inner-top</td></tr>
+<tr><th>R1</th><td>outer-home</td><td>pinky-home</td><td>—</td><td>mid-home</td><td>idx-home</td><td class="sel">ring-home</td></tr>
+<tr><th>R2</th><td>outer-bot</td><td>pinky-bot</td><td>ring-bot</td><td>mid-bot</td><td>idx-bot</td><td>inner-bot</td></tr>
+<tr><th>R3</th><td></td><td></td><td></td><td>tucky</td><td>home</td><td>reachy</td></tr></table>
+<div style="color:#a5adce;font-size:11px;margin-top:6px">Drag a slot id to another cell to override; inner-home moved to an extra row (unpaired).</div>
+<div class="h" style="margin-top:10px">LED order (preview of the Pins / LED tabs)</div>
+<div class="led"><b>1</b> inner-top</div><div class="led"><b>2</b> idx-top</div><div class="led"><b>3</b> mid-top ⋮⋮</div>
+</div></div></div>
+
+<!-- (c) both -->
+<div class="opt"><h2>(c) Both</h2>
+<p class="note" style="margin:0">Canvas overlay from (a) for seeing the matrix and LED chain and for "Pick LED order"; the tables from (b) in the right panel for precise edits. Selecting a cell selects the key, and selecting a key highlights its cell.</p>
+</div>
+
+</body>
+</html>

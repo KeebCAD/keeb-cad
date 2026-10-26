@@ -1,0 +1,117 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Key screen · Isolated key cell</title><style>
+/* GOVERNING SPINE SECTIONS
+   EXPERIENCE.md: Component Patterns: Isolated cell mode, Track tool, Chip, Inspector, Expression field, Rotation handle,
+   Status strip (left-end track-drawing hint), Tab badge; State Patterns: isolated cell mode (canvas header), waiting for edit to finish,
+   violation (canvas marker); Interaction Primitives: Gestures per workspace (isolated cell mode), Esc precedence (1 cancel track ... 7 leave cell);
+   Shortcuts W / X / Backspace; Key Flows J1.9; Upstream Handoffs (key-cell local tracks vs PRD 'no manual trace editing').
+   DESIGN.md: Colors (F.Cu Peach, B.Cu Blue at 70% beneath F.Cu, edge, component outline, error), Components (Isolated cell mode, Chip),
+   Canvas marks (Track tool, PCB marks, Violation marker), Typography (mono header).
+   Tokens: DESIGN.md frontmatter (Frappé, calm density). Geometry: Corney Island left half from mockups/panel-models.html (option c).
+   Spines win on conflict with this mock. */
+:root{--chrome:#292c3c;--panel:#303446;--border:#51576d;--bi:#838ba7;--hover:#414559;--on:#51576d;
+--text:#c6d0f5;--muted:#a5adce;--faint:#737994;--sel:#ca9ee6;--warn:#e5c890;--err:#e78284;--ok:#a6d189;
+--prog:#8caaee;--canvas:#414559;--crust:#232634;
+--sans:system-ui,Inter,sans-serif;--mono:"JetBrains Mono","JetBrainsMono Nerd Font",ui-monospace,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--crust);color:var(--text);font:400 14px/1.3 var(--sans);font-variant-numeric:tabular-nums;padding:24px}
+.pg-h{font:600 14px/1.3 var(--sans);margin:0 0 4px}
+.cap{color:var(--muted);margin:0 0 10px;max-width:1366px}
+.cap code,.mono{font-family:var(--mono);font-size:13px}
+.blk{margin:0 0 36px}
+.row2{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}
+.crop{position:relative;overflow:hidden;box-shadow:0 0 0 1px var(--border);flex:none}
+.crop>.frame{position:absolute}
+/* browser frame */
+.frame{width:1366px;height:768px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 0 0 1px var(--border);background:var(--chrome)}
+.bz{height:72px;flex:none;background:#1e1f2a;display:flex;flex-direction:column}
+.bz-tabs{height:36px;display:flex;align-items:flex-end;gap:8px;padding:0 12px}
+.bz-dots{display:flex;gap:7px;align-self:center;margin-right:8px}.bz-dots i{width:11px;height:11px;border-radius:50%;background:#51576d;display:block}
+.bz-tab{height:30px;width:250px;background:#2a2c3b;border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:12px;color:#a5adce}
+.bz-bar{height:36px;display:flex;align-items:center;gap:14px;padding:0 12px;background:#2a2c3b;color:#a5adce;font-size:12px}
+.bz-url{width:560px;height:26px;border-radius:13px;background:#1e1f2a;padding:0 14px;display:flex;align-items:center;font:12px var(--mono);color:#a5adce}
+.app{height:696px;flex:none;display:flex;flex-direction:column;position:relative;background:var(--chrome)}
+/* top bar */
+.top{height:42px;flex:none;background:var(--chrome);border-bottom:1px solid var(--border);display:flex;align-items:stretch;padding:0 8px;gap:8px}
+.top .c{display:flex;align-items:center;gap:8px}
+.vsep{width:1px;background:var(--border);margin:9px 2px}
+.btn{height:28px;padding:0 10px;border:1px solid var(--bi);border-radius:4px;background:var(--panel);color:var(--text);font:14px var(--sans);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn.on{background:var(--on)}
+.btn.ib{width:28px;padding:0;justify-content:center}
+.btn.dis{color:var(--muted)}
+.dn{font-weight:600}
+.ss{color:var(--muted)}
+.tabs{display:flex;align-items:stretch}
+.wt{display:flex;align-items:center;gap:7px;padding:0 12px;color:var(--muted);white-space:nowrap}
+.wt.on{background:var(--panel);color:var(--text);font-weight:600;box-shadow:inset 0 -2px var(--sel)}
+.wk{font:12px var(--mono);color:var(--muted);font-weight:400}
+.tb{font:12px var(--mono);font-weight:400;height:20px;min-width:20px;padding:0 4px;border:1px solid var(--border);border-radius:3px;display:inline-flex;align-items:center;justify-content:center;gap:3px;color:var(--text)}
+.g-ok{color:var(--ok)}.g-err{color:var(--err)}.g-warn{color:var(--warn)}.g-prog{color:var(--prog)}
+.sp{flex:1}
+/* banner */
+.banner{height:36px;flex:none;background:var(--chrome);border-bottom:1px solid var(--warn);display:flex;align-items:center;gap:10px;padding:0 13px}
+/* work */
+.work{flex:1;min-height:0;display:flex;position:relative}
+.rail{width:44px;flex:none;background:var(--chrome);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding-top:8px;gap:6px}
+.ri{width:32px;height:32px;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:16px}
+.ri.on{background:var(--on);color:var(--text);box-shadow:inset 2px 0 var(--sel)}
+.cv{flex:1;min-width:0;position:relative;background:var(--canvas);overflow:hidden}
+.cv>svg.full{position:absolute;left:0;top:0}
+.insp{width:320px;flex:none;background:var(--panel);border-left:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column}
+.ih{padding:11px 13px 9px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.ih b{font:600 13px var(--mono)}
+.ih .k{color:var(--muted);font-size:13px}
+.sh{height:30px;display:flex;align-items:center;gap:4px;padding:0 13px 0 6px;font:600 11px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.chev{width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted)}
+.sh .rv{margin-left:auto;text-transform:none;letter-spacing:0;font:13px var(--mono);color:var(--muted)}
+.sec{border-bottom:1px solid var(--border);padding-bottom:6px}
+.sec.closed{padding-bottom:0}
+.f{height:34px;display:flex;align-items:center;gap:10px;padding:0 13px}
+.f>label{width:74px;flex:none;color:var(--muted)}
+.ef{flex:1;min-width:0;height:28px;background:var(--chrome);border:1px solid var(--bi);border-radius:3px;font:13px var(--mono);color:var(--text);display:flex;align-items:center;gap:8px;padding:0 8px;white-space:nowrap;overflow:hidden}
+.ef .sx{color:var(--muted);margin-left:auto}
+.ef.focus{border-color:var(--sel);outline:2px solid var(--sel);outline-offset:2px}
+.ef.ro{border-color:transparent}
+.caret{display:inline-block;width:1px;height:15px;background:var(--text);margin-left:-6px}
+.kv{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 13px;gap:10px}
+.kv>span:first-child{color:var(--muted)}
+.kv .v{font:13px var(--mono)}
+.cb{display:inline-flex;align-items:center;gap:6px}
+.box{width:16px;height:16px;border:1px solid var(--bi);border-radius:3px;background:var(--chrome);display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:var(--text)}
+.box.x{background:var(--on);border-color:var(--sel)}
+.wide{margin:4px 13px 6px;width:calc(100% - 26px);justify-content:center}
+/* op list */
+.op{height:30px;display:flex;align-items:center;gap:6px;padding:0 13px;font:13px var(--mono);white-space:nowrap;overflow:hidden}
+.op .f2{color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+.op.sel{background:var(--hover);box-shadow:inset 3px 0 var(--sel)}
+.op.sel .f2{color:var(--text)}
+.op.add{color:var(--muted);font-family:var(--sans);font-size:14px}
+/* status strip */
+.st{height:30px;flex:none;background:var(--chrome);border-top:1px solid var(--border);display:flex;align-items:center;gap:14px;padding:0 12px;color:var(--muted);white-space:nowrap}
+.se{display:inline-flex;align-items:center;gap:6px}
+.se .s{font:13px var(--mono);color:var(--muted)}
+.se .lb{color:var(--muted)}
+.st .div{width:1px;height:16px;background:var(--border)}
+.st .hint{font:13px var(--mono);color:var(--text)}
+.cnt{display:inline-flex;align-items:center;gap:8px;font:13px var(--mono);border:1px solid transparent;border-radius:3px;padding:0 6px;height:22px}
+.cnt.on{background:var(--on);border-color:var(--sel);color:var(--text)}
+/* chips */
+.chips{position:absolute;left:12px;top:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{height:24px;padding:0 8px;border:1px solid var(--bi);border-radius:4px;background:var(--chrome);color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.chip.on{background:var(--on);border-color:var(--sel);color:var(--text)}
+.chip .wk{font-size:11px}
+.kbd{font:12px var(--mono);border:1px solid var(--border);border-bottom-width:2px;border-radius:3px;padding:0 5px;color:var(--muted);white-space:nowrap;background:var(--chrome)}
+/* overlays */
+.ovl{position:absolute;background:var(--panel);border:1px solid var(--border);border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.35);overflow:hidden;z-index:5}
+.mrow{height:30px;display:flex;align-items:center;gap:10px;padding:0 13px;white-space:nowrap}
+.mrow .r{margin-left:auto}
+.mrow.act{background:var(--hover);box-shadow:inset 3px 0 var(--sel)}
+.msep{height:1px;background:var(--border);margin:4px 0}
+.lbl{height:26px;display:flex;align-items:flex-end;padding:0 13px 4px;font:600 11px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.note{position:absolute;font-size:12px;color:var(--muted)}
+</style></head><body>
+<div class="blk"><p class="pg-h">Isolated cell mode — drawing a local track (PCB workspace)</p>
+<p class="cap">Key cell <code>choc-v2-cell</code> alone, large and centred, own zoom: Choc v2 switch footprint (plated pads, centre and side holes), <code>diode</code> on B.Cu (selected, rotation handle), <code>led</code> SK6812mini-e in its cutout. Track tool (W): F.Cu from switch pad 1 → corner → X dropped a via and switched to B.Cu → corner; the next segment is dashed toward the diode pad. Live cell DRC marks the F.Cu segment touching switch pad 2. Inspector: the selected component's offset / rotation as expression fields. Esc cancels the track first; a later Esc returns to the board (header <code>‹ Board (Esc)</code>). PCB tab stays active; background PCB output waits for the edit to finish.</p>
+<div class="frame"><div class="bz"><div class="bz-tabs"><div class="bz-dots"><i></i><i></i><i></i></div><div class="bz-tab"><span>keeb-cad · corney-island</span><span>×</span></div><span style="align-self:center;color:#a5adce">+</span></div>
+<div class="bz-bar"><span>←&nbsp;&nbsp;→&nbsp;&nbsp;⟳</span><div class="bz-url">keeb-cad.localhost / designs / corney-island</div></div></div>
+<div class="app"><div class="top"><div class="c"><span class="btn">File ▾</span></div><div class="vsep"></div><div class="c"><span class="dn">corney-island</span><span class="ss">unsaved changes</span></div><div class="vsep"></div><div class="tabs" role="tablist"><div class="wt" role="tab">Layout<span class="wk">1</span><span class="tb" aria-label="current"><span class="g-ok">✓</span></span></div><div class="wt" role="tab">Shapes<span class="wk">2</span><span class="tb" aria-label="current"><span class="g-ok">✓</span></span></div><div class="wt on" role="tab">PCB<span class="wk">3</span><span class="tb" aria-label="waiting for edit to finish"><span class="g-prog">◌</span></span></div><div class="wt" role="tab">Case<span class="wk">4</span><span class="tb" aria-label="current"><span class="g-ok">✓</span></span></div><div class="wt" role="tab">Firmware<span class="wk">5</span><span class="tb" aria-label="current"><span class="g-ok">✓</span></span></div></div><div class="sp"></div><div class="c"><span class="btn">Export ▾</span><span class="btn ib" aria-label="Undo">↶</span><span class="btn ib" aria-label="Redo">↷</span></div></div><div class="work"><div class="rail"><div class="ri" title="Tree (T)" aria-label="Tree">▤</div><div class="ri" title="Parameters (T)" aria-label="Parameters">ƒ</div></div><div class="cv"><svg class="full" width="1002" height="624" viewBox="0 0 1002 624" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="cg" width="24.0" height="24.0" patternUnits="userSpaceOnUse" x="21.0" y="2.0"><path d="M24.0 0H0V24.0" fill="none" stroke="#51576d" stroke-width="1"/></pattern></defs><rect width="1002" height="624" fill="url(#cg)"/><rect x="285.0" y="122.0" width="432.0" height="432.0" rx="33.599999999999994" fill="none" stroke="#949cbb"/><rect x="321.0" y="158.0" width="360.0" height="360.0" rx="6" fill="none" stroke="#a5adce"/><text x="329.0" y="176.0" font-family="JetBrains Mono,JetBrainsMono Nerd Font,monospace" font-size="11" fill="#c6d0f5">switch</text><circle cx="501.0" cy="338.0" r="60.0" fill="#232634" stroke="#b5bfe2"/><circle cx="369.0" cy="338.0" r="22.799999999999997" fill="#232634" stroke="#b5bfe2"/><circle cx="633.0" cy="338.0" r="22.799999999999997" fill="#232634" stroke="#b5bfe2"/><rect x="462.6" y="191.60000000000002" width="76.80000000000001" height="67.19999999999999" fill="#232634" stroke="#b5bfe2"/><rect x="421.8" y="195.2" width="33.599999999999994" height="21.6" rx="2" fill="#8caaee" fill-opacity=".7"/><rect x="421.8" y="233.6" width="33.599999999999994" height="21.6" rx="2" fill="#8caaee" fill-opacity=".7"/><rect x="546.6" y="195.2" width="33.599999999999994" height="21.6" rx="2" fill="#8caaee" fill-opacity=".7"/><rect x="546.6" y="233.6" width="33.599999999999994" height="21.6" rx="2" fill="#8caaee" fill-opacity=".7"/><text x="501.0" y="170.0" text-anchor="middle" font-family="JetBrains Mono,JetBrainsMono Nerd Font,monospace" font-size="11" fill="#c6d0f5">led</text><polyline points="652.2,458.0 681.0,429.2" fill="none" stroke="#8caaee" stroke-opacity="0.7" stroke-width="6.0" stroke-linecap="round" stroke-linejoin="round" /><polyline points="681.0,429.2 681.0,368.0" fill="none" stroke="#8caaee" stroke-opacity="0.7" stroke-width="6.0" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="12.0 8.399999999999999"/><rect x="659.4" y="270.8" width="43.2" height="86.4" rx="3" fill="none" stroke="#ca9ee6" stroke-width="2"/><rect x="666.6" y="262.4" width="28.799999999999997" height="24.0" rx="2" fill="#8caaee" fill-opacity=".7"/><rect x="666.6" y="341.6" width="28.799999999999997" height="24.0" rx="2" fill="#8caaee" fill-opacity=".7"/><text x="729.0" y="318.0" font-family="JetBrains Mono,JetBrainsMono Nerd Font,monospace" font-size="11" fill="#c6d0f5">diode</text><circle cx="681.0" cy="234.4" r="6" fill="#414559" stroke="#ca9ee6" stroke-width="2"/><circle cx="501.0" cy="479.6" r="28.799999999999997" fill="#ef9f76"/><circle cx="501.0" cy="479.6" r="14.399999999999999" fill="#232634"/><circle cx="621.0" cy="429.2" r="28.799999999999997" fill="#ef9f76"/><circle cx="621.0" cy="429.2" r="14.399999999999999" fill="#232634"/><circle cx="381.0" cy="429.2" r="28.799999999999997" fill="#ef9f76"/><circle cx="381.0" cy="429.2" r="14.399999999999999" fill="#232634"/><polyline points="501.0,479.6 522.6,458.0 652.2,458.0" fill="none" stroke="#ef9f76" stroke-opacity="1" stroke-width="6.0" stroke-linecap="round" stroke-linejoin="round" /><circle cx="652.2" cy="458.0" r="7.720000000000001" fill="#c6d0f5"/><circle cx="652.2" cy="458.0" r="3.5999999999999996" fill="#232634"/><g stroke="#c6d0f5" stroke-width="1"><line x1="669.0" y1="368.0" x2="677.0" y2="368.0"/><line x1="685.0" y1="368.0" x2="693.0" y2="368.0"/><line x1="681.0" y1="356.0" x2="681.0" y2="364.0"/><line x1="681.0" y1="372.0" x2="681.0" y2="380.0"/></g><circle cx="621.0" cy="458.0" r="13" fill="#e7828440" stroke="#e78284" stroke-width="1.5"/><circle cx="634.0" cy="446.0" r="7" fill="#e78284" stroke="#232634" stroke-width="1.5"/><text x="634.0" y="449.5" text-anchor="middle" font-size="9" fill="#232634">●</text><g><rect x="513.0" y="568.4" width="262" height="22" rx="3" fill="#292c3c" stroke="#e78284"/><text x="521.0" y="583.4" font-family="JetBrains Mono,JetBrainsMono Nerd Font,monospace" font-size="11" fill="#c6d0f5"><tspan fill="#e78284">●</tspan> clearance: switch pad 2 (0.00 mm)</text></g><line x1="621.0" y1="471.0" x2="621.0" y2="568.4" stroke="#e78284" stroke-width="1"/></svg><div style="position:absolute;left:12px;top:12px;display:flex;gap:8px;align-items:center"><span class="btn" style="font:13px var(--mono);background:var(--chrome)">‹ Board (Esc) · key cell choc-v2-cell</span></div><div class="chips" style="top:52px"><span class="chip" aria-pressed="false">Matrix<span class="kbd">M</span></span><span class="chip" aria-pressed="false">LED chain<span class="kbd">L</span></span><span class="chip" aria-pressed="false">Pins<span class="kbd">I</span></span><span style="width:8px"></span><span class="chip on" aria-pressed="true">✓ F.Cu</span><span class="chip on" aria-pressed="true">✓ B.Cu</span><span class="chip on" aria-pressed="true">✓ Edge</span><span class="chip on" aria-pressed="true">✓ Keep-outs</span></div></div><div class="insp"><div class="ih"><b>diode</b><span class="k">component · key cell choc-v2-cell</span></div><div class="sec"><div class="sh"><span class="chev">▾</span>Offset</div><div class="f"><label>x</label><div class="ef">ks / 2 - 2mm<span class="sx">= 7.50 mm</span></div></div><div class="f"><label>y</label><div class="ef">-1 mm</div></div><div class="f"><label>rotation</label><div class="ef">90 deg</div></div></div><div class="sec"><div class="kv"><span>layer</span><span class="v">B.Cu</span></div></div></div></div><div class="st"><span class="hint">track B.Cu · X via · Backspace · Esc</span><span class="div"></span><span class="se"><span class="lb">Outline</span><span class="g-ok">✓</span><span class="s">current</span></span><span class="se"><span class="lb">Plates</span><span class="g-ok">✓</span><span class="s">current</span></span><span class="se"><span class="lb">PCB</span><span class="g-prog">◌</span><span class="s">waiting for edit to finish · 0 unrouted</span></span><span class="se"><span class="lb">Case</span><span class="g-ok">✓</span><span class="s">current</span></span><span class="se"><span class="lb">Firmware</span><span class="g-ok">✓</span><span class="s">current</span></span></div></div></div></div>
+</body></html>

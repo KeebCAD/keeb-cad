@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Typography options</title>
+<style>
+/* Frappé: base #303446 mantle #292c3c crust #232634 surface0 #414559 surface1 #51576d overlay0 #737994
+   text #c6d0f5 subtext0 #a5adce mauve #ca9ee6 red #e78284 yellow #e5c890
+   Fonts: sans = system-ui (falls back to Inter if installed); mono = "JetBrains Mono", ui-monospace */
+:root{--sans:system-ui,"Inter",sans-serif;--mono:"JetBrains Mono","JetBrainsMono Nerd Font",ui-monospace,monospace}
+body{margin:0;padding:24px;background:#232634;color:#c6d0f5;font:14px var(--sans)}
+h1{font-size:18px;margin:0 0 4px}
+p.note{color:#a5adce;margin:0 0 20px}
+.row{display:flex;gap:20px;flex-wrap:wrap}
+.opt{width:360px}
+.opt h2{font-size:15px;margin:0 0 8px}
+.panel{background:#303446;border:1px solid #51576d;border-radius:6px;padding:12px 14px}
+.sec{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#a5adce;margin:12px 0 6px}
+.sec:first-child{margin-top:0}
+.f{display:flex;align-items:center;height:30px;gap:10px}
+.f label{width:64px;color:#a5adce}
+.v{flex:1;background:#292c3c;border:1px solid #51576d;border-radius:4px;padding:4px 8px;white-space:nowrap;overflow:hidden}
+.v.focus{border-color:#ca9ee6}
+.r{color:#737994}
+.id{color:#ca9ee6}
+.err{color:#e78284;font-size:12px;margin:2px 0 0 74px}
+.status{margin-top:12px;background:#292c3c;border-radius:4px;padding:6px 8px;font-size:12px;color:#a5adce;display:flex;gap:12px;flex-wrap:wrap}
+.num{font-variant-numeric:tabular-nums}
+/* option a: sans everywhere */
+.a .v,.a .id,.a .status{font-family:var(--sans)}
+/* option b: mono for values, ids, coordinates */
+.b .v,.b .id,.b .coord,.b .err code{font-family:var(--mono);font-size:13px}
+/* option c: mono everywhere */
+.c,.c *{font-family:var(--mono)!important;font-size:13px}
+</style>
+</head>
+<body>
+<h1>Typography: three options, Frappé, calm density</h1>
+<p class="note">Same inspector snippet in each. Monospace is JetBrains Mono if installed, otherwise your system monospace.</p>
+<div class="row">
+
+<div class="opt a"><h2>(a) Sans everywhere, tabular digits</h2>
+<div class="panel num">
+<div class="sec">Slot <span class="id">left/thumb-home</span></div>
+<div class="f"><label>anchor</label><div class="v"><span class="id">thumb-tucky</span> · center</div></div>
+<div class="f"><label>x</label><div class="v">1u + 2mm <span class="r">= 21.00 mm</span></div></div>
+<div class="f"><label>y</label><div class="v focus">0.25u + 0.37mm <span class="r">= 5.12 mm</span></div></div>
+<div class="f"><label>rot</label><div class="v">-15deg + 1u</div></div>
+<div class="err">unit-mismatch: u on rotation</div>
+<div class="f"><label>key cell</label><div class="v">choc-v2-cell</div></div>
+<div class="status"><span class="coord">x 84.92 y −19.70 mm</span><span>zoom 144%</span><span>PCB 41/56 · 15 unrouted</span></div>
+</div></div>
+
+<div class="opt b"><h2>(b) Sans UI, mono values and ids</h2>
+<div class="panel num">
+<div class="sec">Slot <span class="id">left/thumb-home</span></div>
+<div class="f"><label>anchor</label><div class="v"><span class="id">thumb-tucky</span> · center</div></div>
+<div class="f"><label>x</label><div class="v">1u + 2mm <span class="r">= 21.00 mm</span></div></div>
+<div class="f"><label>y</label><div class="v focus">0.25u + 0.37mm <span class="r">= 5.12 mm</span></div></div>
+<div class="f"><label>rot</label><div class="v">-15deg + 1u</div></div>
+<div class="err">unit-mismatch: <code>u</code> on rotation</div>
+<div class="f"><label>key cell</label><div class="v">choc-v2-cell</div></div>
+<div class="status"><span class="coord">x 84.92 y −19.70 mm</span><span>zoom 144%</span><span>PCB 41/56 · 15 unrouted</span></div>
+</div></div>
+
+<div class="opt c"><h2>(c) Mono everywhere</h2>
+<div class="panel num">
+<div class="sec">Slot <span class="id">left/thumb-home</span></div>
+<div class="f"><label>anchor</label><div class="v"><span class="id">thumb-tucky</span> · center</div></div>
+<div class="f"><label>x</label><div class="v">1u + 2mm <span class="r">= 21.00 mm</span></div></div>
+<div class="f"><label>y</label><div class="v focus">0.25u + 0.37mm <span class="r">= 5.12 mm</span></div></div>
+<div class="f"><label>rot</label><div class="v">-15deg + 1u</div></div>
+<div class="err">unit-mismatch: u on rotation</div>
+<div class="f"><label>key cell</label><div class="v">choc-v2-cell</div></div>
+<div class="status"><span class="coord">x 84.92 y −19.70 mm</span><span>zoom 144%</span><span>PCB 41/56 · 15 unrouted</span></div>
+</div></div>
+
+</div>
+</body>
+</html>

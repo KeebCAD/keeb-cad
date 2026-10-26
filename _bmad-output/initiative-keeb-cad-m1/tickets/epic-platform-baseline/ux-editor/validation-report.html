@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UX Design Validation: keeb-cad</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --border: #e7e5e4;
+    --text: #1c1917;
+    --muted: #78716c;
+
+    --verdict-strong: #16a34a;
+    --verdict-adequate: #65a30d;
+    --verdict-thin: #d97706;
+    --verdict-broken: #dc2626;
+
+    --sev-low: #64748b;
+    --sev-medium: #ca8a04;
+    --sev-high: #ea580c;
+    --sev-critical: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  header.report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .title h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .title .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+  .synthesis {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--muted);
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+    font-size: 15.5px;
+  }
+  .synthesis p { margin: 0 0 10px; }
+  .synthesis p:last-child { margin-bottom: 0; }
+
+  .dimension-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .dim-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .dim-card .dim-name { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .dim-card .dim-verdict { font-size: 14px; font-weight: 600; }
+
+  section.dimension, section.reviewer-section { margin-bottom: 14px; }
+  section.dimension details, section.reviewer-section details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  section summary {
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  section summary::-webkit-details-marker { display: none; }
+  section summary::before {
+    content: "▸";
+    display: inline-block;
+    color: var(--muted);
+    transition: transform 0.15s ease;
+  }
+  section details[open] summary::before { transform: rotate(90deg); }
+  section summary h2 {
+    display: inline;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    flex: 1;
+  }
+  .verdict-pill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: white;
+  }
+  .verdict-strong { background: var(--verdict-strong); }
+  .verdict-adequate { background: var(--verdict-adequate); }
+  .verdict-thin { background: var(--verdict-thin); }
+  .verdict-broken { background: var(--verdict-broken); }
+
+  .dim-body { padding: 4px 20px 18px; }
+  .dim-judgment { color: var(--text); font-size: 14.5px; }
+  .dim-judgment p { margin: 0 0 10px; }
+
+  .findings-list { padding: 0 20px 4px; }
+  article.finding {
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+  article.finding:first-child { border-top: none; }
+  article.finding header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .badge {
+    font-size: 10.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+  }
+  .badge-sev-low { background: rgba(100, 116, 139, 0.12); color: var(--sev-low); }
+  .badge-sev-medium { background: rgba(202, 138, 4, 0.14); color: var(--sev-medium); }
+  .badge-sev-high { background: rgba(234, 88, 12, 0.14); color: var(--sev-high); }
+  .badge-sev-critical { background: rgba(220, 38, 38, 0.14); color: var(--sev-critical); }
+  .finding-title { margin: 0; font-size: 15px; font-weight: 500; flex: 1; min-width: 200px; }
+  .finding-location { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; color: var(--muted); }
+  .finding-note, .finding-fix { margin-top: 6px; font-size: 14px; }
+  .finding-fix strong { color: var(--muted); font-weight: 500; }
+
+  .reviewer-source {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  .mechanical {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 24px;
+    font-size: 14px;
+  }
+  .mechanical h3 { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .mechanical ul { margin: 0; padding-left: 20px; }
+  .mechanical li { margin-bottom: 4px; color: var(--text); }
+
+  footer.report-footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  footer .meta { display: flex; gap: 24px; flex-wrap: wrap; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.92em; background: rgba(120,113,108,0.10); padding: 0 4px; border-radius: 3px; }
+  .finding-meta { margin-top: 6px; font-size: 12px; color: var(--muted); font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .counts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+  .also { padding: 10px 20px 16px; font-size: 13.5px; color: var(--muted); }
+  .also ul { margin: 4px 0 0; padding-left: 20px; }
+  @media (max-width: 600px) { .container { padding: 20px 16px 48px; } header.report-header { flex-direction: column; } }
+</style>
+</head>
+<body>
+  <div class="container">
+
+    <header class="report-header">
+      <div class="title">
+        <h1>keeb-cad — UX Design Validation Report</h1>
+        <div class="subtitle">/home/ruyu/projects/keeb-cad/_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md · EXPERIENCE.md</div>
+      </div>
+    </header>
+
+    <div class="synthesis">
+      <p>The pair is a solid contract for the Layout, expression, drag and output-state work. Tokens are complete with dark/light pairs, every mock is linked, and almost every memlog decision is carried over faithfully. It is not yet complete for every editor story. The key-cell UI that R7 names is still a [GAP]. The J2 climax contradicts the interaction primitives. Error and cold-load states are missing. One memlog decision (Firmware legends) and the Inspiration/rejects section were dropped. The rubric found no critical findings.</p>
+      <p>The extra reviewers move the picture from "complete enough with gaps" to "revise before editor stories". The adversarial review found two critical problems the rubric walk missed, both traced to the architecture: SM-5 step 4 changes pitch through a user parameter instead of <code>meta</code> <code>pitch-x</code>/<code>pitch-y</code>, so the success-metric journey cannot run as written, and the derived right side and side-qualified ids have no UI, so right-half bindings, per-side population and violation navigation are unreachable. It also exposes a cluster of input-model contradictions (Esc, Tab, Delete, drag on empty canvas, Firmware capture, drag write-back) concentrated in the bundles accepted unchanged, which makes Flow coverage's "adequate" generous. The accessibility review passes the chrome but finds four breaches of the agreed floor: keycap text fails AA in both themes, Latte Yellow and Teal are still used as text, and pick modes are mouse-only. The visual spine is sound; the behaviour spine and the Latte canvas need another pass, and two items (3D scope, layer ids) need architecture before the affected stories are cut.</p>
+    </div>
+
+    <div class="counts"><span class="badge badge-sev-critical">critical 2</span> <span class="badge badge-sev-high">high 17</span> <span class="badge badge-sev-medium">medium 38</span> <span class="badge badge-sev-low">low 21</span></div>
+
+    <div class="dimension-summary">
+      <div class="dim-card">
+        <div class="dim-name">Flow coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Token completeness</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Component coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-thin)">thin</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">State coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-thin)">thin</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Visual reference coverage</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Bloat &amp; overspecification</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Inheritance discipline</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">Shape fit</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div>
+      </div>
+    </div>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>Flow coverage</h2>
+          <span class="verdict-pill verdict-adequate">adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Checked ticket R7 topics (editor views, panels, drag semantics, key-cell UI, expression UI) and the memlog journeys J1 "First build of Corney Island" / J2 "The thumb-fan edit" against EXPERIENCE.md Key Flows. Both flows have a named protagonist, numbered steps, a climax and a failure path. Views, panels, drag and expression UI are exercised (J1.3, J1.5, J2.1, J2.3, J2.4). The key-cell editor and the J2 climax are the holes.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding" id="F-03">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-03 · Key-cell editor tooling is still a [GAP], though this session owns it</h3>
+              <span class="finding-location">EXPERIENCE.md IA "Key-cell exception", J1.8, Open Items</span>
+            </header>
+            <div class="finding-note">R7 and the architecture Deferred row assign the key-cell editor to this UX session. The spines define only how isolated cell mode is entered and left; the tooling inside it is <code>[GAP]</code> and J1.8 has no editing beat. Story-dev cannot build a key-cell editor from this.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Decide the in-cell tooling (place components, local tracks, pin roles) and add a J1 step for it, or record an explicit PO/architecture deferral.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: USER DECISION</div>
+          </article>
+          <article class="finding" id="F-04">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-04 · The J2 climax contradicts the interaction primitives and cannot be seen where it happens</h3>
+              <span class="finding-location">EXPERIENCE.md J2.2, Interaction Primitives "Rotate", State Patterns "waiting for drag", IA table</span>
+            </header>
+            <div class="finding-note">Step 2 rotates with <code>Shift+]</code>, a discrete keypress, but the climax says outlines "follow under the hand" and PCB shows <code>waiting for drag to finish</code>, a state defined only during a gesture. No mouse-rotate gesture exists anywhere. The adversarial review adds that outline and plates render only in Shapes, so the Layout canvas where the edit happens shows nothing "under the hand"; after rejecting the combined canvas (memlog:19–20) the climax still needs that view.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Either add a rotate-drag gesture (e.g. a rotation handle on the group frame) plus a faint non-interactive outline/plate underlay in Layout (chip-toggled, on by default), or rewrite the climax around a key burst seen through the status strip and drop "under the hand". See F-39 for the burst boundary.</div>
+            <div class="finding-meta">Raised by: rubric, adversarial · Triage: USER DECISION</div>
+          </article>
+          <article class="finding" id="F-20">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-20 · J1 never places a part</h3>
+              <span class="finding-location">EXPERIENCE.md J1, Shortcuts, Component Patterns</span>
+            </header>
+            <div class="finding-note">Corney Island needs an MCU module, display and TRRS, and <code>P</code> "place part" is a shortcut, but no component pattern covers part placement or the catalogue picker, and Open Items does not list it.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add a part-placement step and a Part picker row in both spines, or log a <code>[GAP]</code>.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-58">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-58 · J1.2 "G adds the matrix group" uses an undefined term</h3>
+              <span class="finding-location">EXPERIENCE.md J1.2</span>
+            </header>
+            <div class="finding-note">It reads like a special group kind.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Name the group by id or role, using glossary terms.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+        </div>
+      </details>
+    </section>
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>Token completeness</h2>
+          <span class="verdict-pill verdict-adequate">adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>All 31 dark colour tokens have hex values and <code>-light</code> pairs; typography, rounded and spacing entries are complete; every <code>{path}</code> reference resolves. Contrast ratios were recomputed. The gaps are a wrong Latte key value, marks with no token, and non-text contrast that is never stated.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding" id="F-21">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-21 · Latte <code>key-top-face-light</code> is darker than <code>key-body-light</code></h3>
+              <span class="finding-location">DESIGN.md frontmatter L61–62, Elevation &amp; Depth</span>
+            </header>
+            <div class="finding-note"><code>#9ca0b0</code> vs <code>#acb0be</code> (1.2:1) contradicts the decided "lighter top face" (memlog L40). Open Items says "verify", but the committed value is wrong and code will mirror it.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Pick Latte values with the top face lighter than the body (see F-16), and remove the Open Item.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-22">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-22 · Things the spines draw have no colour token</h3>
+              <span class="finding-location">DESIGN.md frontmatter <code>colors</code>; EXPERIENCE.md Layer chips, State Patterns "violation"</span>
+            </header>
+            <div class="finding-note">Missing: PCB <code>Edge</code> layer, footprints/pads/silkscreen, warning-severity overlap ("Red/Amber" but only a Red <code>overlap-fill</code>), the anchor-cycle path, 3D bodies (case, plates, PCB), Firmware legend text, and hover/pressed states for rows, chips and buttons. Keep-out is already a <code>[GAP]</code>.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add tokens, or <code>[GAP]</code> entries for each.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-23">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-23 · Non-text contrast is never stated; keycaps have no boundary that reaches 3:1</h3>
+              <span class="finding-location">DESIGN.md Colors "Contrast", Canvas keys</span>
+            </header>
+            <div class="finding-note">Key body vs canvas is 1.72 (Frappé) and 1.40 (Latte); keys are the primary canvas object. Latte Mauve selection on <code>canvas-light</code> is 3.5:1. WCAG 1.4.11 is not part of the agreed floor, so this is advisory.</div>
+            <div class="finding-fix"><strong>Fix:</strong> State ≥3:1 targets for keys, selection outlines, anchor links and ratsnest. Draw a 1px keycap outline in Overlay2 (Frappé 3.48; Latte 3.49 on a Base canvas).</div>
+            <div class="finding-meta">Raised by: rubric, accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-59">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-59 · Stated contrast ratios are slightly off; Latte error text on chrome is 4.46</h3>
+              <span class="finding-location">DESIGN.md Colors</span>
+            </header>
+            <div class="finding-note">Latte Green is 3.0 (stated 2.7), Latte Blue 4.3 (stated 4.0). Latte Red on <code>chrome-light</code> is just under AA if error text ever sits on chrome (status strip, banner, field background).</div>
+            <div class="finding-fix"><strong>Fix:</strong> Correct the numbers; keep error text on <code>panel-light</code> (4.80) or use Text with a Red ● on chrome.</div>
+            <div class="finding-meta">Raised by: rubric, accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-60">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-60 · Some literals and assumptions are not tokens</h3>
+              <span class="finding-location">DESIGN.md Elevation &amp; Depth, frontmatter <code>spacing</code></span>
+            </header>
+            <div class="finding-note">Overlay shadow <code>0 6px 18px rgba(0,0,0,.35)</code> is prose only; <code>key-outline-faint</code> has "reduced opacity" with no alpha; spacing <code>'3'</code> duplicates <code>pad</code> (13px) in an odd 4/8/13/20 scale.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add <code>shadow-overlay</code> and an alpha value; confirm the scale.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+        </div>
+      </details>
+    </section>
+    <section class="dimension">
+      <details open>
+        <summary>
+          <h2>Component coverage</h2>
+          <span class="verdict-pill verdict-thin">thin</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>25 DESIGN.md component entries were checked against 23 EXPERIENCE.md Component Patterns rows, plus every component named in prose, the IA, the flows and the memlog. A decided memlog rule (Firmware legends) is missing, several named surfaces have no spec on one or both sides, and the binding-capture and shortcut rules have logical holes.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding" id="F-05">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-05 · Firmware legend rules from the memlog are missing from both spines</h3>
+              <span class="finding-location">DESIGN.md Components "Canvas keys"; EXPERIENCE.md "Binding field"; memlog L55(2)</span>
+            </header>
+            <div class="finding-note">Decided: transparent = faint ▽, none = empty cap, mod-tap/layer-tap = two lines (tap over hold). DESIGN.md says only "Firmware: keycaps with legends".</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add the legend rules to DESIGN.md Canvas keys and the display rules to EXPERIENCE.md. Pair with F-16 (legend contrast).</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-11">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-11 · Firmware binding capture swallows the app's own controls and cannot capture common keys</h3>
+              <span class="finding-location">EXPERIENCE.md "Binding field"; memlog:54</span>
+            </header>
+            <div class="finding-note">(a) Esc, Tab and Delete/Backspace cannot be captured, yet Corney's keymap uses them, and the spine never says the picker is the route for them (rubric). (b) Ctrl+Z, Ctrl+K, Ctrl+1..5 and Ctrl+S are captured as bindings, so with a key selected there is no undo, palette, workspace switch or save without Esc first. (c) Browser- and WM-reserved combos never reach the page. (d) "Next key" for Tab has no defined order. (e) Capture is a focus trap that contradicts "everything keyboard-reachable"; accessibility rates the trap itself low and asks for a persistent <code>Esc to leave · Tab next key</code> hint.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Make capture explicit (Enter or a <code>Capture</code> button arms it for exactly one chord, then disarms). Outside capture, Tab/Esc/Ctrl+* keep their global meanings. Capture by <code>KeyboardEvent.code</code>. Bind Esc/Tab/Delete via the picker or by typing the name. Define the advance order (e.g. matrix row-major, left then right).</div>
+            <div class="finding-meta">Raised by: adversarial, rubric, accessibility · Triage: USER DECISION</div>
+          </article>
+          <article class="finding" id="F-24">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-24 · Design info has no component row</h3>
+              <span class="finding-location">EXPERIENCE.md Surface closure; memlog L32(3)</span>
+            </header>
+            <div class="finding-note"><code>copied from &lt;design&gt; · rev N</code> appears only in the Surface closure table, with no location in either spine.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add a Design info component (where it opens, what it shows) to both spines.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-25">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-25 · Several named surfaces lack a visual spec, a behavioural spec, or both</h3>
+              <span class="finding-location">EXPERIENCE.md IA, Component Patterns; DESIGN.md Components</span>
+            </header>
+            <div class="finding-note">Start screen (state row only), parameters slide-out (rows; create, rename, delete parameter), tree rows, the autocomplete dropdown, isolated cell mode (chrome and the way back), the nudge-step setting control, the Assembly body legend.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add rows for each in both spines.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-26">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-26 · Some canvas marks have behaviour or tokens but no DESIGN.md component</h3>
+              <span class="finding-location">DESIGN.md Components; memlog L48(1)</span>
+            </header>
+            <div class="finding-note">Construction-point crosshair and guide lines, vertex markers, violation ●/▲ markers on ids, the anchor-cycle path, and how a combo is shown on the Firmware canvas.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add canvas-mark entries.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-27">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-27 · Shortcuts collide with browser, OS and window-manager chords</h3>
+              <span class="finding-location">EXPERIENCE.md Shortcuts, Chain drag rule "Alt (during drag)"</span>
+            </header>
+            <div class="finding-note">☝️ The table assumes reserved chords can be taken over. <code>Ctrl+1..5</code> switch tabs in Chromium (and Firefox on Windows) and may not reach the page; <code>Ctrl+Shift+S</code> is Firefox's screenshot shortcut; <code>Ctrl+D</code>, <code>Ctrl+K</code>, <code>Ctrl+O</code>, <code>Ctrl+S</code>, <code>?</code>/<code>/</code> and F8 need <code>preventDefault</code>. Alt-drag is a window-move chord on several Linux WMs, and Firefox toggles its menu bar on Alt keyup. Nothing has been tested.</div>
+            <div class="finding-fix"><strong>Fix:</strong> A 10-minute spike in Chromium and Firefox on the user's machine and WM. One global keydown handler with preventDefault, plus a Playwright test per chord. Name fallbacks (Alt+1..5 or plain 1..5 when no field is focused; palette <code>Save as…</code>; Shift for compensate if Alt fails).</div>
+            <div class="finding-meta">Raised by: rubric, adversarial, accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-61">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-61 · <code>T</code> is ambiguous: one slide-out with tree and parameters, or two panels?</h3>
+              <span class="finding-location">EXPERIENCE.md Shortcuts; DESIGN.md Left rail + slide-out; J2.4</span>
+            </header>
+            <div class="finding-note">The rail has two icons, but there is no separate shortcut for parameters; J2.4 reaches them only via Ctrl+click.</div>
+            <div class="finding-fix"><strong>Fix:</strong> T = tree, a second key (e.g. <code>K</code>/<code>=</code>) = parameters, plus a palette entry; or state that T toggles the last-used panel.</div>
+            <div class="finding-meta">Raised by: rubric, adversarial · Triage: SPINE FIX</div>
+          </article>
+        </div>
+      </details>
+    </section>
+    <section class="dimension">
+      <details open>
+        <summary>
+          <h2>State coverage</h2>
+          <span class="verdict-pill verdict-thin">thin</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Every IA surface (five workspaces, start screen, isolated cell mode, slide-outs, violations panel, command palette, Export menu) was checked for empty, cold-load, focus, error, permission-denied and read-only states. Load, failure and cold-load states are missing entirely, Firefox save does not work as specified, and selection/mode states are undefined.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding" id="F-06">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-06 · Load, failure and cold-load states are missing entirely</h3>
+              <span class="finding-location">EXPERIENCE.md State Patterns</span>
+            </header>
+            <div class="finding-note">Nothing covers an invalid or corrupt design file (KDL parse error, schema error), a save failure or file-permission denial, autosave quota exceeded, or a background stage that throws (worker, replicad or routing crash, as opposed to a violation). Cold load is also missing: app start, WASM/replicad init, and the first Case build, where no "last good solid" exists, so "never blanks" cannot hold.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add a State Patterns row for each, with voice-compliant messages.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-13">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-13 · Ctrl+S "asks location first time, then saves" does not work in Firefox, a stated target</h3>
+              <span class="finding-location">EXPERIENCE.md Foundation, Shortcuts, State "saved / unsaved"; memlog L32(3)</span>
+            </header>
+            <div class="finding-note">The File System Access API (<code>showSaveFilePicker</code>, persisted handles) is Chromium-only. In Firefox every save is a fresh download (<code>corney(1).kdl</code>), so the <code>saved</code> / <code>unsaved changes</code> state cannot be trusted there. The "asks location first time" rule itself is also missing from the spines (rubric).</div>
+            <div class="finding-fix"><strong>Fix:</strong> Either Firefox Ctrl+S = download with the top bar saying <code>downloaded</code> + time, or declare Chromium the editing target and Firefox best-effort. Record it as a platform row in Responsive &amp; Platform, and carry over the first-save rule.</div>
+            <div class="finding-meta">Raised by: adversarial, rubric · Triage: USER DECISION</div>
+          </article>
+          <article class="finding" id="F-28">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-28 · Selection and mode states are missing, including what <code>Take over editing</code> does</h3>
+              <span class="finding-location">EXPERIENCE.md Inspector, Pick modes, State "read-only"</span>
+            </header>
+            <div class="finding-note">Undefined: the multi-selection inspector (mixed values; slots and groups together), the active-pick-mode indicator, the isolated-cell-mode indicator, what read-only disables. The adversarial review adds that the demoted tab's handling of an open gesture, autosave and routing is unstated (AD-13).</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add state rows. Demoted tab: cancel its gesture, stop autosave, show the read-only banner, drop in-flight background results.</div>
+            <div class="finding-meta">Raised by: rubric, adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-62">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-62 · Empty states for Shapes, PCB, Firmware and several panels are undecided</h3>
+              <span class="finding-location">EXPERIENCE.md State Patterns</span>
+            </header>
+            <div class="finding-note">Shapes/PCB/Firmware empty states are already a <code>[GAP]</code>; also unspecified: 0 violations, palette with no match, empty parameters/tree slide-out.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Decide them together with the existing gap.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: USER DECISION</div>
+          </article>
+          <article class="finding" id="F-63">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-63 · Hover and disabled states are defined only for Export rows</h3>
+              <span class="finding-location">EXPERIENCE.md, DESIGN.md Components</span>
+            </header>
+            <div class="finding-note">Every other interactive surface lacks them.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add a general hover/disabled rule.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+        </div>
+      </details>
+    </section>
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>Visual reference coverage</h2>
+          <span class="verdict-pill verdict-strong">strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>All 8 files in <code>mockups/</code> are linked inline at their section, and the chosen option is named for 7 of 8. "Spines win on conflict" is stated. No orphans.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding" id="F-64">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-64 · <code>selection-accent-1.html</code> is linked without naming the chosen option</h3>
+              <span class="finding-location">DESIGN.md Colors</span>
+            </header>
+            <div class="finding-note"><code>color-themes-1.html</code> variation 5 still shows Peach selection, so the reader needs the pointer.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Write "(option c, Mauve; variation 5's Peach selection is superseded)".</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+        </div>
+      </details>
+    </section>
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>Bloat &amp; overspecification</h2>
+          <span class="verdict-pill verdict-strong">strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Both spines are lean and table-heavy, and EXPERIENCE.md prose carries no editorial voice. One triple description invites drift.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding" id="F-65">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-65 · Status strip, violations panel and staleness are each described three times</h3>
+              <span class="finding-location">EXPERIENCE.md IA, Component Patterns, State Patterns</span>
+            </header>
+            <div class="finding-note">Triple descriptions invite drift.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Keep one sentence in IA and point to Component Patterns.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+        </div>
+      </details>
+    </section>
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>Inheritance discipline</h2>
+          <span class="verdict-pill verdict-adequate">adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p><code>sources</code> resolve, journey names are verbatim from the memlog, and every memlog decision line L9–L58 was compared against the spines. Four decisions were dropped, and glossary terms drift in UI copy.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding" id="F-29">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-29 · Some memlog decisions are missing from the spines</h3>
+              <span class="finding-location">EXPERIENCE.md Component Patterns, State Patterns</span>
+            </header>
+            <div class="finding-note">Besides the legends (F-05) and rejects (F-31): L32(3) "asks location first time"; L44 "outputs never edited directly / no manual traces" (load-bearing for PCB); L51(1) "unrouted = 'unrouted' entries in the violations panel"; L42 "no typed command grammar".</div>
+            <div class="finding-fix"><strong>Fix:</strong> Carry each over.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-30">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-30 · Glossary drift in UI copy</h3>
+              <span class="finding-location">EXPERIENCE.md IA, Overlay chips, State Patterns, J1, J2.2</span>
+            </header>
+            <div class="finding-note">Against the memlog L7 rule "glossary terms only in UI": "footprints" (component), "mcu" / "MCU pin" (module; pads), "Amber" (palette says Yellow), "matrix group", "op", "tracks" (route), "fan". The status entry "Plate" is singular though there are several plates, and "Outline" as an output never goes stale on its own. UI-only terms (workspace, inspector, chip, keycap, legend) are never declared.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Replace with glossary terms (routes, module pins, Yellow, Plates = worst state across plates); define or fold <code>Outline</code> status; add a short "UI chrome terms (not domain)" note.</div>
+            <div class="finding-meta">Raised by: rubric, adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-66">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-66 · <code>sources</code> omits upstream documents that bind this UX</h3>
+              <span class="finding-location">EXPERIENCE.md frontmatter</span>
+            </header>
+            <div class="finding-note">Missing: <code>initiative-keeb-cad-m1.md</code> (Boundaries behind R7), the PRD memlog, PRD addendum and architecture memlog (memlog L44).</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add them.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-67">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-67 · Component names drift between files; "Layer" means two things</h3>
+              <span class="finding-location">DESIGN.md / EXPERIENCE.md Components</span>
+            </header>
+            <div class="finding-note">"Layer tab" vs "Layer tabs"; "Chip" / "PCB overlays" vs "Overlay chips" / "Layer chips"; "Workspace tab" has no EXP row; "Command palette / context menu" vs two rows. "Layer" means PCB copper and keymap layers.</div>
+            <div class="finding-fix"><strong>Fix:</strong> One name per component; rename "Layer tabs" to "Keymap layer tabs".</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-68">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-68 · Status vocabulary casing differs</h3>
+              <span class="finding-location">EXPERIENCE.md Voice and Tone</span>
+            </header>
+            <div class="finding-note"><code>Blocked: 2 DRC errors…</code> vs the fixed vocabulary <code>blocked: &lt;reason&gt;</code>.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Pick one.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+        </div>
+      </details>
+    </section>
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>Shape fit</h2>
+          <span class="verdict-pill verdict-adequate">adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>DESIGN.md section order is correct and complete; EXPERIENCE.md has all 8 required defaults plus Responsive &amp; Platform; the invented sections (3D Scope Flag, Open Items, Surface closure) earn their place. Inspiration &amp; Anti-patterns is triggered but missing.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding" id="F-31">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-31 · Inspiration &amp; Anti-patterns is missing, though triggered</h3>
+              <span class="finding-location">EXPERIENCE.md, after Responsive</span>
+            </header>
+            <div class="finding-note">The memlog records rejects a builder could reintroduce: tiled-outputs and structured-doc directions (L18), one canvas with layers and modes (L19), typed command grammar (L42), freehand polygon drawing (L43), table-based PCB overrides (pcb-overrides option b), Peach selection (L37). It also records references: Catppuccin, KiCad copper conventions.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add the section with "Lifted from" and "Rejected" bullets, each with its reason.</div>
+            <div class="finding-meta">Raised by: rubric · Triage: SPINE FIX</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="reviewer-section">
+      <details>
+        <summary>
+          <h2>Adversarial review</h2>
+          <span class="reviewer-source">review-adversarial.md</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p><strong>Revise before editor stories.</strong> The visual spine is sound. The behaviour spine has two blocking problems: one SM-5 step goes through a mechanism the architecture does not have (pitch), and both sides of a split-reversible board (right-half keymap, per-side population, side-qualified violation ids) have no UI. Below those sit a cluster of input-overload contradictions (Esc, Tab, Delete, right-click, drag on empty canvas, Firmware capture) and a drag write-back rule that cannot tell a correction term from an authored term. All are fixable in the spine without touching the architecture, except where noted.</p>
+            <p>Reviewer's own counts: critical 2 · high 10 · medium 17 · low 8.</p>
+            <p><strong>Angles not covered by the decisions.</strong> 📐 Five bundles were accepted unchanged (memlog:35); most findings sit inside them, and the shortcut table was never tested against a real browser or the user's non-US layout and WM. 📐 The decisions optimise for Layout: Firmware and Case got shortcut-level detail but not the same contradiction pass, and the side and population questions were parked as GAPs even though SM-3 and SM-4 run through them. ☝️ "Spines win on conflict with any mock" is fine, but several journey steps (J1.2 <code>kp</code>, J2.2 "under the hand") were written from the mocks' fiction, not from the architecture. Re-check every J step against an AD before stories are cut.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding" id="F-01">
+            <header>
+              <span class="badge badge-sev-critical">critical</span>
+              <h3 class="finding-title">F-01 · SM-5 "change pitch" goes through the wrong mechanism</h3>
+              <span class="finding-location">EXPERIENCE.md J1.2, J2.4; AD-4, AD-8</span>
+            </header>
+            <div class="finding-note">In the architecture, pitch is <code>pitch-x</code>/<code>pitch-y</code> in <code>meta</code> (AD-8), <code>u</code> resolves against it, and the chain step is <code>(size(n−1)+size(n))/2</code> in <code>u</code> (AD-4). A user parameter <code>kp</code> re-spaces only the expressions that name it, so "every chain re-spaces" is false. The spec also has no surface for editing <code>pitch-x</code>/<code>pitch-y</code>. SM-5 cannot be run end to end as written.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add a Pitch control (two expression fields, <code>pitch-x</code> / <code>pitch-y</code>, in the Layout inspector when nothing is selected) and rewrite J1.2/J2.4 to use it. Drop <code>kp</code> from the examples or define it as an ordinary parameter unrelated to <code>u</code>. Decide whether SM-5 "change pitch" means x, y or both.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-02">
+            <header>
+              <span class="badge badge-sev-critical">critical</span>
+              <h3 class="finding-title">F-02 · The right side and side-qualified ids have no UI, but keymap, population and violations depend on them</h3>
+              <span class="finding-location">EXPERIENCE.md Open Items (GAP right side, GAP per-side population); AD-6, AD-19</span>
+            </header>
+            <div class="finding-note">AD-19 keys the keymap by side-qualified slot id, and the right half's bindings must be authored (Corney is split, SM-4). AD-6 puts violations and pads on <code>left/</code>/<code>right/</code> ids. Consequences: Firmware cannot bind right-half keys; clicking a violation naming <code>right/thumb-home</code> has nothing to select; the voice example <code>overlap: thumb-home ↔ thumb-tucky</code> drops the required side qualifier; the wireless design (FR-5, SM-3) differs by population and there is no way to set it.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Decide before Firmware/PCB stories. Draw the derived right side in Firmware (optionally Layout/PCB) read-only and mirrored, selectable for bindings and population only; map a <code>right/x</code> selection to authored <code>x</code> for geometry edits; add a per-side "fitted" toggle (<code>setFitted</code>); use side-qualified ids in every violation message.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: USER DECISION</div>
+          </article>
+          <article class="finding" id="F-07">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-07 · Drag on empty canvas has three competing meanings, and 2D pan/zoom is never specified</h3>
+              <span class="finding-location">EXPERIENCE.md Interaction Primitives; memlog:20; 3D viewer</span>
+            </header>
+            <div class="finding-note">Group frames nest and the top-level / matrix frame encloses almost the whole board, so "empty canvas" barely exists: a press-drag inside any frame is a group drag, and box-select is reachable only outside the board. Nothing says how to pan or zoom the shared 2D viewport. The floor is a 1366×768 laptop, so a trackpad (no middle button) is likely. 📐 The laptop-floor decision was made for screen size only; it also implies trackpad input, which none of the drag decisions considered.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Group selection by handle click only; empty-space drag inside or outside a frame = box-select. Pan = Space+drag / middle-drag / two-finger scroll; zoom = Ctrl+wheel / pinch, cursor-anchored; add a "fit" key. List these in the shortcut table.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: USER DECISION</div>
+          </article>
+          <article class="finding" id="F-08">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-08 · Drag write-back cannot tell its own correction term from an authored term</h3>
+              <span class="finding-location">EXPERIENCE.md Interaction Primitives "Write-back"; memlog:13; AD-8</span>
+            </header>
+            <div class="finding-note">Expressions are stored as plain quoted strings with no marker, and comments are not preserved. An authored <code>0.25u + 2mm</code> or <code>wall - 1mm</code> is indistinguishable from a previous correction, so a drag silently rewrites the user's intent. Rounding is unspecified, so drags write float noise (<code>0.3700000001mm</code>) into a file meant for stable, diffable output.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Update the trailing term only if it is a bare <code>mm</code>/<code>deg</code> literal joined by <code>+</code>/<code>-</code> and was written by a drag/nudge in this session (tracked in Pinia, not the file); otherwise append a term. Round to a fixed precision (0.01 mm / 0.01°) and drop a term that reaches 0. Optionally add grid/snap.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-09">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-09 · The chain drag rule has two homes for one delta</h3>
+              <span class="finding-location">EXPERIENCE.md Interaction Primitives "Chain drag"; AD-4</span>
+            </header>
+            <div class="finding-note">A drag along the chain direction could go into <code>gap(n)</code> or <code>offset.x</code>; both move the key identically. That breaks "one way to do each thing" and makes write-back non-deterministic. The world-space delta must also be resolved into the anchor's rotated frame, which the spec does not say.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Along-direction → <code>gap</code>, perpendicular → <code>offset.y</code> (in the previous sibling's frame), rotation untouched. State that deltas are converted into the node's anchor frame.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-10">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-10 · Multi-selection drag, nudge and rotate are undefined for dependent or differently-framed nodes</h3>
+              <span class="finding-location">EXPERIENCE.md Selection levels, Nudge, Rotate</span>
+            </header>
+            <div class="finding-note">If node B is anchored to selected node A (or is A's later chain sibling), moving both moves B twice. An arrow key is a world direction, but each offset lives in its own rotated anchor frame. "Rotate about its pivot" for a multi-selection could mean each node's pivot or one common pivot.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Move only selected nodes with no selected ancestor in the dependency graph; convert world deltas per node; multi-rotate uses each node's own pivot (or is forbidden in M1).</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-12">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-12 · 3D viewer and Assembly view are scope additions the journeys depend on, with no fallback</h3>
+              <span class="finding-location">EXPERIENCE.md 3D Scope Flag, J1.11, J2.2, J2.5; AD-10; Glossary "preview"</span>
+            </header>
+            <div class="finding-note">The flag is raised but J1/J2 are written as if approved. Plate and PCB solids are a new derivation with no stage owner; AD-10 allows shared derivations only in <code>model.resolve</code>, the Glossary defines preview as 2D only, and "fast 3D preview" is Deferred. If architecture or PO declines, J1.11, J2.5 and the Case canvas have no specified behaviour.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Write the fallback now (Case canvas = 2D plan of the case footprint plus a rebuild state; STL download as the fit check). Ask architecture for a <code>preview3d</code> decision (owner package, Glossary term) before marking Case stories ready.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: UPSTREAM</div>
+          </article>
+          <article class="finding" id="F-14">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-14 · Firmware layer reorder, delete and duplicate break layer references</h3>
+              <span class="finding-location">EXPERIENCE.md Layer tabs; AD-19; Glossary "id"</span>
+            </header>
+            <div class="finding-note"><code>layer-tap</code>, <code>momentary-layer</code> and <code>toggle-layer</code> bindings reference a layer. The Glossary's ids do not cover layers. If layers are referenced by position, a drag reorder silently retargets them and a delete leaves dangling references.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Raise with architecture: layers get stable ids (Glossary + AD-19) and bindings reference them. UX: deleting a referenced layer is rejected with a message naming the referring slots, or removes those bindings in the same command (AD-2 cascade).</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: UPSTREAM</div>
+          </article>
+          <article class="finding" id="F-15">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-15 · Per-side population and Save As have no surface or journey, so the wireless design is unreachable</h3>
+              <span class="finding-location">EXPERIENCE.md Open Items (GAP population, GAP Save As), Surface closure; FR-5, SM-3/SM-4</span>
+            </header>
+            <div class="finding-note">SM-3/SM-4 need "both designs". Without Save As and a population surface, the wireless variant cannot be produced from the wired one. Overlaps F-02 on population.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add J3 "Wireless from wired": Ctrl+Shift+S → swap parts / set population → reroute. This exercises AD-9 provenance and per-side population.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: USER DECISION</div>
+          </article>
+          <article class="finding" id="F-32">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-32 · Esc has six meanings, no precedence, and opposite meanings in different modes</h3>
+              <span class="finding-location">EXPERIENCE.md Shortcuts, Expression field, Pick vertices; AD-2</span>
+            </header>
+            <div class="finding-note">Esc clears selection, closes overlays, ends pick mode, leaves a field, leaves isolated cell mode; in an expression field it restores (= cancel), in <code>Pick vertices</code> it ends (= keep). Gesture cancel during a drag is not listed.</div>
+            <div class="finding-fix"><strong>Fix:</strong> One stack, innermost first: cancel gesture/drag → cancel field edit → end pick mode → close overlay → clear selection → leave isolated cell mode. Pick modes end with Enter (keep) and Esc (discard, one undo step per pick session).</div>
+            <div class="finding-meta">Raised by: adversarial, accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-33">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-33 · Tab has three meanings in a field</h3>
+              <span class="finding-location">EXPERIENCE.md Expression field, Binding field, Accessibility Floor</span>
+            </header>
+            <div class="finding-note">Commit, accept autocomplete, focus traversal. With the dropdown open, Tab both accepts and commits. Enter on <code>Create parameter &lt;name&gt;…</code> is unspecified.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Dropdown open: Tab/Enter accept only. Closed: Enter commits; Tab commits and moves focus. <code>Create parameter</code> opens its own field and leaves the open gesture uncommitted.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-34">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-34 · Expression gesture lifecycle has holes: blur, Ctrl+Z in field, nested commands</h3>
+              <span class="finding-location">EXPERIENCE.md Expression field; AD-2</span>
+            </header>
+            <div class="finding-note">Undefined: blur (canvas click, Ctrl+click a parameter, workspace switch, tab takeover); whether Ctrl+Z in a focused field undoes text, cancels the gesture or undoes the previous command; how <code>Create parameter</code> interleaves with an open gesture when AD-2 allows one gesture.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Blur valid = commit, invalid = restore. Ctrl+Z in a field = native text undo. Before a command dispatches during a field gesture, the gesture commits first.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-35">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-35 · "Single-key shortcuts only when no field is focused" misses modifier and navigation keys</h3>
+              <span class="finding-location">EXPERIENCE.md Shortcuts</span>
+            </header>
+            <div class="finding-note">Delete, arrows, Shift+arrow, Ctrl+arrow (word jump vs 0.05 mm nudge), Ctrl+D and Home are also used by text fields.</div>
+            <div class="finding-fix"><strong>Fix:</strong> With any field focused, all canvas commands are off; only Ctrl+K, Ctrl+S, Ctrl+Z/Shift+Z and Ctrl+1..5 stay global.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-36">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-36 · Delete is ambiguous between a focused layer tab and the canvas selection</h3>
+              <span class="finding-location">EXPERIENCE.md Layer tabs, Shortcuts</span>
+            </header>
+            <div class="finding-note">In Firmware a key selection exists while a tab can have focus.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Delete acts on whatever has keyboard focus; the canvas selection is the target only when the canvas has focus. Show it on the cheat sheet.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-37">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-37 · 3D right/middle-drag pan contradicts "right-click is ALWAYS a context menu"</h3>
+              <span class="finding-location">EXPERIENCE.md 3D viewer vs Context menu; memlog:52 vs memlog:55</span>
+            </header>
+            <div class="finding-note">The user's explicit correction says right-click is never a direct action.</div>
+            <div class="finding-fix"><strong>Fix:</strong> 3D pan = middle-drag or Shift+left-drag; right-click opens the context menu. Or ask the user whether a drag threshold is acceptable.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: USER DECISION</div>
+          </article>
+          <article class="finding" id="F-38">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-38 · Re-anchor keeps the old expression, which preserves meaningless intent</h3>
+              <span class="finding-location">EXPERIENCE.md Re-anchor [ASSUMPTION]; memlog:17; AD-3</span>
+            </header>
+            <div class="finding-note"><code>0.25u</code> from the previous key, re-anchored to a construction point, becomes <code>0.25u + 37.12mm</code>, and later pitch changes move the node for no reason. Rotation and pivot change under a new frame. No reset to the default anchor; no rule for targets that would create a cycle.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Re-anchor flattens offset x/y/rotation to literals unless the new frame is a pure translation of the old one. Disable cycle-creating targets with a hover reason. Add <code>Reset to default anchor</code>.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: USER DECISION</div>
+          </article>
+          <article class="finding" id="F-39">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-39 · Nudge-burst = one undo step has no boundary, and the climax depends on it</h3>
+              <span class="finding-location">EXPERIENCE.md Nudge [ASSUMPTION], J2.2; AD-2, AD-11</span>
+            </header>
+            <div class="finding-note">A burst is not an AD-2 gesture unless modelled as one, and background stages start only on commit or idle. The status says "drag" when the input is a keypress.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Model a burst as a gesture that commits after ~600 ms with no nudge/rotate key, or on any other input. Rename the status to <code>waiting for edit to finish</code>.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-40">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-40 · Violations, counts and export-blocked reasons have no staleness treatment</h3>
+              <span class="finding-location">EXPERIENCE.md Violations panel, Export menu, Status strip; AD-11</span>
+            </header>
+            <div class="finding-note"><code>unrouted</code> and <code>drc</code> reflect an older revision during routing, F8 can jump to ids that no longer exist, and transient <code>unrouted</code> entries flood the panel.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Tag violation groups with their source revision; hatch stale groups with <code>stale</code> and make F8 skip them; collapse <code>unrouted</code> to one counted row while routing runs.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-41">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-41 · STL/STEP export lets a stale case through</h3>
+              <span class="finding-location">EXPERIENCE.md Export menu; AD-11</span>
+            </header>
+            <div class="finding-note">"Blocked only while the case is rebuilding": during <code>waiting for edit</code>, or after a failed rebuild, the last good solid is from an older revision.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Enable STL/STEP only when the case output is <code>current</code>; otherwise <code>Blocked: case stale (rev …)</code> or <code>Blocked: case failed: &lt;message&gt;</code>.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-42">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-42 · <code>rev N</code> contradicts the Glossary: a revision is a content hash, not a counter</h3>
+              <span class="finding-location">DESIGN.md Stale; EXPERIENCE.md State Patterns; memlog:32</span>
+            </header>
+            <div class="finding-note"><code>stale · rev N</code> and <code>copied from &lt;design&gt; · rev N</code> both treat revision as a counter.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Show a short hash (<code>rev 3f2a</code>), or define a session-local counter in Pinia with a different name.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-43">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-43 · No surface for typed command rejections</h3>
+              <span class="finding-location">EXPERIENCE.md Toast row; Conventions; AD-2, AD-3</span>
+            </header>
+            <div class="finding-note">The toast row lists only undo and migration. Deleting a vertex used by a shape, or a cyclic anchor, is rejected by the model, and the UI can fail silently.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Rejection toast in <code>{colors.warning}</code> ▲ with what + where (<code>rejected: vertex v-07 is used by outline-base</code>), plus a Toast row.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-44">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-44 · Which gestures exist in each workspace is undefined</h3>
+              <span class="finding-location">EXPERIENCE.md Canvas row; AD-1</span>
+            </header>
+            <div class="finding-note">Can a key or footprint be dragged in PCB, Shapes or Firmware? If yes, the drag writes the slot offset, which reads as editing an output. Can rectangles and circles be dragged in Shapes?</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add a per-workspace gesture matrix: Layout = node drag; Shapes = vertex/primitive drag; PCB, Firmware = select only in M1.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-45">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-45 · Letter and bracket shortcuts break on non-US layouts if bound by <code>event.key</code></h3>
+              <span class="finding-location">EXPERIENCE.md Shortcuts</span>
+            </header>
+            <div class="finding-note">On a Ukrainian layout <code>[</code>→<code>х</code>, <code>]</code>→<code>ї</code>, G→<code>п</code>.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Bind by <code>KeyboardEvent.code</code>; show labels from <code>navigator.keyboard.getLayoutMap()</code> where available.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-69">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-69 · Home (Case top view) is missing on many laptop keyboards</h3>
+              <span class="finding-location">EXPERIENCE.md Shortcuts</span>
+            </header>
+            <div class="finding-note">Safe under the focused-field rule, but Home needs Fn on many laptops.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add an alias (e.g. <code>0</code> or Shift+H) and a palette command.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-70">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-70 · The undo toast implies a full restore, but copper may differ</h3>
+              <span class="finding-location">EXPERIENCE.md J2 Failure; AD-12</span>
+            </header>
+            <div class="finding-note">Routes are not on the undo stack.</div>
+            <div class="finding-fix"><strong>Fix:</strong> After undo PCB shows <code>routing N/M</code>; note in J2 Failure that copper may differ but stay electrically equal.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-71">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-71 · Undo toast names don't match the commands a chain drag issues</h3>
+              <span class="finding-location">EXPERIENCE.md Toast</span>
+            </header>
+            <div class="finding-note">"move thumb-home" vs <code>setGap</code>/<code>setOffset</code>.</div>
+            <div class="finding-fix"><strong>Fix:</strong> One display label per command, from a table in the model command registry.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-72">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-72 · Construction point from parallel or coincident lines has no result and no violation kind</h3>
+              <span class="finding-location">AD-16; Conventions violation owners</span>
+            </header>
+            <div class="finding-note">Intersection of two lines is undefined when they are parallel.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Ask architecture for a <code>model</code> violation kind (e.g. <code>construction-undefined</code>); UI shows ● on the point.</div>
+            <div class="finding-meta">Raised by: adversarial · Triage: UPSTREAM</div>
+          </article>
+        </div>
+        <div class="also">Also raised by this reviewer, filed under another section after deduplication:
+          <ul>
+            <li><a href="#F-04">F-04</a> (high) The J2 climax contradicts the interaction primitives and cannot be seen where it happens</li>
+            <li><a href="#F-11">F-11</a> (high) Firmware binding capture swallows the app's own controls and cannot capture common keys</li>
+            <li><a href="#F-13">F-13</a> (high) Ctrl+S "asks location first time, then saves" does not work in Firefox, a stated target</li>
+            <li><a href="#F-19">F-19</a> (high) Pick modes and the anchor picker can only be completed with a mouse</li>
+            <li><a href="#F-27">F-27</a> (medium) Shortcuts collide with browser, OS and window-manager chords</li>
+            <li><a href="#F-28">F-28</a> (medium) Selection and mode states are missing, including what <code>Take over editing</code> does</li>
+            <li><a href="#F-30">F-30</a> (medium) Glossary drift in UI copy</li>
+            <li><a href="#F-61">F-61</a> (low) <code>T</code> is ambiguous: one slide-out with tree and parameters, or two panels?</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <section class="reviewer-section">
+      <details>
+        <summary>
+          <h2>Accessibility review</h2>
+          <span class="reviewer-source">review-accessibility.md</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p><strong>Pass with fixes. Four high findings breach the agreed floor.</strong> Lens sized to the stakes: one sighted expert user, hobby project. Non-text contrast (WCAG 1.4.11) is not part of the agreed floor, so those findings are advisory and capped at medium.</p>
+            <p>The chrome holds up: every text pair DESIGN.md claims was recomputed and is correct, the Latte fixes for muted text and warning labels work, and Mauve passes as focus and selection colour on every chrome surface in both themes. The gaps are in places never checked: text on keycaps and the canvas, Latte Yellow and Teal still used as text, and pick modes that only work by clicking.</p>
+            <p>☝️ The DESIGN.md contrast table checks text against <code>panel</code> only; <code>chrome</code>, <code>canvas</code> and keycap backgrounds were not checked, and that is where the failures are. 📐 The Latte fixes only covered chrome text; the Latte canvas (Surface0, a mid-tone) was never checked. The full contrast table is in <code>review-accessibility.md</code>.</p>
+            <p>Reviewer's own counts: critical 0 · high 4 · medium 13 · low 10.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding" id="F-16">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-16 · Text on keycaps fails AA in both themes</h3>
+              <span class="finding-location">DESIGN.md <code>key-top-face</code>, <code>key-body</code>, <code>canvas-label</code>; EXPERIENCE.md Firmware</span>
+            </header>
+            <div class="finding-note">Firmware legends on the top face measure 2.81 (Frappé) and 3.07 (Latte). Slot ids and R·C labels on the key body measure 3.61 and 3.69. Legends are the whole content of the Firmware workspace.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Add a <code>key-legend</code> token pair that passes 4.5: Frappé Crust <code>#232634</code> on an Overlay2 top face (5.5); Latte Text on a lighter top face such as Surface0 or Mantle (5.2+). This also resolves F-21 (Latte top face darker than body).</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-17">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-17 · Latte Yellow is still used as text for overrides</h3>
+              <span class="finding-location">DESIGN.md Colors "Override"; <code>override-light</code></span>
+            </header>
+            <div class="finding-note">The decided Latte fix converted warnings to icon plus Text label, but overrides kept "Yellow + <code>*</code>". They measure 1.70 on canvas (R·C<code>*</code>) and 2.31 in the inspector.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Render override text in <code>text-light</code> and keep Yellow for a non-text cue (underline, dot or chip edge). The <code>*</code> stays the primary signal.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-18">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-18 · Latte Teal is used as text</h3>
+              <span class="finding-location">DESIGN.md <code>led-chain-light</code>, <code>anchor-link-light</code>, <code>expression-field-pick</code></span>
+            </header>
+            <div class="finding-note">LED chain numbers on canvas measure 2.43. Pick-mode field text measures 3.08 on chrome.</div>
+            <div class="finding-fix"><strong>Fix:</strong> LED numbers in <code>text-light</code> inside a Teal-outlined badge. The pick-mode field keeps Text and signals pick mode with the dashed border plus a <code>picking…</code> label.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-19">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">F-19 · Pick modes and the anchor picker can only be completed with a mouse</h3>
+              <span class="finding-location">EXPERIENCE.md Anchor picker, Vertex table, Overlay chips, Interaction Primitives "Pick modes"</span>
+            </header>
+            <div class="finding-note">The anchor picker needs a click on a canvas node. <code>Pick vertices</code>, <code>Pick LED order</code>, construction-line anchors and MCU pin reassignment are click-only, and pin-to-net labels show on hover only. This breaks the Accessibility Floor's "everything keyboard-reachable" (raised by both reviewers; adversarial rated it medium).</div>
+            <div class="finding-fix"><strong>Fix:</strong> In any pick mode, accept a typed id with autocomplete (or Ctrl+K jump), and Tab/Shift+Tab to cycle candidate targets on canvas with a focus ring. Arrows move through the 3×3 attach grid, Enter appends or confirms, Esc ends. Pins open in a keyboard-usable inspector list (pin → net).</div>
+            <div class="finding-meta">Raised by: accessibility, adversarial · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-46">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-46 · Muted text on a <code>canvas</code>-filled row fails AA</h3>
+              <span class="finding-location">DESIGN.md <code>operation-list-row-selected</code>, <code>command-palette.active-row</code></span>
+            </header>
+            <div class="finding-note">4.26 (Frappé) and 4.05 (Latte) for the evaluated suffix or shortcut hint on selected operation/vertex rows and active palette/context-menu rows.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Switch muted text to <code>text</code> on active and selected rows, or use a row fill closer to the panel tone.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-47">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-47 · The Latte canvas fails 3:1 for most meaningful strokes</h3>
+              <span class="finding-location">DESIGN.md Latte canvas tokens</span>
+            </header>
+            <div class="finding-note">📐 The Latte fixes only covered chrome text; the Latte canvas (Surface0, a mid-tone) was never checked. F.Cu 1.93, vertex 1.93, construction point 1.81, anchor link 2.43, group frame 2.07, faint key outline 2.56, LED path 2.43, Amber overlap 1.70, stale hatch 1.69.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Move <code>canvas-light</code> to Base <code>#eff1f5</code> with the grid on Surface0 (brings Teal, Overlay2, Blue above 3:1). For Peach, Flamingo, Sky use 2px strokes with a 1px Text casing, or accept them as hue accents on shapes that differ in form.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: USER DECISION</div>
+          </article>
+          <article class="finding" id="F-48">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-48 · Frappé group frame is 2.80, and the faint key outline opacity is unspecified</h3>
+              <span class="finding-location">DESIGN.md <code>group-frame</code>, <code>key-outline-faint</code></span>
+            </header>
+            <div class="finding-note">The faint outline drops below 3:1 at any opacity under about 85%.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Group frame to Overlay2 (3.48); key-outline opacity ≥0.9, or drop it. Related: F-60.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-49">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-49 · F.Cu and B.Cu differ by hue only</h3>
+              <span class="finding-location">DESIGN.md Copper; EXPERIENCE.md PCB</span>
+            </header>
+            <div class="finding-note">Luminance ratio 1.09 (Frappé) and 1.65 (Latte). KiCad users accept this convention, hence medium.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Draw B.Cu at reduced opacity or under F.Cu with a lighter fill; show the layer in the inspector and on hover/focus.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-50">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-50 · Chip on/off state is carried mainly by border colour</h3>
+              <span class="finding-location">DESIGN.md <code>chip</code></span>
+            </header>
+            <div class="finding-note">Off is a border at 1.32 (Frappé) or 1.18 (Latte) against canvas, barely visible.</div>
+            <div class="finding-fix"><strong>Fix:</strong> On = fill (Surface1) or leading ✓ plus Mauve border and <code>aria-pressed</code>; off = Overlay1 border with <code>text-muted</code> label.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-51">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-51 · Latte ▲ and ✓ glyphs fail 3:1 where they appear without a Text label</h3>
+              <span class="finding-location">DESIGN.md <code>tab-badge</code>; EXPERIENCE.md State Patterns "violation"</span>
+            </header>
+            <div class="finding-note">▲ 2.15 on chrome, 1.70 on canvas; ✓ 2.75. In tab badges and on flagged keys the decided icon-plus-label fix does not apply.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Draw Latte ▲/✓ with a Text-colour stroke, or use darker roles for the glyph only. Always show <code>current</code> beside ✓.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-52">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-52 · The 3D viewer is mouse-only apart from Home</h3>
+              <span class="finding-location">EXPERIENCE.md 3D viewer</span>
+            </header>
+            <div class="finding-note">Orbit, pan and zoom have no keyboard path.</div>
+            <div class="finding-fix"><strong>Fix:</strong> With the viewer focused: arrows orbit, Shift+arrows pan, +/− zoom, Home resets. List on the cheat sheet.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-53">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-53 · Some drag-only actions have no keyboard equivalent</h3>
+              <span class="finding-location">EXPERIENCE.md Interaction Primitives</span>
+            </header>
+            <div class="finding-note">Alt-drag compensation has no nudge counterpart, and box-select has no keyboard path.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Alt+arrow nudge compensates; keyboard multi-select lives in the tree slide-out (Shift/Ctrl+arrow, Space).</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-54">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-54 · No keyboard way to open the context menu</h3>
+              <span class="finding-location">EXPERIENCE.md Context menu</span>
+            </header>
+            <div class="finding-note"><code>Use as outline</code> and layer-tab Rename/Duplicate/Move appear only there. The palette lists every command, so nothing is unreachable.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Shift+F10 / Menu key on the focused item or canvas selection, with arrow, Enter and Esc navigation.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-55">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-55 · Focus management for overlays and panels is unspecified</h3>
+              <span class="finding-location">EXPERIENCE.md Left rail + slide-out, Violations panel</span>
+            </header>
+            <div class="finding-note">Slide-out, palette, context menu, violations panel, cheat sheet, Export menu: nothing says where focus goes on open or returns on close.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Focus the first meaningful item on open; modal overlays trap, non-modal ones do not but close on Esc; return focus to the invoker or canvas.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-56">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-56 · Keyboard entry to the canvas and movement between regions are undefined</h3>
+              <span class="finding-location">EXPERIENCE.md Shortcuts</span>
+            </header>
+            <div class="finding-note">Nudge, rotate and Delete act on "the selection", but focus has no defined route to the canvas or between top bar, rail, canvas, inspector and status strip.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Canvas is one focusable region (<code>tabindex=0</code>) with a visible edge focus ring; F6 / Shift+F6 cycle regions.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-57">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">F-57 · Reduced-motion coverage is a single line</h3>
+              <span class="finding-location">EXPERIENCE.md Accessibility Floor</span>
+            </header>
+            <div class="finding-note">Uncovered motions: violation flash, auto pan/zoom to fit, slide-outs, palette and toasts, Assembly fade-in, 3D Home camera move, spinner and badge progress ring.</div>
+            <div class="finding-fix"><strong>Fix:</strong> List the inventory; under reduced motion jump instead of pan, use a static highlight instead of the flash, show overlays instantly, and replace spinner/ring with a static ◐ beside <code>N%</code>.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-73">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-73 · Field, button and chip borders are 1.49–1.93</h3>
+              <span class="finding-location">DESIGN.md <code>expression-field</code>, <code>button</code></span>
+            </header>
+            <div class="finding-note">Field background differs from panel by only 1.12, so fields are hard to spot as inputs.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Use Overlay0/Overlay1 for interactive borders; keep Surface1 for hairlines.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-74">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-74 · Overlap severity on canvas is colour only</h3>
+              <span class="finding-location">EXPERIENCE.md State Patterns "violation"</span>
+            </header>
+            <div class="finding-note">Red vs Amber outline; the ids carry ●/▲ but the area does not.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Solid outline for errors, dashed for warnings, or a marker on the overlap area.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-75">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-75 · Frappé stale hatch 2.20 and plate cutouts 1.72</h3>
+              <span class="finding-location">DESIGN.md <code>stale-hatch</code>, <code>plate-cutout</code></span>
+            </header>
+            <div class="finding-note">The hatch is backed by a label; the plate fill colour is unspecified.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Hatch in Overlay1/Overlay2; specify a plate fill that cutouts reach 3:1 against.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-76">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-76 · Focus and selection share Mauve</h3>
+              <span class="finding-location">DESIGN.md Selection &amp; focus</span>
+            </header>
+            <div class="finding-note">Shapes differ, so acceptable.</div>
+            <div class="finding-fix"><strong>Fix:</strong> Keep the focus ring offset 2px outside the element.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-77">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-77 · Target sizes are unspecified for small controls</h3>
+              <span class="finding-location">DESIGN.md spacing</span>
+            </header>
+            <div class="finding-note">3×3 attach-grid cells, chips, layer-tab <code>+</code>, collapse chevrons, group-frame grab tab, vertex handles.</div>
+            <div class="finding-fix"><strong>Fix:</strong> ≥24px for chrome controls; ≥8px hit radius for canvas handles at any zoom.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+          <article class="finding" id="F-78">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">F-78 · ARIA semantics are not named in component rules</h3>
+              <span class="finding-location">EXPERIENCE.md Component Patterns</span>
+            </header>
+            <div class="finding-note">The floor requires semantic HTML.</div>
+            <div class="finding-fix"><strong>Fix:</strong> <code>role=tablist</code> with arrows for workspace and layer tabs; accessible names for tab badges; <code>aria-invalid</code> + <code>aria-describedby</code> on fields; <code>aria-disabled</code> on blocked Export items.</div>
+            <div class="finding-meta">Raised by: accessibility · Triage: SPINE FIX</div>
+          </article>
+        </div>
+        <div class="also">Also raised by this reviewer, filed under another section after deduplication:
+          <ul>
+            <li><a href="#F-11">F-11</a> (high) Firmware binding capture swallows the app's own controls and cannot capture common keys</li>
+            <li><a href="#F-23">F-23</a> (medium) Non-text contrast is never stated; keycaps have no boundary that reaches 3:1</li>
+            <li><a href="#F-27">F-27</a> (medium) Shortcuts collide with browser, OS and window-manager chords</li>
+            <li><a href="#F-32">F-32</a> (medium) Esc has six meanings, no precedence, and opposite meanings in different modes</li>
+            <li><a href="#F-59">F-59</a> (low) Stated contrast ratios are slightly off; Latte error text on chrome is 4.46</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <div class="mechanical">
+      <h3>Mechanical notes</h3>
+      <ul>
+        <li>Frontmatter: DESIGN.md has <code>name</code>, <code>description</code>, <code>status</code>, <code>updated</code> plus all token groups; EXPERIENCE.md has <code>name</code>, <code>status</code>, <code>updated</code>, <code>sources</code>, and all three sources resolve. No Mermaid in either file.</li>
+        <li>All <code>{colors.*}</code>, <code>{typography.*}</code>, <code>{rounded.*}</code> and <code>{spacing.*}</code> references resolve; 31 dark tokens and 31 <code>-light</code> pairs, 1:1.</li>
+        <li>Open naming items carried by the spine: <code>choc-v2-cell</code> vs <code>choc-v2-hotswap</code>; chain index notation; <code>R0·C0</code> (mock) vs <code>R1·C4</code> (memlog). Resolve before the first PCB story, since they leak into test fixtures.</li>
+        <li>Ticket adoption not done: <code>companions: []</code> in <code>epic-platform-baseline.md</code> is still empty, so story 5's verify condition is unmet. The 3D scope flag still awaits architecture and PO confirmation (see F-12).</li>
+        <li>Deduplication: 93 raw findings across three reviewers became 78. Merged findings take the highest severity any reviewer gave and list every reviewer that raised them.</li>
+      </ul>
+    </div>
+
+    <footer class="report-footer">
+      <div class="meta">
+        <span>Rubric: /home/ruyu/projects/keeb-cad/_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/review-rubric.md</span>
+        <span>Adversarial: review-adversarial.md</span>
+        <span>Accessibility: review-accessibility.md</span>
+        <span>Generated: 2026-10-26T17:30:34+02:00</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

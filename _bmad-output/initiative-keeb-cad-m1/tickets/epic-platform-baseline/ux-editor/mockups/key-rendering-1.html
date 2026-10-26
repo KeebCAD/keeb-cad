@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Key rendering options</title>
+<style>
+/* Frappé: base #303446 mantle #292c3c crust #232634 surface0 #414559 surface1 #51576d surface2 #626880
+   overlay0 #737994 overlay1 #838ba7 text #c6d0f5 subtext0 #a5adce mauve #ca9ee6 red #e78284 teal #81c8be */
+body{margin:0;padding:24px;background:#232634;color:#c6d0f5;font:14px system-ui,sans-serif}
+h1{font-size:18px;margin:0 0 4px}
+p.note{color:#a5adce;margin:0 0 20px}
+.row{display:flex;gap:20px;flex-wrap:wrap}
+.opt h2{font-size:15px;margin:0 0 4px}
+.opt .k{color:#a5adce;font-size:13px;margin-bottom:8px;max-width:400px}
+svg{display:block;border-radius:6px}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+</style>
+</head>
+<body>
+<h1>Key rendering on the Layout canvas</h1>
+<p class="note">Same scene in each: inner column (2 keys) and the 3-key thumb fan in its group frame; thumb-home selected (Mauve), its anchor link to thumb-tucky (Teal), overlap with thumb-tucky (Red). Canvas Surface0 with a Surface1 line grid.</p>
+<div class="row">
+
+<div class="opt"><h2>(a) Filled keycaps</h2>
+<div class="k">Solid keycap shapes (Surface2) with a slightly lighter top face. Reads as a physical keyboard.</div>
+<svg width="400" height="300" viewBox="0 0 400 300">
+<defs><pattern id="g1" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#51576d" stroke-width=".6"/></pattern></defs>
+<rect width="400" height="300" fill="#414559"/><rect width="400" height="300" fill="url(#g1)"/>
+<g><rect x="40" y="20" width="56" height="56" rx="5" fill="#626880"/><rect x="46" y="24" width="44" height="42" rx="4" fill="#737994"/>
+<rect x="40" y="80" width="56" height="56" rx="5" fill="#626880"/><rect x="46" y="84" width="44" height="42" rx="4" fill="#737994"/></g>
+<rect x="60" y="150" width="300" height="130" rx="6" fill="none" stroke="#838ba7" stroke-dasharray="4 4"/>
+<rect x="60" y="141" width="56" height="16" rx="3" fill="#51576d"/><text x="66" y="153" font-size="11" fill="#c6d0f5" class="mono">⠿ thumb</text>
+<g transform="rotate(0 110 210)"><rect x="80" y="180" width="56" height="56" rx="5" fill="#626880"/><rect x="86" y="184" width="44" height="42" rx="4" fill="#737994"/></g>
+<g transform="rotate(-15 180 215)"><rect x="128" y="185" width="56" height="56" rx="5" fill="#626880" stroke="#ca9ee6" stroke-width="3"/><rect x="134" y="189" width="44" height="42" rx="4" fill="#838ba7"/></g>
+<path d="M128 192 L136 186 L136 236 L130 236 Z" fill="#e78284" opacity=".55"/>
+<g transform="rotate(-30 260 225)"><rect x="220" y="195" width="56" height="56" rx="5" fill="#626880"/><rect x="226" y="199" width="44" height="42" rx="4" fill="#737994"/></g>
+<line x1="108" y1="208" x2="156" y2="213" stroke="#81c8be" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="108" cy="208" r="3" fill="#81c8be"/>
+<text x="140" y="272" font-size="11" fill="#ca9ee6" class="mono">thumb-home</text>
+</svg></div>
+
+<div class="opt"><h2>(b) Outlined keys</h2>
+<div class="k">Keycap outline only, with the switch cutout drawn inside. Drafting feel; geometry under keys stays visible.</div>
+<svg width="400" height="300" viewBox="0 0 400 300">
+<defs><pattern id="g2" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#51576d" stroke-width=".6"/></pattern></defs>
+<rect width="400" height="300" fill="#414559"/><rect width="400" height="300" fill="url(#g2)"/>
+<g fill="none" stroke="#a5adce" stroke-width="1.2"><rect x="40" y="20" width="56" height="56" rx="5"/><rect x="40" y="80" width="56" height="56" rx="5"/></g>
+<g fill="none" stroke="#737994"><rect x="54" y="34" width="28" height="28"/><rect x="54" y="94" width="28" height="28"/></g>
+<rect x="60" y="150" width="300" height="130" rx="6" fill="none" stroke="#838ba7" stroke-dasharray="4 4"/>
+<rect x="60" y="141" width="56" height="16" rx="3" fill="#51576d"/><text x="66" y="153" font-size="11" fill="#c6d0f5" class="mono">⠿ thumb</text>
+<g fill="none"><rect x="80" y="180" width="56" height="56" rx="5" stroke="#a5adce" stroke-width="1.2"/><rect x="94" y="194" width="28" height="28" stroke="#737994"/></g>
+<g transform="rotate(-15 180 215)" fill="none"><rect x="128" y="185" width="56" height="56" rx="5" stroke="#ca9ee6" stroke-width="2.5"/><rect x="142" y="199" width="28" height="28" stroke="#ca9ee6" opacity=".6"/></g>
+<path d="M128 192 L136 186 L136 236 L130 236 Z" fill="#e78284" opacity=".55"/>
+<g transform="rotate(-30 260 225)" fill="none"><rect x="220" y="195" width="56" height="56" rx="5" stroke="#a5adce" stroke-width="1.2"/><rect x="234" y="209" width="28" height="28" stroke="#737994"/></g>
+<line x1="108" y1="208" x2="156" y2="213" stroke="#81c8be" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="108" cy="208" r="3" fill="#81c8be"/>
+<text x="140" y="272" font-size="11" fill="#ca9ee6" class="mono">thumb-home</text>
+</svg></div>
+
+<div class="opt"><h2>(c) Tinted fill + outline</h2>
+<div class="k">Translucent fill with a clear outline and the slot id inside. Between (a) and (b): solid enough to read, see-through enough for geometry.</div>
+<svg width="400" height="300" viewBox="0 0 400 300">
+<defs><pattern id="g3" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#51576d" stroke-width=".6"/></pattern></defs>
+<rect width="400" height="300" fill="#414559"/><rect width="400" height="300" fill="url(#g3)"/>
+<g fill="#c6d0f5" fill-opacity=".10" stroke="#a5adce" stroke-width="1.2"><rect x="40" y="20" width="56" height="56" rx="5"/><rect x="40" y="80" width="56" height="56" rx="5"/></g>
+<g font-size="9" fill="#a5adce" class="mono"><text x="46" y="52">inner-top</text><text x="46" y="112">inner-home</text></g>
+<rect x="60" y="150" width="300" height="130" rx="6" fill="none" stroke="#838ba7" stroke-dasharray="4 4"/>
+<rect x="60" y="141" width="56" height="16" rx="3" fill="#51576d"/><text x="66" y="153" font-size="11" fill="#c6d0f5" class="mono">⠿ thumb</text>
+<rect x="80" y="180" width="56" height="56" rx="5" fill="#c6d0f5" fill-opacity=".10" stroke="#a5adce" stroke-width="1.2"/><text x="84" y="212" font-size="9" fill="#a5adce" class="mono">tucky</text>
+<g transform="rotate(-15 180 215)"><rect x="128" y="185" width="56" height="56" rx="5" fill="#ca9ee6" fill-opacity=".22" stroke="#ca9ee6" stroke-width="2.5"/><text x="140" y="217" font-size="9" fill="#ca9ee6" class="mono">home</text></g>
+<path d="M128 192 L136 186 L136 236 L130 236 Z" fill="#e78284" opacity=".55"/>
+<g transform="rotate(-30 260 225)"><rect x="220" y="195" width="56" height="56" rx="5" fill="#c6d0f5" fill-opacity=".10" stroke="#a5adce" stroke-width="1.2"/><text x="228" y="227" font-size="9" fill="#a5adce" class="mono">reachy</text></g>
+<line x1="108" y1="208" x2="156" y2="213" stroke="#81c8be" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="108" cy="208" r="3" fill="#81c8be"/>
+</svg></div>
+
+</div>
+</body>
+</html>

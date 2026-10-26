@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1414">
+<title>Firmware key screen</title>
+<style>
+/* Firmware key screen — key-screen mock (bmad-ux key-screens). Spines win on conflict.
+   Governs:
+   EXPERIENCE.md — Component Patterns: Keymap layer tabs, Binding field (capture, hint, ↓ picker), Firmware legends (▽ transparent,
+     none = empty cap, mod-tap two lines), Status strip; Information Architecture (Firmware row: both halves, `Matrix & pins → PCB`);
+     Key Flows J1 step 13; Accessibility Floor (focus ring, no focus trap); Interaction Primitives (Shortcuts: fields swallow single keys).
+   DESIGN.md — Components: Keymap layer tabs, Binding field, Focus ring; Canvas marks: Firmware legends, Canvas keys; Colors; Typography.
+   Mocks traced: key-rendering-1 (a), panel-models (c).
+   Tokens: DESIGN.md frontmatter (unsuffixed = Frappé, -light = Latte), exact hex. */
+
+:root{--sans:system-ui,Inter,sans-serif;--mono:"JetBrains Mono","JetBrainsMono Nerd Font",ui-monospace,monospace}
+*{box-sizing:border-box}
+body{margin:0;padding:24px;background:#232634;color:#c6d0f5;font:14px/1.3 var(--sans);font-variant-numeric:tabular-nums}
+body.lightpage{background:#dce0e8;color:#4c4f69}
+.cap{font:13px var(--sans);color:#a5adce;margin:0 0 8px;max-width:1366px}
+body.lightpage .cap{color:#5c5f77}
+.cap b{color:inherit;font-weight:600}
+.sect{margin-bottom:32px}
+.frame{width:1366px;height:768px;overflow:hidden;display:flex;flex-direction:column;position:relative;background:var(--chrome);color:var(--text);box-shadow:0 0 0 1px var(--border)}
+.mono{font-family:var(--mono);font-size:13px}
+/* browser frame */
+.bstrip{height:34px;flex:none;background:var(--bstrip);display:flex;align-items:flex-end;gap:8px;padding:0 12px}
+.bstrip .dots{display:flex;gap:7px;align-self:center}
+.bstrip .dots i{width:11px;height:11px;border-radius:50%;background:var(--border);display:block}
+.btab{height:28px;width:250px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;margin-left:10px;background:var(--btab);border-radius:6px 6px 0 0;font-size:12px;color:var(--muted)}
+.btool{height:38px;flex:none;background:var(--btab);display:flex;align-items:center;gap:14px;padding:0 12px;color:var(--muted);font-size:13px;border-bottom:1px solid var(--border)}
+.url{width:560px;height:26px;border-radius:13px;background:var(--burl);font:12px/26px var(--mono);color:var(--muted);padding:0 14px}
+/* app */
+.app{flex:1;display:flex;flex-direction:column;min-height:0;position:relative}
+.top{height:42px;flex:none;background:var(--chrome);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 10px}
+.menu{height:28px;display:inline-flex;align-items:center;gap:6px;padding:0 10px;border-radius:4px;color:var(--text);font-size:14px;white-space:nowrap}
+.menu.btn{border:1px solid var(--bi);background:var(--panel)}
+.menu.open{background:var(--fillon);border-color:var(--sel)}
+.dname{display:flex;align-items:baseline;gap:8px;white-space:nowrap;padding:0 4px}
+.dname .n{font:600 13px var(--mono)}
+.dname .s{color:var(--muted);font-size:13px}
+.vsep{width:1px;height:20px;background:var(--border);flex:none}
+.tabs{display:flex;align-items:stretch;height:42px;gap:2px}
+.wt{display:flex;align-items:center;gap:7px;padding:0 12px;color:var(--muted);font-size:14px;white-space:nowrap}
+.wt .k{font:11px var(--mono);color:var(--muted)}
+.wt.on{background:var(--panel);color:var(--text);font-weight:600;box-shadow:inset 0 -2px var(--sel)}
+.badge{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 5px;border:1px solid var(--border);border-radius:3px;font:11px var(--mono);color:var(--text);font-weight:400}
+.badge .e{color:var(--err)}
+.sp{flex:1}
+.ib{width:30px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--bi);border-radius:4px;background:var(--panel);color:var(--text);font-size:15px}
+.work{height:624px;flex:none;display:flex;min-height:0}
+.rail{width:44px;flex:none;background:var(--chrome);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding-top:8px;gap:8px}
+.ri{width:32px;height:32px;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:15px;border:1px solid transparent}
+.ri .t{font:10px var(--mono)}
+.canvas{width:1002px;height:624px;flex:none;position:relative;overflow:hidden;background:var(--canvas)}
+.canvas>svg{position:absolute;inset:0;display:block}
+.insp{width:320px;flex:none;background:var(--panel);border-left:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column}
+.status{height:30px;flex:none;background:var(--chrome);border-top:1px solid var(--border);display:flex;align-items:center;gap:14px;padding:0 10px;color:var(--muted);font-size:13px;white-space:nowrap}
+.status .ent{display:inline-flex;align-items:center;gap:5px}
+.status .ent .st{font:12px var(--mono)}
+.status .hint{color:var(--text);font:12px var(--mono)}
+.status .nud{font:12px var(--mono);height:22px;display:inline-flex;align-items:center;padding:0 7px;border:1px solid var(--bi);border-radius:4px;color:var(--text)}
+.status .coord{font:12px var(--mono)}
+.g-ok{color:var(--ok)}
+.g-err{color:var(--err)}
+.g-wait{color:var(--muted)}
+.light .g-ok{-webkit-text-stroke:.5px var(--text)}
+.ring{display:inline-block;vertical-align:-2px}
+/* chips (top-left of the canvas) */
+.chips{position:absolute;left:12px;top:12px;display:flex;gap:6px;align-items:center}
+.chip{height:26px;display:inline-flex;align-items:center;gap:5px;padding:0 9px;border:1px solid var(--bi);border-radius:4px;font-size:13px;color:var(--muted);background:var(--canvas)}
+.chip.on{background:var(--fillon);border-color:var(--sel);color:var(--text)}
+.chips .gap{width:10px}
+/* inspector */
+.ihead{display:flex;align-items:baseline;gap:8px;padding:12px 13px 10px;border-bottom:1px solid var(--border)}
+.ihead .id{font:600 13px var(--mono);color:var(--text)}
+.ihead .m{color:var(--muted);font-size:13px}
+.sec{border-bottom:1px solid var(--border);padding:0 13px 6px}
+.sec.closed{padding-bottom:0}
+.sh{height:30px;display:flex;align-items:center;gap:8px;font:600 11px var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.sh .chev{width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;margin-left:-6px;font-size:12px;color:var(--muted)}
+.sh .cnt{font:11px var(--mono);letter-spacing:0;text-transform:none}
+.fld{height:30px;display:flex;align-items:center;gap:8px}
+.fld label{width:62px;flex:none;color:var(--muted);font-size:13px}
+.ef{flex:1;height:28px;display:flex;align-items:center;gap:6px;padding:0 7px;border:1px solid var(--bi);border-radius:3px;background:var(--chrome);font:13px var(--mono);color:var(--text);white-space:nowrap;overflow:hidden}
+.ef .r{color:var(--muted)}
+.ef.ph{color:var(--muted)}
+.ef.focus{border-color:var(--sel);box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--sel)}
+.caret{display:inline-block;width:1px;height:15px;background:var(--text);margin-left:-4px}
+.agw{display:flex;align-items:center;gap:10px}
+.ag{display:grid;grid-template-columns:repeat(3,24px);grid-template-rows:repeat(3,24px);gap:2px}
+.ag i{border:1px solid var(--bi);border-radius:3px;display:flex;align-items:center;justify-content:center}
+.ag i::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--bi)}
+.ag i.on{background:var(--anchor);border-color:var(--anchor)}
+.ag i.on::after{background:var(--panel)}
+.muted{color:var(--muted)}
+.btn{height:28px;display:inline-flex;align-items:center;gap:6px;padding:0 10px;border:1px solid var(--bi);border-radius:4px;background:var(--panel);color:var(--text);font-size:13px;white-space:nowrap}
+.btn.on{background:var(--fillon);border-color:var(--sel)}
+.op{height:30px;display:flex;align-items:center;gap:6px;padding:0 8px;border-radius:3px;font:13px var(--mono);white-space:nowrap;overflow:hidden}
+.op.sel{background:var(--hover);box-shadow:inset 3px 0 var(--sel);color:var(--text)}
+.op .f{color:var(--muted)}
+.op.sel .f{color:var(--text)}
+.vt{width:100%;border-collapse:collapse;font:13px var(--mono)}
+.vt th{height:26px;text-align:left;font:600 11px var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:0 6px}
+.vt td{height:30px;padding:0 6px;white-space:nowrap;color:var(--text)}
+.vt td.ix{color:var(--muted)}
+.vt tr.sel td{background:var(--hover)}
+.vt tr.sel td:first-child{box-shadow:inset 3px 0 var(--sel);color:var(--text)}
+.add{height:30px;display:flex;align-items:center;padding:0 8px;color:var(--muted);font-size:13px}
+.lnk{color:var(--text);text-decoration:underline;text-decoration-color:var(--bi);text-underline-offset:3px}
+/* overlays */
+.ovl{position:absolute;background:var(--panel);border:1px solid var(--border);border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.35);padding:4px}
+.mi{height:30px;display:flex;align-items:center;gap:10px;padding:0 10px;border-radius:3px;font-size:14px;color:var(--text);white-space:nowrap}
+.mi .why{margin-left:auto;font:12px var(--mono);color:var(--muted)}
+.mi.dis{color:var(--muted)}
+.mi.dis .why a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.mi .fmt{margin-left:auto;font:12px var(--mono);color:var(--muted)}
+.msep{height:1px;background:var(--border);margin:4px 0}
+/* svg classes */
+.c-grid{stroke:var(--grid);stroke-width:1;fill:none}
+.k-body{fill:var(--keybody);stroke:var(--keyedge);stroke-width:1}
+.k-top{fill:var(--keytop)}
+.k-sel{fill:none;stroke:var(--sel);stroke-width:2.5}
+.k-faint{fill:none;stroke:var(--kfaint);stroke-width:1}
+.k-id{font:11px var(--mono);fill:var(--legend)}
+.k-leg{font:11px var(--mono);fill:var(--legend)}
+.k-tr{font:13px var(--mono);fill:var(--faint)}
+.gframe{fill:none;stroke:var(--frame);stroke-width:1;stroke-dasharray:5 4}
+.gframe.sel{stroke:var(--sel);stroke-width:2}
+.gtab{fill:var(--canvas);stroke:var(--frame);stroke-width:1}
+.gtab.sel{fill:var(--sel);stroke:var(--sel)}
+.gtab-t{font:11px var(--mono);fill:var(--text)}
+.gtab-t.sel{fill:var(--legend)}
+.light .gtab-t.sel{fill:var(--panel)}
+.octx{fill:none;stroke:var(--octx);stroke-width:1}
+.oshape{fill:none;stroke:var(--oshape);stroke-width:1.5}
+.alink{stroke:var(--anchor);stroke-width:1.5;stroke-dasharray:4 3;fill:none}
+.adot{fill:var(--anchor)}
+.rh{fill:var(--canvas);stroke:var(--rot);stroke-width:2}
+.piv{fill:none;stroke:var(--rot);stroke-width:1.5}
+.readout{font:11px var(--mono);fill:var(--text)}
+.part{fill:var(--keybody);stroke:var(--keyedge);stroke-width:1}
+.selpoly{fill:none;stroke:var(--sel);stroke-width:2}
+.vx{fill:var(--vertex)}
+.light .vx{stroke:var(--text);stroke-width:1}
+.ap{fill:var(--anchor)}
+.ap-hot{fill:none;stroke:var(--anchor);stroke-width:2}
+.cp{stroke:var(--cp);stroke-width:1.5;fill:none}
+.guide{stroke:var(--faint);stroke-width:1;stroke-dasharray:2 3;fill:none}
+.lbl{font:11px var(--mono);fill:var(--muted)}
+.edge{fill:none;stroke:var(--edge);stroke-width:1.5}
+.comp{fill:none;stroke:var(--comp);stroke-width:1}
+.fcu{stroke:var(--fcu);fill:none;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+.bcu{stroke:var(--bcu);fill:none;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;opacity:.7}
+.pad{fill:var(--fcu)}
+.rats{stroke:var(--rats);stroke-width:1;stroke-dasharray:4 3;fill:none}
+.mx{font:11px var(--mono);fill:var(--muted)}
+.mx.ov{fill:var(--override)}
+.ledp{fill:none;stroke:var(--led);stroke-width:1.5;stroke-dasharray:4 3}
+.ledb{fill:var(--canvas);stroke:var(--led);stroke-width:1.5}
+.ledn{font:10px var(--mono);fill:var(--text)}
+.vmark{fill:var(--err);stroke:var(--canvas);stroke-width:1.5}
+.mcu-l{font:11px var(--mono);fill:var(--muted)}
+.dark{--chrome:#292c3c;--panel:#303446;--border:#51576d;--bi:#838ba7;--hover:#414559;--fillon:#51576d;--text:#c6d0f5;--muted:#a5adce;--faint:#737994;--sel:#ca9ee6;--warn:#e5c890;--err:#e78284;--ok:#a6d189;--prog:#8caaee;--canvas:#414559;--grid:#51576d;--keybody:#626880;--keyedge:#949cbb;--keytop:#949cbb;--legend:#232634;--kfaint:#949cbb;--frame:#949cbb;--anchor:#81c8be;--rot:#ca9ee6;--octx:#b5bfe2;--oshape:#b5bfe2;--vertex:#eebebe;--cp:#99d1db;--edge:#b5bfe2;--comp:#a5adce;--fcu:#ef9f76;--bcu:#8caaee;--rats:#a5adce;--led:#81c8be;--override:#e5c890;--bstrip:#232634;--btool:#232634;--btab:#292c3c;--burl:#303446}
+.light{--chrome:#e6e9ef;--panel:#eff1f5;--border:#bcc0cc;--bi:#7c7f93;--hover:#dce0e8;--fillon:#dce0e8;--text:#4c4f69;--muted:#5c5f77;--faint:#9ca0b0;--sel:#8839ef;--warn:#df8e1d;--err:#d20f39;--ok:#40a02b;--prog:#1e66f5;--canvas:#eff1f5;--grid:#ccd0da;--keybody:#ccd0da;--keyedge:#7c7f93;--keytop:#dce0e8;--legend:#4c4f69;--kfaint:#7c7f93;--frame:#6c6f85;--anchor:#0f6f75;--rot:#8839ef;--octx:#5c5f77;--oshape:#5c5f77;--vertex:#dd7878;--cp:#04a5e5;--edge:#5c5f77;--comp:#6c6f85;--fcu:#c4500a;--bcu:#1e66f5;--rats:#6c6f85;--led:#0f6f75;--override:#df8e1d;--bstrip:#ccd0da;--btool:#dce0e8;--btab:#e6e9ef;--burl:#eff1f5}
+</style>
+</head>
+<body>
+<p class="cap"><b>Firmware · Frappé</b> — layer lower, left/index-top selected, binding field capturing.</p><div class="frame dark"><div class="bstrip"><span class="dots"><i></i><i></i><i></i></span><div class="btab">corney-island · keeb-cad<span>×</span></div><span style="align-self:center;color:var(--muted)">+</span></div><div class="btool"><span>←&nbsp;&nbsp;→&nbsp;&nbsp;⟳</span><div class="url">keeb-cad.localhost / designs / corney-island</div></div><div class="app"><div class="top"><span class="menu">File ▾</span><span class="vsep"></span><span class="dname"><span class="n">corney-island</span><span class="s">saved</span></span><span class="vsep"></span><div class="tabs" role="tablist"><div class="wt" role="tab" aria-selected="false">Layout<span class="k">1</span></div><div class="wt" role="tab" aria-selected="false">Shapes<span class="k">2</span></div><div class="wt" role="tab" aria-selected="false">PCB<span class="k">3</span></div><div class="wt" role="tab" aria-selected="false">Case<span class="k">4</span></div><div class="wt on" role="tab" aria-selected="true">Firmware<span class="k">5</span></div></div><span class="sp"></span><span class="menu btn">Export ▾</span><span class="ib" aria-label="Undo">↶</span><span class="ib" aria-label="Redo">↷</span></div><div class="work"><div class="rail"><div class="ri" title="Tree (T)" aria-label="Tree">▤</div><div class="ri" title="Parameters" aria-label="Parameters"><span class="t">x=</span></div></div><div class="canvas"><svg width="1002" height="624" viewBox="0 0 1002 624" role="img" aria-label="Firmware canvas, layer lower"><defs><pattern id="gf" width="28.50" height="28.50" patternUnits="userSpaceOnUse" patternTransform="translate(3.00,22.50)"><path d="M28.50 0H0V28.50" class="c-grid"/></pattern></defs><rect width="1002" height="624" fill="url(#gf)"/><g transform="translate(60.0,336.0) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g><g transform="translate(942.0,336.0) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g><g transform="translate(60.0,279.0) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-leg" x="0" y="-5.4" text-anchor="middle">Esc</text><text class="k-leg" x="0" y="7.6" text-anchor="middle">Ctrl</text></g><g transform="translate(942.0,279.0) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g><g transform="translate(60.0,222.0) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g><g transform="translate(942.0,222.0) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-leg" x="0" y="1.1" text-anchor="middle">Bksp</text></g><g transform="translate(117.0,336.0) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/></g><g transform="translate(885.0,336.0) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/></g><g transform="translate(117.0,279.0) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g><g transform="translate(885.0,279.0) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g><g transform="translate(117.0,222.0) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-leg" x="0" y="1.1" text-anchor="middle">1</text></g><g transform="translate(885.0,222.0) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-leg" x="0" y="1.1" text-anchor="middle">0</text></g><g transform="translate(174.0,321.8) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/></g><g transform="translate(828.0,321.8) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/></g><g transform="translate(174.0,264.8) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g><g transform="translate(828.0,264.8) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-leg" x="0" y="1.1" text-anchor="middle">→</text></g><g transform="translate(174.0,207.8) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-leg" x="0" y="1.1" text-anchor="middle">2</text></g><g transform="translate(828.0,207.8) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-leg" x="0" y="1.1" text-anchor="middle">9</text></g><g transform="translate(231.0,314.6) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/></g><g transform="translate(771.0,314.6) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/></g><g transform="translate(231.0,257.6) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g><g transform="translate(771.0,257.6) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-leg" x="0" y="1.1" text-anchor="middle">↑</text></g><g transform="translate(231.0,200.6) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-leg" x="0" y="1.1" text-anchor="middle">3</text></g><g transform="translate(771.0,200.6) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-leg" x="0" y="1.1" text-anchor="middle">8</text></g><g transform="translate(288.0,321.8) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/></g><g transform="translate(714.0,321.8) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/></g><g transform="translate(288.0,264.8) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g><g transform="translate(714.0,264.8) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-leg" x="0" y="1.1" text-anchor="middle">↓</text></g><g transform="translate(288.0,207.8) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><rect class="k-sel" x="-28.5" y="-28.5" width="57.0" height="57.0" rx="5.2"/><text class="k-leg" x="0" y="1.1" text-anchor="middle">4</text></g><g transform="translate(714.0,207.8) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-leg" x="0" y="1.1" text-anchor="middle">7</text></g><g transform="translate(345.0,328.9) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/></g><g transform="translate(657.0,328.9) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/></g><g transform="translate(345.0,271.9) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g><g transform="translate(657.0,271.9) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-leg" x="0" y="1.1" text-anchor="middle">←</text></g><g transform="translate(345.0,214.9) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-leg" x="0" y="1.1" text-anchor="middle">5</text></g><g transform="translate(657.0,214.9) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-leg" x="0" y="1.1" text-anchor="middle">6</text></g><g transform="translate(259.5,380.6) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g><g transform="translate(742.5,380.6) rotate(0.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g><g transform="translate(314.6,395.0) rotate(15.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g><g transform="translate(687.4,395.0) rotate(-15.00)"><rect class="k-body" x="-27.0" y="-27.0" width="54.0" height="54.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-23.3" width="42.8" height="40.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g><g transform="translate(387.6,412.5) rotate(30.00)"><rect class="k-body" x="-27.0" y="-40.5" width="54.0" height="81.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-36.8" width="42.8" height="67.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g><g transform="translate(614.4,412.5) rotate(-30.00)"><rect class="k-body" x="-27.0" y="-40.5" width="54.0" height="81.0" rx="4.2"/><rect class="k-top" x="-21.4" y="-36.8" width="42.8" height="67.8" rx="3.4"/><text class="k-tr" x="0" y="1.1" text-anchor="middle">▽</text></g></svg><div class="chips" role="tablist" aria-label="Keymap layers" style="gap:2px"><span class="wt" role="tab" style="height:30px;border-radius:3px 3px 0 0">base</span><span class="wt on" role="tab" aria-selected="true" style="height:30px;border-radius:3px 3px 0 0">lower</span><span class="wt" role="tab" style="height:30px;border-radius:3px 3px 0 0">raise</span><span class="wt" role="button" aria-label="Add layer" style="height:30px;min-width:30px;justify-content:center">+</span></div></div><div class="insp" aria-label="Binding"><div class="ihead"><span class="id">left/index-top</span><span class="m">slot · layer lower</span></div><div class="sec" style="padding-bottom:12px"><div class="sh"><span class="chev">⌄</span>Binding</div><div class="fld"><label>binding</label><div class="ef focus" aria-describedby="bh">4<span class="caret" style="margin-left:2px"></span></div></div><div id="bh" class="muted" style="font-size:13px;margin:6px 0 0 70px">Tab, Esc, Ctrl+… → pick from list (↓)</div></div><div class="sec" style="border-bottom:0;padding-top:10px"><span class="lnk">Matrix &amp; pins → PCB</span></div></div></div><div class="status"><span class="ent">Outline <span class="g-ok" aria-hidden="true">✓</span> <span class="st">current</span></span><span class="ent">Plates <span class="g-ok" aria-hidden="true">✓</span> <span class="st">current</span></span><span class="ent">PCB <span class="g-ok" aria-hidden="true">✓</span> <span class="st">0 unrouted</span></span><span class="ent">Case <span class="g-ok" aria-hidden="true">✓</span> <span class="st">current</span></span><span class="ent">Firmware <span class="g-ok" aria-hidden="true">✓</span> <span class="st">current</span></span><span class="sp"></span><span class="coord">x 76.00 y −42.75 mm</span><span class="coord">zoom 72%</span><span class="nud">0.25 mm</span></div></div></div>
+</body>
+</html>

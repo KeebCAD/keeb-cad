@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Operation list placement</title>
+<style>
+/* Frappé: base #303446 mantle #292c3c crust #232634 surface0 #414559 surface1 #51576d surface2 #626880
+   overlay0 #737994 overlay1 #838ba7 text #c6d0f5 subtext0 #a5adce mauve #ca9ee6 rosewater #f2d5cf green #a6d189 */
+:root{--mono:"JetBrains Mono",ui-monospace,monospace}
+body{margin:0;padding:24px;background:#232634;color:#c6d0f5;font:14px system-ui,sans-serif}
+h1{font-size:18px;margin:0 0 4px}
+p.note{color:#a5adce;margin:0 0 20px}
+.opt{margin-bottom:28px}
+.opt h2{font-size:15px;margin:0 0 6px}
+.screen{width:760px;height:400px;display:grid;grid-template-rows:34px 1fr 24px;border:1px solid #51576d;border-radius:6px;overflow:hidden;background:#303446}
+.top{background:#292c3c;display:flex;align-items:center;gap:4px;padding:0 10px;font-size:13px;border-bottom:1px solid #51576d}
+.tab{padding:5px 10px;border-radius:4px;color:#a5adce}
+.tab.on{background:#414559;color:#c6d0f5;box-shadow:inset 0 -2px #ca9ee6}
+.status{background:#292c3c;border-top:1px solid #51576d;font-size:11px;color:#a5adce;display:flex;gap:14px;align-items:center;padding:0 10px}
+.mid{display:flex;min-height:0}
+.rail{width:30px;background:#292c3c;border-right:1px solid #51576d;display:flex;flex-direction:column;align-items:center;padding-top:8px;gap:10px;color:#a5adce;font-size:11px}
+.left{width:220px;background:#292c3c;border-right:1px solid #51576d;padding:10px}
+.canvas{flex:1;background:#414559;position:relative;min-width:0}
+.insp{width:240px;background:#303446;border-left:1px solid #51576d;padding:10px;overflow:hidden}
+.h{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#a5adce;margin:0 0 6px}
+.op{font-family:var(--mono);font-size:12px;padding:5px 6px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.op.sel{background:#414559;box-shadow:inset 2px 0 #ca9ee6}
+.op .n{color:#c6d0f5}.op .f{color:#a5adce}
+.star{color:#e5c890}
+.add{font-size:12px;color:#a5adce;padding:5px 6px}
+.fld{display:flex;align-items:center;gap:8px;height:30px;font-size:13px}
+.fld label{width:62px;color:#a5adce}
+.fld .v{flex:1;font-family:var(--mono);font-size:12px;background:#292c3c;border:1px solid #51576d;border-radius:4px;padding:3px 6px;white-space:nowrap;overflow:hidden}
+.r{color:#737994}
+.sep{border-top:1px solid #51576d;margin:10px 0}
+.overlay{position:absolute;left:8px;top:8px;width:210px;background:#292c3c;border:1px solid #51576d;border-radius:6px;padding:10px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.hint{position:absolute;left:8px;bottom:8px;font-size:11px;color:#a5adce;background:#292c3c;padding:3px 8px;border-radius:4px}
+</style>
+</head>
+<body>
+<h1>Where the operation list sits: Shapes workspace</h1>
+<p class="note">Same content in each: the outline built from operations, <code>body</code> selected. Case would look the same with 3D operations.</p>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="board" viewBox="0 0 400 260">
+<pattern id="gr" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#51576d" stroke-width=".6"/></pattern>
+<rect width="400" height="260" fill="url(#gr)"/>
+<path d="M40 40 Q40 30 50 30 L250 22 Q262 22 262 34 L270 150 Q272 160 290 175 L330 215 Q338 224 328 232 L240 245 Q230 247 222 240 L60 200 Q40 195 40 180 Z" fill="#ca9ee6" fill-opacity=".14" stroke="#ca9ee6" stroke-width="2"/>
+<g fill="none" stroke="#838ba7" stroke-width=".9" opacity=".7">
+<rect x="55" y="45" width="34" height="34" rx="3"/><rect x="95" y="40" width="34" height="34" rx="3"/><rect x="135" y="35" width="34" height="34" rx="3"/><rect x="175" y="38" width="34" height="34" rx="3"/><rect x="215" y="42" width="34" height="34" rx="3"/>
+<rect x="55" y="85" width="34" height="34" rx="3"/><rect x="95" y="80" width="34" height="34" rx="3"/><rect x="135" y="75" width="34" height="34" rx="3"/><rect x="175" y="78" width="34" height="34" rx="3"/><rect x="215" y="82" width="34" height="34" rx="3"/>
+<rect x="55" y="125" width="34" height="34" rx="3"/><rect x="95" y="120" width="34" height="34" rx="3"/><rect x="135" y="115" width="34" height="34" rx="3"/><rect x="175" y="118" width="34" height="34" rx="3"/><rect x="215" y="122" width="34" height="34" rx="3"/>
+<rect x="170" y="175" width="34" height="34" rx="3"/><rect x="212" y="182" width="34" height="34" rx="3" transform="rotate(-15 229 199)"/><rect x="254" y="195" width="34" height="34" rx="3" transform="rotate(-30 271 212)"/>
+</g>
+</symbol></defs></svg>
+
+<!-- (a) docked left -->
+<div class="opt"><h2>(a) Docked open on the left (Shapes and Case only)</h2>
+<div class="screen">
+<div class="top"><span class="tab">Layout</span><span class="tab on">Shapes</span><span class="tab">PCB</span><span class="tab">Case</span><span class="tab">Firmware</span></div>
+<div class="mid">
+<div class="left"><div class="h">Shapes</div>
+<div class="op"><span class="n">keys</span> <span class="f">= key outline(matrix, thumb)</span></div>
+<div class="op sel"><span class="n">body</span> <span class="f">= offset(keys, 2mm)</span></div>
+<div class="op"><span class="n">notch</span> <span class="f">= rectangle(@mcu)</span></div>
+<div class="op"><span class="n">outline</span> <span class="star">★</span> <span class="f">= body − notch</span></div>
+<div class="add">+ add operation</div>
+<div class="sep"></div><div class="h">Plates</div>
+<div class="op"><span class="n">switch-plate</span></div><div class="op"><span class="n">backplate</span></div><div class="op"><span class="n">mcu-cover</span></div>
+</div>
+<div class="canvas"><svg width="100%" height="100%" preserveAspectRatio="xMidYMid meet"><use href="#board"/></svg></div>
+<div class="insp"><div class="h">offset · body</div>
+<div class="fld"><label>source</label><div class="v">keys</div></div>
+<div class="fld"><label>distance</label><div class="v">2mm</div></div>
+<div class="fld"><label>corner</label><div class="v">round</div></div>
+<div class="fld"><label>fillet</label><div class="v">fillet_radius <span class="r">= 0.5 mm</span></div></div>
+</div></div>
+<div class="status"><span>Outline ✓</span><span>Plate ✓</span><span>PCB 41/56 · 15 unrouted</span><span>Case rebuilding 62%</span></div>
+</div></div>
+
+<!-- (b) slide-out -->
+<div class="opt"><h2>(b) Slide-out like Layout's tree (press T)</h2>
+<div class="screen">
+<div class="top"><span class="tab">Layout</span><span class="tab on">Shapes</span><span class="tab">PCB</span><span class="tab">Case</span><span class="tab">Firmware</span></div>
+<div class="mid">
+<div class="rail"><span>☰</span><span>T</span></div>
+<div class="canvas"><svg width="100%" height="100%" preserveAspectRatio="xMidYMid meet"><use href="#board"/></svg>
+<div class="overlay"><div class="h">Shapes</div>
+<div class="op"><span class="n">keys</span> <span class="f">= key outline(…)</span></div>
+<div class="op sel"><span class="n">body</span> <span class="f">= offset(keys, 2mm)</span></div>
+<div class="op"><span class="n">notch</span> <span class="f">= rectangle(@mcu)</span></div>
+<div class="op"><span class="n">outline</span> <span class="star">★</span> <span class="f">= body − notch</span></div>
+<div class="add">+ add operation</div></div>
+<div class="hint">shown open; closes on Esc or T</div></div>
+<div class="insp"><div class="h">offset · body</div>
+<div class="fld"><label>source</label><div class="v">keys</div></div>
+<div class="fld"><label>distance</label><div class="v">2mm</div></div>
+<div class="fld"><label>corner</label><div class="v">round</div></div>
+<div class="fld"><label>fillet</label><div class="v">fillet_radius <span class="r">= 0.5 mm</span></div></div>
+</div></div>
+<div class="status"><span>Outline ✓</span><span>Plate ✓</span><span>PCB 41/56 · 15 unrouted</span><span>Case rebuilding 62%</span></div>
+</div></div>
+
+<!-- (c) inside inspector -->
+<div class="opt"><h2>(c) Inside the right panel: list on top, fields below</h2>
+<div class="screen">
+<div class="top"><span class="tab">Layout</span><span class="tab on">Shapes</span><span class="tab">PCB</span><span class="tab">Case</span><span class="tab">Firmware</span></div>
+<div class="mid">
+<div class="rail"><span>☰</span><span>T</span></div>
+<div class="canvas"><svg width="100%" height="100%" preserveAspectRatio="xMidYMid meet"><use href="#board"/></svg></div>
+<div class="insp" style="width:260px"><div class="h">Shapes</div>
+<div class="op"><span class="n">keys</span> <span class="f">= key outline(…)</span></div>
+<div class="op sel"><span class="n">body</span> <span class="f">= offset(keys, 2mm)</span></div>
+<div class="op"><span class="n">notch</span> <span class="f">= rectangle(@mcu)</span></div>
+<div class="op"><span class="n">outline</span> <span class="star">★</span> <span class="f">= body − notch</span></div>
+<div class="add">+ add operation</div>
+<div class="sep"></div><div class="h">offset · body</div>
+<div class="fld"><label>source</label><div class="v">keys</div></div>
+<div class="fld"><label>distance</label><div class="v">2mm</div></div>
+<div class="fld"><label>fillet</label><div class="v">fillet_radius <span class="r">= 0.5 mm</span></div></div>
+</div></div>
+<div class="status"><span>Outline ✓</span><span>Plate ✓</span><span>PCB 41/56 · 15 unrouted</span><span>Case rebuilding 62%</span></div>
+</div></div>
+
+</body>
+</html>
