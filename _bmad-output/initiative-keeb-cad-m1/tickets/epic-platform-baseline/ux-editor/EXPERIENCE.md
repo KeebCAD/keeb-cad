@@ -93,7 +93,7 @@ Behavioral. Visual specs live in DESIGN.md › Components. Every interactive ite
 |---|---|---|
 | Top bar | Global | File menu, design name (opens Design info) and save state (see State Patterns › File), workspace tabs, Export menu, undo/redo. |
 | File menu | Top bar | `New design`, `Open…` (Ctrl+O), `Save` (Ctrl+S: writes this design to its file), `Save to file…` (Ctrl+Shift+S: same design, same id and history, another location), `Copy design…` (new name, new id, records `copied from <design> · rev <hash>`, opens the copy, original untouched), `Design info`. |
-| Design info | Popover from the design name `[ASSUMPTION: placement]` | Name, id, current revision, provenance (`copied from <design> · rev <hash>`), file location (Chromium) or the Firefox save state (see State Patterns › File); fields read-only. **Versions** list below: one row per stored revision (`rev <hash>`, time, source `file` / `browser`), current marked; arrows and Enter pick. Picking makes that revision current at once; the previous current stays in the list; toast `Opened rev <hash> · rev <hash> kept in versions`. A read-only tab lists versions but cannot pick `[ASSUMPTION]`. Which revisions are kept: see Open Items. |
+| Design info | Popover from the design name `[ASSUMPTION: placement]` | Name, id, current revision, provenance (`copied from <design> · rev <hash>`), file location (Chromium) or the Firefox save state (see State Patterns › File); fields read-only. **Versions** list below, newest first: one row per named point (`rev <hash>`, time, reason `file` / `saved` / `switch` / `migration` / `copy`; AD-13). The current revision is marked and always has its own row, even when it is an autosave. Autosaves between two named points fold into one `▸ N autosaves <from>–<to>` row; Enter or → expands it in place, ← collapses. Arrows and Enter pick. Picking makes that revision current at once; the previous current stays in the list; toast `Opened rev <hash> · rev <hash> kept in versions`. A read-only tab lists versions but cannot pick `[ASSUMPTION]`. Kept: named points until the design is deleted, plus the last 20 autosaves (AD-13). |
 | Start screen | No design open (the empty state) | New design, Open file (Ctrl+O), recent autosaved designs (arrows and Enter); the first recent row has focus. |
 | Workspace tabs | Top bar | `role=tablist`; keys 1–5 when no field is focused; arrows move between tabs when focused. Each tab carries a tab badge. |
 | Tab badge | Workspace tabs | Repeats the worst output state of that workspace (see State Patterns › Output states). Accessible name = the state text (`PCB: routing 41/56`). |
@@ -176,7 +176,7 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 | first save (Chromium) | Ctrl+S | File System Access: asks for a location once, then saves silently |
 | save (Firefox) | Ctrl+S | Degrades openly: downloads `<design>.rev<hash>.<ext>`; Open uses the standard file picker |
 | save failed `[ASSUMPTION]` | Toast | `save failed: <reason>`; state stays `unsaved changes` |
-| autosave failed `[ASSUMPTION]` | Banner | `Autosave failed: browser storage full. Save to file (Ctrl+S).` |
+| autosave failed `[ASSUMPTION]` | Banner | `Autosave failed: browser storage full. Save to file (Ctrl+S).` Shown only once no autosave versions are left to prune (AD-13) |
 | read-only (second tab) | Banner | `Read-only — this design is open for editing in another tab.` + `Take over editing`. Read-only disables every command that changes the authored sections; selection, navigation, export and `Copy design…` stay enabled `[ASSUMPTION]`. Take over: this tab edits; the other tab cancels its gesture, stops autosave, drops in-flight background results and shows the banner |
 | format-too-new | Banner | `Made with a newer keeb-cad (format N). Read-only here.` Older formats migrate silently with toast `Upgraded from format N`; the next save writes the new format |
 | open over a newer stored copy | Toast | Opening a file whose design is stored at a newer revision opens the file's revision and keeps the stored one in Design info › Versions (AD-13): `Opened rev <hash> from file · newer rev <hash> kept in versions`. Nothing is overwritten |
@@ -370,7 +370,7 @@ Resolved 2026-10-26 unless marked open: the architecture update (AD-9, AD-13, AD
 | FR-5 "Save As" wording | Sofia | Behavior ships as `Copy design…`; `Save to file…` keeps the same design. Reword FR-5. Resolved (PRD updated 2026-10-26). |
 | SM-5 "change pitch" axis | Sofia | `pitch-x`, `pitch-y` or both. Resolved (PRD updated 2026-10-26). |
 | Epic companions (story 5 verify) | Sofia | Add DESIGN.md and EXPERIENCE.md to `companions:` in `epic-platform-baseline.md`. Resolved. |
-| Version retention | bmad-architecture | **Open.** Which revisions `listVersions` keeps (every autosave, or file opens + Copy design + the last N autosaves); Design info › Versions length depends on it. |
+| Version retention | bmad-architecture | Resolved: named points kept until the design is deleted, plus the last 20 autosaves, pruned first (AD-13). |
 
 ## Open Items
 
@@ -411,7 +411,6 @@ The register of every inline `[ASSUMPTION]` in this spine, plus gaps and naming 
 **Gaps:**
 
 - `[GAP]` Authored keep-out creation and keep-out color on the PCB canvas.
-- `[GAP]` Version retention: which revisions Design info › Versions lists (see Upstream Handoffs).
 
 **Naming:**
 
