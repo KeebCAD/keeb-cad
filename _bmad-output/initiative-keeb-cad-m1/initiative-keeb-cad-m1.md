@@ -119,3 +119,4 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
   - A violation kind for a construction point from parallel or coincident lines (F-72), for example `construction-undefined`. Gates epic-shapes-and-plates.
   - Rename "Save As" to "Copy design" in AD-9 and the `meta` provenance wording (behaviour unchanged).
   - Confirm `unresolvable-reference` is a warning when a key-cell reference names a cell that does not exist yet (epic-layout Decision 2026-10-26).
+- Decision (2026-10-26): epic-design-document split at refinement into epic-design-document (headless core) and epic-editor-shell (id 12: chrome, expression field, Parameters UI), because it ran to about 16 stories. epic-layout waits only on the headless core; epic-layout-editor now waits on epic-editor-shell.

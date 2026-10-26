@@ -46,7 +46,7 @@ Sergii builds Corney Island's key layout from a blank canvas in the Layout works
 ## Boundaries
 
 - Out: the layout model and its violations (epic-layout).
-- Out: the shared chrome and the expression field component (epic-design-document).
+- Out: the shared chrome and the expression field component (epic-editor-shell).
 - Out: the Shapes, PCB, Case and Firmware workspaces (their epics), which reuse this epic's canvas.
 - Out: the Outline context line (epic-shapes-and-plates, where the outline first exists) and the inspector's `Edit key cell` link (epic-parts-and-pcb, with isolated cell mode).
 
@@ -60,7 +60,7 @@ Sergii builds Corney Island's key layout from a blank canvas in the Layout works
 ## Notes
 
 - Waits on epic 1 because: the UX session result
-- Waits on epic 3 because: the editor chrome and the expression field
+- Waits on epic 12 because: the editor chrome and the expression field
 - Waits on epic 4 because: the layout model and its violations
 - Decision (2026-10-26): the shared editor chrome goes to epic-design-document, not to this epic: workspaces 1–5 with their empty states, hybrid panels and slide-out, status strip and tab badges, Ctrl+K palette, context menu, cheat sheet, F6 regions, Start screen, File menu, banners and toasts (EXPERIENCE.md › Global chrome, Panels and overlays). This epic owns the canvas, the Layout workspace and the violations panel, since it emits the first violations.
 - Decision (2026-10-26): the expression field component (live preview, error underline and message, autocomplete, `Create parameter…`, Ctrl+click to a parameter) is built in epic-design-document, beside its evaluator and the Parameters slide-out. This epic uses it in the inspector: anchor, offset, chain and pitch fields, drag/nudge/rotate write-back to the last literal term, and `unit-mismatch` (EXPERIENCE.md › Fields and pickers, Interaction Primitives › Write-back).
@@ -72,3 +72,4 @@ Sergii builds Corney Island's key layout from a blank canvas in the Layout works
 - Decision (2026-10-26): tracer bullet is entry 1 (the Layout canvas shows resolved keys and adds groups and slots). Entry 2, the chain-rule drag with Alt compensation, is the least certain and comes next. Violations and both halves run late because they wait on epic-layout 4.7 and 4.6.
 - Decision (2026-10-26): the Part picker's rows preview the part's envelope outline and cutouts (entry 5); epic-parts-and-pcb swaps in the footprint preview.
 - Decision (2026-10-26, initiative item 8): entry 10 reviews the UX assumptions and bundles after the Corney layout rebuild, not at milestone acceptance, so the chrome and later workspaces build on settled decisions. It runs after epic-layout-editor, the first point where the editor is usable, rather than after epic-layout, which has no UI since the split.
+- Decision (2026-10-26): the chrome and the expression field now come from epic-editor-shell (split from epic-design-document at its refinement); the two decisions above stand with that epic in place of epic-design-document.

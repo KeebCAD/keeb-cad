@@ -19,9 +19,17 @@ after = [{ epic = 1, needs = "the monorepo scaffold the fixtures harness lives i
 id = 3
 slug = "epic-design-document"
 title = "A design file that saves, reopens and undoes"
-description = "A design opens, autosaves, saves to a file and reopens byte-identical, and Copy design records provenance. Every change is a named command with undo/redo. Parameters and expressions evaluate. The pipeline tags outputs by revision, marks stale ones, and runs background workers with progress and cancel. Every AD-8 section has its schema skeleton and the export registry exists, so later epics fill sections in without colliding."
+description = "Headless: a design opens, autosaves, saves to a file and reopens byte-identical, and Copy design records provenance. Every change is a named command with undo/redo. Parameters and expressions evaluate. The pipeline tags outputs by revision, marks stale ones, and runs background workers with progress and cancel. Every AD-8 section has its schema skeleton and the export registry exists, so later epics fill sections in without colliding."
 covers = ["R5", "R17", "R18"]
 after = [{ epic = 1, needs = "the monorepo scaffold and CI" }]
+
+[[epic]]
+id = 12
+slug = "epic-editor-shell"
+title = "The editor shell around every workspace"
+description = "The shared editor chrome per EXPERIENCE.md works on the locally served build: workspaces 1–5 with tabs, badges and empty states, the docked right panel, the slide-out with Tree and Parameters, the status strip, Ctrl+K palette, context menu, cheat sheet, F6 regions, the Start screen, File menu (New, Open, Save, Save to file, Copy design, Design info), banners and toasts, and the expression field with autocomplete and Create parameter. It drives epic-design-document's commands, undo, file lifecycle and output states."
+covers = ["R5", "R17", "R18"]
+after = [{ epic = 1, needs = "the UX session result" }, { epic = 3, needs = "commands, undo, the design file, storage, parameters and pipeline output states" }]
 
 [[epic]]
 id = 4
@@ -37,7 +45,7 @@ slug = "epic-layout-editor"
 title = "Corney Island's layout built on the Layout canvas"
 description = "The Layout workspace edits the layout model visually per EXPERIENCE.md: both halves drawn with per-side population, chain drag with Alt compensation and write-back to the last literal term, rotation handle, nudge and rotate keys, the 2D pointer map and selection, the anchor picker with re-anchoring, inspector and Design settings expression fields, the Part picker, and the violations panel. Provides the 2D canvas, shared viewport, selection and pick modes the other 2D workspaces reuse."
 covers = ["R1", "R2", "R3", "R4", "R8", "R17"]
-after = [{ epic = 1, needs = "the UX session result" }, { epic = 3, needs = "the editor chrome and the expression field" }, { epic = 4, needs = "the layout model and its violations" }]
+after = [{ epic = 1, needs = "the UX session result" }, { epic = 12, needs = "the editor chrome and the expression field" }, { epic = 4, needs = "the layout model and its violations" }]
 
 [[epic]]
 id = 5
