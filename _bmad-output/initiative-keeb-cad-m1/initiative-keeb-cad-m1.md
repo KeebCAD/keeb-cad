@@ -103,3 +103,4 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
 - Decision: 2026-10-25 epic-design-document owns the worker harness, every AD-8 section skeleton and the export registry, so routing, case and firmware don't collide in `model`.
 - Decision: 2026-10-25 the UX session runs inside epic-platform-baseline; epic-layout waits on it.
 - Decision: 2026-10-25 Corney's TRRS nets are derived unchanged in epic-parts-and-pcb; a later rewire changes only the jack's catalogue pin roles.
+- Decision (2026-10-26): epic-layout split at refinement into epic-layout (placement model, headless Ergogen match) and epic-layout-editor (id 11, the Layout workspace UX), because it ran to about 15 stories. epic-shapes-and-plates now also waits on epic-layout-editor for the 2D canvas.

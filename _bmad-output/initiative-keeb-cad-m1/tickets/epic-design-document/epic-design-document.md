@@ -4,7 +4,7 @@ title: "A design file that saves, reopens and undoes"
 parent: initiative-keeb-cad-m1
 covers: [R5, R17, R18]
 sources: []
-companions: []
+companions: [_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md, _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md]
 after: []
 refined: false
 risk: medium
@@ -41,3 +41,8 @@ Every later epic edits the design through commands and sees revision-tagged outp
 ## Notes
 
 - Waits on epic 1 because: the monorepo scaffold and CI
+
+## Notes
+
+- Decision (2026-10-26, from epic-layout refinement): this epic owns the shared editor chrome: workspaces 1–5 with their empty states, hybrid panels and slide-out, status strip and tab badges, Ctrl+K palette, context menu, cheat sheet, F6 regions, Start screen, File menu (`Copy design…`, `Save to file…`), banners and toasts (EXPERIENCE.md › Global chrome, Panels and overlays, State Patterns › File, Output states). It is the UI of this epic's commands, file lifecycle and pipeline states. The violations panel belongs to epic-layout.
+- Decision (2026-10-26, from epic-layout refinement): this epic builds the expression field component (live preview, error underline and message, autocomplete, `Create parameter…`, Ctrl+click to a parameter), beside the evaluator and the Parameters slide-out (EXPERIENCE.md › Fields and pickers). epic-layout uses it in the inspector.
