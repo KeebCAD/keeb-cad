@@ -102,3 +102,14 @@ covers = []
 after = [1, 2, 3, 4, 5, 6, 7, 8]
 hitl = false
 risk = "low"
+
+[[entry]]
+id = 10
+type = "story"
+title = "UX assumptions reviewed after the Corney layout rebuild"
+description = "With Sergii, after rebuilding Corney's key layout in the locally served editor, a bmad-ux Update run on the editor spines (epic-platform-baseline/ux-editor/) decides each [ASSUMPTION] in EXPERIENCE.md › Open Items that the chrome and Layout workspace exercise (about 22 of 28) and the five facilitator-proposed bundles (output state, violations, file lifecycle, shortcuts, expression editing). Each remaining assumption is recorded with the epic whose workspace exercises it. Changes to built behaviour become new stories in the owning epic."
+verify = "EXPERIENCE.md's Open Items list no exercised assumption still undecided, each other one names the epic that will decide it, and the five bundles are confirmed or changed, with the run's decisions in its memlog."
+covers = ["R8"]
+after = [9]
+hitl = true
+risk = "low"
