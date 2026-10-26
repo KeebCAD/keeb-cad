@@ -286,11 +286,12 @@ graph TD
 
 ### AD-13: Storage behind one interface; milestone 1 is local-only [ADOPTED]
 - **Binds:** editor, storage, library, pipeline
-- **Prevents:** a hard dependency on any service; tabs overwriting each other; a file pairing authored state with routes from another revision.
+- **Prevents:** a hard dependency on any service; tabs overwriting each other; a file pairing authored state with routes from another revision; storage and the Versions list keeping different revisions; pruning a recovery point.
 - **Rule:**
   - All persistence goes through the `storage` package interface: `save`, `load`, `listVersions`, `listDesigns`. The saved unit is the whole design file, written atomically: authored sections plus the routing section valid for that revision.
   - `listDesigns` returns the designs in browser storage, newest first, each with design id, name, revision and last-saved time. On launch the editor reopens the first; the Start screen lists them.
   - Opening a file never overwrites browser storage: when that design id is stored at another revision, the file's revision opens as current and the stored one stays available through `listVersions`.
+  - **Version retention.** `listVersions` returns every kept version of a design, newest first, each a whole design file with its reason. **Named points** are kept until the design is deleted: the revision current at each file open (`file`), each save, Save to file or Firefox download (`saved`), both sides of a version switch (`switch`), the revision before a migration (`migration`), and the source revision when the design is copied (`copy`). **Rolling:** the last 20 autosaved revisions (`autosave`). Under storage pressure only rolling versions are pruned, oldest first; autosave reports failure only when none remain.
   - Milestone 1 implements browser autosave and file Save/Open.
   - The catalogue ships bundled with the app.
   - No network calls are needed to design or export.
