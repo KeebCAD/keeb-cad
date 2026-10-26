@@ -19,7 +19,7 @@ after = [{ epic = 1, needs = "the monorepo scaffold the fixtures harness lives i
 id = 3
 slug = "epic-design-document"
 title = "A design file that saves, reopens and undoes"
-description = "A design opens, autosaves, saves to a file and reopens byte-identical, and Save As records provenance. Every change is a named command with undo/redo. Parameters and expressions evaluate. The pipeline tags outputs by revision, marks stale ones, and runs background workers with progress and cancel. Every AD-8 section has its schema skeleton and the export registry exists, so later epics fill sections in without colliding."
+description = "A design opens, autosaves, saves to a file and reopens byte-identical, and Copy design records provenance. Every change is a named command with undo/redo. Parameters and expressions evaluate. The pipeline tags outputs by revision, marks stale ones, and runs background workers with progress and cancel. Every AD-8 section has its schema skeleton and the export registry exists, so later epics fill sections in without colliding."
 covers = ["R5", "R17", "R18"]
 after = [{ epic = 1, needs = "the monorepo scaffold and CI" }]
 

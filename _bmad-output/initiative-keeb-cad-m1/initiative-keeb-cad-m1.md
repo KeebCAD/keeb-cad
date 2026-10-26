@@ -26,7 +26,7 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
 - R2 (prd FR-2): Arrange children freely or as a chain. Corney Island's cumulative column stagger and 3-key thumb fan are expressible without absolute coordinates. Each node has one rotation, carried along the chain; a mid-chain turn that must not carry uses an explicit anchor. Placement reproduces Ergogen within ±0.05 mm.
 - R3 (prd FR-3): Set pitch independently of switch type, slot size (1u, 1.5u), a key cell applied to every key, and overrides per group or part. Changing the key cell updates every key's footprints. Choc v2 at 19 mm pitch is expressible.
 - R4 (prd FR-4): Design a split-reversible board (one geometry, one PCB, per-side population). Split-mirrored and unibody designs load without a model change; editing them is deferred.
-- R5 (prd FR-5): Save As a copy of a design that records its source design and revision. Corney Island wireless is a copy of wired with different parts, positions and population.
+- R5 (prd FR-5): Copy a design (`Copy design…`) as a new design that records its source design and revision; `Save to file…` keeps the same design and id. Corney Island wireless is a copy of wired with different parts, positions and population.
 - R6 (prd FR-6): Build named shapes from key outlines, rectangle, circle, polygon, add/subtract/intersect, and offset with corner style and fillet, and reference shapes from shapes. Corney Island's 18-vertex filleted outline and LambBT's r = 150 mm circle subtraction are expressible.
 - R7 (prd FR-7): Every primitive and polygon vertex is anchored to a node, construction point or other vertex, and can be reused across shapes. Moving a column moves exactly the vertices anchored to it.
 - R8 (prd FR-8): Place curated catalogue parts in slots anchored to any node. The catalogue covers everything Corney Island needs, with footprints from keeb-cad's own library carrying attribution.
@@ -37,7 +37,7 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
   - Routes are saved in the design and kept while their endpoints are unchanged and DRC passes; only broken connections are rerouted.
   - Unrouted connections are always reported.
   - Design rules are obeyed, and a pre-routed module zone is allowed.
-  - No manual trace editing.
+  - No manual editing of board routes; key-cell local tracks are drawn by hand in the key-cell editor.
 - R13 (prd FR-13): Export fab-ready gerbers + drill once routing completes, gated by zero DRC errors. A KiCad export that opens in KiCad 10 is always available as the escape hatch.
 - R14 (prd FR-14): Add a tray case from a parameterised template and edit the 3D operations it is built from (extrude, offset, boolean, z-position), with the parameters still in effect.
   - The case follows the outline and part cutouts, and rebuilds in the background with progress.
@@ -50,7 +50,7 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
 
 ## Constraints
 
-- C1 (prd §6): Browser-only; every stage, including routing and case solids, runs client-side with no server.
+- C1 (prd §6, FR-18): Browser-only, on current desktop Chromium and Firefox; every stage, including routing and case solids, runs client-side with no server. Firefox saves by download.
 - C2 (prd §6): Stable outputs: the same file reopens to the same outputs, and an edit changes only what it must. Routes are saved, case solids may be cached, and pure derivations are recomputed.
 - C3 (architecture spine): AD-1 to AD-21 bind every epic and story. Work that needs to break one goes back through `bmad-architecture`.
 - C4 (prd SM-1, SM-2, SM-C1): Acceptance is against Corney Island v0.3's Ergogen output within ±0.05 mm (key centres, outline vertices, plate cutouts, case dimensions), with no Corney-specific shortcuts.
@@ -71,12 +71,12 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
   - remix and the block library; propagating layout changes between designs
   - MX, Choc v1 and the Sofle thumb as built references
   - editing unibody and split-mirrored designs
-  - manual trace editing; QMK; Ergogen and KiCad import; KLE
+  - manual editing of board routes (key-cell local tracks are authored); QMK; Ergogen and KiCad import; KLE
   - case styles other than tray, and tenting
   - the Case workspace's Assembly view (plates and PCB at real heights), and the plate and PCB 3D bodies it needs (Decision 2026-10-26)
   - accounts and sharing
   - bare-chip routing; user-imported parts
-- Out: editor views, panels and drag semantics. They are decided in a separate UX session (`bmad-ux`) before the editor stories.
+- Editor views, panels and drag semantics were decided in the UX session (epic-platform-baseline story 5); its DESIGN.md and EXPERIENCE.md are companions of the editor epics.
 - Touch point: Ergogen reference output (Corney Island) — golden comparison; owner: epic-risk-spikes
 - Touch point: routing engine (tscircuit capacity-autorouter or a custom keyboard router, chosen by epic-risk-spikes) — runs in a worker; owner: epic-routing-and-fab
 - Touch point: KiCad 10 — opens the board export; owner: epic-parts-and-pcb

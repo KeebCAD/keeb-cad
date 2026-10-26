@@ -2,7 +2,7 @@
 title: keeb-cad milestone 1
 status: final
 created: 2026-10-25
-updated: 2026-10-25
+updated: 2026-10-26
 ---
 
 # PRD: keeb-cad — Milestone 1
@@ -100,8 +100,9 @@ The user can design a reversible split board: one geometry and one PCB for both 
 - The design model must not assume a reversible split board: the `split-mirrored` and `unibody` forms are deferred but must not require a model change. [NON-GOAL for milestone 1: mirrored and unibody editing]
 
 #### FR-5: Second design from a copy [REVISED 2026-10-25]
-The user can save a copy of a design as a new design (Save As) and change its electronics: Corney Island wireless is a copy of Corney Island wired with different parts, positions and population (reset button, display, battery, power switch).
+The user can copy a design as a new design (`Copy design…`: new name and id, recording its source design and revision) and change its electronics: Corney Island wireless is a copy of Corney Island wired with different parts, positions and population (reset button, display, battery, power switch).
 - The copy records which design and revision it came from, so milestone 2 can pull later layout changes into it (remix).
+- Saving to another file (`Save to file…`) keeps the same design and id; only `Copy design…` makes a new design.
 - In milestone 1, a layout change made after the copy is made in each design separately. [NON-GOAL for milestone 1: several electronics setups in one design; layout changes propagating between designs]
 
 ### 4.2 Shapes and outline
@@ -149,7 +150,7 @@ Key-cell tracks move with their key live. Connections between key cells, modules
 - The router connects to modules only (nice!nano), not bare chips; a pre-routed zone around a module is allowed.
 - Connections the router cannot complete are reported as unrouted, never hidden.
 - Routing obeys design rules: power/battery net widths, module keep-outs (nice!nano antenna on the wireless design), edge clearance.
-- No manual trace editing in milestone 1. [NON-GOAL]
+- No manual editing of board routes in milestone 1; connections between key cells, modules and peripherals are always routed automatically. A key cell's local tracks are drawn by hand in the key-cell editor. [NON-GOAL: board route editing]
 - Fallback if the routing spike fails: see SM-3.
 
 #### FR-13: Production and escape-hatch export
@@ -187,15 +188,16 @@ The user can save and open a design as one file, and undo/redo every edit (every
 - Elements keep stable IDs, so keymap entries and saved routes survive edits.
 - The file is versioned; older files open through migrations.
 - Everything runs in the browser; no server is required.
+- Supported browsers in milestone 1: current Chromium and Firefox, on desktop. In Chromium, Save writes the design's file in place after the first save asks for a location. Firefox lacks the File System Access API, so each save downloads a file named with its revision (`<design>.rev<hash>.<ext>`) and Open uses the standard file picker. On both, browser autosave is the source of truth.
 
-**Notes:** views, panels and the meaning of dragging a key are decided in a separate UX session.
+**Notes:** views, panels and the meaning of dragging a key were decided in the UX session (2026-10-26): `initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/` (DESIGN.md, EXPERIENCE.md).
 
 ## 5. Non-Goals (Explicit)
 - Remixing and the block library of known boards (milestone 2).
 - Choc v1, MX and Sofle thumb cluster as built references (milestone 2).
 - Unibody and split-mirrored editing (model must be ready, editing deferred).
 - Several electronics setups (variants) in one design; propagating layout changes between designs (milestone 2 remix).
-- Manual trace editing or locking.
+- Manual editing or locking of board routes (key-cell local tracks are authored, see FR-12).
 - QMK output.
 - Ergogen config import.
 - Case styles other than tray; tenting.
@@ -207,6 +209,7 @@ The user can save and open a design as one file, and undo/redo every edit (every
 
 ## 6. Cross-Cutting NFRs
 - **Browser-only:** all stages, including routing and case solids, run client-side.
+- **Supported browsers:** current desktop Chromium and Firefox; Firefox saves by download (FR-18). Safari and a full browser matrix wait for the first public preview.
 - **Stable outputs:** the same file always reopens to the same outputs, and an edit changes only what it has to. Routes are saved in the design; expensive results (case solids) may be cached; pure derivations (outline, plate, placement, firmware matrix) are recomputed. Two separately made designs producing identical files is not a goal.
 - **Live latency:** target set after measurement (§8 Q3).
 
@@ -217,7 +220,7 @@ The user can save and open a design as one file, and undo/redo every edit (every
 - **SM-2:** The tray case matches Corney Island's case within ±0.05 mm on: wall thickness, PCB-to-wall gap, floor thickness, wall height, screw-hole positions and radii, and the MCU/USB wall cutout position and size (see the addendum, Tray case reference numbers). Validates FR-14.
 - **SM-3:** Both designs (wired and wireless) route fully in the browser, pass DRC, and export gerbers + drill directly from keeb-cad that pass the fab's checks. If the routing spike shows that browser routing is not achievable, milestone 1 is re-scoped: it counts as done when the KiCad export, routed outside keeb-cad, produces fab-ready files. The PCB is compared with Corney Island's by parts and nets, not by copper, because keeb-cad uses its own footprint library. Validates FR-11–FR-13.
 - **SM-4:** ZMK firmware for both designs builds from the export (wired design: see §8 Q2). Validates FR-15–FR-16.
-- **SM-5:** A short edit script runs with zero manual fix-ups in any output: move one thumb-fan key; rotate the thumb fan; shift one column's stagger; change pitch; change a case parameter. After each step, the outline, plate, PCB, case and firmware of the edited design are current (or visibly updating). One layout change updating both boards is a milestone-2 metric. Validates FR-17.
+- **SM-5:** A short edit script runs with zero manual fix-ups in any output: move one thumb-fan key; rotate the thumb fan; shift one column's stagger; change pitch-x, then pitch-y (each to a value at or above the switch's minimum); change a case parameter. After each step, the outline, plate, PCB, case and firmware of the edited design are current (or visibly updating). One layout change updating both boards is a milestone-2 metric. Validates FR-17.
 
 **Counter-metrics (do not optimise)**
 - **SM-C1:** Corney Island-specific shortcuts. Passing SM-1 by hard-coding Corney Island shapes defeats the point; LambBT and Corax56 stay as paper checks for generality.

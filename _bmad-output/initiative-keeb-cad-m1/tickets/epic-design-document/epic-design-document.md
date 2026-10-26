@@ -14,7 +14,7 @@ risk: medium
 
 ## Description
 
-A design opens, autosaves, saves to a file and reopens byte-identical, and Save As records provenance. Every change is a named command with undo/redo. Parameters and expressions evaluate. The pipeline tags outputs by revision, marks stale ones, and runs background workers with progress and cancel. Every AD-8 section has its schema skeleton and the export registry exists, so later epics fill sections in without colliding.
+A design opens, autosaves, saves to a file and reopens byte-identical, and Copy design records provenance. Every change is a named command with undo/redo. Parameters and expressions evaluate. The pipeline tags outputs by revision, marks stale ones, and runs background workers with progress and cancel. Every AD-8 section has its schema skeleton and the export registry exists, so later epics fill sections in without colliding.
 
 ## Outcome
 
@@ -24,7 +24,7 @@ Every later epic edits the design through commands and sees revision-tagged outp
 
 - Save, reopen and save again gives a byte-identical file; older format versions migrate; newer ones open read-only.
 - Every command undoes and redoes; a gesture is one undo step.
-- Save As writes provenance.
+- Copy design writes provenance; Save to file keeps the same design id.
 - A parameter change re-evaluates its dependent expressions.
 - Outputs are tagged by revision and stale ones are marked; a background worker reports progress and is cancelled by a newer committed revision.
 
