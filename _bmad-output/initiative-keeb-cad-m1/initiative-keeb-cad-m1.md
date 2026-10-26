@@ -73,6 +73,7 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
   - editing unibody and split-mirrored designs
   - manual trace editing; QMK; Ergogen and KiCad import; KLE
   - case styles other than tray, and tenting
+  - the Case workspace's Assembly view (plates and PCB at real heights), and the plate and PCB 3D bodies it needs (Decision 2026-10-26)
   - accounts and sharing
   - bare-chip routing; user-imported parts
 - Out: editor views, panels and drag semantics. They are decided in a separate UX session (`bmad-ux`) before the editor stories.
@@ -104,3 +105,4 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
 - Decision: 2026-10-25 the UX session runs inside epic-platform-baseline; epic-layout waits on it.
 - Decision: 2026-10-25 Corney's TRRS nets are derived unchanged in epic-parts-and-pcb; a later rewire changes only the jack's catalogue pin roles.
 - Decision (2026-10-26): epic-layout split at refinement into epic-layout (placement model, headless Ergogen match) and epic-layout-editor (id 11, the Layout workspace UX), because it ran to about 15 stories. epic-shapes-and-plates now also waits on epic-layout-editor for the 2D canvas.
+- Decision (2026-10-26): the 3D case viewer (EXPERIENCE.md › Workspace-specific › 3D viewer) is in M1, as an epic-tray-case requirement, because editing case operations blind fails FR-14's intent. The Assembly view and its plate and PCB 3D bodies are deferred past M1; SM-2's numeric case check stands in for the fit check. bmad-architecture adds the 3D library to the Stack in the same run as the 2D renderer.

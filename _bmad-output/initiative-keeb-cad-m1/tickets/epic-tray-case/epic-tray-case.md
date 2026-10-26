@@ -40,3 +40,6 @@ Corney Island's tray case follows the outline and part cutouts and matches the o
 - Waits on epic 3 because: parameters, expressions and the worker harness
 - Waits on epic 5 because: the outline shape
 - Waits on epic 6 because: part case cutouts
+- Decision (2026-10-26, initiative item 3): this epic owns the Case workspace's 3D viewer (orbit, pan, zoom, Home/0 top view, keyboard, never blanks once a solid exists; EXPERIENCE.md › Workspace-specific › 3D viewer, State Patterns). The Assembly chip and view are deferred past M1. Write it into Requirements when this epic is refined.
+- Unknown: the 3D rendering library, its owner package and its Glossary term, from bmad-architecture. The viewer stories wait on it.
+- Open question: does SM-2's dimension list cover the PCB-to-wall gap and the plate seat height, so a fit error fails SM-2 before a print? Check when this epic is refined.
