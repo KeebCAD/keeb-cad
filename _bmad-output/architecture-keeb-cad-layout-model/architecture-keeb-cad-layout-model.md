@@ -17,6 +17,8 @@ sources:
   - _bmad-output/forge-keeb-cad-preserve-work/forge-keeb-cad-preserve-work.md
   - _bmad-output/layout-model/paper-test-v0.md
   - _bmad-output/architecture-keeb-cad-layout-model/stack-research.md
+  - _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md
+  - _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md
 ---
 
 # Architecture Spine: keeb-cad, layout model and generation core
@@ -84,8 +86,9 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | **route** | The copper path for one routed connection |
 | **design rules** | Net classes (width, clearance), edge clearance, and keep-out switches |
 | **DRC** | The design-rule check, implemented once in `drc` |
-| **binding** | What one key does on one layer, from the firmware-neutral vocabulary |
-| **keymap** | Layers of bindings keyed by side-qualified slot id, plus combos |
+| **binding** | What one key does on one keymap layer, from the firmware-neutral vocabulary |
+| **keymap layer** | One ordered entry of the keymap: an id, an editable name, and bindings keyed by side-qualified slot id. PCB layers (F.Cu, B.Cu) are always **copper layers** |
+| **keymap** | Keymap layers, plus combos |
 | **violation** | A reported design problem: `{ kind, severity, ids, message }` |
 | **block** | A reusable, versioned design fragment (milestone 2) |
 | **command** | A named, undoable operation; the only way the authored sections change |
@@ -96,7 +99,10 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | **stage** | A pure function from the resolved design (and, where stated, other stage outputs) to one output |
 | **live** | Recomputed synchronously, including during a gesture |
 | **background** | Computed in a Web Worker, with progress; cancelled by a newer committed revision |
-| **preview** | The editor's 2D rendering of resolved placements and shapes |
+| **preview** | The editor's 2D rendering of resolved placements, shapes and stage outputs, in SVG |
+| **viewport** | The one 2D view position shared by the 2D workspaces (not isolated cell mode): centre (mm, y up) and zoom |
+| **3D viewer** | The Case workspace's interactive rendering of bodies, in `viewer3d` |
+| **body** | One named triangulated solid shown in the 3D viewer: id, kind, faces, edges. Milestone 1 has case bodies only. The 2D "key body" colour is a keycap face, not a body |
 | **escape hatch** | Exporting a KiCad project to finish outside keeb-cad; the export no longer syncs |
 
 ## Design Paradigm
@@ -109,7 +115,8 @@ graph LR
   C --> A[(Authored sections)]
   CAT[(Catalogue, library)] --> R
   A --> R["model.resolve: expressions, sides, frames, shapes, netlist, connections"]
-  R --> PL[plates] & PC[pcb placement] & CS[case] & FW[firmware] & PV[preview]
+  R --> PL[plates] & PC[pcb placement] & CS[case] & FW[firmware]
+  R --> PV["preview (editor)"]
   PC --> RT[routing, background]
   RS[(Routing section)] --> RT & DR
   PC --> DR[drc]
@@ -135,7 +142,7 @@ graph LR
 - **Rule:**
   - Every change to an authored section is a named command in `model` (e.g. `moveSlot`, `setGap`, `setAnchor`, `addVertex`, `setParameter`, `renameParameter`, `setBinding`, `insertTemplate`, `setFitted`), and nothing else writes to them.
   - A drag is a **gesture**: `begin`, `update`…, then `commit` or `cancel`. Each `update` produces a revision that the live stages consume. A committed gesture is **one** undo entry.
-  - A command that removes something removes everything keyed to it in the same command (deleting a slot deletes its bindings, combo memberships, population entries and overrides; deleting a vertex is rejected while a shape uses it), so one undo restores them all.
+  - A command that removes something removes everything keyed to it in the same command (deleting a slot deletes its bindings, combo memberships, population entries and overrides; deleting a vertex is rejected while a shape uses it, as is deleting a keymap layer that a binding on another keymap layer, or a combo, references), so one undo restores them all.
   - `renameParameter` rewrites every expression that uses the name, in the same command.
   - The routing section is outside commands and undo (AD-12).
   - The command log is not persisted. The design file holds state, not history.
@@ -170,7 +177,7 @@ graph LR
   - The slot owns which part it holds. Population owns only whether it is fitted, per side.
   - `model` owns the **catalogue schema**: components, pins and pin roles, minimum pitch, 3D envelope, cutouts (role + target `plate` / `pcb` / `case`), keep-outs, optional fixed tracks (a pre-routed module zone), named part parameters with defaults. `library` owns the **catalogue data**.
   - Catalogue entries are immutable per version. `catalogue-refs` pins each used part as id + version. `library` keeps every released version; an update adds a version, and moving a design to it is a command.
-  - Groups reference a key cell; a slot uses its nearest ancestor's. Part parameters (e.g. screw-hole radius) can be overridden per slot or group, per target.
+  - Groups reference a key cell; a slot uses its nearest ancestor's. A slot whose key-cell reference doesn't resolve has no components, so no pads, nets or matrix position. Part parameters (e.g. screw-hole radius) can be overridden per slot or group, per target.
   - Every stage takes cutouts, keep-outs and fixed tracks from the resolved design only.
   - Pitch below a switch's minimum is `pitch-below-min`, never silently adjusted.
   - Lengths carry an explicit unit: `u` or `mm`. Angles are in `deg`.
@@ -198,7 +205,7 @@ graph LR
 - **Prevents:** noisy diffs, unreadable old files, sections stored in incompatible shapes, format lock-in.
 - **Rule:**
   - Designs are KDL v2 files carrying a `format-version`. `model` validates them and migrates older versions forward on load. A newer version than the app knows opens read-only with `format-too-new`. A failed migration reports `migration-failed` and never overwrites the file.
-  - Sections, in this order: `meta` (design id, form, pitch, provenance), `parameters`, `catalogue-refs`, `key-cells`, `layout`, `construction`, `shapes`, `plates`, `case`, `population`, `overrides`, `design-rules`, `keymap`, `routing`. The schema for each lives in `model`.
+  - Sections, in this order: `meta` (design id, name, form, pitch, provenance), `parameters`, `catalogue-refs`, `key-cells`, `layout`, `construction`, `shapes`, `plates`, `case`, `population`, `overrides`, `design-rules`, `keymap`, `routing`. The schema for each lives in `model`.
   - **The canonical writer lives in `model`.** It sets node and property order itself, writes lengths, angles and expressions as quoted strings (`"19mm"`, `"-15deg"`, `"wall + gap"`), and canonicalises numbers.
   - Loading and then saving an unchanged design reproduces the file byte for byte.
   - Free-text comments are not preserved. Annotations use a `note` property.
@@ -210,14 +217,14 @@ graph LR
 - **Prevents:** remixes silently changing under the user; ids that can't support a later merge; a second mechanism for carrying layout changes between boards.
 - **Rule:**
   - A remix source is a **block or a whole design**. A design made from another design (e.g. wireless Corney Island from wired) is a remix, not a variant.
-  - **Save As** mints a new design id, keeps every other id, and writes provenance into `meta`: source design id, source revision, licence.
+  - **Copy design** mints a new design id and takes a new name, keeps every other id, and writes provenance into `meta`: source design id, source revision, licence. **Save to file** keeps the design id; only Copy design makes a new design.
   - Ids inside an inserted block are `<instance-id>/<block-node-id>`.
-  - **Milestone 1:** Save As only. No library of blocks, no update pull.
+  - **Milestone 1:** Copy design only. No library of blocks, no update pull.
   - **Milestone 2:** the design embeds an untouched base copy of the source; pulling is a three-way merge (base, new source, local) keyed by id; conflicting changes are surfaced, never auto-resolved; a pull carries layout and electronics changes alike.
 
 ### AD-10: Package dependency direction, shared derivations, stage contracts [ADOPTED]
 - **Binds:** all packages
-- **Prevents:** stages coupling to each other; UI framework leaking into the core; stages each evaluating geometry, expressions or nets their own way; two shapes for one output.
+- **Prevents:** stages coupling to each other; UI framework or rendering libraries leaking into the core; stages each evaluating geometry, expressions or nets their own way; two shapes for one output.
 - **Rule:**
   - Dependencies point only as drawn below. Stages depend on `model` only and never import each other. **One named exception:** `routing` imports `drc`.
   - `model` imports no other workspace package. `resolve(authored, catalogue)` receives catalogue data from its caller. `insertTemplate(payload)` receives the template from `editor`, which reads it from `library`; `model` mints the ids and suffixes clashing parameter names.
@@ -225,7 +232,7 @@ graph LR
   - **Every stage output type is defined in `model`** (`PlatesOutput`, `PcbPlacement`, `RouteSet`, `DrcResult`, `CaseOutput`, `FirmwareOutput`).
   - **Stage signatures:** `(resolved) → { output, violations[] }` for plates, pcb, case, firmware. `routing(resolved, placement, savedRoutes)` and `drc(resolved, placement, routes)`. `exports(resolved, outputs)` packages what `pipeline` hands it.
   - **Named stage-to-stage flows, all via `pipeline`:** pcb placement → routing and drc; every stage output → exports. No others.
-  - Only `editor` imports Vue. Nothing imports `editor`.
+  - Only `editor` imports Vue. Only `viewer3d` imports three.js; only `editor` imports `viewer3d`. Nothing imports `editor`.
   - **Enforcement:** pnpm strict dependencies, plus dependency-cruiser rules in CI.
 
 ```mermaid
@@ -234,6 +241,8 @@ graph TD
   editor --> model
   editor --> library
   editor --> storage
+  editor --> viewer3d
+  viewer3d --> model
   pipeline --> plates & pcb & routing & drc & case & firmware & exports
   pipeline --> model
   pipeline --> library
@@ -253,11 +262,13 @@ graph TD
 - **Binds:** pipeline, editor, stages
 - **Prevents:** a UI that blocks on slow geometry; stale outputs shown as current; cache false hits after an app update or a non-geometric edit.
 - **Rule:**
-  - **Live:** resolve, plates, pcb placement with key-cell and part tracks, firmware, preview, and DRC of saved routes against the current placement.
+  - **Live:** resolve, plates, pcb placement with key-cell and part tracks, firmware, and DRC of saved routes against the current placement. The preview is `editor` rendering of these, not a stage.
   - **Background** (Web Workers): case (replicad) and routing. They report progress and partial or failed results; a newer committed revision cancels them. Background stages start only at committed revisions, or after a gesture has been idle for a debounce interval.
   - **Cache key** = stage id + stage version + catalogue versions used + hash of the resolved slice the stage reads (+ routing hash for drc and exports).
   - Every output is tagged with the revision it was computed from (+ routing hash where it reads routes). An output whose tag differs from the current one is shown marked stale, never as current, including on cache hits.
   - The case solid may be cached by its cache key in memory or browser storage; it is never written to the design file.
+  - `CaseOutput` carries **bodies**, each `{ id, kind, faces, edges }`, typed arrays shaped like replicad's `mesh()` and `meshEdges()` output, transferred from the case worker without copying, plus the STEP and STL bytes written in the case worker. A body's id is the id of the case operation whose result it is. `model` and `case` never import three.js.
+  - `pipeline` keeps the last good output of each stage, tagged with its revision; the editor holds references to them, never copies, and never makes them reactive.
 
 ### AD-12: Routing: incremental, browser-only, saved in the routing section [ADOPTED]
 - **Binds:** pcb, routing, drc, pipeline, storage
@@ -277,7 +288,9 @@ graph TD
 - **Binds:** editor, storage, library, pipeline
 - **Prevents:** a hard dependency on any service; tabs overwriting each other; a file pairing authored state with routes from another revision.
 - **Rule:**
-  - All persistence goes through the `storage` package interface: `save`, `load`, `listVersions`. The saved unit is the whole design file, written atomically: authored sections plus the routing section valid for that revision.
+  - All persistence goes through the `storage` package interface: `save`, `load`, `listVersions`, `listDesigns`. The saved unit is the whole design file, written atomically: authored sections plus the routing section valid for that revision.
+  - `listDesigns` returns the designs in browser storage, newest first, each with design id, name, revision and last-saved time. On launch the editor reopens the first; the Start screen lists them.
+  - Opening a file never overwrites browser storage: when that design id is stored at another revision, the file's revision opens as current and the stored one stays available through `listVersions`.
   - Milestone 1 implements browser autosave and file Save/Open.
   - The catalogue ships bundled with the app.
   - No network calls are needed to design or export.
@@ -296,12 +309,13 @@ graph TD
 
 ### AD-15: Exports [ADOPTED]
 - **Binds:** exports, pipeline, plates, pcb, drc, case, firmware
-- **Prevents:** each stage inventing its own export set; fab files from a board that fails DRC.
+- **Prevents:** each stage inventing its own export set; fab files from a board that fails DRC; files exported from geometry that didn't resolve.
 - **Rule:** Milestone-1 exports:
   - plates: DXF, SVG, and gerber + drill (edge + holes board, same writer as the PCB)
   - case: STEP and STL
   - PCB: gerber (copper, mask, silkscreen, edge) + Excellon drill, **only when `pipeline` holds a DRC result with zero `error` violations and no unrouted connections, tagged with the same revision and routing hash as the routes being exported**; a KiCad 10 board file as the escape hatch, always available
   - firmware: a ZMK shield with the `zmk,physical-layout` node, wired split over UART and RGB underglow when the population fits them, and the keymap
+  - Every export except the KiCad board is **blocked while the resolved slice it reads carries a `model` violation of severity `error`**, reported as `blocked: <kind>`. Warnings never block. The KiCad board exports whatever resolved.
 
 ### AD-16: Shapes are authored and evaluated once, in `model` [ADOPTED]
 - **Binds:** model, plates, pcb, case, drc, exports
@@ -334,9 +348,12 @@ graph TD
 
 ### AD-19: Keymap is firmware-neutral [ADOPTED]
 - **Binds:** model, firmware, editor
-- **Prevents:** firmware-specific data in the design; QMK later needing design changes; right-half keys that can't be bound.
+- **Prevents:** firmware-specific data in the design; QMK later needing design changes; right-half keys that can't be bound; keymap layer references breaking on reorder, duplicate or delete.
 - **Rule:**
-  - The `keymap` section is a list of layers, each mapping side-qualified slot id → binding, plus a list of combos (set of side-qualified slot ids + layers → binding).
+  - The `keymap` section is a list of keymap layers, each mapping side-qualified slot id → binding, plus a list of combos (set of side-qualified slot ids + layers → binding).
+  - Each keymap layer has an id minted by `model` and an editable name. Keymap layer order is the list order; firmware layer numbers come from it, in the writer.
+  - `layer-tap`, `momentary-layer`, `toggle-layer` and a combo's layers reference keymap layers **by id**, never by index or name. Reordering changes no binding. Duplicating mints a new keymap layer id and copies the bindings unchanged.
+  - Deleting a keymap layer removes its own bindings in the same command. Deleting one that a binding on another keymap layer, or a combo, references is rejected, naming those side-qualified slots and combos (AD-2).
   - Bindings use **only** the vocabulary defined in `model`: `key`, `mod-tap`, `layer-tap`, `momentary-layer`, `toggle-layer`, `transparent`, `none`, and device actions `bluetooth`, `output-select`, `rgb`. The vocabulary grows by changing `model`. There is no raw firmware binding.
   - A device action whose hardware the population doesn't fit is `binding-unsupported`, naming the slot.
   - Firmware writers translate the vocabulary. A writer is a pure addition.
@@ -356,6 +373,16 @@ graph TD
   - A design has one population per side, one netlist, one routing section and one firmware.
   - Different electronics on the same layout are separate designs related by remix (AD-9). There is no variant concept in the model, file or stages.
 
+### AD-22: Editor views: SVG canvases, one viewport, a 3D viewer of bodies [ADOPTED]
+- **Binds:** editor, viewer3d, model
+- **Prevents:** workspaces choosing their own renderers; the Layout canvas and Case camera disagreeing; canvases flipping y or re-deriving geometry; Assembly needing a new viewer.
+- **Rule:**
+  - Every 2D canvas (Layout, Shapes, PCB, Firmware, isolated cell mode) is inline SVG rendered by Vue templates in `editor`. Canvas items are DOM elements: focus, `aria-*`, pointer hit-testing, theme tokens as CSS custom properties, and reduced motion through CSS. Canvas marks meet 3:1 non-text contrast in both themes; handles keep the 8px canvas hit radius (DESIGN.md `spacing.canvas-hit-radius`) in screen pixels at any zoom.
+  - One **viewport** (centre in model mm, y up; zoom) lives in Pinia and is shared by the 2D workspaces. Isolated cell mode has its own zoom. The model-to-screen y-flip happens once, in the viewport transform (AD-7). Text and handles are positioned through that transform but drawn in screen space, so they are never flipped or scaled.
+  - Canvases draw only the resolved design and stage outputs; they compute no geometry (AD-10).
+  - `viewer3d` is framework-free: it renders a list of bodies and owns the camera and its pointer and keyboard controls on its own canvas element, and honours `prefers-reduced-motion` (the Home camera move jumps). It never handles `contextmenu`; it exposes picking (screen point → body id) and a top view set from the viewport. `editor` hosts it and owns focus regions, menus and the viewport. Home/0 is the top view derived from the viewport.
+  - The 3D viewer never blanks once a body exists: while `CaseOutput` is stale, the last good bodies are drawn grayed (AD-11).
+
 ## Consistency Conventions
 
 | Concern | Convention |
@@ -363,7 +390,7 @@ graph TD
 | Naming | Glossary terms only. Packages: `@keeb-cad/<name>`. KDL node names are lowercase glossary terms. Commands are verb+noun camelCase (`setGap`). |
 | Ids | Kebab-case, minted by `model`. Resolved: `<side>/<id>`. Block nodes: `<instance-id>/<block-node-id>`. Pads: `<side>/<slot-id>.<component>.<pin>`. Nets: derived from ids (AD-14). |
 | Units in files | Quoted with an explicit unit or as an expression: `"19mm"`, `"1u"`, `"-15deg"`, `"wall + gap"`. |
-| Violations | `{ kind, severity: error \| warning, ids, message }`. Design problems never throw. Commands that can't apply return a typed rejection. Each kind has one owner. `model`: `anchor-cycle`, `unresolvable-reference`, `unit-mismatch`, `unsupported-form`, `pitch-below-min`, `overlap`, `binding-unsupported`, `format-too-new`, `migration-failed`. `routing`: `unrouted`. `drc`: `drc`. A stage reports only its own kinds. |
+| Violations | `{ kind, severity: error \| warning, ids, message }`. Design problems never throw. Commands that can't apply return a typed rejection. Each kind has one owner. `model`: `anchor-cycle`, `construction-undefined` (error: a construction point from parallel or coincident lines; ids name the point and its two lines; it and its dependents are not evaluated), `unresolvable-reference` (warning when a key-cell reference names a cell not defined yet, the slot placing with no footprint; error otherwise), `unit-mismatch`, `unsupported-form`, `pitch-below-min`, `overlap`, `binding-unsupported`, `format-too-new`, `migration-failed`. `routing`: `unrouted`. `drc`: `drc`. A stage reports only its own kinds. |
 | Stable outputs | Same file + same app version → same bytes for every export. No clocks, randomness, locale or random UUIDs in outputs; tool-generated ids (KiCad UUIDs) are derived from design ids. Only routes are history-dependent, and they are saved. |
 | Testing | Golden fixtures: Corney Island v0.3 wired and wireless, as two designs (`fixtures/`, from `layout-model/sources/`). Internal: key positions within 0.01 mm of Ergogen. Acceptance: key centres, outline vertices, plate cutouts and case dimensions within ±0.05 mm. Every stage has golden-file tests. KiCad output opens in KiCad 10; ZMK output builds. A cross-stage netlist test enforces AD-14. LambBT and Corax56 are paper checks. |
 | Editor state | UI state (selection, viewport, panels, gesture in progress) lives in Pinia, never in the design. The design store exposes `dispatch(command)`, the gesture API and read access only. |
@@ -372,7 +399,7 @@ graph TD
 
 ## Stack
 
-Verified 2026-10-24 (`stack-research.md`) and 2026-10-25 (gate re-check).
+Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check) and 2026-10-26 (renderers, npm).
 
 | Name | Version |
 | --- | --- |
@@ -390,6 +417,9 @@ Verified 2026-10-24 (`stack-research.md`) and 2026-10-25 (gate re-check).
 | replicad / replicad-opencascadejs | 1.2.0 / 1.1.0 |
 | @bgotink/kdl (KDL v2) | 0.4.1 |
 | @tarikjabiri/dxf | 2.9.0 |
+| 2D canvas: inline SVG via Vue templates (no library) | — |
+| three (3D viewer, `viewer3d` only) | 0.186.1 |
+| replicad-threejs-helper (`viewer3d` only) | 1.2.0 |
 | KiCad target (board format `20260206`, written literally) | 10.0.x |
 | ZMK target (board names `nice_nano_v2`) | v0.3.0 |
 
@@ -412,7 +442,8 @@ keeb-cad/
     pipeline/   # orchestration, caching, workers, revision tagging, routing-section writer, export gate
     storage/    # storage interface + browser/file backends
     library/    # versioned catalogue data, footprints + attribution, case templates
-  app/          # editor: Vue app (create-vue), package @keeb-cad/editor
+    viewer3d/   # 3D viewer: three.js scene of bodies, camera + controls (no Vue)
+  app/          # editor: Vue app (create-vue), package @keeb-cad/editor; SVG canvases
   fixtures/     # Corney Island wired + wireless designs, Ergogen reference output
 ```
 
@@ -434,7 +465,7 @@ graph TD
 | FR-1–2 layout, anchors, chain | model | AD-3, AD-4 |
 | FR-3 pitch, slot size, key cell, group and per-target overrides | model, pcb | AD-4, AD-5 |
 | FR-4 form readiness | model | AD-6 |
-| FR-5 variants | separate designs | AD-21, AD-9 |
+| FR-5 second design from a copy | separate designs | AD-21, AD-9 |
 | FR-6–7 shapes, anchored geometry | model | AD-16, AD-3 |
 | FR-8–9 parts, cutouts, keep-outs | model (schema), library (data) | AD-5 |
 | FR-10 plates | plates, exports | AD-16, AD-15 |
@@ -446,6 +477,7 @@ graph TD
 | FR-16 keymap | model, firmware | AD-19, AD-2 |
 | FR-17 live propagation, warnings | pipeline, editor | AD-11, conventions |
 | FR-18 file, undo, autosave, migrations | model, storage | AD-2, AD-8, AD-13 |
+| Editor canvases and Case 3D viewer (UX spines) | editor, viewer3d | AD-22, AD-11 |
 
 ## Deferred
 
@@ -462,7 +494,9 @@ graph TD
 | Footprint licence (ceoloide derivation with attribution) | Data, not structure | Before footprint library work |
 | Construction point kinds beyond line intersection; averaged anchors | Corney uses intersection only | During the Corney rebuild |
 | Default LED-order and MCU pin assignment rules | Overrides cover Corney (AD-14) | First netlist story |
-| `split-mirrored` and `unibody` implementation | Model ready (AD-6) | When a reference board is chosen |
+| `split-mirrored` and `unibody` implementation | Model ready (AD-6) | When a reference board is chosen, or at the routing verdict if reversible Corney doesn't route in the browser (epic-risk-spikes story 13) |
+| Konva copper layer under the PCB SVG (konva 10.9.0 + vue-konva 4.0.1) | Corney is ~100 keys; SVG covers M1 (AD-22) | If PCB canvas frame time hurts during gestures; selectable items stay SVG |
+| Assembly view: plate and PCB bodies at real heights | Deferred past M1 (initiative Decision 2026-10-26); the 3D viewer already takes a list of bodies (AD-22) | After milestone 1 |
 | MX, Choc v1, EC11, stabilisers and wide-key rules | Not needed by Corney | Milestone 2 |
 | Blocks, block library, three-way merge, pull filtering | Milestone 2 (AD-9) | Milestone 2 |
 | QMK writer | Pure addition (AD-19) | After milestone 1 |
@@ -470,6 +504,6 @@ graph TD
 | Publishing, accounts, git/cloud backends | Milestone 1 is personal (AD-13) | Milestone 2 |
 | Static hosting, CI/deploy pipeline, environments | No backend; any static host works | Before the first public preview |
 | Offline use (caching the WASM), supported-browser matrix | Personal use; current Chromium and Firefox | Before the first public preview |
-| Editor views, drag semantics, expression UI, key-cell editor | UX session | Before editor stories |
+| Editor behaviour and visuals not fixed by an AD (views, drag semantics, expression field, key-cell editor) | Owned by the ux-editor spines: `epic-platform-baseline/ux-editor/EXPERIENCE.md` and `DESIGN.md` | When a UX change touches an AD's contract |
 | Ergogen config import | Non-goal | After milestone 1 |
 | Turborepo, Vitest 5, TS 7, Vue 3.6 | Not needed yet | When speed hurts / create-vue supports them |
