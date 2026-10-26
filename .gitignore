@@ -1,2 +1,5 @@
 # Party-mode room memory (personal, not project knowledge)
 _bmad-output/party-mode/
+
+# Rendered BMad skill snapshots (regenerated on every activation, path-specific)
+_bmad/render/
