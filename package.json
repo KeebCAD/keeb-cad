@@ -4,15 +4,19 @@
   "type": "module",
   "packageManager": "pnpm@12.15.0",
   "engines": {
-    "node": "^22.18.0 || >=24.12.0"
+    "node": ">=26"
   },
   "scripts": {
     "typecheck": "vue-tsc --build",
+    "depcruise": "depcruise packages app/src fixtures --config .dependency-cruiser.mts",
     "test": "vitest run",
     "build": "pnpm --filter @keeb-cad/editor build-only",
-    "check": "pnpm typecheck && pnpm test && pnpm build"
+    "check": "pnpm typecheck && pnpm depcruise && pnpm test && pnpm build"
   },
   "devDependencies": {
+    "@types/node": "^24.13.4",
+    "@vue/compiler-sfc": "3.5.44",
+    "dependency-cruiser": "18.7.0",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "vue-tsc": "catalog:"
