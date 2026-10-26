@@ -23,7 +23,7 @@ Every later epic builds on a boundary-checked app shell that runs locally, and o
 ## Requirements
 
 - R1 (architecture Monorepo, Structural Seed, Stack): A pnpm workspace holds the 12 `@keeb-cad/<name>` packages from the structural seed plus `fixtures/`, using TypeScript project references and the Stack versions. A clean clone installs under pnpm strict and builds.
-- R2 (architecture AD-10): dependency-cruiser encodes AD-10. An import that breaks a rule fails the checks and names the rule. The rules: a stage importing another stage, `model` importing any workspace package, a non-`editor` package importing Vue, and anything importing `editor`. `routing` importing `drc` passes.
+- R2 (architecture AD-10): dependency-cruiser encodes the full AD-10 dependency graph. An import that breaks a rule fails the checks and names the rule. The rules: stages import only `model` (and `routing` also imports `drc`), `model` imports no workspace package, only `editor` imports Vue, and nothing imports `editor`.
 - R3 (architecture Stack; initiative C1): `editor` is the create-vue app shell. Its static build, served locally by `vite preview`, shows the empty editor, and a smoke test opens it.
 - R4 (Decision 2026-10-26): One `pnpm check` runs typecheck, lint, unit tests, the smoke test, dependency-cruiser and the build, and exits non-zero on any failure. A pre-commit hook runs the fast part.
 - R5 (Decision 2026-10-26): A GitHub remote exists, and GitHub Actions runs `pnpm check` on every push and fails visibly when a check fails. There is no hosting.
@@ -60,3 +60,7 @@ Every later epic builds on a boundary-checked app shell that runs locally, and o
 - Decision (2026-10-26): every check (typecheck, lint, tests, dependency-cruiser, build) runs from one local `pnpm check`. A git pre-commit hook runs the fast part. A GitHub remote is added and GitHub Actions runs `pnpm check` on push. There is no hosting.
 - Decision (2026-10-26): the scaffold creates all 12 packages from the architecture's structural seed, plus `fixtures/`. Each starts as an empty `@keeb-cad/<name>` package with the AD-10 dependency rules wired in from the first commit.
 - Decision (2026-10-26): keeb-cad's own code is MIT-licensed, with a LICENSE file at the repo root before the first push.
+- Decision (2026-10-26): R2 widened to the full AD-10 graph. A stage importing `pipeline`, `library`, `storage` or another stage is a violation.
+- Decision (2026-10-26): tracer bullet is story 1, the empty editor building and previewing from the workspace. Story 2 follows as the least-certain one.
+- Decision (2026-10-26): no closing refactor sweep, since the packages start empty.
+- Decision (2026-10-26): the pre-commit hook's fast part is lint and dependency-cruiser. `pnpm check` adds typecheck, tests, the smoke test and build. The agent runs create-vue with flags, so story 1 needs no hands-on step.

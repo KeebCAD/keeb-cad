@@ -5,10 +5,10 @@
 id = 1
 type = "story"
 title = "Corney fixtures compared on key centres"
-description = "Runs pinned Ergogen once on Corney Island v0.3 to produce wired and wireless reference outputs under fixtures/, and a harness that compares key centres and rotations against them within ±0.05 mm."
+description = "Runs pinned Ergogen once on Corney Island v0.3 to produce wired and wireless reference outputs under fixtures/, and a harness that compares key centres and rotations against them within ±0.05 mm. The harness lives in the fixtures/ package that epic-platform-baseline entry 1 scaffolds, and runs under its Vitest setup."
 verify = "One harness command passes on the committed fixtures and fails, naming the key, when one key centre is shifted by 0.06 mm."
 covers = ["R1"]
-after = ["epic-platform-baseline"]
+after = ["1.1"]
 hitl = false
 risk = "medium"
 

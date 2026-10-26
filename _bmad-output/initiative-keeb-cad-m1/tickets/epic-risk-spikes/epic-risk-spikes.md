@@ -5,7 +5,7 @@ parent: initiative-keeb-cad-m1
 covers: []
 sources: [_bmad-output/initiative-keeb-cad-m1/initiative-keeb-cad-m1.md, _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md]
 companions: [_bmad-output/initiative-keeb-cad-m1/tickets/epic-risk-spikes/research-browser-pcb-autorouters/research-browser-pcb-autorouters.md]
-after: [epic-platform-baseline]
+after: []
 refined: true
 risk: high
 ---
@@ -77,4 +77,4 @@ The two highest risks are answered before the epics that depend on them start.
 - Decision (2026-10-26): tracer bullet is story 1, Corney fixtures compared on key centres (Ergogen output to fixtures to harness pass/fail). Story 3 follows as the least-certain one.
 - Decision (2026-10-26): no closing refactor sweep. The `spikes/` code is throwaway and only the fixtures harness ships.
 - Decision (2026-10-26): once downstream epics are sliced, pin their entries to stories here rather than to the whole epic: epic-layout to 2.2, epic-shapes-and-plates to 2.12, epic-parts-and-pcb to 2.4, epic-routing-and-fab to 2.13.
-- Waits on epic-platform-baseline because: the fixtures harness (story 1) lives in its monorepo scaffold.
+- Waits on epic-platform-baseline because: the fixtures harness (story 1) lives in its monorepo scaffold, pinned to entry 1.1 only; the rest of this epic doesn't wait on epic 1.

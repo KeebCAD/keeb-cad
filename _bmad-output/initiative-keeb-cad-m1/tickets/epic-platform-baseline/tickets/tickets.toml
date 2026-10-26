@@ -1,0 +1,57 @@
+# Epic 1 "Monorepo builds and checks boundaries": agreed stories, in build order.
+# Lanes: workspace and checks (1-4), UX session (5).
+
+[[entry]]
+id = 1
+type = "story"
+title = "Empty editor builds and previews from the workspace"
+description = "Scaffolds the pnpm workspace (pnpm 12.15.0 pinned, strict) with the 12 empty @keeb-cad packages from the structural seed and the fixtures/ package, joined by TypeScript project references; generates editor with create-vue at the Stack versions; sets up Vitest workspace-wide, fixtures/ included; excludes spikes/ from the workspace and every check; adds the MIT LICENSE; and wires a first pnpm check that typechecks, tests and builds. Entry 2's rules, entry 3's full check and epic-risk-spikes story 1's harness build on this workspace."
+verify = "From a clean clone, pnpm install (strict) and pnpm check pass, and vite preview serves the empty editor in a browser."
+covers = ["R1", "R3", "R6"]
+after = []
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 2
+type = "story"
+title = "dependency-cruiser rejects AD-10 violations"
+description = "Encodes AD-10 as dependency-cruiser rules over entry 1's packages and adds them to pnpm check: stages import only model (routing also drc), model imports no workspace package, only editor imports Vue, nothing imports editor."
+verify = "One dependency-cruiser run over a test tree of deliberate violations reports exactly one named violation per rule and none for routing importing drc."
+covers = ["R2"]
+after = [1]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 3
+type = "story"
+title = "pnpm check runs every check, with a pre-commit hook"
+description = "Extends pnpm check to typecheck, lint, unit tests, a Playwright smoke test on the preview build, entry 2's dependency-cruiser rules and build, and adds a pre-commit hook running the fast part (lint and dependency-cruiser). Brings any harness already in fixtures/ under lint. Entry 4's workflow calls this command."
+verify = "A scripted run that breaks each check in turn on a scratch branch shows pnpm check exiting non-zero for every one and the hook refusing the commit for the fast ones."
+covers = ["R3", "R4"]
+after = [2]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 4
+type = "story"
+title = "GitHub Actions runs pnpm check on push"
+description = "The user creates the GitHub repo and chooses its visibility, and the history is pushed only after their go-ahead. Adds a GitHub Actions workflow that installs pnpm and Playwright's browsers and runs entry 3's pnpm check on every push."
+verify = "A push with a passing tree shows a green run, and a pushed branch with one broken check shows a red run."
+covers = ["R5"]
+after = [3]
+hitl = true
+risk = "low"
+
+[[entry]]
+id = 5
+type = "story"
+title = "UX session decides the editor"
+description = "Runs bmad-ux with the user on editor views, panels, drag semantics, key-cell and expression UI, and adopts its DESIGN.md and EXPERIENCE.md as companions of this epic. epic-layout's editor stories wait on it."
+verify = "DESIGN.md and EXPERIENCE.md exist in a ux- folder in this epic and are listed in its companions."
+covers = ["R7"]
+after = []
+hitl = true
+risk = "medium"
