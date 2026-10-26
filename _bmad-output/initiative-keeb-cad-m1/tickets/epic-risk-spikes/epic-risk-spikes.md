@@ -5,7 +5,7 @@ parent: initiative-keeb-cad-m1
 covers: []
 sources: [_bmad-output/initiative-keeb-cad-m1/initiative-keeb-cad-m1.md, _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md]
 companions: [_bmad-output/initiative-keeb-cad-m1/tickets/epic-risk-spikes/research-browser-pcb-autorouters/research-browser-pcb-autorouters.md]
-after: []
+after: [epic-platform-baseline]
 refined: true
 risk: high
 ---
@@ -72,3 +72,9 @@ The two highest risks are answered before the epics that depend on them start.
 - Decision (2026-10-26): the geometry spike tests two cases. The first is Corney's outline (wired and wireless), built the AD-16 way from model shapes rather than by replaying Ergogen's makerjs calls, since Ergogen itself uses makerjs 0.18.1. The second is a LambBT-style subtraction of a circle of radius 150 mm, which exercises arc booleans and the coincident and tangent cases (makerjs #509, #377, #387, #477). Each case is measured for ±0.05 mm accuracy and main-thread latency.
 - Decision (2026-10-26): engines route at the strictest clearance of any net class, and our own `drc` checks each net class's actual rules. No clearance is loosened (C6). Input to AD-20 for the architect.
 - Decision (2026-10-26): flatten tolerance left to the geometry spike, starting from a maximum chord deviation of about 0.005 mm.
+- Decision (2026-10-26): the fixtures harness lives in epic 1's monorepo, so story 1 waits for its scaffold. This supersedes the earlier "no `after`" for that story only. `spikes/` stays a standalone project, so stories 3 onward don't wait on epic 1.
+- Decision (2026-10-26): when a routing lane's timebox ends or its engine fails early, that lane's unfinished stories are dropped, each with a `Dropped:` line naming the failure, and removed from story 13's `after` (a dropped prerequisite still blocks in `tickets.py`). Story 13 then grades that engine **fail** on the evidence so far. The geometry lane works the same way for story 12.
+- Decision (2026-10-26): tracer bullet is story 1, Corney fixtures compared on key centres (Ergogen output to fixtures to harness pass/fail). Story 3 follows as the least-certain one.
+- Decision (2026-10-26): no closing refactor sweep. The `spikes/` code is throwaway and only the fixtures harness ships.
+- Decision (2026-10-26): once downstream epics are sliced, pin their entries to stories here rather than to the whole epic: epic-layout to 2.2, epic-shapes-and-plates to 2.12, epic-parts-and-pcb to 2.4, epic-routing-and-fab to 2.13.
+- Waits on epic-platform-baseline because: the fixtures harness (story 1) lives in its monorepo scaffold.

@@ -1,0 +1,145 @@
+# Epic 2 "Routing and geometry risks answered": agreed stories, in build order.
+# Lanes: fixtures (1-2), routing groundwork (3-5), tscircuit (6-7), custom router (8-10), geometry (11-12), routing verdict (13).
+
+[[entry]]
+id = 1
+type = "story"
+title = "Corney fixtures compared on key centres"
+description = "Runs pinned Ergogen once on Corney Island v0.3 to produce wired and wireless reference outputs under fixtures/, and a harness that compares key centres and rotations against them within ±0.05 mm."
+verify = "One harness command passes on the committed fixtures and fails, naming the key, when one key centre is shifted by 0.06 mm."
+covers = ["R1"]
+after = ["epic-platform-baseline"]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 3
+type = "story"
+title = "tscircuit routes in a browser worker offline"
+description = "Sets up the throwaway spikes/ project (pnpm strict, TypeScript 6) that entries 4 to 12 run in, installing every pinned spike dependency (@tscircuit/capacity-autorouter, clipper2-ts, flatbush, makerjs), and runs tscircuit in a Vite Web Worker with the network blocked on a two-connection test board."
+verify = "One spikes/ command installs, typechecks and routes the test board headless, exiting 0 with zero network requests logged."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 2
+type = "story"
+title = "Harness compares outline, cutouts and footprints"
+description = "Extends the harness to outline vertices and arcs, plate cutouts and footprint positions from the .kicad_pcb, for wired and wireless. Its .kicad_pcb reader is reused by entry 4, and its outline comparison by entry 11."
+verify = "The harness passes on the fixtures and fails, naming the item, for a 0.06 mm shift in an outline vertex, a plate cutout and a footprint."
+covers = ["R1"]
+after = [1]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 4
+type = "story"
+title = "Corney PCB to routing input, with the split rule"
+description = "Converts Corney's Ergogen .kicad_pcb into routing input shared by both routers: board outline, pads, nets split into connections by the written split rule, module keep-out zone and net-class rules. Reuses entry 2's .kicad_pcb reader, and adds the one-key-move variant both reroute tests (7, 10) use."
+verify = "Converting wired and wireless yields every net's connections with canonical ids, and the ids are unchanged after one key is moved."
+covers = ["R4"]
+after = [2, 3]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 5
+type = "story"
+title = "Routes written back and checked by drc"
+description = "Writes a router's result back into the .kicad_pcb, checks it with a keeb-cad drc that reports per net class (starting from kle-ng's MIT drc.ts), and cross-checks with KiCad's own DRC through kicad-cli, which this story sets up. Defines the scorecard both routers fill (6, 9) and the reroute fields 7 and 10 add."
+verify = "A board with one deliberate clearance violation is reported by both drc and KiCad DRC, and a clean board passes both."
+covers = ["R2", "R7"]
+after = [4]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 6
+type = "story"
+title = "tscircuit routes full Corney and is scored"
+description = "Routes Corney wired and wireless with tscircuit at the strictest net-class clearance and fills entry 5's scorecard: completion %, drc and KiCad DRC errors, worker time and peak memory. The tier is graded in entry 13."
+verify = "The run command regenerates the scorecard for both boards with every R2 field filled except the reroute diff."
+covers = ["R2", "R7"]
+after = [5]
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 7
+type = "story"
+title = "tscircuit reroutes one moved key"
+description = "Uses entry 4's one-key-move variant; reroutes with saved routes held fixed, measuring both preloaded traces and the rect-obstacle workaround, checks the module zone stays clear, and writes the reroute diff into the scorecard."
+verify = "The reroute diff shows only the moved key's connections changed, or records which saved routes changed, and no copper enters the module zone."
+covers = ["R2", "R3"]
+after = [6]
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 8
+type = "story"
+title = "Custom router routes the key matrix"
+description = "Prototypes a keyboard router on clipper2-ts and flatbush in the spikes/ worker that routes Corney's row and column connections and a few MCU connections at the strictest net-class clearance."
+verify = "The matrix and the chosen MCU connections route on wired Corney and pass drc."
+covers = ["R2", "R7"]
+after = [5]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 9
+type = "story"
+title = "Custom router routes full Corney and is scored"
+description = "Extends the prototype to every connection on wired and wireless at the strictest net-class clearance and fills entry 5's scorecard as entry 6 does."
+verify = "The run command regenerates the scorecard for both boards with every R2 field filled except the reroute diff."
+covers = ["R2", "R7"]
+after = [8]
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 10
+type = "story"
+title = "Custom router reroutes one moved key"
+description = "Uses entry 4's one-key-move variant; reroutes with saved routes as fixed obstacles, checks the module zone stays clear, and writes the reroute diff into the scorecard."
+verify = "The reroute diff shows only the moved key's connections changed, or records which saved routes changed, and no copper enters the module zone."
+covers = ["R2", "R3"]
+after = [9]
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 11
+type = "story"
+title = "makerjs rebuilds Corney's outline, flatten fixed"
+description = "Builds Corney's outline the AD-16 way from model shapes with makerjs, measures main-thread latency, and fixes the flatten function and tolerance. Runs in entry 3's spikes/ project and uses entry 2's outline comparison."
+verify = "The harness compares the flattened makerjs outline for wired and wireless against the fixtures and records each deviation, the latency and the chosen tolerance."
+covers = ["R5", "R6"]
+after = [2, 3]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 12
+type = "story"
+title = "Geometry verdict signed off"
+description = "Tests the LambBT r = 150 mm circle subtraction with makerjs, writes the geometry verdict from it and entry 11, and lists changes to AD-16 for bmad-architecture, for the user to sign off."
+verify = "The verdict is written in the epic folder with accuracy, latency and flatten tolerance, and the user's sign-off is a dated Decision line in the epic's Notes."
+covers = ["R5", "R8"]
+after = [11]
+hitl = true
+risk = "high"
+
+[[entry]]
+id = 13
+type = "story"
+title = "Routing verdict signed off"
+description = "Grades both scorecards against the bar and tie-break, names the engine or triggers the SM-3 fallback, and lists the changes to AD-12, AD-14 and AD-20 for bmad-architecture."
+verify = "The verdict is written in the epic folder and the user's sign-off is a dated Decision line in the epic's Notes."
+covers = ["R2", "R3", "R4", "R7", "R8"]
+after = [7, 10]
+hitl = true
+risk = "high"

@@ -13,6 +13,7 @@ slug = "epic-risk-spikes"
 title = "Routing and geometry risks answered"
 description = "Corney Island golden fixtures (Ergogen reference output for wired and wireless, plus a comparison harness) exist. The routing spike, run on Corney's Ergogen-generated PCB, has picked a browser engine that routes incrementally around fixed routes and a pre-routed module zone, or triggered the SM-3 KiCad fallback, and fixed the connection split rule. The geometry spike has confirmed makerjs against Corney's outline (or switched to clipper2) and fixed the flatten tolerance."
 covers = []
+after = [{ epic = 1, needs = "the monorepo scaffold the fixtures harness lives in" }]
 
 [[epic]]
 id = 3
