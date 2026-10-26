@@ -1,0 +1,88 @@
+# Digest: landscape and screen of browser-runnable PCB autorouters
+
+- Dimension: 1, landscape and screen
+- Round: 1
+- Researcher: landscape-r1-1
+- Date accessed: 2026-10-26
+- Budget used: 20 tool calls (hard cap reached; includes the lead's G2-relaxation follow-up); about 9 distinct sources read (GitHub API x6 repos, Codeberg API/raw for Topola, npm registry + tarball for @tscircuit/krt-wasm, npm search, git.supported.systems freeroute via search snippets, CheerpJ docs via search).
+
+## Findings
+
+1. Freerouting is GPL-3.0 (GitHub licence detection), Java, actively maintained: v2.5.0 released 2026-10-05, v2.4.1 2026-09-03, v2.3.0 2026-08-07; last push 2026-10-25; 2133 stars. | https://github.com/freerouting/freerouting (GitHub API `repos/freerouting/freerouting` + `/releases`) | GitHub / Freerouting | 2026-10-05 | accessed 2026-10-26 | high | licence, ecosystem
+2. KiCad source (which contains pcbnew's PNS router) is GPL-3.0 per GitHub licence detection of the official mirror; last push 2026-10-25. File-level SPDX of `pcbnew/router/*` was NOT checked this round. | https://github.com/KiCad/kicad-source-mirror (GitHub API) | KiCad | 2026-10-25 | accessed 2026-10-26 | high (repo level) / medium (PNS files specifically) | licence
+3. CheerpJ (the route to run Freerouting's JVM code in a browser) has a cloud-hosted runtime that is free only for non-commercial use; self-hosting and commercial use need a licence. That fails G1 by default (network runtime) and adds a proprietary dependency even before Freerouting's GPL. I found no evidence of any existing Freerouting build for CheerpJ, TeaVM or GraalVM-Wasm. | https://cheerpj.com/docs/overview | Leaning Technologies | undated (current docs) | accessed 2026-10-26 | medium (via search snippet of the docs) | licence, capability
+4. "freeroute" (the kicad-mcp pure-Python Freerouting replacement, author Ryan Malloy) describes itself as a Python port of the FreeRouting engine. Its porting plan works from the upstream Java source, and it is reported as GPL-3.0-or-later "matching the FreeRouting source it is ported from". It is pre-alpha, takes DSN in and writes SES out, and has commits adding vias, multi-layer routing and shove primitives. kicad-mcp keeps the JAR as a fallback for dense boards. | https://git.supported.systems/warehack.ing/freeroute/commit/0270137b9f4edfe6e20f89712c91e2bda4118512 ; https://git.supported.systems/warehack.ing/freeroute/src/branch/main/docs/PORTING_PLAN.md ; https://git.supported.systems/MCP/kicad-mcp/commit/349616b77d5a6ccbd78b6a6bf65d0f7bd00108ac.diff | git.supported.systems (Ryan Malloy) | 2026 (commit dates not retrieved) | accessed 2026-10-26 | medium (this comes from search-result snippets; I could not read the LICENSE file directly) | licence, capability
+5. The freeroute repo now 301-redirects to forge.warehack.ing, which shows "Migration failed" for warehack.ing/freeroute. The source is not publicly readable there today. | https://forge.warehack.ing/warehack.ing/freeroute | forge.warehack.ing | 2026-10-26 | accessed 2026-10-26 | high | ecosystem, failure-report
+6. Topola is MIT (README "Licence" section; `SPDX-License-Identifier: MIT` in Cargo.toml; LICENSES/MIT.txt). One file, `crates/planar-incr-embed/src/math.rs`, is MIT OR Apache-2.0, and assets are MIT OR CC-BY-4.0. Language is Rust. It describes itself as a "work-in-progress topological (rubberband) router and autorouter", version 0.1.0. | https://codeberg.org/topola/topola (raw README.md, Cargo.toml, LICENSES dir via Codeberg API, branch develop) | Topola contributors (NLnet NGI0 funded) | 2026-07-02 | accessed 2026-10-26 | high | licence
+7. Topola has an official browser build of its GUI using Trunk (INSTALL.md, "Running Topola in Web browser"). Cargo sets `opt-level = 2 # fast and small wasm`. It reads Specctra DSN through an in-tree `specctra-core` crate. The README gallery shows a 3x4 tactswitch keyboard remote and a 4x4 LED matrix routed with it. | https://codeberg.org/topola/topola/raw/branch/develop/INSTALL.md | Topola | 2026 | accessed 2026-10-26 | high (that a WASM build exists) / unknown (whether a headless library API can run in a Worker) | capability
+8. Topola activity is slow. The last five commits on develop are dated 2026-07-02, 2026-03-12, 2026-03-03, 2026-02-12 and 2025-12-01, and the last two are docs or policy. There are no Codeberg releases and 34 stars. Open issues include #278 (2025-09) "routing fails with 'The new constraint edge intersects an existing constraint edge'", #120 (constrained Delaunay not yet used) and #90 (WASM GUI mouse scaling). | https://codeberg.org/api/v1/repos/topola/topola/commits?sha=develop ; .../issues | Codeberg | 2026-07-02 | accessed 2026-10-26 | high | ecosystem, failure-report
+9. @tscircuit/krt-wasm 0.1.9 (published 2026-08-20, created 2026-05-01) is "Fork of KiCad Routing Tools packaged as a WASM autorouter". Its LICENSE file is MIT (Copyright 2026 drandyhaas). The npm `license` field is empty. The upstream repo drandyhaas/KiCadRoutingTools is MIT per GitHub detection, Python with a Rust core, 663 stars, last push 2026-10-26. The fork repo tscircuit/krt-wasm is MIT, last push 2026-08-20. | npm registry + tarball; https://github.com/tscircuit/krt-wasm ; https://github.com/drandyhaas/KiCadRoutingTools | tscircuit / drandyhaas | 2026-08-20 | accessed 2026-10-26 | high | licence, ecosystem
+10. krt-wasm features, per its README. Implemented: sequential A* grid routing (Rust `GridRouter::route_multi`), multi-layer with via insertion, top/bottom/innerN layers, rectangular obstacles from `SimpleRouteJson.obstacles` filtered by layer, connected-obstacle exemption, routing bounds, per-connection trace width, and configurable grid step, clearance, via cost and layer direction preferences. Explicitly not implemented: rip-up-and-reroute, net classes / design-rule extraction / DRC, board-edge geometry, and non-rectangular or rotated obstacles. | npm tarball README.md of @tscircuit/krt-wasm 0.1.9 | tscircuit | 2026-08-20 | accessed 2026-10-26 | high (that the docs say this) / unverified (behaviour) | capability
+11. krt-wasm packaging: the 265 kB WASM is inlined as base64 in `pkg-node/grid_router.js`, which also references `Buffer.from` (a Node API), so browser and Worker compatibility is unverified. It has `peerDependencies: { tscircuit: "*" }`, `type: module` and no `exports` or `browser` field. | npm tarball inspection | tscircuit | 2026-08-20 | accessed 2026-10-26 | high (the facts) / unknown (the browser outcome) | version-compat, capability
+12. tscircuit's autorouter repo is now tscircuit/tscircuit-autorouter (MIT per GitHub; description "A State of the Art MIT-licensed PCB Autorouter"; TypeScript; last push 2026-10-26). It is published as @tscircuit/capacity-autorouter 0.0.1010 (modified 2026-10-25), and that npm metadata has no `license` field. Other researchers own the depth on this. | https://github.com/tscircuit/tscircuit-autorouter ; npm registry | tscircuit | 2026-10-25 | accessed 2026-10-26 | high | licence, ecosystem
+13. Other tscircuit solver packages exist on npm: @tscircuit/infgrid-ijump-astar 0.0.35 (2025-05-21, an "intersection jump" A* solver), @tscircuit/happy-autorouter 0.0.5 (2026-09-06, "four-layer via-in-pad", so a poor fit for 2-layer), and @tscircuit/fanout-solver 0.0.81 (BGA fanout, not relevant). I did not check their licences. | npm search `autorouter` | npm | 2026-10 | accessed 2026-10-26 | medium | ecosystem
+14. GitHub repos seen in an "autorouter" search with licence by GitHub detection: OrthoRoute (bbenchoff, MIT, Python, 425 stars, pushed 2026-10-25), RustRouter (thorstenstueker, GPL-3.0, Rust), hulryung/kicad-autorouter (MIT, Python), VelaTrace (MIT, Python), Webb-Ventures/autorouter (MIT, TypeScript, 0 stars), faisalm7/KiCad-Autorouter (GPL-3.0), typmax-router (GPL-3.0), bbnet (AGPL-3.0). All are low-signal except OrthoRoute. Whether OrthoRoute can run in a browser is unverified; my unverified belief is that it is GPU-oriented. | GitHub search API | GitHub | 2026-10 | accessed 2026-10-26 | medium (licence) / low (fit) | licence, ecosystem
+
+15. CheerpJ licensing. The Community License allows "unlimited, unmetered use of CheerpJ from the cjrtnc.leaningtech.com domain, such as its usage via npm package manager". Self-hosting the CheerpJ Core runtime requires the CheerpJ Commercial License, which also covers commercial use, redistribution and OEM. So the free tier means loading the runtime from Leaning Tech's domain at runtime, which fails G1. | https://cheerpj.com/docs/licensing | Leaning Technologies | current docs | accessed 2026-10-26 | high | licence, capability
+16. There is no Freerouting browser build. The open issue #1012 (2026-10-21) is titled "Suggestion: keep the routing core cleanly decoupled/headless to enable community WASM builds", so none exists. GraalVM work in the repo is Native Image, which means native CLI executables: PR #940, closed 2026-10-05, "native CLI executables generation via GraalVM Native Image and PGO", and open regression #1019 (EnumMap UnsupportedFeatureError in the native CLI). No issue or PR mentions TeaVM or GraalVM Web Image/Wasm. | https://github.com/freerouting/freerouting/issues/1012 ; /pull/940 ; /issues/1019 (GitHub search API) | Freerouting | 2026-10-05..2026-10-23 | accessed 2026-10-26 | high (that none exists, from the issue tracker) / medium (absence of TeaVM work) | capability, version-compat
+17. Freerouting interfaces are GUI, CLI (headless mode is in docs/command_line_arguments.md), a beta public HTTP API at api.freerouting.app/v1 (self-hostable via Docker or JRE), and an MCP server that calls the public API. All of them are a JVM or a server, so none is browser-local. | https://github.com/freerouting/freerouting (README) | Freerouting | 2026-10 | accessed 2026-10-26 | high | capability
+18. Freerouting handling of fixed copper and keep-outs: #958 (closed 2026-10-08) fixed missed valid junctions on preserved traces; #990 (closed 2026-10-14) preserves SES trace geometry; #996 (open, 2026-10-14) is about strengthening preserved-junction and SES fidelity; #1011 (open, 2026-10-21) says SES reimport rejects exported wires; #1018 (open, 2026-10-23) says `wire_keepout` is imported as a full keepout that also blocks vias, causing thousands of false FixedVia/ObstacleArea violations on KiCad exports, with fix PR #1023 open. I did not read the DSN `(type fix)`/protect semantics directly. | https://github.com/freerouting/freerouting/issues/958 ; /issues/1011 ; /issues/1018 ; /pull/1023 | Freerouting | 2026-10 | accessed 2026-10-26 | high (titles and states) / medium (semantics) | capability, failure-report
+
+## Per-candidate gate and criterion notes
+
+### A. tscircuit-autorouter / @tscircuit/capacity-autorouter (owned by another researcher)
+- G1 unknown (another researcher's job). G2 pass for the repo (MIT, F12); npm `license` field empty (F12), worth noting for SBOM tooling. G3 unknown, but it is TypeScript. G4 unknown.
+- Weighted: ecosystem looks very active (F12). Everything else is owned by the other researcher.
+- Screen: **finalist (licence clean)**.
+
+### B. @tscircuit/krt-wasm (KiCad Routing Tools Rust GridRouter in WASM)
+- G1 pass likely: the WASM is inlined in JS, so there is no fetch (F11). G2 pass: MIT LICENSE file, upstream MIT (F9). Whether upstream copied any KiCad GPL code is unverified, even though "KiCad" is in the name; check the source headers. G3 unknown: the build targets Node (`pkg-node`) and references `Buffer.from` (F11), and the wrapper is tied to tscircuit's `GenericLocalAutorouter` (F10). A spike could call the raw wasm-bindgen `GridRouter`, or rebuild with `wasm-pack --target web`. G4 partial: existing copper can be passed only as rectangular obstacles (F10). Diagonal or arc tracks would have to be split into many rectangles, or the upstream Rust core would need to take segments.
+- Keep-outs (3): partial, rectangles with a layer filter (F10). Net classes and board-edge clearance (3): partial, per-connection width and a global clearance; no net classes and no board-edge geometry (F10). Quality (3): unknown, and the lack of rip-up-and-reroute is a risk for completion on a 40-50 key matrix (F10). Speed (2): unknown, though the grid A* is in Rust. Integration (2): mixed, SimpleRouteJson in, peer dependency on `tscircuit` (F11). Ecosystem (2): fork is quiet since 2026-08-20, upstream is active (F9). Determinism (1): likely, since routing is sequential, but unverified.
+- Screen: **finalist**.
+
+### C. Topola
+- G1 pass likely: there is a self-built Trunk WASM bundle (F7). G2 pass: MIT, with MIT/Apache and MIT/CC-BY dual-licensed parts (F6). G3 unknown: the WASM build is the egui GUI app (F7), and I have not verified that a headless autorouter API can run in a Worker. G4 unknown: DSN input can express fixed wires, but I did not find whether Topola honours pre-existing wiring as fixed.
+- Keep-outs, net classes, vias / 2 layers: unknown. Topola routes multi-layer ratlines (closed issue #219) and its gallery includes keyboard-matrix-like boards (F7). Quality: risk, given open triangulation failure #278 (F8). Ecosystem (2): weak, with slow commits, no releases and v0.1.0 (F8). Integration: DSN format (F7). Determinism: unknown.
+- Screen: **finalist (conditional)**. Settle G3 and G4 by reading the `src/autorouter` API and checking whether DSN `(wiring ... (type fix))` is imported.
+
+### D. Freerouting (Java), re-screened under the relaxed G2
+- G2 **pass under the relaxed rule**: GPL-3.0 (F1). It can be loaded as a separate Worker with DSN in and SES out, and source offered.
+- G1 **fail today**. With CheerpJ, the free Community License only allows loading the runtime from cjrtnc.leaningtech.com, and self-hosting needs a paid Commercial License (F15). The other runtime paths do not exist yet: there is no TeaVM build and no GraalVM Wasm/Web Image build (F16). GraalVM Native Image builds produce desktop executables (F16).
+- G3 **fail today**, for the same reason. The only non-JVM path is native executables, and the hosted API (F17) is a server, so it also fails G1 and G3.
+- G4 pass with caveats. Preserved traces are supported, with recent fixes (F18). Open SES reimport issue #1011 (F18).
+- Keep-outs (3): partial. `wire_keepout` is imported wrongly as a full keepout, with fix PR #1023 still open (F18).
+- Ecosystem (2): strong (F1). Quality: best-known open router, but quality is unverified this run.
+- Screen: **not a finalist now**, cut on G1/G3. It becomes a candidate only if someone pays for a CheerpJ Commercial License for self-hosting, or a community WASM/TeaVM build appears (issue #1012). A spike could also try a TeaVM or GraalVM Web Image build itself, which is unproven effort.
+
+### E. freeroute (kicad-mcp's pure-Python Freerouting port, via Pyodide)
+- G2 **fail**: reported GPL-3.0-or-later and a port of FreeRouting source, so a derivative of GPL code (F4). Ecosystem: the repo is currently unreachable after a failed migration (F5), and the project is pre-alpha (F4). **Cut.**
+
+### F. KiCad PNS router (pcbnew/router)
+- G2 **fail**, GPL-3.0 (F2). No WASM build was found, and it is tightly coupled to pcbnew. **Cut.**
+
+### G. Others
+- RustRouter, faisalm7/KiCad-Autorouter, typmax-router and bbnet: **cut on G2** (GPL or AGPL, F14).
+- @tscircuit/happy-autorouter: **cut on fit**, since it is four-layer via-in-pad (F13).
+- OrthoRoute, hulryung/kicad-autorouter, VelaTrace and Webb-Ventures/autorouter: MIT, but G3 is unknown and they are Python or very young. **Not screened in.** They are leads only.
+- @tscircuit/infgrid-ijump-astar: licence unknown. Lead (F13).
+
+## Screen result
+- Finalists: (1) tscircuit-autorouter, (2) @tscircuit/krt-wasm (or a direct `--target web` build of the KiCadRoutingTools Rust GridRouter), (3) Topola (conditional on G3 and G4).
+- Cut: Freerouting (G1/G3: no self-hostable browser runtime without a CheerpJ Commercial License; G2 now passes under the relaxed rule), freeroute Python port (G2, GPL derivative), KiCad PNS (G2), RustRouter, typmax-router and KiCad-Autorouter (G2 GPL-3.0), bbnet (G2 AGPL-3.0), happy-autorouter (4-layer fit).
+
+## Leads worth chasing next round
+- drandyhaas/KiCadRoutingTools Rust crate: check the source headers for any KiCad-derived GPL code, whether the Rust core accepts segment or polygon obstacles (not just rectangles), and whether it builds with `wasm-pack --target web`. Also look at the upstream rip-up-and-reroute logic, which lives in Python and is not in the WASM.
+- Topola `src/autorouter`: is there a headless API, how are fixed wires and keepouts handled, and is there a per-net clearance class from DSN?
+- @tscircuit/infgrid-ijump-astar: licence and whether it can be used standalone.
+- OrthoRoute: check its runtime and whether it has a CPU path.
+- KiCad `pcbnew/router/*.cpp` SPDX headers: confirms the GPL-3.0-or-later cut at file level (the result will not change).
+
+- Freerouting: price of a CheerpJ Commercial License, and whether Freerouting's routing core (excluding Swing) would build under TeaVM or GraalVM Web Image. Follow issue #1012 and PR #1023.
+
+## Looked for and could not find
+- Any Freerouting build for the browser (CheerpJ, TeaVM, GraalVM-Wasm, JWebAssembly). This is confirmed absent by issue #1012 (F16).
+- CheerpJ Commercial License price (the pricing page was behind a Cloudflare challenge).
+- Any WASM build of KiCad's PNS router.
+- freeroute's LICENSE file read directly. The repo has moved and its migration failed, so the licence comes only from search-result snippets.
+- Benchmarks of Topola or krt-wasm on keyboard-like 2-layer boards.
+- Evidence that Topola treats pre-routed copper as fixed.
