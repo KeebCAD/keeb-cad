@@ -99,7 +99,6 @@ covers = ["R4", "R6"]
 after = [7]
 hitl = false
 risk = "medium"
-unknown = "Is split-reversible kept in M1, or deferred with reversibility (initiative item 4, AD-6)?"
 
 [[entry]]
 id = 10
