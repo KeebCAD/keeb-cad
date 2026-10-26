@@ -1,9 +1,13 @@
 {
-  // Root tool configs (vitest.config.ts); type-check only.
+  // Root tool configs and tooling/ tests; type-check only.
   "extends": "./tsconfig.base.json",
-  "include": ["vitest.config.ts"],
+  "include": ["vitest.config.ts", ".dependency-cruiser.mts", "tooling/**/*.ts"],
+  // Deliberate AD-10 violations; cruised by tooling/ad10/rules.spec.ts, never compiled.
+  "exclude": ["tooling/**/violations/**"],
   "compilerOptions": {
     "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node"],
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo"
   }
 }

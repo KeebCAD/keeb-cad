@@ -1,0 +1,136 @@
+// Proves every AD-10 rule in .dependency-cruiser.mts against a committed tree of
+// deliberate violations (./violations), cruised with the real config.
+import { fileURLToPath } from 'node:url'
+import { cruise, type ICruiseResult } from 'dependency-cruiser'
+import { describe, expect, it } from 'vitest'
+import config, { VUE } from '../../.dependency-cruiser.mts'
+
+const violationsDir = fileURLToPath(new URL('violations', import.meta.url))
+const repoRoot = fileURLToPath(new URL('../..', import.meta.url))
+
+async function cruiseWithConfig(paths: string[], baseDir: string): Promise<ICruiseResult> {
+  const { output } = await cruise(
+    paths,
+    { baseDir, ruleSet: config, validate: true },
+    config.options?.enhancedResolveOptions,
+  )
+  if (typeof output === 'string') throw new Error('expected a cruise result object')
+  return output
+}
+
+describe('AD-10 rules on the violation tree', async () => {
+  const result = await cruiseWithConfig(['packages', 'app', 'fixtures'], violationsDir)
+  const violations = result.summary.violations.map((v) => ({
+    rule: v.rule.name,
+    from: v.from,
+    to: v.to,
+  }))
+
+  it('reports exactly the deliberate violations, each under one rule', () => {
+    const sorted = [...violations].sort((a, b) =>
+      `${a.rule} ${a.from} ${a.to}`.localeCompare(`${b.rule} ${b.from} ${b.to}`),
+    )
+    expect(sorted).toEqual([
+      { rule: 'editor-imports-no-stage', from: 'app/src/App.vue', to: '@keeb-cad/plates' },
+      { rule: 'editor-imports-no-stage', from: 'app/src/main.ts', to: 'packages/plates/src/index.ts' },
+      { rule: 'fixtures-only-in-tests', from: 'packages/model/src/index.ts', to: '@keeb-cad/fixtures' },
+      {
+        rule: 'library-and-storage-import-only-model',
+        from: 'packages/library/src/index.ts',
+        to: 'packages/storage/src/index.ts',
+      },
+      {
+        rule: 'model-imports-no-workspace-package',
+        from: 'packages/model/src/index.ts',
+        to: 'packages/library/src/index.ts',
+      },
+      { rule: 'nothing-imports-editor', from: 'packages/pipeline/src/index.ts', to: 'app/src/main.ts' },
+      { rule: 'nothing-imports-editor', from: 'packages/plates/src/index.ts', to: '@keeb-cad/editor' },
+      { rule: 'only-editor-imports-vue', from: 'packages/storage/src/index.ts', to: 'vue' },
+      {
+        rule: 'pipeline-imports-no-storage',
+        from: 'packages/pipeline/src/index.ts',
+        to: 'packages/storage/src/index.ts',
+      },
+      {
+        rule: 'routing-imports-only-model-and-drc',
+        from: 'packages/routing/src/index.ts',
+        to: 'packages/pcb/src/index.ts',
+      },
+      { rule: 'stage-imports-only-model', from: 'packages/plates/src/index.ts', to: '@keeb-cad/pcb' },
+      {
+        rule: 'stage-imports-only-model',
+        from: 'packages/plates/src/index.ts',
+        to: 'packages/pcb/src/index.ts',
+      },
+    ])
+  })
+
+  it('exercises every forbidden rule in the config', () => {
+    const reported = new Set(violations.map((v) => v.rule))
+    const configured = new Set((config.forbidden ?? []).map((r) => r.name))
+    expect(reported).toEqual(configured)
+  })
+
+  it('allows a model test to import fixtures', () => {
+    expect(violations.filter((v) => v.from === 'packages/model/src/x.spec.ts')).toEqual([])
+    // The allowed edge was really cruised, not silently dropped.
+    const spec = result.modules.find((m) => m.source === 'packages/model/src/x.spec.ts')
+    expect(spec?.dependencies.map((d) => d.module)).toContain('@keeb-cad/fixtures')
+  })
+
+  it('allows routing to import drc and model', () => {
+    const fromRouting = violations.filter((v) => v.from.startsWith('packages/routing/'))
+    expect(fromRouting.map((v) => v.to)).not.toContain('packages/drc/src/index.ts')
+    expect(fromRouting.map((v) => v.to)).not.toContain('packages/model/src/index.ts')
+    // The allowed edges were really cruised, not silently dropped.
+    const routing = result.modules.find((m) => m.source === 'packages/routing/src/index.ts')
+    expect(routing?.dependencies.map((d) => d.resolved)).toEqual(
+      expect.arrayContaining(['packages/drc/src/index.ts', 'packages/model/src/index.ts']),
+    )
+  })
+})
+
+describe('AD-10 config on the real editor', async () => {
+  // The violation tree has no node_modules, so its bare imports stay unresolved. Only a
+  // real, declared import proves the resolve options and the anchored `exclude` keep a
+  // resolved npm target for only-editor-imports-vue to see.
+  const result = await cruiseWithConfig(['app/src/main.ts'], repoRoot)
+
+  it('resolves and keeps the vue dependency of app/src/main.ts', () => {
+    const main = result.modules.find((m) => m.source === 'app/src/main.ts')
+    const dep = main?.dependencies.find((d) => d.module === 'vue')
+    expect(dep).toBeDefined()
+    expect(dep?.couldNotResolve).toBe(false)
+    expect(dep?.resolved).toMatch(new RegExp(VUE))
+    expect(dep?.resolved).toMatch(/(^|\/)node_modules\//)
+  })
+})
+
+describe('the Vue target regex', () => {
+  const vue = new RegExp(VUE)
+
+  it.each([
+    'node_modules/.pnpm/vue@3.5.44/node_modules/vue/index.js',
+    'node_modules/.pnpm/@vue+shared@3.5.44/node_modules/@vue/shared/index.js',
+    'node_modules/.pnpm/vue-router@5.4.0/node_modules/vue-router/index.cjs',
+    'node_modules/.pnpm/pinia@4.1.0/node_modules/pinia/dist/pinia.js',
+    'vue',
+    'vue/server-renderer',
+    '@vue/shared',
+    'vue-router',
+    'pinia',
+    'app/src/x.vue',
+  ])('matches %s', (path) => {
+    expect(vue.test(path)).toBe(true)
+  })
+
+  it.each([
+    'vuex-like',
+    'node_modules/.pnpm/vuex-like@1.0.0/node_modules/vuex-like/index.js',
+    'piniacolada',
+    'packages/model/src/vue-helpers.ts',
+  ])('does not match %s', (path) => {
+    expect(vue.test(path)).toBe(false)
+  })
+})
