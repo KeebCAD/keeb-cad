@@ -31,7 +31,7 @@ Every later epic edits the design through commands and sees revision-tagged outp
 - R7 (initiative Decision 2026-10-25; architecture AD-15): An export registry lets each stage register its exports, each reporting available or blocked with a reason. The same file and app version give the same export bytes.
 - R8 (parent R18; architecture AD-13; prd FR-18): All persistence goes through the `storage` interface (`save`, `load`, `listVersions`), writing the whole design atomically with the routing section valid for that revision. Browser autosave is the source of truth. Chromium saves the file in place after the first save asks for a location; Firefox saves by downloading `<design>.rev<hash>.<ext>`. No network call is needed.
 - R9 (architecture AD-13; EXPERIENCE.md › State Patterns › File): One tab edits a design; other tabs open it read-only and never write. Taking over editing makes the other tab cancel its gesture, stop autosave and drop in-flight background results.
-- R10 (parent R5; architecture AD-9): Copy design makes a new design, with a new name and id, that records its source design and revision; the original is untouched. Save to file keeps the same design and id.
+- R10 (parent R5; architecture AD-9, Consistency Conventions › Licences): Copy design makes a new design, with a new name and id, that records its source design, revision and source licence and keeps every other id; the original is untouched. Save to file keeps the same design and id.
 
 ## Constraints
 
@@ -63,3 +63,4 @@ Every later epic edits the design through commands and sees revision-tagged outp
 
 - Waits on epic 1 because: the monorepo scaffold and CI
 - Decision (2026-10-26): split at refinement because the epic ran to about 16 stories. This epic keeps the headless core (schema skeleton, canonical file, migrations, commands, gestures and undo, parameters and the evaluator, pipeline and workers, export registry, storage, single-tab editing, Copy design); the chrome, the expression field and the Parameters UI move to epic-editor-shell (id 12). epic-layout waits only on this epic.
+- Decision (2026-10-26): tracer bullet is entry 1 (a new design: command → canonical file → browser autosave → reload, with one revision-tagged live output). Entry 6, workers with progress and cancel in both browsers, is the least certain; it runs as early as its needs allow (after 3 and 5), with 4 in parallel. Lanes: model (1–4, 7, 10), pipeline (5, 6, 11), storage (8, 9); some after links guard shared code (8 after 6 for the Playwright setup, 9 after 7 for the read-only mode, 10 after 9 for the command gate).

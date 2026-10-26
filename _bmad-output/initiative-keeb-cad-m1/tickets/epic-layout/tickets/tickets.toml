@@ -8,7 +8,7 @@ title = "One Corney column resolves from a chain"
 description = "Fills the layout and meta schema sections (groups, slots, chain +x/+y with gap and offset, pitch-x/pitch-y, u and mm units) with add-group, add-slot, duplicate and delete commands (delete cascading per AD-2), the free arrangement (default anchor = the parent origin), and model.resolve turns a group of chained slots into world frames. The thinnest path from command to design file to resolved placement to the golden harness, using epic-risk-spikes story 1's harness and epic-design-document's commands and file. epic-layout-editor entry 1 draws its resolve and calls its commands."
 verify = "A design built by commands with one Corney column as a chain resolves and the harness passes that column's key centres within ±0.05 mm; saving and reopening it resolves the same."
 covers = ["R2", "R3"]
-after = ["epic-design-document", "2.1"]
+after = ["3.4", "2.1"]
 hitl = false
 risk = "medium"
 
@@ -38,10 +38,10 @@ risk = "high"
 id = 8
 type = "story"
 title = "Move and rotate commands with chain rule and write-back"
-description = "Move takes a world delta converted into each node's anchor frame, moving only selected nodes with no selected ancestor; in a chain the along-direction part goes to gap and the perpendicular part to offset.y, and compensate takes it off the next step; rotate changes the deg term; write-back edits a plain literal or the last literal mm/deg term, appending one if none, rounded to 0.01 mm and 0.1°. Each runs inside epic-design-document's gesture (begin, update, commit, cancel) and is one undo step. epic-layout-editor wires drag, nudge and the rotation handle to these commands."
+description = "Move takes a world delta converted into each node's anchor frame, moving only selected nodes with no selected ancestor; in a chain the along-direction part goes to gap and the perpendicular part to offset.y, and compensate takes it off the next step; rotate changes the deg term; write-back edits a plain literal or the last literal mm/deg term, appending one if none, rounded to 0.01 mm and 0.1°. Each runs inside epic-design-document's gesture (3.3) (begin, update, commit, cancel) and is one undo step. epic-layout-editor wires drag, nudge and the rotation handle to these commands."
 verify = "Headless tests show a chain move changing only gap and offset.y, compensate leaving later siblings in place, 0.25u becoming 0.25u + 0.37mm, and one undo restoring each."
 covers = ["R7"]
-after = [3]
+after = [3, "3.4"]
 hitl = false
 risk = "medium"
 
