@@ -5,9 +5,9 @@
 id = 1
 type = "story"
 title = "Empty editor builds and previews from the workspace"
-description = "Scaffolds the pnpm workspace (pnpm 12.15.0 pinned, strict) with the 12 empty @keeb-cad packages from the structural seed and the fixtures/ package, joined by TypeScript project references; generates editor with create-vue at the Stack versions; sets up Vitest workspace-wide, fixtures/ included; excludes spikes/ from the workspace and every check; adds the MIT LICENSE; and wires a first pnpm check that typechecks, tests and builds. Entry 2's rules, entry 3's full check and epic-risk-spikes story 1's harness build on this workspace."
+description = "Scaffolds the pnpm workspace (pnpm 12.15.0 pinned, strict) with the 12 empty @keeb-cad packages from the structural seed and the fixtures/ package, joined by TypeScript project references; generates editor with create-vue at the Stack versions; sets up Vitest workspace-wide, fixtures/ included; excludes spikes/ from the workspace and every check; and wires a first pnpm check that typechecks, tests and builds. Entry 2's rules, entry 3's full check and epic-risk-spikes story 1's harness build on this workspace."
 verify = "From a clean clone, pnpm install (strict) and pnpm check pass, and vite preview serves the empty editor in a browser."
-covers = ["R1", "R3", "R6"]
+covers = ["R1", "R3"]
 after = []
 hitl = false
 risk = "medium"
@@ -38,11 +38,11 @@ risk = "low"
 id = 4
 type = "story"
 title = "GitHub Actions runs pnpm check on push"
-description = "The user creates the GitHub repo and chooses its visibility, and the history is pushed only after their go-ahead. Adds a GitHub Actions workflow that installs pnpm and Playwright's browsers and runs entry 3's pnpm check on every push."
+description = "The public GitHub repo KeebCAD/keeb-cad exists and main is pushed (done 2026-10-26). Adds a GitHub Actions workflow that installs pnpm and Playwright's browsers and runs entry 3's pnpm check on every push."
 verify = "A push with a passing tree shows a green run, and a pushed branch with one broken check shows a red run."
 covers = ["R5"]
 after = [3]
-hitl = true
+hitl = false
 risk = "low"
 
 [[entry]]

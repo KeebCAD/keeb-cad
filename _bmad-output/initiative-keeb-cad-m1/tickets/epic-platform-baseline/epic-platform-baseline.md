@@ -54,7 +54,6 @@ Every later epic builds on a boundary-checked app shell that runs locally, and o
 
 ## Notes
 
-- Assumption: you choose the repo's visibility (public or private) at the GitHub step. If it's public, `_bmad-output/` is published with it.
 - Decision: 2026-10-25 the UX session runs inside this epic; epic-layout waits on it.
 - Decision (2026-10-26): no deploy in this epic, and none in milestone 1. keeb-cad runs locally only. The static build is still served locally (`vite preview`), so no server dependency creeps in (C1). Hosting choice, CI/deploy and COOP/COEP headers stay deferred (architecture Deferred, "before the first public preview").
 - Decision (2026-10-26): every check (typecheck, lint, tests, dependency-cruiser, build) runs from one local `pnpm check`. A git pre-commit hook runs the fast part. A GitHub remote is added and GitHub Actions runs `pnpm check` on push. There is no hosting.
@@ -64,3 +63,4 @@ Every later epic builds on a boundary-checked app shell that runs locally, and o
 - Decision (2026-10-26): tracer bullet is story 1, the empty editor building and previewing from the workspace. Story 2 follows as the least-certain one.
 - Decision (2026-10-26): no closing refactor sweep, since the packages start empty.
 - Decision (2026-10-26): the pre-commit hook's fast part is lint and dependency-cruiser. `pnpm check` adds typecheck, tests, the smoke test and build. The agent runs create-vue with flags, so story 1 needs no hands-on step.
+- Decision (2026-10-26): R6 is done ahead of the stories. The MIT LICENSE was committed before the first push, and `main` was pushed to the public repo `git@github.com:KeebCAD/keeb-cad.git`, `_bmad-output/` included. Story 1.4 keeps only the Actions workflow.
