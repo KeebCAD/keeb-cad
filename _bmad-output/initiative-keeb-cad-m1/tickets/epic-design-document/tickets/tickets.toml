@@ -82,13 +82,12 @@ risk = "low"
 id = 8
 type = "story"
 title = "Save and open files in Chromium and Firefox"
-description = "storage's file backend: in Chromium, the first save asks for a location through the File System Access API and later saves write in place; in Firefox, each save downloads <design>.rev<hash>.<ext>; Open uses the file picker; the design exposes its save state (saved, unsaved changes; in Firefox, saved to browser with the last downloaded revision) and a failed save reports save failed with its reason and stays unsaved; storage also lists the designs in browser storage for the Start screen (pending the AD-13 amendment); every save writes the whole design atomically with the routing section valid for that revision; no network call. epic-editor-shell's File menu calls it. A person confirms one real Chromium save and one Firefox download."
+description = "storage's file backend: in Chromium, the first save asks for a location through the File System Access API and later saves write in place; in Firefox, each save downloads <design>.rev<hash>.<ext>; Open uses the file picker; the design exposes its save state (saved, unsaved changes; in Firefox, saved to browser with the last downloaded revision) and a failed save reports save failed with its reason and stays unsaved; storage's listDesigns lists the designs in browser storage newest first (design id, name, revision, last saved) for the Start screen and reopening the last on launch; opening a file whose design is stored at another revision opens the file's revision and keeps the stored one as a version, never overwriting it (AD-13); every save writes the whole design atomically with the routing section valid for that revision; no network call. epic-editor-shell's File menu calls it. A person confirms one real Chromium save and one Firefox download."
 verify = "Playwright runs in both browsers show the Chromium save writing in place (picker stubbed) and the Firefox save downloading the revision-named file, and reopening each gives the same bytes; a person confirms one real Chromium save and one Firefox download."
 covers = ["R8"]
 after = [1, 3, 6]
 hitl = true
 risk = "medium"
-unknown = "Does bmad-architecture amend AD-13's storage interface with a way to list designs (for the Start screen's recent designs)?"
 
 [[entry]]
 id = 9
@@ -116,7 +115,7 @@ risk = "low"
 id = 11
 type = "story"
 title = "Export registry reports available or blocked"
-description = "pipeline's export registry: each stage registers its exports, each reports available or blocked with a reason derived from output states (for example, blocked while its source is stale or failed), and an export of the same file and app version gives the same bytes. epic-editor-shell's Export menu lists it; plates, pcb, case and firmware register their exports."
+description = "pipeline's export registry: each stage registers its exports, each reports available or blocked with a reason derived from output states (for example, blocked while its source is stale or failed, or blocked: <kind> while the resolved slice it reads carries a model error; the KiCad board is exempt; AD-15), and an export of the same file and app version gives the same bytes. epic-editor-shell's Export menu lists it; plates, pcb, case and firmware register their exports."
 verify = "With a test export, the registry lists it as blocked with its reason while its stage is stale and available once current, and two exports of the same file are byte-identical."
 covers = ["R7"]
 after = [6]

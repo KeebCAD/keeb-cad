@@ -40,4 +40,4 @@ The outline and plates follow layout edits with no manual realignment (SM-1, out
 - Waits on epic 2 because: the geometry spike verdict and flatten tolerance
 - Waits on epic 4 because: resolved slot frames and part cutouts
 - Decision (2026-10-26, from epic-layout-editor refinement): this epic owns the Layout workspace's Outline context line (chip O): the shape holding the outline marker ★, drawn thin and non-editable behind the keys, following live during a gesture (EXPERIENCE.md › Canvas › Outline context line). Write it into Requirements when this epic is refined.
-- Unknown: the violation kind for a construction point from parallel or coincident lines (F-72), from the bmad-architecture queue in the initiative's Notes. The construction-point story waits on it.
+- Decision (2026-10-26, architecture update, commit 15bf969): a construction point from parallel or coincident lines is `construction-undefined`, a `model` error naming the point and its two lines; it and its dependents are not evaluated, and exports reading them are blocked (Consistency Conventions › Violations, AD-15). Write it into Requirements when this epic is refined.

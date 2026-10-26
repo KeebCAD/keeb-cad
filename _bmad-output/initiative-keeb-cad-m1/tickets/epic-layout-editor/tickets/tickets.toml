@@ -7,13 +7,12 @@
 id = 1
 type = "story"
 title = "Layout canvas shows resolved keys and adds groups and slots"
-description = "The Layout workspace's 2D canvas, in the renderer architecture picks, draws resolved placements as keycaps with group frames and anchor links in both themes; G adds a group, S a slot, Ctrl+D duplicates, Delete deletes; click selects, the tree slide-out stays synced; wheel zoom to cursor, middle or Space drag and trackpad pan, F fits; the viewport is shared across 2D workspaces; the empty Layout shows its hint. Uses epic-editor-shell's chrome and epic-layout story 1's commands and resolve. Its canvas, selection and viewport are what every later 2D story builds on."
+description = "The Layout workspace's 2D canvas, inline SVG drawn by Vue templates (AD-22), draws resolved placements as keycaps with group frames and anchor links in both themes; G adds a group, S a slot, Ctrl+D duplicates, Delete deletes; click selects, the tree slide-out stays synced; wheel zoom to cursor, middle or Space drag and trackpad pan, F fits; the viewport is shared across 2D workspaces; the empty Layout shows its hint. Uses epic-editor-shell's chrome and epic-layout story 1's commands and resolve. Its canvas, selection and viewport are what every later 2D story builds on."
 verify = "In the locally served build, a new design shows the empty hint; G then S adds a key that appears on the canvas and in the tree, selecting either selects both, Ctrl+Z removes it, and a switch to Shapes and back keeps zoom and pan; an automated check finds every canvas mark at 3:1 contrast in both themes and handles at the canvas hit radius at three zoom levels."
 covers = ["R1", "R8"]
 after = ["1.5", "epic-editor-shell", "4.1"]
 hitl = false
 risk = "medium"
-unknown = "Which 2D renderer (SVG, Canvas 2D or WebGL) does bmad-architecture put in the Stack?"
 
 [[entry]]
 id = 2

@@ -52,7 +52,7 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
 
 - C1 (prd §6, FR-18): Browser-only, on current desktop Chromium and Firefox; every stage, including routing and case solids, runs client-side with no server. Firefox saves by download.
 - C2 (prd §6): Stable outputs: the same file reopens to the same outputs, and an edit changes only what it must. Routes are saved, case solids may be cached, and pure derivations are recomputed.
-- C3 (architecture spine): AD-1 to AD-21 bind every epic and story. Work that needs to break one goes back through `bmad-architecture`.
+- C3 (architecture spine): AD-1 to AD-22 bind every epic and story. Work that needs to break one goes back through `bmad-architecture`.
 - C4 (prd SM-1, SM-2, SM-C1): Acceptance is against Corney Island v0.3's Ergogen output within ±0.05 mm (key centres, outline vertices, plate cutouts, case dimensions), with no Corney-specific shortcuts.
 - C5 (prd §5, FR-15): ZMK is the only firmware target, and the catalogue is curated (no user-imported parts).
 - C6 (prd SM-C2): Routing completion is never bought by loosening clearances or hiding unrouted connections.
@@ -89,7 +89,7 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
 
 - prd — _bmad-output/prd-keeb-cad-m1/prd-keeb-cad-m1.md, §4.0 control and follow matrix, §4 FR-1 to FR-18, §7 success metrics, §8 open questions
 - prd — _bmad-output/prd-keeb-cad-m1/addendum.md, routing candidates, tray case reference numbers, Ergogen operations
-- architecture — _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md, Invariants AD-1 to AD-21, Deferred (routing and geometry spikes scheduled first)
+- architecture — _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md, Invariants AD-1 to AD-22, Deferred (routing and geometry spikes scheduled first)
 - fixture — _bmad-output/layout-model/sources/corney-island.yaml
 
 ## Notes
@@ -112,12 +112,5 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
   - FR-12 and §5: "No manual editing of board routes in milestone 1; connections between key cells, modules and peripherals are always routed automatically. A key cell's local tracks are drawn by hand in the key-cell editor." §5: "Manual editing or locking of board routes (key-cell local tracks are authored, see FR-12)." R12 and Boundaries reword the same way.
   - SM-5: "… shift one column's stagger; change pitch-x, then pitch-y (each to a value at or above the switch's minimum); change a case parameter …"
   - FR-18 and §6, new: "Supported browsers in milestone 1: current Chromium and Firefox, on desktop. In Chromium, Save writes the design's file in place after the first save asks for a location. Firefox lacks the File System Access API, so each save downloads a file named with its revision (`<design>.rev<hash>.<ext>`) and Open uses the standard file picker. On both, browser autosave is the source of truth." C1 gains "current desktop Chromium and Firefox". Safari stays out (architecture Deferred, supported-browser matrix).
-- Open question: architecture queue for one `bmad-architecture` run (initiative items 3 and 6; EXPERIENCE.md › Upstream Handoffs). No PO decision is needed; each item gates the epic named.
-  - 2D canvas renderer (SVG, Canvas 2D or WebGL) in the Stack. Gates epic-layout-editor story 1.
-  - 3D rendering library, its owner package and Glossary term for the Case workspace's viewer (Assembly is deferred, so no plate or PCB 3D bodies). Gates epic-tray-case's viewer stories.
-  - Keymap layer stable ids (F-14): `layer-tap`, `momentary-layer` and `toggle-layer` survive reorder, duplicate and delete; deleting a referenced layer is rejected naming the slots, or cascades in one command. Gates epic-firmware-and-keymap.
-  - A violation kind for a construction point from parallel or coincident lines (F-72), for example `construction-undefined`. Gates epic-shapes-and-plates.
-  - Rename "Save As" to "Copy design" in AD-9 and the `meta` provenance wording (behaviour unchanged).
-  - AD-13's storage interface lists the designs in browser storage, for the Start screen's recent designs and reopening the last one. Gates epic-design-document story 8.
-  - Confirm `unresolvable-reference` is a warning when a key-cell reference names a cell that does not exist yet (epic-layout Decision 2026-10-26).
+- Decision (2026-10-26, architecture update, commit 15bf969): the architecture queue is settled. 2D canvases are SVG drawn by Vue, with one shared viewport (AD-22, Konva as the Deferred fallback for PCB copper). The Case 3D viewer is three.js + replicad-threejs-helper in a new `viewer3d` package (AD-22, AD-11; Glossary: 3D viewer, body). Keymap layers have stable ids; deleting a referenced layer is rejected, naming the slots and combos (AD-19). `construction-undefined` is a `model` error. AD-13 gains `listDesigns`, and opening a file never overwrites a newer stored copy. `unresolvable-reference` is a warning for a missing key cell, an error otherwise. AD-9 says Copy design. Every export but the KiCad board is blocked by a `model` error in its slice (AD-15). Each gated epic carries its line.
 - Decision (2026-10-26): epic-design-document split at refinement into epic-design-document (headless core) and epic-editor-shell (id 12: chrome, expression field, Parameters UI), because it ran to about 16 stories. epic-layout waits only on the headless core; epic-layout-editor now waits on epic-editor-shell.
