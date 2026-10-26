@@ -11,3 +11,7 @@ catalog:
 strictPeerDependencies: true
 hoist: false
 publicHoistPattern: []
+
+# lefthook's own postinstall is not needed: the root `prepare` script runs `lefthook install`.
+allowBuilds:
+  lefthook: false

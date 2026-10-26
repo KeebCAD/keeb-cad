@@ -1,0 +1,14 @@
+# Prettier also reads .gitignore. Keep in step with IGNORED in eslint.config.ts.
+spikes/
+_bmad*/
+.agents/
+.claude/
+pnpm-lock.yaml
+skills-lock.json
+dist/
+dist-ssr/
+coverage/
+test-results/
+playwright-report/
+# Deliberate AD-10 violations, cruised by tooling/ad10/rules.spec.ts.
+tooling/ad10/violations/

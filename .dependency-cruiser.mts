@@ -15,12 +15,12 @@ export const ws = (names: string) => `^(packages/(${names})/|@keeb-cad/(${names}
 export const EDITOR = '^(app/|@keeb-cad/editor(/|$))'
 export const FIXTURES = '^(fixtures/|@keeb-cad/fixtures(/|$))'
 const VUE_NAMES = 'vue|vue-router|pinia|@vue/[^/]+'
-export const VUE = `(^|/)node_modules/(${VUE_NAMES})/|^(${VUE_NAMES})(/|$)|\\.vue$`
+export const VUE = String.raw`(^|/)node_modules/(${VUE_NAMES})/|^(${VUE_NAMES})(/|$)|\.vue$`
 
 const ANY_PACKAGE = ws('[^/]+')
 // Editor and fixtures targets belong to their own rules, so nothing double-reports.
 const OWNED_ELSEWHERE = [EDITOR, FIXTURES]
-const TEST_FILE = '\\.(spec|test)\\.ts$|(^|/)__tests__/'
+const TEST_FILE = String.raw`\.(spec|test)\.ts$|(^|/)__tests__/`
 
 /** `from` packages may import only their own files plus `allowed` packages. */
 const importsOnly = (

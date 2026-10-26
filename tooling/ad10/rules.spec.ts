@@ -14,7 +14,7 @@ async function cruiseWithConfig(paths: string[], baseDir: string): Promise<ICrui
     { baseDir, ruleSet: config, validate: true },
     config.options?.enhancedResolveOptions,
   )
-  if (typeof output === 'string') throw new Error('expected a cruise result object')
+  if (typeof output === 'string') throw new TypeError('expected a cruise result object')
   return output
 }
 
@@ -27,13 +27,21 @@ describe('AD-10 rules on the violation tree', async () => {
   }))
 
   it('reports exactly the deliberate violations, each under one rule', () => {
-    const sorted = [...violations].sort((a, b) =>
+    const sorted = violations.toSorted((a, b) =>
       `${a.rule} ${a.from} ${a.to}`.localeCompare(`${b.rule} ${b.from} ${b.to}`),
     )
     expect(sorted).toEqual([
       { rule: 'editor-imports-no-stage', from: 'app/src/App.vue', to: '@keeb-cad/plates' },
-      { rule: 'editor-imports-no-stage', from: 'app/src/main.ts', to: 'packages/plates/src/index.ts' },
-      { rule: 'fixtures-only-in-tests', from: 'packages/model/src/index.ts', to: '@keeb-cad/fixtures' },
+      {
+        rule: 'editor-imports-no-stage',
+        from: 'app/src/main.ts',
+        to: 'packages/plates/src/index.ts',
+      },
+      {
+        rule: 'fixtures-only-in-tests',
+        from: 'packages/model/src/index.ts',
+        to: '@keeb-cad/fixtures',
+      },
       {
         rule: 'library-and-storage-import-only-model',
         from: 'packages/library/src/index.ts',
@@ -44,8 +52,16 @@ describe('AD-10 rules on the violation tree', async () => {
         from: 'packages/model/src/index.ts',
         to: 'packages/library/src/index.ts',
       },
-      { rule: 'nothing-imports-editor', from: 'packages/pipeline/src/index.ts', to: 'app/src/main.ts' },
-      { rule: 'nothing-imports-editor', from: 'packages/plates/src/index.ts', to: '@keeb-cad/editor' },
+      {
+        rule: 'nothing-imports-editor',
+        from: 'packages/pipeline/src/index.ts',
+        to: 'app/src/main.ts',
+      },
+      {
+        rule: 'nothing-imports-editor',
+        from: 'packages/plates/src/index.ts',
+        to: '@keeb-cad/editor',
+      },
       { rule: 'only-editor-imports-vue', from: 'packages/storage/src/index.ts', to: 'vue' },
       {
         rule: 'pipeline-imports-no-storage',
@@ -57,7 +73,11 @@ describe('AD-10 rules on the violation tree', async () => {
         from: 'packages/routing/src/index.ts',
         to: 'packages/pcb/src/index.ts',
       },
-      { rule: 'stage-imports-only-model', from: 'packages/plates/src/index.ts', to: '@keeb-cad/pcb' },
+      {
+        rule: 'stage-imports-only-model',
+        from: 'packages/plates/src/index.ts',
+        to: '@keeb-cad/pcb',
+      },
       {
         rule: 'stage-imports-only-model',
         from: 'packages/plates/src/index.ts',

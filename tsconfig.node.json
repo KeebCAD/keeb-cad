@@ -1,7 +1,7 @@
 {
   // Root tool configs and tooling/ tests; type-check only.
   "extends": "./tsconfig.base.json",
-  "include": ["vitest.config.ts", ".dependency-cruiser.mts", "tooling/**/*.ts"],
+  "include": ["vitest.config.ts", "eslint.config.ts", ".dependency-cruiser.mts", "tooling/**/*.ts"],
   // Deliberate AD-10 violations; cruised by tooling/ad10/rules.spec.ts, never compiled.
   "exclude": ["tooling/**/violations/**"],
   "compilerOptions": {

@@ -1,0 +1,7 @@
+# Pre-commit runs the fast checks (lint, format check, AD-10 depcruise); `pnpm check` runs the rest.
+# Node 26 comes only from mise, and dependency-cruiser refuses older Node, so activate mise when present.
+# if/else rather than `||`, so a failing check is not re-run without mise.
+pre-commit:
+  jobs:
+    - name: check:fast
+      run: if command -v mise >/dev/null; then mise exec -- pnpm check:fast; else pnpm check:fast; fi
