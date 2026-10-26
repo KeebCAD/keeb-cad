@@ -55,8 +55,8 @@ colors:
   led-chain: '#81c8be'           # Teal path and badge outline; numbers in {colors.text}
   combo-link: '#949cbb'          # Overlay2, dotted [ASSUMPTION]
   body-case: '#949cbb'           # Overlay2, 3D [ASSUMPTION]
-  body-plate: '#a5adce'          # Subtext0, 3D [ASSUMPTION]
-  body-pcb: '#babbf1'            # Lavender, 3D [ASSUMPTION]
+  body-plate: '#a5adce'          # Subtext0, 3D [ASSUMPTION]; deferred past M1 (Assembly)
+  body-pcb: '#babbf1'            # Lavender, 3D [ASSUMPTION]; deferred past M1 (Assembly)
   mirror-axis: '#949cbb'         # Overlay2, 1px dashed: center's y-axis [ASSUMPTION: color]
   pick-point: '#ca9ee6'          # Mauve: lit attach points + rubber band in pick mode — decided
   via: '#c6d0f5'                 # Text disc; drill hole in via-hole
@@ -281,7 +281,7 @@ components:
     radius: '{rounded.lg}'
     width: 440px                 # [ASSUMPTION] from mockups/key-start.html
     shadow: none
-  assembly-legend:
+  assembly-legend:              # deferred past M1 (Assembly)
     background: '{colors.panel}'
     border: '{colors.border}'
     radius: '{rounded.lg}'
@@ -395,7 +395,7 @@ Rows are `{spacing.row}`; fields `{spacing.field-height}`; panel padding `{spaci
 
 ## Elevation & Depth
 
-Docked surfaces are flat and separated by tone and a 1px `{colors.border}` hairline. Only floating overlays (slide-out, menus, command palette, context menu, violations panel, Part picker, toasts) cast `{components.overlay.shadow}`. Cards fixed to the canvas (Start card, Assembly legend, 3D progress) and canvas chips stay flat. On the canvas, depth means physical height only: the key top face is lighter than the body in both themes. The 3D viewer uses real lighting; nothing else imitates 3D.
+Docked surfaces are flat and separated by tone and a 1px `{colors.border}` hairline. Only floating overlays (slide-out, menus, command palette, context menu, violations panel, Part picker, toasts) cast `{components.overlay.shadow}`. Cards fixed to the canvas (Start card, 3D progress) and canvas chips stay flat. On the canvas, depth means physical height only: the key top face is lighter than the body in both themes. The 3D viewer uses real lighting; nothing else imitates 3D.
 
 ## Shapes
 
@@ -409,7 +409,7 @@ General states: hover fills `{colors.hover}` (no Mauve bar); pressed/on fills `{
 
 - **Button** — `button`: `{colors.panel}` fill, `{colors.border-interactive}` edge, `{rounded.md}`; hover `{colors.hover}`.
 - **Kbd** — every shortcut hint in menus, palette, chips and the Start card: `kbd` (`{typography.mono-small}`, 1px `{colors.border}` with a 2px bottom edge).
-- **Chip** (overlay chips, PCB layer chips, Outline chip, Assembly chip) — top-left of the canvas, `{components.chip.inset}` inset, label and `kbd` key. Off: `{colors.border-interactive}` edge, muted label. On: `{colors.fill-on}` fill, leading ✓, Mauve edge, Text label.
+- **Chip** (overlay chips, PCB layer chips, Outline chip) — top-left of the canvas, `{components.chip.inset}` inset, label and `kbd` key. Off: `{colors.border-interactive}` edge, muted label. On: `{colors.fill-on}` fill, leading ✓, Mauve edge, Text label.
 
 ### Frame
 
@@ -452,9 +452,7 @@ File menu, Export menu, Design info, Autocomplete dropdown and Context menu use 
 
 ### Canvas views
 
-- **3D viewer** — Case canvas area; bodies in `{colors.body-case}`, `{colors.body-plate}`, `{colors.body-pcb}`; the selected operation's result outlined in `{colors.selection}`; stale solid grayed under a `{colors.progress}` bar. → `mockups/key-case.html`.
-- **Assembly chip** — `Assembly` with an `A` kbd, a chip at the 3D viewer's top-left.
-- **Assembly legend** — `assembly-legend` card at the top-right of the 3D viewer, flat, shown while Assembly is on: one checkbox row per body (Case, each plate, PCB).
+- **3D viewer** — Case canvas area; case bodies in `{colors.body-case}`; the selected operation's result outlined in `{colors.selection}`; stale solid grayed under a `{colors.progress}` bar. → `mockups/key-case.html`.
 - **Isolated cell mode** — canvas header `‹ Board (Esc) · key cell <id>` in `{typography.mono}` at the top-left; the cell fills the canvas; same chips as PCB. → `mockups/key-cell.html`.
 - **Keymap layer tabs** (Firmware) — overlay at the canvas top-left (chip position), workspace-tab treatment, `{components.keymap-layer-tabs.height}` tall, `+` tab last. → `mockups/key-firmware.html`.
 
@@ -479,6 +477,14 @@ File menu, Export menu, Design info, Autocomplete dropdown and Context menu use 
 - **Combo** (Firmware) — dotted `{colors.combo-link}` line joining the combo's keys, combo binding label at its midpoint `[ASSUMPTION]`.
 
 → `mockups/oplist-placement-1.html` (option c), `mockups/canvas-model-storyboard.html` (model b) for composition. Key screens (Frappé; Layout also Latte): `mockups/key-layout.html`, `key-shapes.html`, `key-pcb.html`, `key-firmware.html`, `key-case.html`, `key-cell.html`, `key-panels.html`, `key-start.html`. Their op names, heights, part versions, DRC text, legends and layer names are illustrative.
+
+### Deferred past M1
+
+The Assembly view is deferred past M1 (initiative Decision 2026-10-26); its decided visuals stay here and are not built in M1. Tokens `{colors.body-plate}`, `{colors.body-pcb}` and `{components.assembly-legend}` belong to it.
+
+- **Assembly chip** — `Assembly` with an `A` kbd, a chip at the 3D viewer's top-left.
+- **Assembly legend** — `{components.assembly-legend}` card at the top-right of the 3D viewer, flat, shown while Assembly is on: one checkbox row per body (Case, each plate, PCB).
+- Plates and PCB in the 3D viewer: `{colors.body-plate}`, `{colors.body-pcb}`. → `mockups/key-case.html` (frame 2).
 
 ## Do's and Don'ts
 

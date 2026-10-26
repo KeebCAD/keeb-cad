@@ -35,7 +35,7 @@ No UI component library: custom Vue components on Catppuccin tokens. `DESIGN.md`
 | Layout | 1 | both halves as filled keycaps, group frames, anchor links; Outline context line (chip O) | Inspector (anchor, offset, chain, population, part, key cell with `Edit key cell` → PCB); Design settings when nothing is selected. → `mockups/key-layout.html` (J2.2 mid-rotation, Frappé and Latte) |
 | Shapes | 2 | both halves as faint key outlines; shapes, vertices, construction points; selected plate with cutouts | Operation list: Shapes · Construction · Plates; selected entry's fields below. → `mockups/key-shapes.html` (polygon in `Pick vertices`, list collapsed) |
 | PCB | 3 | the board: components, pads, F.Cu/B.Cu routes, ratsnest; overlay and PCB layer chips | Inspector; design rules when nothing is selected. `Edit key cell` opens isolated cell mode. → `mockups/key-pcb.html` (rerouting, Matrix and LED chain, Export menu), `mockups/key-cell.html` (isolated cell mode, track drawing) |
-| Case | 4 | 3D viewer (case; Assembly chip adds plates and PCB) | Operation list of case operations; selected operation's fields; tray template parameters live in the Parameters slide-out. → `mockups/key-case.html` (at rest, Assembly, stale, empty) |
+| Case | 4 | 3D viewer (case bodies; Assembly: see Deferred past M1) | Operation list of case operations; selected operation's fields; tray template parameters live in the Parameters slide-out. → `mockups/key-case.html` (at rest, stale, empty; its Assembly frame is deferred) |
 | Firmware | 5 | both halves side by side as keycaps with legends; keymap layer tabs overlaid top-left | Binding field and picker; `Matrix & pins → PCB` link. → `mockups/key-firmware.html` (binding field capturing) |
 
 **Both halves.** The left half is authored; the right half is derived (split-reversible, AD-6) but drawn and selectable in Layout, Shapes, PCB and Firmware. In M1 the right half takes population, keymap and netlist overrides only; its geometry fields are read-only (see Population toggle). The right half reads as derived: a thin dashed mirror axis between the halves, and right-half keys at lower opacity until selected. On PCB the right board is the flipped reversible board; its copper colors swap (see DESIGN.md › Colors), and labels still name the layer.
@@ -58,7 +58,7 @@ No UI component library: custom Vue components on Catppuccin tokens. `DESIGN.md`
 | Key cell (components, local tracks) | Isolated cell mode | J1.9 |
 | Matrix / pin / LED overrides | PCB overlay chips + inspector | J1.10 |
 | Design rules, routing, DRC | PCB right panel, status strip, violations panel | J1.11, J3.5 |
-| Case from tray template; fit check | Case operation list, 3D viewer, Assembly | J1.12, J2.5 |
+| Case from tray template; fit check against SM-2 | Case operation list, 3D viewer, Parameters slide-out | J1.12, J2.5 |
 | Keymap for both halves | Firmware, keymap layer tabs, binding field | J1.13, J3.6 |
 | Production files | Export menu, plate export buttons | J1.14, J3.7 |
 | See every output follow an edit | Status strip, tab badges, staleness, Outline context line | J2 |
@@ -93,14 +93,14 @@ Behavioral. Visual specs live in DESIGN.md › Components. Every interactive ite
 |---|---|---|
 | Top bar | Global | File menu, design name (opens Design info) and save state (see State Patterns › File), workspace tabs, Export menu, undo/redo. |
 | File menu | Top bar | `New design`, `Open…` (Ctrl+O), `Save` (Ctrl+S: writes this design to its file), `Save to file…` (Ctrl+Shift+S: same design, same id and history, another location), `Copy design…` (new name, new id, records `copied from <design> · rev <hash>`, opens the copy, original untouched), `Design info`. |
-| Design info | Popover from the design name `[ASSUMPTION: placement]` | Name, id, current revision, provenance (`copied from <design> · rev <hash>`), file location (Chromium) or the Firefox save state (see State Patterns › File). Read-only. |
+| Design info | Popover from the design name `[ASSUMPTION: placement]` | Name, id, current revision, provenance (`copied from <design> · rev <hash>`), file location (Chromium) or the Firefox save state (see State Patterns › File); fields read-only. **Versions** list below: one row per stored revision (`rev <hash>`, time, source `file` / `browser`), current marked; arrows and Enter pick. Picking makes that revision current at once; the previous current stays in the list; toast `Opened rev <hash> · rev <hash> kept in versions`. A read-only tab lists versions but cannot pick `[ASSUMPTION]`. Which revisions are kept: see Open Items. |
 | Start screen | No design open (the empty state) | New design, Open file (Ctrl+O), recent autosaved designs (arrows and Enter); the first recent row has focus. |
 | Workspace tabs | Top bar | `role=tablist`; keys 1–5 when no field is focused; arrows move between tabs when focused. Each tab carries a tab badge. |
 | Tab badge | Workspace tabs | Repeats the worst output state of that workspace (see State Patterns › Output states). Accessible name = the state text (`PCB: routing 41/56`). |
 | Status strip | Bottom, global | One entry per output — Outline, Plates (worst across plates), PCB (always shows the unrouted count, even `0 unrouted`), Case, Firmware — showing its output state (see State Patterns › Output states). When the strip overflows (at 1366 px wide), entries compress to glyph and number; the full state text shows in a tooltip and stays the accessible name. Click → that workspace. Warning/error counts open the violations panel. The left end shows pick-mode / track-drawing hints. |
 | Nudge-step control | Status strip | Click opens three expression fields (arrow, Shift, Ctrl step); defaults 0.25 / 1 / 0.05 mm. |
-| Export menu | Top bar, all workspaces | Lists every output. Unavailable items are `aria-disabled` with an inline reason (`blocked: 2 DRC errors, 15 unrouted`) linking to the violations panel. KiCad 10 project always enabled. STL/STEP enabled only when Case is `current`; otherwise `blocked: case stale (rev <hash>)` or `blocked: case failed: <message>`. |
-| Toast | Global | Undo/redo (`Undid: <command label>` — one display label per command from the model command registry), rejections (`rejected: <what>` with ▲), re-anchor, format migration, save failure. `role=status`; auto-hides after ~4 s `[ASSUMPTION]`. |
+| Export menu | Top bar, all workspaces | Lists every output. Unavailable items are `aria-disabled` with an inline reason (`blocked: 2 DRC errors, 15 unrouted`) linking to the violations panel. An export whose geometry has a `model` error is blocked (AD-15); that reason comes first, as count + kind: `blocked: 1 construction-undefined`, or `blocked: 2 model errors (anchor-cycle, …)` for several kinds. Warnings never block. KiCad 10 project always enabled, even with model errors. STL/STEP enabled only when Case is `current`; otherwise `blocked: case stale (rev <hash>)` or `blocked: case failed: <message>`. |
+| Toast | Global | Undo/redo (`Undid: <command label>` — one display label per command from the model command registry), rejections (`rejected: <what>` with ▲), re-anchor, format migration, save failure, version switch, and opening a file over a newer stored copy (see State Patterns › File). `role=status`; auto-hides after ~4 s `[ASSUMPTION]`. |
 | Banner | Under top bar | Read-only, format-too-new, autosave failure. Pushes the canvas down; never covers it. `role=alert`. → `mockups/key-start.html`. |
 
 ### Panels and overlays
@@ -135,7 +135,7 @@ Behavioral. Visual specs live in DESIGN.md › Components. Every interactive ite
 | Outline context line | Layout | The shape holding the outline marker ★, thin and non-editable, behind keys; follows live during a gesture. Plates are not shown in Layout. |
 | Canvas marks | All 2D canvases | Vertices, construction points, overlap areas, violation markers, anchor-cycle paths, ratsnest, LED chain, combos: display only, except vertex drag in Shapes. Clicking a violation marker selects its ids. |
 | Overlay chips (PCB) | PCB | Toggle buttons with `aria-pressed`: Matrix (M), LED chain (L), Pins (I); off by default, combinable, remembered for the session. Matrix: R·C label per key, zero-based (`R0·C0`), overrides with `*`; row/column overrides are set in the inspector for the selected keys. LED chain: numbered path; `Pick LED order` (pick mode) turns it on while active. Pins: hover or focus the MCU module to show pin → net labels; the inspector lists pins → nets as a keyboard-usable list; pick a pin to reassign. → `mockups/pcb-overrides-1.html` (option a), `mockups/key-pcb.html`. |
-| Layer and view chips | PCB, Layout, Case, isolated cell mode | Toggle buttons with `aria-pressed`. PCB layer chips: F.Cu, B.Cu, Edge, Keep-outs; on by default. Outline chip (Layout, O): on by default. Assembly chip (Case, A): off by default. |
+| Layer and view chips | PCB, Layout, Case, isolated cell mode | Toggle buttons with `aria-pressed`. PCB layer chips: F.Cu, B.Cu, Edge, Keep-outs; on by default. Outline chip (Layout, O): on by default. |
 
 ### Workspace-specific
 
@@ -144,10 +144,9 @@ Behavioral. Visual specs live in DESIGN.md › Components. Every interactive ite
 | Operation list | Shapes, Case | Ordered named entries; selecting one highlights its result (2D in Shapes, 3D in Case) and shows its fields below. Add via `+ add operation` or Ctrl+K. A long selected operation (18-vertex polygon) collapses the list to the selected entry, with a `▸ N more` row above it that expands the list. Shapes adds Construction (line intersection from two lines, each two anchor-picker points) and Plates sections. `Use as outline` moves the outline marker ★; exactly one shape holds it. |
 | Vertex table | Polygon operation | Row = anchor + offset. `Pick vertices` (pick mode): each pick appends a row anchored there with zero offset. Add a row with `+ vertex` or insert row; set its anchor with the anchor picker and type the offset. Dragging a vertex changes its offset (see Write-back). |
 | Plate fields | Shapes → Plates | Shape dropdown, cutout-role checkboxes, user cutout shapes list; the canvas previews the plate with cutouts; DXF/SVG/gerber export per plate. |
-| Keymap layer tabs | Firmware, overlay at the canvas top-left | `role=tablist`. `+` adds; double-click renames; drag or `Move left/right` reorders; right-click → context menu (Rename, Duplicate, Move left/right, Delete); Delete deletes the focused tab; one undo restores it. Layer references: see Upstream Handoffs. |
+| Keymap layer tabs | Firmware, overlay at the canvas top-left | `role=tablist`. `+` adds; double-click renames; drag or `Move left/right` reorders; right-click → context menu (Rename, Duplicate, Move left/right, Delete); Delete deletes the focused tab; one undo restores it. Layer references are by stable id: reorder and duplicate never rebind; deleting a layer that another layer's binding or a combo references is rejected, naming them (architecture AD-19). |
 | Firmware legends | Firmware canvas | Show each key's binding on the selected layer: transparent = faint ▽; none = empty cap; mod-tap / layer-tap = tap over hold; hardware-less action (RGB without LEDs, Bluetooth on wired) = ▲ plus a violation naming the slot. |
 | 3D viewer | Case | Left-drag orbit; middle-drag or Space+drag pan; wheel zoom to cursor; Home or 0 = top view aligned with the shared viewport; right-click = context menu (Hide body, Top view, Export). Keyboard (viewer focused): arrows orbit, Shift+arrows pan, + / − zoom. The camera starts from the shared viewport's top-down view. Never blanks once a solid exists (see State Patterns). |
-| Assembly legend | Case, Assembly chip on (A) | Plates and PCB fade in at real heights; one checkbox per body hides it. → `mockups/key-case.html` (frame 2). |
 | Isolated cell mode | PCB; `Edit key cell` | Opens the key cell alone, large and centered, with its own zoom; header `‹ Board (Esc) · key cell <id>`; the PCB tab stays active. Components placed by drag or inspector fields (offset/rotation expressions; same drag/nudge/rotate rules as keys). Track tool (W). Cell-level DRC runs live; while in isolated cell mode, its errors show on the canvas only (marker + callout), not in the status strip or tab badge. Per-group key-cell overrides open the same way (choose which cell). Esc (last in Esc precedence) returns to the board at the shared viewport. |
 | Track tool | Isolated cell mode, W | Click a pad, click corners, click the target pad to finish; snaps to pads and 45° (Shift = free). X switches F.Cu/B.Cu and drops a via. Backspace removes the last segment; Esc cancels. Existing track: select, drag corners, Delete. Width from net class, overridable in the inspector. One finished track = one undo step. |
 
@@ -180,6 +179,7 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 | autosave failed `[ASSUMPTION]` | Banner | `Autosave failed: browser storage full. Save to file (Ctrl+S).` |
 | read-only (second tab) | Banner | `Read-only — this design is open for editing in another tab.` + `Take over editing`. Read-only disables every command that changes the authored sections; selection, navigation, export and `Copy design…` stay enabled `[ASSUMPTION]`. Take over: this tab edits; the other tab cancels its gesture, stops autosave, drops in-flight background results and shows the banner |
 | format-too-new | Banner | `Made with a newer keeb-cad (format N). Read-only here.` Older formats migrate silently with toast `Upgraded from format N`; the next save writes the new format |
+| open over a newer stored copy | Toast | Opening a file whose design is stored at a newer revision opens the file's revision and keeps the stored one in Design info › Versions (AD-13): `Opened rev <hash> from file · newer rev <hash> kept in versions`. Nothing is overwritten |
 | cannot open `[ASSUMPTION]` | Start screen + toast | `cannot open corney.kdl: <parse or schema error> at line N`; nothing replaced |
 | cold load `[ASSUMPTION]` | Whole app | The frame renders at once; status strip entries show `rebuilding N%` while WASM/replicad initialize; Layout is editable immediately |
 
@@ -260,7 +260,6 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 | O | Layout: Outline chip |
 | M / L / I | PCB: Matrix / LED chain / Pins chips |
 | W / X / Backspace | Isolated cell mode: track tool / switch layer + via / remove last segment |
-| A | Case: Assembly chip |
 | Home, 0 | Case: top view `[ASSUMPTION: 0 alias for laptops without Home]` |
 
 ## Accessibility Floor
@@ -270,7 +269,7 @@ Behavioral. Visual contrast lives in DESIGN.md › Colors.
 - Everything keyboard-reachable: regions by F6, pick modes by typed id or Tab, context menu by Shift+F10, 3D viewer by arrows, multi-select through the tree. Visible `{colors.focus}` ring. No focus traps except modal overlays; Esc always leaves a binding field.
 - Color is never the only signal: error ● + Red, warning ▲ + Yellow, overlap severity by solid vs dashed outline, stale hatch + label, override `*`, B.Cu by opacity and inspector label, chip state by ✓ + fill.
 - WCAG AA text contrast and 3:1 non-text contrast in both themes (see DESIGN.md › Colors, Contrast targets).
-- `prefers-reduced-motion`: violation flash → static highlight; auto pan/zoom-to-fit → jump; slide-out, violations panel, palette, menus and toasts appear instantly; Assembly fade-in → instant; 3D Home camera move → jump; spinner and progress ring → static ◐ beside `N%`.
+- `prefers-reduced-motion`: violation flash → static highlight; auto pan/zoom-to-fit → jump; slide-out, violations panel, palette, menus and toasts appear instantly; 3D Home camera move → jump; spinner and progress ring → static ◐ beside `N%`.
 - Semantic HTML for panels and fields: `role=tablist` for workspace and keymap layer tabs; tab badges have accessible names; `aria-invalid` + `aria-describedby` on fields; `aria-pressed` on chips; `aria-disabled` on blocked Export items; toasts `role=status`, banners `role=alert`. Canvas screen-reader support is out of M1 scope.
 - Targets: chrome controls at least `{spacing.target-min}`; canvas handles at least `{spacing.canvas-hit-radius}` at any zoom.
 
@@ -291,7 +290,7 @@ Protagonist: Sergii, builder and sole user, on a laptop.
 9. PCB (3): `No key cell. Create one (Edit key cell).` In isolated cell mode (→ `mockups/key-cell.html`), Sergii places switch, diode and LED components and draws local tracks with W (X for a via); cell DRC passes; Esc returns to the board.
 10. With the M and L chips on (→ `mockups/key-pcb.html`), Sergii overrides a column (`R1·C5*`) in the inspector and runs `Pick LED order`; I shows pins; Sergii reassigns an MCU pin.
 11. Routing runs on its own; the strip shows `routing 41/56`, with unrouted connections as dashed ratsnest. F8 steps through DRC violations; Sergii fixes each in Layout or design rules.
-12. Case (4) (→ `mockups/key-case.html`): Sergii inserts the tray case (`Insert tray case`) and sets wall and gap in the Parameters slide-out; A shows plates and PCB at real heights to check fit.
+12. Case (4) (→ `mockups/key-case.html`): Sergii inserts the tray case (`Insert tray case`) and sets wall and gap in the Parameters slide-out. To check fit, Sergii reads the case dimensions from the operations' fields and the Parameters slide-out against SM-2's list: wall thickness, PCB-to-wall gap, floor thickness, wall height, screw holes, MCU/USB cutout.
 13. Firmware (5) (→ `mockups/key-firmware.html`): both halves side by side. Per layer, Sergii selects a key and presses its binding, Tab advancing key by key; Esc and Tab bindings come from the picker (↓); mod-tap gets two fields; combos go through `Add combo`.
 14. From the Export menu, Sergii exports gerber + drill, STL and ZMK config. When gerber is disabled, its reason links to the violations panel.
 15. **Climax:** the status strip reads ✓ across Outline, Plates, PCB `0 unrouted`, Case, Firmware — a full pass from a blank canvas. Ctrl+S asks for a location once and writes the file.
@@ -305,7 +304,7 @@ This journey runs the PRD SM-5 edit script on the finished design; after each st
 1. **Move one thumb-fan key.** Sergii drags thumb-home; its step changes and thumb-reachy follows (Alt-drag would compensate, keeping it still). Write-back appends `+ 0.37mm`.
 2. **Rotate the thumb fan.** Sergii selects the thumb group and drags its rotation handle 5° about the group origin (→ `mockups/key-layout.html`). **Climax:** the Outline context line follows under the mouse in Layout; the status strip shows PCB and Case `waiting for edit to finish`, then `routing N/M` and `rebuilding N%` after release. Switching to PCB (3) and Case (4) confirms it: PCB reroutes only the broken connections, dashed ratsnest turning into routes; the case rebuilds; the keymap stays attached to its keys. Zero manual fix-ups.
 3. **Shift one column's stagger.** Sergii edits the column's offset expression; the field previews live, and Enter commits one undo step.
-4. **Change pitch.** In Design settings, Sergii changes `pitch-x`; every chain re-spaces live and `u` re-evaluates (axis: see Upstream Handoffs).
+4. **Change pitch.** In Design settings, Sergii changes `pitch-x`, then `pitch-y` (each at or above the switch's minimum); every chain re-spaces live and `u` re-evaluates.
 5. **Change a case parameter.** Sergii changes the case wall in the Parameters slide-out; the 3D solid grays under the progress bar and is replaced when the new one lands.
 6. The status strip returns to ✓ everywhere, `0 unrouted`.
 
@@ -349,18 +348,29 @@ Rejected:
 | Keyboard layouts | See Interaction Primitives › Shortcuts. |
 | Browser / WM chords | See Interaction Primitives › Shortcuts. |
 
+## Deferred past M1
+
+Decided, then deferred with the Assembly view (initiative Decision 2026-10-26). Not built in M1; kept so it isn't re-decided from scratch.
+
+- **Assembly chip** (Case, A): off by default; plates and PCB fade in at real heights (reduced motion: instant).
+- **Assembly legend**: card at the 3D viewer's top-right, one checkbox per body (Case, each plate, PCB) to hide it.
+- Visuals: DESIGN.md › Components › Deferred past M1. → `mockups/key-case.html` (frame 2).
+
 ## Upstream Handoffs
+
+Resolved 2026-10-26 unless marked open: the architecture update (AD-9, AD-13, AD-15, AD-19, AD-22) and the PRD and ticket updates answered them.
 
 | Item | To | Ask |
 |---|---|---|
-| 3D case preview + Assembly (F-12) | bmad-architecture, Sofia | 3D rendering library in Stack, owner package and Glossary term for 3D preview, plate/PCB 3D bodies at thickness; epic-tray-case requirement. Case stories wait for this. |
-| Keymap layer stable ids (F-14) | bmad-architecture | Layers need stable ids so `layer-tap` / `momentary-layer` / `toggle-layer` survive reorder, duplicate and delete; deleting a referenced layer is rejected naming the referring slots, or cascades in one command. |
-| Construction point from parallel/coincident lines (F-72) | bmad-architecture | A `model` violation kind (for example `construction-undefined`); UI shows ● on the point. |
-| Reversibility vs split-mirrored (raised by Sergii) | bmad-architecture, Sofia | Defer reversibility past M1? Corney's footprints are reversible; AD-6, FR-4, SM-3 would change. UX proceeds on split-reversible; right-half geometry overrides are designed but locked. |
-| PRD "no manual trace editing" | Sofia | Confirm it covers board routing only, not key-cell local tracks (key cell = components + local tracks). |
-| FR-5 "Save As" wording | Sofia | Behavior ships as `Copy design…`; `Save to file…` keeps the same design. Reword FR-5. |
-| SM-5 "change pitch" axis | Sofia | `pitch-x`, `pitch-y` or both. |
-| Epic companions (story 5 verify) | Sofia | Add DESIGN.md and EXPERIENCE.md to `companions:` in `epic-platform-baseline.md`. |
+| 3D case preview + Assembly (F-12) | bmad-architecture, Sofia | Resolved: three.js in `viewer3d` (AD-22); Assembly deferred past M1. |
+| Keymap layer stable ids (F-14) | bmad-architecture | Layers need stable ids so `layer-tap` / `momentary-layer` / `toggle-layer` survive reorder, duplicate and delete; deleting a referenced layer is rejected naming the referring slots, or cascades in one command. Resolved: rejected (AD-19). |
+| Construction point from parallel/coincident lines (F-72) | bmad-architecture | A `model` violation kind (for example `construction-undefined`); UI shows ● on the point. Resolved: `construction-undefined`, error. |
+| Reversibility vs split-mirrored (raised by Sergii) | bmad-architecture, Sofia | Defer reversibility past M1? Corney's footprints are reversible; AD-6, FR-4, SM-3 would change. UX proceeds on split-reversible; right-half geometry overrides are designed but locked. Resolved: split-reversible stays; revisit at the routing verdict. |
+| PRD "no manual trace editing" | Sofia | Confirm it covers board routing only, not key-cell local tracks (key cell = components + local tracks). Resolved (PRD updated 2026-10-26). |
+| FR-5 "Save As" wording | Sofia | Behavior ships as `Copy design…`; `Save to file…` keeps the same design. Reword FR-5. Resolved (PRD updated 2026-10-26). |
+| SM-5 "change pitch" axis | Sofia | `pitch-x`, `pitch-y` or both. Resolved (PRD updated 2026-10-26). |
+| Epic companions (story 5 verify) | Sofia | Add DESIGN.md and EXPERIENCE.md to `companions:` in `epic-platform-baseline.md`. Resolved. |
+| Version retention | bmad-architecture | **Open.** Which revisions `listVersions` keeps (every autosave, or file opens + Copy design + the last N autosaves); Design info › Versions length depends on it. |
 
 ## Open Items
 
@@ -386,6 +396,7 @@ The register of every inline `[ASSUMPTION]` in this spine, plus gaps and naming 
 - State Patterns › File — autosave failed.
 - State Patterns › File — read-only keeps selection, navigation, export and `Copy design…` enabled.
 - State Patterns › File — cannot open.
+- Global chrome › Design info — a read-only tab lists versions but cannot pick one.
 - State Patterns › File — cold load.
 - State Patterns › Empty states — `No nodes. Add a group (G).`
 - State Patterns › Interaction states — pick-mode hint text.
@@ -400,6 +411,7 @@ The register of every inline `[ASSUMPTION]` in this spine, plus gaps and naming 
 **Gaps:**
 
 - `[GAP]` Authored keep-out creation and keep-out color on the PCB canvas.
+- `[GAP]` Version retention: which revisions Design info › Versions lists (see Upstream Handoffs).
 
 **Naming:**
 
