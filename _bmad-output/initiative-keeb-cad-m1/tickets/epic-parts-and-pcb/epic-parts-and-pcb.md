@@ -43,3 +43,4 @@ Both Corney Island designs have a live PCB placement with the right parts and ne
 - Waits on epic 5 because: the outline as board edge
 - Waits on footprint licence (initiative Open question, owner Sergii) before footprint library work.
 - Decision: 2026-10-25 Corney's TRRS nets are derived unchanged; a later rewire changes only the jack's catalogue pin roles.
+- Decision (2026-10-26, from epic-layout-editor refinement): this epic owns the Layout inspector's `Edit key cell` link to isolated cell mode (EXPERIENCE.md › Information Architecture, Workspace-specific › Isolated cell mode). Write it into Requirements when this epic is refined.
