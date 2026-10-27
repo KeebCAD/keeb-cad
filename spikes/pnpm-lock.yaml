@@ -182,15 +182,18 @@ importers:
       '@playwright/test':
         specifier: 1.64.1
         version: 1.64.1
+      '@types/node':
+        specifier: 26.6.5
+        version: 26.6.5
       typescript:
         specifier: 6.0.3
         version: 6.0.3
       vite:
         specifier: 8.3.5
-        version: 8.3.5
+        version: 8.3.5(@types/node@26.6.5)
       vitest:
         specifier: 4.1.12
-        version: 4.1.12(vite@8.3.5)
+        version: 4.1.12(@types/node@26.6.5)(vite@8.3.5(@types/node@26.6.5))
 
 packages:
 
@@ -458,6 +461,9 @@ packages:
 
   '@types/history@4.7.11':
     resolution: {integrity: sha512-qjDJRrmvBMiTx+jyLxvLfJU7UznFuokDv4f3WRuriHKERccVpFU+8XMQUAbDzoiJCsmexxRExQeMwwCdamSKDA==}
+
+  '@types/node@26.6.5':
+    resolution: {integrity: sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg==}
 
   '@types/node@7.10.14':
     resolution: {integrity: sha512-29GS75BE8asnTno3yB6ubOJOO0FboExEqNJy4bpz0GSmW/8wPTNL4h9h63c6s1uTrOopCmJYe/4yJLh5r92ZUA==}
@@ -830,6 +836,9 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  undici-types@8.9.0:
+    resolution: {integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==}
+
   use-mouse-matrix-transform@1.3.5:
     resolution: {integrity: sha512-Ng938MFw/1kmxqQYORBIzC50KAekVLLtY3aepGbrzHehoNvbE75afOo3APxGk+kR3cVKKc3H8fW6vjbNY5J5tw==}
     peerDependencies:
@@ -1110,9 +1119,13 @@ snapshots:
 
   '@types/fontkit@2.0.9':
     dependencies:
-      '@types/node': 7.10.14
+      '@types/node': 26.6.5
 
   '@types/history@4.7.11': {}
+
+  '@types/node@26.6.5':
+    dependencies:
+      undici-types: 8.9.0
 
   '@types/node@7.10.14': {}
 
@@ -1120,7 +1133,7 @@ snapshots:
 
   '@types/pdfkit@0.7.36':
     dependencies:
-      '@types/node': 7.10.14
+      '@types/node': 26.6.5
 
   '@types/react-router-dom@5.3.3':
     dependencies:
@@ -1146,13 +1159,13 @@ snapshots:
       chai: 6.3.0
       tinyrainbow: 3.2.0
 
-  '@vitest/mocker@4.1.12(vite@8.3.5)':
+  '@vitest/mocker@4.1.12(vite@8.3.5(@types/node@26.6.5))':
     dependencies:
       '@vitest/spy': 4.1.12
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 8.3.5
+      vite: 8.3.5(@types/node@26.6.5)
 
   '@vitest/pretty-format@4.1.12':
     dependencies:
@@ -1456,12 +1469,14 @@ snapshots:
 
   typescript@6.0.3: {}
 
+  undici-types@8.9.0: {}
+
   use-mouse-matrix-transform@1.3.5(react@18.3.1):
     dependencies:
       react: 18.3.1
       transformation-matrix: 3.1.0
 
-  vite@8.3.5:
+  vite@8.3.5(@types/node@26.6.5):
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.7
@@ -1469,12 +1484,13 @@ snapshots:
       rolldown: 1.2.15
       tinyglobby: 0.2.17
     optionalDependencies:
+      '@types/node': 26.6.5
       fsevents: 2.3.3
 
-  vitest@4.1.12(vite@8.3.5):
+  vitest@4.1.12(@types/node@26.6.5)(vite@8.3.5(@types/node@26.6.5)):
     dependencies:
       '@vitest/expect': 4.1.12
-      '@vitest/mocker': 4.1.12(vite@8.3.5)
+      '@vitest/mocker': 4.1.12(vite@8.3.5(@types/node@26.6.5))
       '@vitest/pretty-format': 4.1.12
       '@vitest/runner': 4.1.12
       '@vitest/snapshot': 4.1.12
@@ -1491,8 +1507,10 @@ snapshots:
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
       tinyrainbow: 3.2.0
-      vite: 8.3.5
+      vite: 8.3.5(@types/node@26.6.5)
       why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@types/node': 26.6.5
     transitivePeerDependencies:
       - msw
 

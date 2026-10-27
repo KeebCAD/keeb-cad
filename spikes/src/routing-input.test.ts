@@ -142,6 +142,7 @@ describe.each(DESIGNS)('Corney %s', (design) => {
       layers: ['F.Cu', 'B.Cu'],
       engineClearance: 0.2,
       boardEdgeClearance: 0.3,
+      holeClearance: 0.25,
       via: { diameter: 0.56, drill: 0.3 },
     })
   })

@@ -347,3 +347,89 @@ export function readSegments(text: string): CopperSegment[] {
     }
   })
 }
+
+/** An Edge.Cuts graphic drawn inside a footprint (e.g. an LED window), in world coordinates. */
+export type FootprintEdgeCut = { reference: string; segment: Segment }
+
+/**
+ * Every footprint's Edge.Cuts graphics, in file order, moved to world coordinates with the
+ * footprint's `(at x y r)` (the same transform as `readPads`). `fp_line`, `fp_arc` and
+ * `fp_circle` map one to one; `fp_rect` and `fp_poly` become their sides as lines, in order.
+ */
+export function readFootprintEdgeCuts(text: string): FootprintEdgeCut[] {
+  const root = boardRoot(text)
+  return children(root, 'footprint').flatMap((node, index) => {
+    const reference = referenceOf(node, index)
+    const where = `footprint ${reference}`
+    const at = child(node, 'at', where)
+    const fx = num(at[1], `${where} at.x`)
+    const fy = num(at[2], `${where} at.y`)
+    const theta = ((at[3] === undefined ? 0 : num(at[3], `${where} at.r`)) * Math.PI) / 180
+    const cos = Math.cos(theta)
+    const sin = Math.sin(theta)
+    const world = (p: Point): Point => ({
+      x: fx + p.x * cos + p.y * sin,
+      y: fy - p.x * sin + p.y * cos,
+    })
+    const sides = (pts: Point[]): Segment[] =>
+      pts.map((p, i) => ({ kind: 'line', start: world(p), end: world(pts[(i + 1) % pts.length]!) }))
+    const out: FootprintEdgeCut[] = []
+    for (const g of node) {
+      const kind = head(g)
+      if (!isList(g) || !kind?.startsWith('fp_')) continue
+      if (children(g, 'layer')[0]?.[1] !== EDGE_CUTS) continue
+      const w = `${where} ${kind}`
+      let segments: Segment[]
+      switch (kind) {
+        case 'fp_line': {
+          segments = [
+            { kind: 'line', start: world(point(g, 'start', w)), end: world(point(g, 'end', w)) },
+          ]
+          break
+        }
+        case 'fp_arc': {
+          segments = [
+            {
+              kind: 'arc',
+              start: world(point(g, 'start', w)),
+              mid: world(point(g, 'mid', w)),
+              end: world(point(g, 'end', w)),
+            },
+          ]
+          break
+        }
+        case 'fp_circle': {
+          const centre = point(g, 'center', w)
+          const end = point(g, 'end', w)
+          segments = [
+            {
+              kind: 'circle',
+              centre: world(centre),
+              radius: Math.hypot(end.x - centre.x, end.y - centre.y),
+            },
+          ]
+          break
+        }
+        case 'fp_rect': {
+          const a = point(g, 'start', w)
+          const b = point(g, 'end', w)
+          segments = sides([a, { x: b.x, y: a.y }, b, { x: a.x, y: b.y }])
+          break
+        }
+        case 'fp_poly': {
+          const pts = children(child(g, 'pts', w), 'xy').map((xy) => ({
+            x: num(xy[1], `${w} xy.x`),
+            y: num(xy[2], `${w} xy.y`),
+          }))
+          segments = sides(pts)
+          break
+        }
+        default: {
+          throw new Error(`${w}: unsupported Edge.Cuts graphic`)
+        }
+      }
+      for (const segment of segments) out.push({ reference, segment })
+    }
+    return out
+  })
+}

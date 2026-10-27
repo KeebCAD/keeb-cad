@@ -1,12 +1,15 @@
 // Engine-neutral routing input from an Ergogen `.kicad_pcb` (Corney). Pure: text in, data out.
 // Frame and units are KiCad's: mm, y down, degrees. Entries 6–10 adapt this to their engines.
 import {
+  parseSexpr,
+  readFootprintEdgeCuts,
   readKicadPcb,
   readPads,
   readSegments,
   type Pad,
   type Point,
   type Segment,
+  type Sexpr,
   type Size,
 } from '../../fixtures/src/kicad-pcb'
 import { splitNet } from './split-rule'
@@ -28,6 +31,16 @@ interface PadGeometry {
   size: Size
   drill: Size | undefined
   layers: CopperLayer[]
+  /** KiCad `roundrect_rratio` (roundrect pads only). */
+  roundrectRatio?: number
+  /** KiCad `chamfer_ratio` and chamfered corners (`top_left`, `bottom_right`…), when chamfered. */
+  chamfer?: { ratio: number; corners: string[] }
+}
+
+/** Shape details `readPads` does not read: roundrect ratio and chamfers, per pad in file order. */
+export interface PadShapeExtra {
+  roundrectRatio?: number
+  chamfer?: { ratio: number; corners: string[] }
 }
 
 export interface RoutingPad extends PadGeometry {
@@ -98,11 +111,16 @@ export interface DesignRules {
   /** The strictest net class's clearance, for engines that take one value. */
   engineClearance: number
   boardEdgeClearance: number
+  /** Copper to an NPTH hole's edge (KiCad's default hole clearance; decision 2026-10-27). */
+  holeClearance: number
   via: { diameter: number; drill: number }
 }
 
 export interface RoutingInput {
-  /** Edge.Cuts graphics, as in the file. */
+  /**
+   * Edge.Cuts graphics: the top-level ones as in the file, then each footprint's (LED windows),
+   * in world coordinates and file order, rects and polygons as their sides (decision 2026-10-27).
+   */
   outline: Segment[]
   pads: RoutingPad[]
   obstacles: PadObstacle[]
@@ -122,6 +140,7 @@ const CLASS_RULES: Record<NetClassName, { traceWidth: number; clearance: number 
   signal: { traceWidth: 0.15, clearance: 0.15 },
 }
 const BOARD_EDGE_CLEARANCE = 0.3
+const HOLE_CLEARANCE = 0.25
 const VIA = { diameter: 0.56, drill: 0.3 }
 
 function copperOf(pad: Pad): { copper: PadCopper; layers: CopperLayer[] } {
@@ -135,8 +154,9 @@ function copperOf(pad: Pad): { copper: PadCopper; layers: CopperLayer[] } {
   throw new Error(`${where}: no copper layer in ${pad.layers.join(' ')}`)
 }
 
-function geometry(pad: Pad): PadGeometry {
+function geometry(pad: Pad, extra: PadShapeExtra = {}): PadGeometry {
   return {
+    ...extra,
     type: pad.type,
     shape: pad.shape,
     x: pad.x,
@@ -157,16 +177,20 @@ export function padId(reference: string, pin: string, copper: PadCopper): string
  * `<Reference>.<pin>.<copper>` keeps the id on its first pad in file order; later ones get `.2`,
  * `.3`… Copies are never merged.
  */
-export function classifyPads(pads: readonly Pad[]): {
+export function classifyPads(
+  pads: readonly Pad[],
+  extras: readonly PadShapeExtra[] = [],
+): {
   pads: RoutingPad[]
   obstacles: PadObstacle[]
 } {
   const routable: RoutingPad[] = []
   const obstacles: PadObstacle[] = []
   const seen = new Map<string, number>()
-  for (const pad of pads) {
+  for (const [i, pad] of pads.entries()) {
+    const extra = extras[i]
     if (pad.pin === '' || pad.net === undefined) {
-      obstacles.push({ reference: pad.reference, pin: pad.pin, ...geometry(pad) })
+      obstacles.push({ reference: pad.reference, pin: pad.pin, ...geometry(pad, extra) })
       continue
     }
     const { copper } = copperOf(pad)
@@ -174,7 +198,7 @@ export function classifyPads(pads: readonly Pad[]): {
     const copy = (seen.get(base) ?? 0) + 1
     seen.set(base, copy)
     const id = copy === 1 ? base : `${base}.${copy}`
-    routable.push({ id, reference: pad.reference, pin: pad.pin, copper, net: pad.net, ...geometry(pad) })
+    routable.push({ id, reference: pad.reference, pin: pad.pin, copper, net: pad.net, ...geometry(pad, extra) })
   }
   return { pads: routable, obstacles }
 }
@@ -255,10 +279,31 @@ function copperLayer(layer: string): CopperLayer {
   throw new Error(`Segment on non-copper layer ${layer}`)
 }
 
+/** Each pad's roundrect ratio and chamfer, in `readPads`'s order (footprints, then pads). */
+export function readPadShapeExtras(pcbText: string): PadShapeExtra[] {
+  const root = parseSexpr(pcbText)
+  if (!Array.isArray(root)) return []
+  const lists = (node: Sexpr[], name: string) =>
+    node.filter((c): c is Sexpr[] => Array.isArray(c) && c[0] === name)
+  return lists(root, 'footprint').flatMap((fp) =>
+    lists(fp, 'pad').map((pad) => {
+      const extra: PadShapeExtra = {}
+      const rr = lists(pad, 'roundrect_rratio')[0]?.[1]
+      if (typeof rr === 'string') extra.roundrectRatio = Number(rr)
+      const ratio = lists(pad, 'chamfer_ratio')[0]?.[1]
+      const corners = (lists(pad, 'chamfer')[0] ?? []).slice(1).filter((c): c is string => typeof c === 'string')
+      if (typeof ratio === 'string' && Number(ratio) > 0 && corners.length > 0) {
+        extra.chamfer = { ratio: Number(ratio), corners }
+      }
+      return extra
+    }),
+  )
+}
+
 /** Builds the engine-neutral routing input from a `.kicad_pcb`'s text. */
 export function toRoutingInput(pcbText: string): RoutingInput {
   const { edgeCuts, footprints } = readKicadPcb(pcbText)
-  const { pads, obstacles } = classifyPads(readPads(pcbText))
+  const { pads, obstacles } = classifyPads(readPads(pcbText), readPadShapeExtras(pcbText))
 
   const fixedCopper: FixedTrace[] = readSegments(pcbText).map((s) => ({
     start: s.start,
@@ -302,7 +347,7 @@ export function toRoutingInput(pcbText: string): RoutingInput {
   )
 
   return {
-    outline: edgeCuts,
+    outline: [...edgeCuts, ...readFootprintEdgeCuts(pcbText).map((c) => c.segment)],
     pads,
     obstacles,
     fixedCopper,
@@ -312,6 +357,7 @@ export function toRoutingInput(pcbText: string): RoutingInput {
       layers: [...LAYERS],
       engineClearance: Math.max(...netClasses.map((c) => c.clearance)),
       boardEdgeClearance: BOARD_EDGE_CLEARANCE,
+      holeClearance: HOLE_CLEARANCE,
       via: { ...VIA },
     },
     connections,

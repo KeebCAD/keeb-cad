@@ -1,0 +1,11 @@
+{
+  // Node-side code: the kicad-drc script and its test, and the Vite, Vitest and Playwright
+  // configs (vite's types pull in node). The one project with @types/node; src/ has none.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "typeRoots": ["../node_modules/@types"]
+  },
+  "include": ["*.ts", "../vite.config.ts", "../vitest.config.ts", "../playwright.config.ts"]
+}

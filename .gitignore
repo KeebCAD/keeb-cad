@@ -14,3 +14,6 @@ dist/
 coverage/
 test-results/
 playwright-report/
+
+# Boards written by spikes/ kicad-drc
+spikes/out/

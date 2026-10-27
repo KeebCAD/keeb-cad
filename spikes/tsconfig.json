@@ -11,7 +11,9 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": []
+    "types": [],
+    // Shadows @types/node, which makerjs's type deps reference: src/ stays free of Node globals.
+    "typeRoots": ["./types-browser"]
   },
-  "include": ["src", "e2e", "vite.config.ts", "vitest.config.ts", "playwright.config.ts"]
+  "include": ["src", "e2e"]
 }

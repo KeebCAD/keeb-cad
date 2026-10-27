@@ -8,7 +8,7 @@ exports[`Corney wired > snapshots the counts 1`] = `
   "keyCell": 63,
   "nets": 119,
   "obstacles": 93,
-  "outlineSegments": 37,
+  "outlineSegments": 145,
   "pads": 556,
   "routing": 270,
   "singlePadNets": 21,
