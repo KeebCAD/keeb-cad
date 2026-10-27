@@ -3,7 +3,7 @@ title: 'pnpm check runs every check, with a pre-commit hook'
 type: 'feature'
 ticket: '3'
 created: '2026-10-26'
-status: 'built'
+status: done
 baseline_revision: '5d789a263cac5c5e5e7fa1caa9f11c7162708a52'
 route: 'full'
 route_source: 'auto'

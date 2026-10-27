@@ -3,7 +3,7 @@ title: 'dependency-cruiser rejects AD-10 violations'
 type: 'feature'
 ticket: '2'
 created: '2026-10-26'
-status: 'built'
+status: done
 baseline_revision: 'deaa74e8de97bb1a88e30666cb0d53d34c3fceec'
 route: 'full'
 route_source: 'auto'

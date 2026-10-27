@@ -3,7 +3,7 @@ title: 'GitHub Actions runs pnpm check on push'
 type: 'feature'
 ticket: '4'
 created: '2026-10-26'
-status: 'built'
+status: done
 baseline_revision: '644337025c402acd66dde24c1da71ff50a6fd414'
 route: 'oneshot'
 route_source: 'auto'

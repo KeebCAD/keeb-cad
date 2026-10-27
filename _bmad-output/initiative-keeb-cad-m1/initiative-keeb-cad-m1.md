@@ -8,6 +8,7 @@ companions:
   - _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md
 after: []
 risk: high
+status: in-progress
 ---
 
 # Corney Island rebuilt visually in keeb-cad, through to files ready for production

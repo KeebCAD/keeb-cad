@@ -3,7 +3,7 @@ title: 'Empty editor builds and previews from the workspace'
 type: 'feature'
 ticket: '1'
 created: '2026-10-26'
-status: 'built'
+status: done
 baseline_revision: '0967e50b217be7ad20f0547d0f8680ec45ac8790'
 route: 'full'
 route_source: 'auto'
