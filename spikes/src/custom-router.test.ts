@@ -5,7 +5,7 @@ import { routeConnections, type RouteResult } from './custom-router'
 import { drc } from './drc'
 import { addedViolations } from './drc-cases'
 import { EMPTY_ROUTES } from './route-set'
-import { toRoutingInput, type FixedTrace, type RoutingInput } from './routing-input'
+import { toRoutingInput, type FixedTrace, type RoutingInput, type RoutingPad } from './routing-input'
 
 const input = toRoutingInput(CORNEY.wired)
 const baseline = drc(input, EMPTY_ROUTES)
@@ -123,5 +123,98 @@ describe('custom router edge cases', () => {
   it('throws on a connection realised by fixed copper, naming it', () => {
     const fixed = input.connections.find((c) => c.realisedBy === 'fixed-copper')!
     expect(() => routeConnections(input, [fixed.id])).toThrow(fixed.id)
+  })
+})
+
+/**
+ * A one-layer box (B.Cu is a keep-out, so no vias): `B` runs the length of the box, and the
+ * shorter `A` crosses it, so the first pass routes `A` straight across and `B` has no way past.
+ * `A` can go round `B`'s left pad instead, which only a rip-up finds.
+ */
+function crossingBox(): RoutingInput {
+  const pad = (net: string, ref: string, x: number, y: number): RoutingPad => ({
+    id: `${ref}.1.F`,
+    reference: ref,
+    pin: '1',
+    copper: 'F',
+    net,
+    type: 'smd',
+    shape: 'rect',
+    x,
+    y,
+    r: 0,
+    size: { w: 0.6, h: 0.6 },
+    drill: undefined,
+    layers: ['F.Cu'],
+  })
+  const corners = [
+    { x: -3, y: -2 },
+    { x: 13, y: -2 },
+    { x: 13, y: 2 },
+    { x: -3, y: 2 },
+  ]
+  const ring: FixedTrace[] = corners.map((start, i) => ({ start, end: corners[(i + 1) % 4]!, width: 0.2, layer: 'F.Cu', net: undefined }))
+  const pads = [pad('A', 'PA1', 5, -1.2), pad('A', 'PA2', 5, 1.2), pad('B', 'PB1', 0, 0), pad('B', 'PB2', 10, 0)]
+  return {
+    outline: [],
+    pads,
+    obstacles: [],
+    fixedCopper: ring,
+    keepOuts: [{ id: 'no-back', polygon: corners.map((p) => ({ x: p.x * 2, y: p.y * 2 })), layers: ['B.Cu'] }],
+    netClasses: [{ name: 'signal', traceWidth: 0.15, clearance: 0.15, nets: ['A', 'B'] }],
+    rules: input.rules,
+    connections: [
+      { id: 'A:PA1.1.F~PA2.1.F', net: 'A', padA: 'PA1.1.F', padB: 'PA2.1.F', realisedBy: 'routing' },
+      { id: 'B:PB1.1.F~PB2.1.F', net: 'B', padA: 'PB1.1.F', padB: 'PB2.1.F', realisedBy: 'routing' },
+    ],
+  }
+}
+
+describe('custom router rip-up and reroute', () => {
+  const box = crossingBox()
+  const ids = box.connections.map((c) => c.id)
+  const [A, B] = ids as [string, string]
+  const boxAdded = (routes: RouteResult['routes']) => addedViolations(drc(box, EMPTY_ROUTES), drc(box, routes))
+
+  it('without rip-up, the connection blocked by an earlier one is unrouted; alone, it routes', () => {
+    const first = routeConnections(box, ids, { ripUpRounds: 0 })
+    expect(routedConnections(box, first.routes)).toEqual([A])
+    expect(first.unrouted).toEqual([B])
+    const alone = routeConnections(box, [B])
+    expect(alone.unrouted).toEqual([])
+    expect(routedConnections(box, alone.routes)).toEqual([B])
+  })
+
+  it('rips up the earlier connection, places the blocked one, and reroutes the ripped one round it', () => {
+    const { routes, unrouted, timedOut } = routeConnections(box, ids)
+    expect(unrouted).toEqual([])
+    expect(timedOut).toBe(false)
+    expect(routedConnections(box, routes).sort()).toEqual([...ids].sort())
+    expect(boxAdded(routes)).toEqual([])
+    expect(routes.vias).toEqual([])
+    // A no longer goes straight across: it goes round B's left pad.
+    const xs = routes.traces.filter((t) => t.connection === A).flatMap((t) => t.points.map((p) => p.x))
+    expect(Math.min(...xs)).toBeLessThan(0)
+    expect(routeConnections(box, ids)).toEqual({ routes, unrouted, timedOut })
+  })
+})
+
+describe('custom router deadline', () => {
+  const box = crossingBox()
+  const ids = box.connections.map((c) => c.id)
+
+  it('stops between connections once the injected clock passes the deadline, keeping what it placed', () => {
+    let t = 0
+    // Read once before each connection: 0 (A goes), then 1 > 0 (B is not started).
+    const result = routeConnections(box, ids, { deadlineMs: 0, now: () => t++ })
+    expect(result.timedOut).toBe(true)
+    expect(routedConnections(box, result.routes)).toEqual([ids[0]])
+    expect(result.unrouted).toEqual([ids[1]])
+  })
+
+  it('does not time out before a deadline it does not reach', () => {
+    const result = routeConnections(box, ids, { deadlineMs: 1e9, now: () => 0 })
+    expect(result.timedOut).toBe(false)
+    expect(result.unrouted).toEqual([])
   })
 })

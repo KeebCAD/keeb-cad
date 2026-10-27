@@ -1,4 +1,6 @@
 import type { SimpleRouteJson, SimplifiedPcbTraces } from '@tscircuit/capacity-autorouter'
+import type { RouteSet } from './route-set'
+import type { RoutingInput } from './routing-input'
 
 /** Main thread → worker. */
 export interface RouteRequest {
@@ -28,3 +30,23 @@ export type RouteResponse =
 export interface ExternalPage {
   routeBoard?: (request: RouteRequest) => Promise<RouteResponse>
 }
+
+/** Main thread → custom worker (`?corney=<design>&engine=custom`). `RoutingInput` is plain data. */
+export interface CustomRouteRequest {
+  input: RoutingInput
+  ids: string[]
+  /** Routing-time cap in ms, checked between connections. */
+  capMs: number
+  /** Negative control (`&probe`): the worker fetches an external URL instead of routing. */
+  probe?: boolean
+}
+
+/**
+ * Custom worker → main thread, with `RouteResponse`'s statuses: `solved` when the router ran to
+ * its end (some connections may be in `unrouted`), `timeout` past the cap with what was placed
+ * by then, `failed` with `thrown` when it threw (no routes), `probed` for the `&probe` control. `ms` is routing time in the worker.
+ */
+export type CustomRouteResponse =
+  | { status: 'solved' | 'timeout'; error: string | null; routes: RouteSet; unrouted: string[]; ms: number }
+  | { status: 'failed'; error: string; routes: RouteSet; unrouted: string[]; ms: number; thrown: true }
+  | { status: 'probed'; error: string | null; routes: RouteSet; unrouted: string[]; ms: number }

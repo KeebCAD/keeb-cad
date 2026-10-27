@@ -1,5 +1,6 @@
-// The matrix's "Outbound request" row for `score:tscircuit`: with `--probe` the page's worker
-// fetches https://example.com/; the browser-level block must fail the run and name the URL.
+// The matrix's "Outbound request" row for `score:tscircuit` and `score:custom`: with `--probe` the
+// page's worker fetches https://example.com/; the browser-level block (shared, in score.ts) must
+// fail the run and name the URL.
 // The probe scores nothing, so it needs no kicad-cli. It needs dist/, built here first.
 import { spawnSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
@@ -14,9 +15,9 @@ beforeAll(async () => {
   await build({ root: spikes, logLevel: 'silent' })
 }, 60_000)
 
-describe('score:tscircuit with an outbound request', () => {
+describe.each(['score-tscircuit.ts', 'score-custom.ts'])('%s with an outbound request', (script) => {
   it('exits non-zero and names the URL', () => {
-    const r = spawnSync(process.execPath, ['--import', join(here, 'ts-resolve.mjs'), join(here, 'score-tscircuit.ts'), '--probe'], {
+    const r = spawnSync(process.execPath, ['--import', join(here, 'ts-resolve.mjs'), join(here, script), '--probe'], {
       encoding: 'utf8',
       cwd: spikes,
       timeout: 60_000,

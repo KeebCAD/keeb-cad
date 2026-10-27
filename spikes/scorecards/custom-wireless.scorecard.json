@@ -1,0 +1,94 @@
+{
+  "engine": {
+    "name": "custom",
+    "version": "f96ff22"
+  },
+  "design": "wireless",
+  "kicadVersion": "10.0.7",
+  "date": "2026-10-27T13:49:13.154Z",
+  "connections": {
+    "total": 152,
+    "routed": 152,
+    "completionPct": 100,
+    "byRealisation": {
+      "key-cell": {
+        "total": 63,
+        "routed": 63,
+        "completionPct": 100
+      },
+      "fixed-copper": {
+        "total": 108,
+        "routed": 0,
+        "completionPct": null
+      },
+      "routing": {
+        "total": 89,
+        "routed": 89,
+        "completionPct": 100
+      }
+    }
+  },
+  "drc": {
+    "errors": 0,
+    "byClass": {
+      "power": 0,
+      "signal": 0,
+      "default": 0
+    },
+    "byKind": {
+      "clearance": 0,
+      "short": 0,
+      "track-width": 0,
+      "edge-clearance": 0,
+      "hole-clearance": 0
+    },
+    "added": 0
+  },
+  "kicad": {
+    "clearanceFamily": {},
+    "other": {
+      "hole_to_hole": 2,
+      "lib_footprint_issues": 75
+    },
+    "capped": [],
+    "added": 0,
+    "addedUncertain": []
+  },
+  "baseline": {
+    "drc": {
+      "errors": 0,
+      "byClass": {
+        "power": 0,
+        "signal": 0,
+        "default": 0
+      },
+      "byKind": {
+        "clearance": 0,
+        "short": 0,
+        "track-width": 0,
+        "edge-clearance": 0,
+        "hole-clearance": 0
+      }
+    },
+    "kicad": {
+      "clearanceFamily": {},
+      "other": {
+        "lib_footprint_issues": 75,
+        "unconnected_items": 152
+      },
+      "capped": []
+    }
+  },
+  "workerMs": 2618,
+  "peakMemoryMb": 30.6,
+  "run": {
+    "status": "solved",
+    "error": null,
+    "capMs": 600000
+  },
+  "unrouted": [],
+  "crossCheck": {
+    "drcOnly": [],
+    "kicadOnly": []
+  }
+}

@@ -13,7 +13,8 @@
     "verify": "pnpm install --frozen-lockfile && playwright install chromium && pnpm typecheck && pnpm test && pnpm build && pnpm route && pnpm kicad-drc",
     "test": "vitest run",
     "kicad-drc": "node --import ./scripts/ts-resolve.mjs scripts/kicad-drc.ts",
-    "score:tscircuit": "vite build && node --import ./scripts/ts-resolve.mjs scripts/score-tscircuit.ts"
+    "score:tscircuit": "vite build && node --import ./scripts/ts-resolve.mjs scripts/score-tscircuit.ts",
+    "score:custom": "vite build && node --import ./scripts/ts-resolve.mjs scripts/score-custom.ts"
   },
   "dependencies": {
     "@tscircuit/capacity-autorouter": "0.0.1010",

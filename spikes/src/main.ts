@@ -1,5 +1,5 @@
 import { brokenBoard, testBoard } from './test-board'
-import type { ExternalPage, RouteRequest, RouteResponse } from './protocol'
+import type { CustomRouteRequest, CustomRouteResponse, ExternalPage, RouteRequest, RouteResponse } from './protocol'
 
 const result = document.querySelector<HTMLPreElement>('#result')
 if (!result) throw new Error('#result missing')
@@ -12,7 +12,18 @@ function show(status: string, body: unknown): void {
 /** Per-board solve cap for `?corney=` (10× the 60 s bar), unless `&cap=<ms>` says otherwise. */
 const CORNEY_CAP_MS = 600_000
 
-const worker = new Worker(new URL('./route.worker.ts', import.meta.url), { type: 'module' })
+/**
+ * The page's one worker, made on first use, so a page runs only the worker it needs: the
+ * tscircuit one (`route.worker.ts`) or, for `&engine=custom`, `custom.worker.ts`. An idle
+ * second worker would load its bundle and show in the score scripts' heap samples. Each
+ * `new Worker(new URL(…, import.meta.url))` stays written out: that is the form Vite bundles.
+ */
+function listen<Res>(worker: Worker, onAnswer: (response: Res) => void, onError: (message: string) => void): Worker {
+  worker.addEventListener('message', (event: MessageEvent<Res>) => onAnswer(event.data))
+  worker.addEventListener('error', (event) => onError(`worker error: ${event.message}`))
+  return worker
+}
+
 /** `?external`: the caller waiting on the request in flight. */
 let pending: ((response: RouteResponse) => void) | undefined
 function answer(response: RouteResponse): void {
@@ -21,28 +32,48 @@ function answer(response: RouteResponse): void {
   if (resolve) resolve(response)
   else show(response.status, response)
 }
-worker.addEventListener('message', (event: MessageEvent<RouteResponse>) => answer(event.data))
-worker.addEventListener('error', (event) => {
-  answer({ status: 'failed', error: `worker error: ${event.message}`, traces: [], ms: 0, thrown: true })
-})
+const tscircuitWorker = () =>
+  listen<RouteResponse>(new Worker(new URL('./route.worker.ts', import.meta.url), { type: 'module' }), answer, (error) =>
+    answer({ status: 'failed', error, traces: [], ms: 0, thrown: true }),
+  )
+
+const loadInput = async (design: string) => {
+  const [{ CORNEY }, { toRoutingInput }] = await Promise.all([import('./corney'), import('./routing-input')])
+  if (design !== 'wired' && design !== 'wireless') throw new Error(`Unknown Corney design ${design}`)
+  return toRoutingInput(CORNEY[design])
+}
 
 /**
  * `?corney=wired|wireless` routes that Corney design. The page builds the SRJ, so the worker's
  * `ms` is solve time only. The design texts load on demand, so the default page stays small.
  */
 async function corneyRequest(design: string, capMs: number): Promise<RouteRequest> {
-  const [{ CORNEY }, { toRoutingInput }, { toSimpleRouteJson }] = await Promise.all([
-    import('./corney'),
-    import('./routing-input'),
-    import('./tscircuit-adapter'),
-  ])
-  if (design !== 'wired' && design !== 'wireless') throw new Error(`Unknown Corney design ${design}`)
-  return { board: toSimpleRouteJson(toRoutingInput(CORNEY[design])), probe: false, capMs }
+  const [input, { toSimpleRouteJson }] = await Promise.all([loadInput(design), import('./tscircuit-adapter')])
+  return { board: toSimpleRouteJson(input), probe: false, capMs }
 }
+
+/**
+ * `?corney=<design>&engine=custom`: every `key-cell` and `routing` connection, routed by the
+ * custom router in its own worker. The page builds the RoutingInput, so `ms` is routing time.
+ */
+async function customRequest(design: string, capMs: number, broken: boolean, probe: boolean): Promise<CustomRouteRequest> {
+  const input = await loadInput(design)
+  const ids = input.connections.filter((c) => c.realisedBy === 'key-cell' || c.realisedBy === 'routing').map((c) => c.id)
+  // `&broken`: a negative control, an id the router does not know, so it throws in the worker.
+  if (broken) ids.push(BROKEN_ID)
+  return { input, ids, capMs, probe }
+}
+
+/** The unknown connection id `&broken` adds. */
+const BROKEN_ID = 'NOPE:X1.1.F~X2.1.F'
+
+const pageFailed = (err: unknown) => show('failed', { status: 'failed', error: `page: ${String(err)}`, traces: [], ms: 0, thrown: true })
 
 const params = new URLSearchParams(location.search)
 const corney = params.get('corney')
+const engine = params.get('engine') ?? 'tscircuit'
 if (params.has('external')) {
+  const worker = tscircuitWorker()
   ;(window as ExternalPage).routeBoard = (request) =>
     new Promise<RouteResponse>((resolve, reject) => {
       if (pending) return reject(new Error('routeBoard: a request is already in flight'))
@@ -52,14 +83,26 @@ if (params.has('external')) {
   show('ready', { status: 'ready' })
 } else if (corney !== null) {
   const cap = Number(params.get('cap') ?? CORNEY_CAP_MS)
-  corneyRequest(corney, Number.isFinite(cap) && cap > 0 ? cap : CORNEY_CAP_MS).then(
-    (request) => worker.postMessage(request),
-    (err: unknown) => show('failed', { status: 'failed', error: `page: ${String(err)}`, traces: [], ms: 0, thrown: true }),
-  )
+  const capMs = Number.isFinite(cap) && cap > 0 ? cap : CORNEY_CAP_MS
+  if (engine === 'custom') {
+    // A page failure in the custom response's shape (score-custom reads `routes`, `unrouted`).
+    const customFailed = (error: string, ids: string[]) =>
+      show('failed', { status: 'failed', error, routes: { traces: [], vias: [] }, unrouted: ids, ms: 0, thrown: true })
+    customRequest(corney, capMs, params.has('broken'), params.has('probe')).then((request) => {
+      const worker = listen<CustomRouteResponse>(
+        new Worker(new URL('./custom.worker.ts', import.meta.url), { type: 'module' }),
+        (response) => show(response.status, response),
+        (error) => customFailed(error, request.ids),
+      )
+      worker.postMessage(request)
+    }, (err: unknown) => customFailed(`page: ${String(err)}`, []))
+  } else if (engine === 'tscircuit') {
+    corneyRequest(corney, capMs).then((request) => tscircuitWorker().postMessage(request), pageFailed)
+  } else pageFailed(new Error(`Unknown engine ${engine}`))
 } else {
   const request: RouteRequest = {
     board: params.has('broken') ? brokenBoard : testBoard,
     probe: params.has('probe'),
   }
-  worker.postMessage(request)
+  tscircuitWorker().postMessage(request)
 }

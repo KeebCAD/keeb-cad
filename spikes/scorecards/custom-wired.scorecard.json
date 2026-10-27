@@ -1,0 +1,125 @@
+{
+  "engine": {
+    "name": "custom",
+    "version": "f96ff22"
+  },
+  "design": "wired",
+  "kicadVersion": "10.0.7",
+  "date": "2026-10-27T13:49:08.203Z",
+  "connections": {
+    "total": 333,
+    "routed": 333,
+    "completionPct": 100,
+    "byRealisation": {
+      "key-cell": {
+        "total": 63,
+        "routed": 63,
+        "completionPct": 100
+      },
+      "fixed-copper": {
+        "total": 104,
+        "routed": 0,
+        "completionPct": null
+      },
+      "routing": {
+        "total": 270,
+        "routed": 270,
+        "completionPct": 100
+      }
+    }
+  },
+  "drc": {
+    "errors": 216,
+    "byClass": {
+      "power": 108,
+      "signal": 108,
+      "default": 0
+    },
+    "byKind": {
+      "clearance": 0,
+      "short": 0,
+      "track-width": 0,
+      "edge-clearance": 216,
+      "hole-clearance": 0
+    },
+    "added": 0
+  },
+  "kicad": {
+    "clearanceFamily": {
+      "copper_edge_clearance": 199
+    },
+    "other": {
+      "hole_to_hole": 45,
+      "holes_co_located": 27,
+      "invalid_outline": 4,
+      "lib_footprint_issues": 101
+    },
+    "capped": [
+      "copper_edge_clearance"
+    ],
+    "added": 0,
+    "addedUncertain": [
+      "copper_edge_clearance"
+    ]
+  },
+  "baseline": {
+    "drc": {
+      "errors": 216,
+      "byClass": {
+        "power": 108,
+        "signal": 108,
+        "default": 0
+      },
+      "byKind": {
+        "clearance": 0,
+        "short": 0,
+        "track-width": 0,
+        "edge-clearance": 216,
+        "hole-clearance": 0
+      }
+    },
+    "kicad": {
+      "clearanceFamily": {
+        "copper_edge_clearance": 199
+      },
+      "other": {
+        "invalid_outline": 4,
+        "lib_footprint_issues": 101,
+        "unconnected_items": 333
+      },
+      "capped": [
+        "copper_edge_clearance"
+      ]
+    }
+  },
+  "workerMs": 13000,
+  "peakMemoryMb": 83.1,
+  "run": {
+    "status": "solved",
+    "error": null,
+    "capMs": 600000
+  },
+  "unrouted": [],
+  "crossCheck": {
+    "drcOnly": [
+      "copper_edge_clearance|pad:LED25.4.B",
+      "copper_edge_clearance|pad:LED26.4.F",
+      "copper_edge_clearance|pad:LED26.3.F",
+      "copper_edge_clearance|pad:LED26.1.F",
+      "copper_edge_clearance|pad:LED26.2.F",
+      "copper_edge_clearance|pad:LED26.2.B",
+      "copper_edge_clearance|pad:LED26.1.B",
+      "copper_edge_clearance|pad:LED26.3.B",
+      "copper_edge_clearance|pad:LED26.4.B",
+      "copper_edge_clearance|pad:LED27.4.F",
+      "copper_edge_clearance|pad:LED27.3.F",
+      "copper_edge_clearance|pad:LED27.1.F",
+      "copper_edge_clearance|pad:LED27.2.F",
+      "copper_edge_clearance|pad:LED27.2.B",
+      "copper_edge_clearance|pad:LED27.1.B",
+      "copper_edge_clearance|pad:LED27.3.B",
+      "copper_edge_clearance|pad:LED27.4.B"
+    ],
+    "kicadOnly": []
+  }
+}

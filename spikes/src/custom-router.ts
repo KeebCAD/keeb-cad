@@ -14,6 +14,13 @@
 // neighbouring grid points is within that distance of one of them, so if both are free the whole
 // segment keeps its clearance. Vias sit on grid points, so their field has no margin. Arc
 // flattening and clipper's chords and rounding add `tol`, always outwards.
+//
+// After the first pass (shortest first), a bounded rip-up and reroute (story 9's decision): each
+// unrouted connection is searched on the static field only, with a cost (`crossCost`) for steps
+// onto the router's own copper; the placed connections its copper comes within clearance of are
+// ripped up, it is placed, and they are rerouted. The attempt is kept only if all of them reroute,
+// so the routed count only grows. `ripUpRounds` rounds, deterministic. An optional deadline
+// (`deadlineMs` on an injected clock) is checked between connections.
 import { EndType, JoinType, inflatePathsD, type PathsD } from 'clipper2-ts'
 import Flatbush from 'flatbush'
 import type { Point } from '../../fixtures/src/kicad-pcb'
@@ -38,12 +45,29 @@ export interface RouterOptions {
   viaCost?: number
   /** Extra cost of a change of direction, in mm of trace. Default 0.2. */
   bendCost?: number
+  /** Rounds of rip-up and reroute after the first pass. Default 3; 0 turns it off. */
+  ripUpRounds?: number
+  /**
+   * Rip-up search only: extra cost, in mm of trace, of each grid step (or via) onto the router's
+   * own copper of another net, which that search does not treat as an obstacle. Default 3, so the
+   * path rips up few connections. A cost, not a rule: clearances are untouched.
+   */
+  crossCost?: number
+  /**
+   * Stop starting work once `now()` is past this time (on `now`'s clock). Checked between
+   * connections only: one A* search is not interrupted.
+   */
+  deadlineMs?: number
+  /** The clock `deadlineMs` is on. Default `performance.now`. Injected, so tests (and the router) stay pure. */
+  now?: () => number
 }
 
 export interface RouteResult {
   routes: RouteSet
-  /** Ids the router could not route, in routing order. They have no traces or vias in `routes`. */
+  /** Ids the router could not route (or did not reach before the deadline), in routing order. They have no traces or vias in `routes`. */
   unrouted: string[]
+  /** The deadline passed: the routes are what was placed by then. */
+  timedOut: boolean
 }
 
 export const DEFAULT_STEP = 0.1
@@ -119,17 +143,26 @@ interface Grid {
  */
 class Field {
   readonly raster: [Int32Array, Int32Array]
-  private readonly staticItems: Array<{ net: number; layers: [boolean, boolean]; paths: PathsD }> = []
+  private readonly staticItems: Array<{ net: number; layers: [boolean, boolean]; paths: PathsD }>
   private readonly dynamicItems: Array<{ net: number; layers: [boolean, boolean]; paths: PathsD; box: Bounds }> = []
   private index: Flatbush | undefined
   private readonly grid: Grid
   private readonly delta: (rule: Rule) => number
 
-  constructor(grid: Grid, delta: (rule: Rule) => number) {
+  /** An empty field, or with `from`, a copy of `from`'s static items (call before any dynamic one). */
+  constructor(grid: Grid, delta: (rule: Rule) => number, from?: Field) {
     this.grid = grid
     this.delta = delta
     const n = grid.nx * grid.ny
-    this.raster = [new Int32Array(n), new Int32Array(n)]
+    if (from) {
+      if (from.dynamicItems.length > 0) throw new Error('Field: copy a static-only field')
+      this.raster = [from.raster[0].slice(), from.raster[1].slice()]
+      this.staticItems = from.staticItems
+      this.index = from.index
+    } else {
+      this.raster = [new Int32Array(n), new Int32Array(n)]
+      this.staticItems = []
+    }
   }
 
   addStatic(items: readonly Item[]): void {
@@ -328,6 +361,11 @@ export function routeConnections(input: RoutingInput, ids: readonly string[], op
   const step = options.step ?? DEFAULT_STEP
   const viaCost = options.viaCost ?? 1.5
   const bendCost = options.bendCost ?? 0.2
+  const ripUpRounds = options.ripUpRounds ?? 3
+  const crossCost = options.crossCost ?? 3
+  const now = options.now ?? (() => performance.now())
+  const deadline = options.deadlineMs
+  const pastDeadline = () => deadline !== undefined && now() > deadline
   const connections = chosen(input, ids)
 
   const { rules } = input
@@ -378,21 +416,31 @@ export function routeConnections(input: RoutingInput, ids: readonly string[], op
 
   const grid = gridOf(input, step)
   const margin = (step * Math.SQRT2) / 2
+  const fieldDelta = (radius: number, gridMargin: number) => (rule: Rule) => clearance[rule] + radius + gridMargin + TOL
+  /** Static obstacles only, per placed width: the rip-up's search, and the base of every field. */
+  const staticFields = new Map<string, Field>()
+  /** Static obstacles plus the router's own copper (`placed`). Dropped whole when copper is ripped up. */
   const fields = new Map<string, Field>()
-  /** The router's own copper so far, for fields made after it was placed. */
-  const placed: Item[] = []
-  const fieldFor = (key: string, radius: number, gridMargin: number) => {
+  /** The router's own copper, by connection id. */
+  const placed = new Map<string, Placed>()
+  const fieldFor = (withPlaced: boolean, key: string, radius: number, gridMargin: number) => {
+    let base = staticFields.get(key)
+    if (!base) {
+      base = new Field(grid, fieldDelta(radius, gridMargin))
+      base.addStatic(items)
+      staticFields.set(key, base)
+    }
+    if (!withPlaced) return base
     let f = fields.get(key)
     if (!f) {
-      f = new Field(grid, (rule) => clearance[rule] + radius + gridMargin + TOL)
-      f.addStatic(items)
-      for (const d of placed) f.addDynamic(d)
+      f = new Field(grid, fieldDelta(radius, gridMargin), base)
+      for (const p of placed.values()) for (const it of p.items) f.addDynamic(it)
       fields.set(key, f)
     }
     return f
   }
-  const viaField = () => fieldFor('via', rules.via.diameter / 2, 0)
-  const traceField = (width: number) => fieldFor(`trace:${width}`, width / 2, margin)
+  const viaField = (withPlaced: boolean) => fieldFor(withPlaced, 'via', rules.via.diameter / 2, 0)
+  const traceField = (withPlaced: boolean, width: number) => fieldFor(withPlaced, `trace:${width}`, width / 2, margin)
 
   const { nx, ny, x0, y0 } = grid
   const N = nx * ny
@@ -439,10 +487,8 @@ export function routeConnections(input: RoutingInput, ids: readonly string[], op
     return nodes
   }
 
-  const routes: RouteSet = { traces: [], vias: [] }
-  const unrouted: string[] = []
   const padById = new Map(input.pads.map((p) => [p.id, p]))
-  const order = connections
+  const order: Entry[] = connections
     .map((c) => {
       const a = padById.get(c.padA)
       const b = padById.get(c.padB)
@@ -451,11 +497,10 @@ export function routeConnections(input: RoutingInput, ids: readonly string[], op
     })
     .sort((p, q) => p.length - q.length || (p.c.id < q.c.id ? -1 : p.c.id > q.c.id ? 1 : 0))
 
-  for (const { c, a, b } of order) {
+  /** A* for one connection on the given fields: its copper, or undefined when it has no path. */
+  const search = ({ c, a, b }: Entry, tf: Field, vf: Field, soft?: { tf: Field; vf: Field }): Placed | undefined => {
     const net = codeOf(c.net)
     const width = widthOf(c.net)
-    const tf = traceField(width)
-    const vf = viaField()
     gen++
     heap.clear()
 
@@ -518,21 +563,19 @@ export function routeConnections(input: RoutingInput, ids: readonly string[], op
         const nc = j * nx + i
         if (!tf.free(l, nc, net)) continue
         const len = d % 2 === 0 ? step : step * Math.SQRT2
-        relax(l * N + nc, gi + len + (din >= 0 && din < 8 && din !== d ? bendCost : 0), d)
+        const crossing = soft && !soft.tf.free(l, nc, net) ? crossCost : 0
+        relax(l * N + nc, gi + len + crossing + (din >= 0 && din < 8 && din !== d ? bendCost : 0), d)
       }
       // A via: not at a start, not right after another via, free on both layers.
       if (din !== -1 && din !== VIA_DIR && vf.free(0, cell, net) && vf.free(1, cell, net)) {
         const other = (1 - l) * N + cell
         // Goals are reached only by trace moves: the state has no direction, so a goal closed after
         // a via would drop a later same-layer arrival.
-        if (goal[other] !== gen && tf.free(1 - l, cell, net)) relax(other, gi + viaCost, VIA_DIR)
+        const crossing = soft && !(soft.vf.free(0, cell, net) && soft.vf.free(1, cell, net)) ? crossCost : 0
+        if (goal[other] !== gen && tf.free(1 - l, cell, net)) relax(other, gi + viaCost + crossing, VIA_DIR)
       }
     }
-
-    if (found < 0) {
-      unrouted.push(c.id)
-      continue
-    }
+    if (found < 0) return undefined
 
     // Walk back to the start, then split into runs per layer, with a via at each layer change.
     const path: number[] = []
@@ -562,13 +605,8 @@ export function routeConnections(input: RoutingInput, ids: readonly string[], op
     if (endStub) run.push(endStub)
     flush(found >= N ? 1 : 0)
     // A path with no trace (start on the goal, or every run under 2 points) realises nothing.
-    if (traces.length === 0) {
-      unrouted.push(c.id)
-      continue
-    }
+    if (traces.length === 0) return undefined
 
-    routes.traces.push(...traces)
-    routes.vias.push(...vias)
     const added: Item[] = []
     for (const t of traces) {
       for (let k = 1; k < t.points.length; k++) {
@@ -576,11 +614,136 @@ export function routeConnections(input: RoutingInput, ids: readonly string[], op
       }
     }
     for (const v of vias) added.push(shapeItem(net, [true, true], 'copper', viaShape(v.at, v.diameter)))
-    placed.push(...added)
-    for (const f of fields.values()) for (const it of added) f.addDynamic(it)
+    return { net, traces, vias, items: added }
   }
 
-  return { routes, unrouted }
+  const place = (id: string, p: Placed) => {
+    placed.set(id, p)
+    for (const f of fields.values()) for (const it of p.items) f.addDynamic(it)
+  }
+  const routeOn = (e: Entry, withPlaced: boolean) => search(e, traceField(withPlaced, widthOf(e.c.net)), viaField(withPlaced))
+
+  /**
+   * Rip-up and reroute for one unrouted connection: route it ignoring the router's own copper,
+   * rip up every placed connection of another net its copper comes within clearance of, place
+   * it, and reroute the ripped ones (routing order). Kept only if every ripped one reroutes, so
+   * the routed count only grows; otherwise everything is put back as it was.
+   */
+  const ripUp = (e: Entry): 'placed' | 'kept' | 'timeout' => {
+    const width = widthOf(e.c.net)
+    const p = search(e, traceField(false, width), viaField(false), { tf: traceField(true, width), vf: viaField(true) })
+    if (!p) return 'kept'
+    const victims = new Set<string>()
+    for (const [id, q] of placed) if (q.net !== p.net && conflicts(p.items, q.items, clearance.copper)) victims.add(id)
+    const before = new Map(placed)
+    for (const id of victims) placed.delete(id)
+    fields.clear()
+    place(e.c.id, p)
+    let outcome: 'placed' | 'kept' | 'timeout' = 'placed'
+    for (const o of order) {
+      if (!victims.has(o.c.id)) continue
+      if (pastDeadline()) {
+        outcome = 'timeout'
+        break
+      }
+      const q = routeOn(o, true)
+      if (!q) {
+        outcome = 'kept'
+        break
+      }
+      place(o.c.id, q)
+    }
+    if (outcome !== 'placed') {
+      placed.clear()
+      for (const [id, q] of before) placed.set(id, q)
+      fields.clear()
+    }
+    return outcome
+  }
+
+  let timedOut = false
+  for (const e of order) {
+    if (pastDeadline()) {
+      timedOut = true
+      break
+    }
+    const p = routeOn(e, true)
+    if (p) place(e.c.id, p)
+  }
+  for (let round = 0; round < ripUpRounds && !timedOut; round++) {
+    let progress = false
+    for (const e of order) {
+      if (placed.has(e.c.id)) continue
+      if (pastDeadline()) {
+        timedOut = true
+        break
+      }
+      const outcome = ripUp(e)
+      if (outcome === 'timeout') {
+        timedOut = true
+        break
+      }
+      if (outcome === 'placed') progress = true
+    }
+    if (!progress) break
+  }
+
+  const routes: RouteSet = { traces: [], vias: [] }
+  const unrouted: string[] = []
+  for (const { c } of order) {
+    const p = placed.get(c.id)
+    if (!p) {
+      unrouted.push(c.id)
+      continue
+    }
+    routes.traces.push(...p.traces)
+    routes.vias.push(...p.vias)
+  }
+  return { routes, unrouted, timedOut }
+}
+
+/** A connection to route, with its pads and its pad-to-pad length (the routing order). */
+interface Entry {
+  c: Connection
+  a: RoutingPad
+  b: RoutingPad
+  length: number
+}
+
+/** One connection's copper: its traces and vias, and the same as obstacle items. */
+interface Placed {
+  net: number
+  traces: RouteTrace[]
+  vias: RouteVia[]
+  items: Item[]
+}
+
+/** Whether any item of `xs` comes within `gap` (+ tolerance) of an item of `ys` on a shared layer. */
+function conflicts(xs: readonly Item[], ys: readonly Item[], gap: number): boolean {
+  for (const x of xs) {
+    const bx = itemBounds(x)
+    for (const y of ys) {
+      if (!((x.layers[0] && y.layers[0]) || (x.layers[1] && y.layers[1]))) continue
+      const by = itemBounds(y)
+      const reach = gap + TOL
+      if (bx.maxX + reach < by.minX || by.maxX + reach < bx.minX || bx.maxY + reach < by.minY || by.maxY + reach < bx.minY) continue
+      if (coreDistance(x.core as Core, y.core as Core).d - x.r - y.r < reach) return true
+    }
+  }
+  return false
+}
+
+function itemBounds(it: Item): Bounds {
+  const c = it.core
+  const pts = c.kind === 'point' ? [c.p] : c.kind === 'segment' ? [c.a, c.b] : c.pts
+  const b = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
+  for (const p of pts) {
+    b.minX = Math.min(b.minX, p.x - it.r)
+    b.minY = Math.min(b.minY, p.y - it.r)
+    b.maxX = Math.max(b.maxX, p.x + it.r)
+    b.maxY = Math.max(b.maxY, p.y + it.r)
+  }
+  return b
 }
 
 /** Drops the inner points of collinear runs (grid directions, so exact up to float noise). */

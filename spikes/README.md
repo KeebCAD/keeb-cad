@@ -223,7 +223,7 @@ names the URL. So does a missing `kicad-cli`, which names `sudo pacman -S kicad`
 scores nothing and needs no kicad-cli. `scripts/score-tscircuit-probe.test.ts` builds `dist/`,
 runs it, and asserts a non-zero exit naming `https://example.com/`. `e2e/corney-cap.spec.ts`
 routes wireless with a 200 ms cap and asserts `timeout`, an error, and a stop near the cap.
-`scripts/run-status.ts` maps the worker's response to the scorecard's `run.status`. The shared KiCad helpers are in `scripts/kicad.ts`. The
+`scripts/run-status.ts` maps the worker's response to the scorecard's `run.status`. The shared KiCad helpers are in `scripts/kicad.ts`. Since story 9 the engine-neutral steps (serving, blocking, heap sampling, steps 2–5, `--probe`) are in `scripts/score.ts`, shared with `score:custom`; `score-tscircuit.ts` keeps the adapter and the reroute. The
 script is outside `verify` because a routing result is not a test outcome. The adapter and
 completion unit tests are inside it.
 
@@ -454,3 +454,84 @@ The test also routes two chained `R0` connections that share `D6.1.B` (both real
 boxes `D1.2.B` in a netless ring on both layers (`unrouted`, no traces or vias), checks the GND
 traces are 0.25 mm wide, and checks that two runs give equal `RouteSet`s. The worker run, the
 Chromium timing, peak memory and the scorecard belong to story 9.
+
+## Custom router routes full Corney and is scored (story 9)
+
+```sh
+pnpm --dir spikes score:custom   # vite build, then scripts/score-custom.ts; needs kicad-cli
+```
+
+The same pipeline as `score:tscircuit`, through the same `scoreRoutes` in `scripts/score.ts`, so
+the two scorecards compare field for field: port 4175, a 600 s cap plus 120 s of grace, every
+off-origin request blocked and fatal, the worker's V8 heap sampled every 100 ms over CDP, `drc`
+and KiCad on the bare and the routed board (`out/custom-<design>/`), `added`, `addedUncertain`,
+`crossCheck` and `unrouted`. It writes `scorecards/custom-<design>.scorecard.json` with every R2
+field but `reroute` (story 10), and prints one line per design. `engine.version` is the git blob
+hash of `src/custom-router.ts` (`git hash-object`, 7 characters, or `spike` without git), so it
+names the exact router source the scorecards came from.
+
+- **Page and worker.** `/?corney=<design>&engine=custom&cap=<ms>`: the page builds the
+  `RoutingInput` from `CORNEY[design]` and takes every `key-cell` and `routing` connection (wired
+  333, wireless 152). It posts `{ input, ids, capMs }` to `src/custom.worker.ts`, its only
+  worker (85 kB, no tscircuit). The page now makes each worker on first use, so an idle
+  tscircuit worker never shows in the heap samples. The worker calls `routeConnections` and
+  answers `{ status, error, routes, unrouted, ms }` (`CustomRouteResponse` in `src/protocol.ts`).
+  `ms` is routing time only. A throw is `failed` with `thrown`, so `threw` in the scorecard.
+  A run that ends past the cap (the deadline passed during the last search) is `timeout` too.
+  A page failure answers in the same shape, with empty routes. `&probe` makes the custom worker
+  fetch `https://example.com/` instead of routing. `score-custom.ts --probe` loads
+  `/?corney=wireless&engine=custom&probe`, so the outbound-request test covers this worker.
+- **Cap.** The router has no step loop, so the cap is a deadline (`deadlineMs` on an injected
+  `now`) checked between connections. Past it, the router stops and returns what it placed, the
+  rest in `unrouted`, and `timedOut`. The worker reports `timeout`.
+  `e2e/corney-cap.spec.ts` routes wireless with a 50 ms cap.
+- **Rip-up and reroute (decision 2026-10-27).** The first pass (story 8) gives wired 327/333.
+  Each of the 6 left routes alone, so the order blocks them, not the rules. After the first pass,
+  for up to 3 rounds (`ripUpRounds`), each unrouted connection is searched on the static field
+  only. Each step onto the router's own copper of another net costs `crossCost` (3 mm) instead
+  of being blocked. The placed connections its copper comes within `engineClearance` of are
+  ripped up, it is placed, and they are rerouted in routing order. The attempt is kept only if
+  every ripped connection reroutes; otherwise everything is put back. So the routed count only
+  grows, and the result is deterministic. Clearances, widths and the connection set are
+  untouched. Unit tests: a one-layer box where a crossing connection is blocked only by an
+  earlier one and routes after the rip-up, and the deadline on a counting clock.
+- **The rip-up is tuned on wired Corney, which is also the test (story 13 should weigh this).**
+  The plan's "route it ignoring our copper" (no cost) placed 329/333: the shortest path cut 11 to
+  14 connections, and one of them always failed to reroute. With a cost per step on our copper,
+  wired gave 331 (0.3 mm), 332 (1 mm), **333 (3 mm)** and 332 (10 mm). I kept 3 mm. Our engine
+  got this tuning; tscircuit was only adapted, not tuned.
+
+### Results (2026-10-27, Chromium 156 headless, KiCad 10.0.7, one run), next to tscircuit's
+
+| | custom wired | tscircuit wired | custom wireless | tscircuit wireless |
+|---|---|---|---|---|
+| run | solved, 13.0 s | solved, 244.3 s | solved, 2.6 s | solved, 26.5 s |
+| routed (key-cell + routing) | 333 / 333 (100%) | 330 / 333 (99.1%) | 152 / 152 (100%) | 144 / 152 (94.7%) |
+| key-cell / routing | 63/63, 270/270 | 63/63, 267/270 | 63/63, 89/89 | 63/63, 81/89 |
+| peak worker JS heap | 83.1 MiB | 790.9 MiB | 30.6 MiB | 467.0 MiB |
+| `drc` baseline + added | 216 + 0 | 216 + 3418 | 0 + 0 | 0 + 250 |
+| KiCad added (clearance family) | 0; `addedUncertain`: copper edge clearance (at 199 on both boards) | 950 | 0 | 240 |
+| cross-check `drcOnly` / `kicadOnly` | 17 / 0 | 2712 / 91 | 0 / 0 | 17 / 7 |
+
+- **`drcOnly` on wired** is 17 baseline `copper_edge_clearance` pads (LED25 to LED27) that KiCad
+  stops reporting at 199. No routed copper is in them.
+- **Not in the clearance family, so not counted as errors, but new on the routed board (C6).**
+  KiCad warns `hole_to_hole` (wired 45, wireless 2) and `holes_co_located` (wired 27). These are
+  vias of one net from different connections that sit on or near each other: same-net copper
+  never blocks, and `RoutingInput` has no via-to-via drill rule. tscircuit has the same kinds
+  (wired 16 and 69). Story 13 should decide whether a hole-to-hole rule belongs in
+  `RoutingInput`.
+- **Time moves with the machine's state.** The committed cards (router `f96ff22`) are from a run
+  where story 8's Node test took 3.6–3.8 s instead of the 1.6 s it took at story 8, at the story-8
+  commit too, so the machine, not the code, slowed down. An earlier run of the same router source
+  took wired 5.4 s / 79.9 MiB and wireless 1.1 s / 22.4 MiB. Either way, wired
+  takes about 3.5× story 8's Node time for 131 connections, because there are 2.5× more
+  connections and the rip-up rebuilds the fields. tscircuit's times come from a different run.
+- **The heap figure leaves out most of the custom router's memory.** `usedSize` is the V8 heap
+  only, without ArrayBuffer backing stores (see Memory and time above). The router's grid is
+  1359 × 939 points at 0.1 mm on both designs. Its 6 rasters (static and with-our-copper, for the
+  via and the two trace widths, 2 layers each) take about 58 MiB, and the A* arrays about
+  61 MiB, all typed arrays. So add roughly 120 MiB to the custom figures for a like-for-like
+  comparison (an estimate from the array sizes, not a measurement). tscircuit's share of
+  typed arrays is not known.
+
