@@ -3,7 +3,7 @@ title: 'tscircuit routes in a browser worker offline'
 type: 'feature'
 ticket: '3'
 created: '2026-10-27'
-status: 'built'
+status: done
 baseline_revision: '641d5ab23c32015ddcc8dfe143ec8633bf36029b'
 route: 'full'
 route_source: 'auto'

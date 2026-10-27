@@ -3,7 +3,7 @@ title: 'Corney fixtures compared on key centres'
 type: 'feature'
 ticket: '1'
 created: '2026-10-27'
-status: 'built'
+status: done
 baseline_revision: '6959a58ca9058a486ec4ea5451b1a79a86d08715'
 route: 'full'
 route_source: 'auto'

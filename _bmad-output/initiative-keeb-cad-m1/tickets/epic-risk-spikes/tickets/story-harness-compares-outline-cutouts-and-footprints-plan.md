@@ -3,7 +3,7 @@ title: 'Harness compares outline, cutouts and footprints'
 type: 'feature'
 ticket: '2'
 created: '2026-10-27'
-status: 'built'
+status: done
 baseline_revision: 'a5b186817eb46dfe373f7424337e6b2285c63258'
 route: 'full'
 route_source: 'auto'
