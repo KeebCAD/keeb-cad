@@ -1,0 +1,31 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Corney wired > snapshots the counts 1`] = `
+{
+  "connections": 437,
+  "fixedCopper": 224,
+  "fixedCopperConnections": 104,
+  "keyCell": 63,
+  "nets": 119,
+  "obstacles": 93,
+  "outlineSegments": 37,
+  "pads": 556,
+  "routing": 270,
+  "singlePadNets": 21,
+}
+`;
+
+exports[`Corney wireless > snapshots the counts 1`] = `
+{
+  "connections": 260,
+  "fixedCopper": 228,
+  "fixedCopperConnections": 108,
+  "keyCell": 63,
+  "nets": 95,
+  "obstacles": 105,
+  "outlineSegments": 37,
+  "pads": 355,
+  "routing": 89,
+  "singlePadNets": 21,
+}
+`;

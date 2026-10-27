@@ -11,12 +11,14 @@ depends on it. Delete the folder once the spike verdicts are recorded.
 pnpm --dir spikes verify
 ```
 
-It runs a frozen install, `playwright install chromium`, `tsc --noEmit`, `vite build`, and a headless
+It runs a frozen install, `playwright install chromium`, `tsc --noEmit`, `vitest run` (`pnpm test`),
+`vite build`, and a headless
 Playwright run (`e2e/route.spec.ts`) against `vite preview` on port 4174. It exits 0 only if:
 
 1. the Web Worker (`src/route.worker.ts`) routes both connections of `src/test-board.ts` with
-   tscircuit's default `AutoroutingPipelineSolver`, and
-2. no request left `http://localhost:4174`. Playwright's `context.route('**/*')` blocks and logs
+   tscircuit's default `AutoroutingPipelineSolver`,
+2. the Vitest unit tests (`src/**/*.test.ts`, the Corney routing input) pass, and
+3. no request left `http://localhost:4174`. Playwright's `context.route('**/*')` blocks and logs
    every other request at the browser level. The `?probe` test makes the worker `fetch`
    `https://example.com/` and asserts that this URL, and only this URL, is logged. This proves
    that worker traffic reaches the logger.
@@ -55,3 +57,32 @@ with a non-empty error rather than hanging.
   `src/route.worker.ts` therefore declares `self` as `DedicatedWorkerGlobalScope` explicitly.
   No `@types/node` was needed.
 - **No install scripts**, so there is no `allowBuilds`.
+
+## Corney routing input (story: Corney PCB to routing input, with the split rule)
+
+```sh
+pnpm --dir spikes test
+```
+
+`src/routing-input.ts` has `toRoutingInput(pcbText)`. It turns Corney's committed Ergogen
+`.kicad_pcb` (wired and wireless, both in full) into an engine-neutral `RoutingInput`. That covers
+the outline, pads, obstacles, fixed copper, keep-outs (none: the module zone is its fixed copper),
+net classes, design rules and connections, in KiCad's frame (mm, y down). The split rule and the
+id grammar are in [SPLIT-RULE.md](SPLIT-RULE.md). `src/move-key.ts` has
+`moveKey(pcbText, key, {dx, dy})`, which makes the one-key-move variant that entries 7 and 10 use.
+Tests are in `src/routing-input.test.ts`, under Vitest.
+
+| | wired | wireless |
+|---|---|---|
+| pads / obstacles | 556 / 93 | 355 / 105 |
+| nets (single-pad) | 119 (21) | 95 (21) |
+| connections | 437 | 260 |
+| key-cell / fixed-copper / routing | 63 / 104 / 270 | 63 / 108 / 89 |
+| fixed copper segments | 224 | 228 |
+
+Rules: power is GND, VCC, RAW, plus BAT_P on wireless, at 0.25 mm width and 0.20 mm clearance.
+Signal is 0.15 / 0.15 mm. Board-edge clearance is 0.30 mm, the via is 0.56 mm with a 0.30 mm
+drill, and the engine clearance is 0.20 mm.
+
+The wired TRRS1 writes its pins 2, 3 and 4 twice as through-holes. The repeats get a file-order
+suffix (`TRRS1.2.TH.2`), so they stay distinct pads joined by a visible connection.

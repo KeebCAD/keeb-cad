@@ -1,5 +1,6 @@
 // A minimal `.kicad_pcb` reader: an s-expression parser plus extraction of the board outline
-// (top-level Edge.Cuts graphics) and footprint placements. Pure: no fs, no fixture paths.
+// (top-level Edge.Cuts graphics), footprint placements, pads and top-level copper segments.
+// Pure: no fs, no fixture paths.
 //
 // Frame: KiCad's (mm, y down, rotation in degrees as written in `(at x y r)`).
 
@@ -30,6 +31,41 @@ export type Footprint = {
 }
 
 export type KicadPcb = { edgeCuts: Segment[]; footprints: Footprint[] }
+
+export type Size = { w: number; h: number }
+
+export type Pad = {
+  /** The owning footprint's `Reference`, e.g. `S1`. */
+  reference: string
+  /** The pad number as written, e.g. `2`; `''` when unnumbered (NPTH holes, mounting tabs). */
+  pin: string
+  /** `smd`, `thru_hole`, `np_thru_hole` or `connect`, as written. */
+  type: string
+  /** `circle`, `rect`, `roundrect`, `oval`…, as written. */
+  shape: string
+  size: Size
+  /** Drill size; round drills have `w === h`. Undefined for SMD pads. */
+  drill: Size | undefined
+  /** Layers as written, e.g. `['*.Cu', '*.Mask']` or `['F.Cu', 'F.Paste', 'F.Mask']`. */
+  layers: string[]
+  /** The net name; undefined without a `(net …)` or for the empty net. */
+  net: string | undefined
+  /** World position, mm. */
+  x: number
+  y: number
+  /** World rotation in degrees, normalised to [0, 360). */
+  r: number
+}
+
+/** A top-level copper `(segment …)`, i.e. a pre-routed trace. */
+export type CopperSegment = {
+  start: Point
+  end: Point
+  width: number
+  layer: string
+  /** The net name; undefined when the segment carries no net (or net 0). */
+  net: string | undefined
+}
 
 const ESCAPES: Record<string, string> = { n: '\n', t: '\t', r: '\r' }
 const DELIMITERS = new Set(['(', ')', '"'])
@@ -166,12 +202,18 @@ function segment(node: Sexpr[], where: string): Segment {
   }
 }
 
-function footprint(node: Sexpr[], index: number): Footprint {
-  let where = `footprint #${index + 1}`
+function referenceOf(node: Sexpr[], index: number): string {
+  const where = `footprint #${index + 1}`
   const library = str(node[1], `${where} library`)
   const reference = children(node, 'property').find((p) => p[1] === 'Reference')
   if (!reference) throw new Error(`${where} (${library}): no Reference property`)
-  where = `footprint ${str(reference[2], `${where} Reference`)}`
+  return str(reference[2], `${where} Reference`)
+}
+
+function footprint(node: Sexpr[], index: number): Footprint {
+  const library = str(node[1], `footprint #${index + 1} library`)
+  const reference = referenceOf(node, index)
+  const where = `footprint ${reference}`
 
   const side = str(child(node, 'layer', where)[1], `${where} layer`)
   if (side !== 'F.Cu' && side !== 'B.Cu') throw new Error(`${where}: unexpected layer ${side}`)
@@ -185,7 +227,7 @@ function footprint(node: Sexpr[], index: number): Footprint {
     }),
   )
   return {
-    reference: str(reference[2], where),
+    reference,
     library,
     side,
     x: num(at[1], `${where} at.x`),
@@ -195,10 +237,15 @@ function footprint(node: Sexpr[], index: number): Footprint {
   }
 }
 
-/** The board's Edge.Cuts graphics (top level only) and its footprints, in file order. */
-export function readKicadPcb(text: string): KicadPcb {
+function boardRoot(text: string): Sexpr[] {
   const root = parseSexpr(text)
   if (!isList(root) || head(root) !== 'kicad_pcb') throw new Error('Not a (kicad_pcb …) file')
+  return root
+}
+
+/** The board's Edge.Cuts graphics (top level only) and its footprints, in file order. */
+export function readKicadPcb(text: string): KicadPcb {
+  const root = boardRoot(text)
 
   const edgeCuts: Segment[] = []
   for (const [index, node] of root.entries()) {
@@ -209,4 +256,94 @@ export function readKicadPcb(text: string): KicadPcb {
   }
   const footprints = children(root, 'footprint').map((node, index) => footprint(node, index))
   return { edgeCuts, footprints }
+}
+
+const normaliseDegrees = (r: number) => ((r % 360) + 360) % 360
+
+function size(node: Sexpr[], where: string): Size {
+  const list = child(node, 'size', where)
+  return { w: num(list[1], `${where} size.w`), h: num(list[2], `${where} size.h`) }
+}
+
+/** `(drill d)`, `(drill oval w h)`, optionally followed by `(offset …)`; undefined when absent. */
+function drill(node: Sexpr[], where: string): Size | undefined {
+  const list = children(node, 'drill')[0]
+  if (!list) return undefined
+  const values = list.slice(1).filter((v): v is string => typeof v === 'string' && v !== 'oval')
+  const w = num(values[0], `${where} drill`)
+  return { w, h: values[1] === undefined ? w : num(values[1], `${where} drill.h`) }
+}
+
+function netName(
+  node: Sexpr[],
+  names: ReadonlyMap<string, string>,
+  where: string,
+): string | undefined {
+  const list = children(node, 'net')[0]
+  if (!list) return
+  const name = typeof list[2] === 'string' ? list[2] : names.get(str(list[1], `${where} net`))
+  return name === '' ? undefined : name
+}
+
+/** Top-level `(net N "name")` declarations, by number. */
+function netNames(root: Sexpr[]): Map<string, string> {
+  return new Map(
+    children(root, 'net').map((n) => [str(n[1], 'net number'), str(n[2], 'net name')] as const),
+  )
+}
+
+/**
+ * Every footprint's pads, in file order, with world positions. A pad's `(at lx ly r)` is local
+ * to the footprint, but its `r` is absolute; B.Cu footprints are already written flipped.
+ */
+export function readPads(text: string): Pad[] {
+  const root = boardRoot(text)
+  const names = netNames(root)
+  return children(root, 'footprint').flatMap((node, index) => {
+    const reference = referenceOf(node, index)
+    const at = child(node, 'at', `footprint ${reference}`)
+    const fx = num(at[1], `footprint ${reference} at.x`)
+    const fy = num(at[2], `footprint ${reference} at.y`)
+    const theta =
+      ((at[3] === undefined ? 0 : num(at[3], `footprint ${reference} at.r`)) * Math.PI) / 180
+    const cos = Math.cos(theta)
+    const sin = Math.sin(theta)
+    return children(node, 'pad').map((pad, padIndex): Pad => {
+      const where = `footprint ${reference} pad #${padIndex + 1}`
+      const pat = child(pad, 'at', where)
+      const lx = num(pat[1], `${where} at.x`)
+      const ly = num(pat[2], `${where} at.y`)
+      return {
+        reference,
+        pin: str(pad[1], `${where} number`),
+        type: str(pad[2], `${where} type`),
+        shape: str(pad[3], `${where} shape`),
+        size: size(pad, where),
+        drill: drill(pad, where),
+        layers: child(pad, 'layers', where)
+          .slice(1)
+          .map((layer) => str(layer, `${where} layers`)),
+        net: netName(pad, names, where),
+        x: fx + lx * cos + ly * sin,
+        y: fy - lx * sin + ly * cos,
+        r: normaliseDegrees(pat[3] === undefined ? 0 : num(pat[3], `${where} at.r`)),
+      }
+    })
+  })
+}
+
+/** The board's top-level copper `(segment …)`s (pre-routed traces), in file order. */
+export function readSegments(text: string): CopperSegment[] {
+  const root = boardRoot(text)
+  const names = netNames(root)
+  return children(root, 'segment').map((node, index) => {
+    const where = `segment #${index + 1}`
+    return {
+      start: point(node, 'start', where),
+      end: point(node, 'end', where),
+      width: num(child(node, 'width', where)[1], `${where} width`),
+      layer: str(child(node, 'layer', where)[1], `${where} layer`),
+      net: netName(node, names, where),
+    }
+  })
 }
