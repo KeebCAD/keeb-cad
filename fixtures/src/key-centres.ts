@@ -3,9 +3,8 @@
 // plugs in as `compareKeyPoses(loadKeyPoses('wired'), engineKeys)`.
 //
 // Frame: Ergogen's (mm, y up, r in degrees counter-clockwise). Callers convert.
-import { existsSync, readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { parse } from 'yaml'
+import { existsSync } from 'node:fs'
+import { FIXTURE_DIR, readYaml } from './fixture-files'
 
 export type Design = 'wired' | 'wireless'
 
@@ -58,8 +57,6 @@ export type KeyComparison = {
   duplicate: string[]
 }
 
-const FIXTURE_DIR = new URL('../corney-island/ergogen/', import.meta.url)
-
 /** Both designs share one `points`; they differ only in the PCB Ergogen emits. */
 export const DESIGN_PCB: Record<Design, string> = {
   wired: 'pcbs/corney_island.kicad_pcb',
@@ -74,10 +71,6 @@ const WIDE_FACTOR = 1.5
 const EPSILON = 1e-9
 
 type ErgogenPoint = { x: number; y: number; r: number; meta?: { tags?: unknown } }
-
-function readYaml(relative: string): unknown {
-  return parse(readFileSync(fileURLToPath(new URL(relative, FIXTURE_DIR)), 'utf8'))
-}
 
 function tagsOf(point: ErgogenPoint): string[] {
   const tags = point.meta?.tags
