@@ -1,5 +1,5 @@
 {
-  // Node-side code: the kicad-drc script and its test, and the Vite, Vitest and Playwright
+  // Node-side code: the kicad-drc and score:tscircuit scripts, their helpers and tests, and the Vite, Vitest and Playwright
   // configs (vite's types pull in node). The one project with @types/node; src/ has none.
   "extends": "../tsconfig.json",
   "compilerOptions": {

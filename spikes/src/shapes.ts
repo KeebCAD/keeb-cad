@@ -435,3 +435,22 @@ export function edgePolyline(edge: Segment): Vec[] {
   const n = Math.max(2, Math.ceil(Math.abs(ring.sweep) / (Math.PI / 36)))
   return Array.from({ length: n + 1 }, (_, i) => ringPoint(ring, ring.start + (ring.sweep * i) / n))
 }
+
+/**
+ * An Edge.Cuts graphic as a polyline whose chords stay within `maxDeviation` of the true arc
+ * (sagitta R(1 − cos(θ/2)) ≤ maxDeviation). Lines come back as their two ends; a circle closes on
+ * its first point.
+ */
+export function flattenEdge(edge: Segment, maxDeviation: number): Vec[] {
+  if (edge.kind === 'line') return [edge.start, edge.end]
+  const ring = ringOf(edge)
+  const step = ring.R <= maxDeviation ? Math.PI / 2 : 2 * Math.acos(1 - maxDeviation / ring.R)
+  const n = Math.max(1, Math.ceil(Math.abs(ring.sweep) / step))
+  const pts = Array.from({ length: n + 1 }, (_, i) => ringPoint(ring, ring.start + (ring.sweep * i) / n))
+  // Arcs keep their exact file ends, so the chain closes on the next graphic's start.
+  if (edge.kind === 'arc') {
+    pts[0] = edge.start
+    pts[n] = edge.end
+  }
+  return pts
+}

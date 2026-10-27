@@ -1,0 +1,134 @@
+{
+  "engine": {
+    "name": "tscircuit",
+    "version": "0.0.1010"
+  },
+  "design": "wireless",
+  "kicadVersion": "10.0.7",
+  "date": "2026-10-27T10:57:59.722Z",
+  "connections": {
+    "total": 152,
+    "routed": 144,
+    "completionPct": 94.73684210526315,
+    "byRealisation": {
+      "key-cell": {
+        "total": 63,
+        "routed": 63,
+        "completionPct": 100
+      },
+      "fixed-copper": {
+        "total": 108,
+        "routed": 0,
+        "completionPct": null
+      },
+      "routing": {
+        "total": 89,
+        "routed": 81,
+        "completionPct": 91.01123595505618
+      }
+    }
+  },
+  "drc": {
+    "errors": 250,
+    "byClass": {
+      "power": 27,
+      "signal": 223,
+      "default": 0
+    },
+    "byKind": {
+      "clearance": 96,
+      "short": 12,
+      "track-width": 0,
+      "edge-clearance": 0,
+      "hole-clearance": 142
+    },
+    "added": 250
+  },
+  "kicad": {
+    "clearanceFamily": {
+      "clearance": 83,
+      "hole_clearance": 147,
+      "shorting_items": 11
+    },
+    "other": {
+      "holes_co_located": 1,
+      "lib_footprint_issues": 75,
+      "solder_mask_bridge": 20,
+      "unconnected_items": 5
+    },
+    "capped": [],
+    "added": 241,
+    "addedUncertain": []
+  },
+  "baseline": {
+    "drc": {
+      "errors": 0,
+      "byClass": {
+        "power": 0,
+        "signal": 0,
+        "default": 0
+      },
+      "byKind": {
+        "clearance": 0,
+        "short": 0,
+        "track-width": 0,
+        "edge-clearance": 0,
+        "hole-clearance": 0
+      }
+    },
+    "kicad": {
+      "clearanceFamily": {},
+      "other": {
+        "lib_footprint_issues": 75,
+        "unconnected_items": 152
+      },
+      "capped": []
+    }
+  },
+  "workerMs": 26629,
+  "peakMemoryMb": 458.7,
+  "run": {
+    "status": "solved",
+    "error": null,
+    "capMs": 600000
+  },
+  "unrouted": [
+    "GND:MCU1.123.TH~RST1.1.B",
+    "GND:RST1.1.B~RST1.1.F",
+    "GND:RST1.1.F~RST1.3.B",
+    "GND:RST1.3.B~RST1.3.F",
+    "RST:RST1.2.B~RST1.2.F",
+    "RST:RST1.2.F~RST1.4.B",
+    "RST:RST1.4.B~RST1.4.F",
+    "BAT_P:PWR1.1.F~PWR1.3.B"
+  ],
+  "crossCheck": {
+    "drcOnly": [
+      "clearance|pad:S4.2.B|track:C0.B.Cu",
+      "clearance|pad:DISP1.5.TH|track:VCC.F.Cu",
+      "clearance|pad:JST1.22.F|track:GND.F.Cu",
+      "clearance|pad:JST1.2.F|via:BAT_P",
+      "clearance|track:CS.F.Cu|track:VCC.F.Cu",
+      "clearance|track:C0.B.Cu|track:C5.B.Cu",
+      "clearance|track:C0.B.Cu|track:C5.B.Cu",
+      "clearance|track:C0.B.Cu|track:C5.B.Cu",
+      "shorting_items|track:C5.B.Cu|via:C0",
+      "clearance|track:middle_bottom_B.B.Cu|via:C1",
+      "clearance|track:middle_bottom_B.B.Cu|via:C1",
+      "clearance|track:C2.B.Cu|via:R1",
+      "clearance|track:C1.F.Cu|track:C2.F.Cu",
+      "clearance|track:C2.F.Cu|via:C1",
+      "clearance|track:C1.F.Cu|via:C0",
+      "clearance|track:C1.F.Cu|via:C0"
+    ],
+    "kicadOnly": [
+      "clearance|via:BAT_P|via:GND",
+      "hole_clearance|pad:S21..TH|via:C5",
+      "hole_clearance|pad:S20..TH|via:C4",
+      "hole_clearance|pad:S10..TH|via:C3",
+      "hole_clearance|pad:S8..TH|via:C2",
+      "hole_clearance|pad:S7..TH|via:C2",
+      "clearance|via:C1|via:C3"
+    ]
+  }
+}

@@ -104,7 +104,14 @@ export interface Scorecard {
   }
   /** `drc` on the routed board; `added` is what the routes add over `baseline`. */
   drc: DrcCounts & { added: number }
-  kicad: KicadCounts & { added: number }
+  kicad: KicadCounts & {
+    added: number
+    /**
+     * Types capped (at KiCad's report limit) on the bare or the routed board: their share of
+     * `added` is a difference of two truncated samples, not a count.
+     */
+    addedUncertain?: string[]
+  }
   /**
    * The bare board's own violations (wired Corney's LED pads against their cutouts), recorded
    * so a router is judged on what it adds (decision 2026-10-27). Never subtracted silently.
@@ -112,6 +119,15 @@ export interface Scorecard {
   baseline: { drc: DrcCounts; kicad: KicadCounts }
   workerMs: number
   peakMemoryMb: number
+  /** How the engine run ended; the traces it returned are scored whatever the status. */
+  run?: { status: RunStatus; error: string | null; capMs: number }
+  /** Scored connections (`key-cell`, `routing`) the routes do not realise, by id. */
+  unrouted?: string[]
+  /**
+   * Clearance-family errors on the routed board that only one checker reports, as signatures
+   * (`type|item|item`). Listed, never hidden (C6).
+   */
+  crossCheck?: { drcOnly: string[]; kicadOnly: string[] }
   /** Entries 7 and 10 only: the one-key-move reroute. */
   reroute?: {
     movedKey: string
@@ -122,6 +138,9 @@ export interface Scorecard {
     fixedCopperViolations: number
   }
 }
+
+/** `timeout`: not solved within the cap; `failed`: the solver gave up; `threw`: it threw. */
+export type RunStatus = 'solved' | 'timeout' | 'failed' | 'threw'
 
 export interface DrcCounts {
   errors: number
@@ -134,7 +153,7 @@ export interface KicadCounts {
   clearanceFamily: Record<string, number>
   /** Every other type, unconnected items included, by type (recorded, never hidden: C6). */
   other: Record<string, number>
-  /** Types at KiCad's per-type report limit (199 in 10.0.7): KiCad stopped reporting them. */
+  /** Types at exactly KiCad's report limit (199 in 10.0.7, some types only): KiCad stopped reporting them. */
   capped: string[]
 }
 

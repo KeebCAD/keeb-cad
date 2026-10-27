@@ -161,8 +161,10 @@ limit for that type.
   pad sits 0.21 mm from its own footprint's cutout, under the 0.30 mm rule: 27 LEDs × 8 pads =
   216 violations. `drc` reports one per copper item, against its nearest edge, as KiCad does. The
   run fails on any baseline violation that is not an LED pad against its own cutout.
-- **KiCad's report limit.** KiCad 10.0.7 reports at most 199 violations of each type (shown with
-  210 thin traces on wireless: exactly 199 `track_width` and 199 `track_dangling`). So it reports
+- **KiCad's report limit.** KiCad 10.0.7 stops reporting some violation types at exactly 199
+  (shown with 210 thin traces on wireless: exactly 199 `track_width` and 199 `track_dangling`).
+  Not every type: a routed wired board reported 499 `clearance`. A type counts as `capped` only
+  at exactly 199. So it reports
   199 of the 216, and which ones it drops changes as copper is added. The plan's "199" was this
   limit, not the real count. The script marks a type at the limit as `capped` and lists the
   `drc` errors KiCad did not report under `unreportedAtLimit` in `out/kicad-drc.json`. Every
@@ -185,3 +187,142 @@ limit), `baseline {drc, kicad}` (the bare board's counts, same shapes), `workerM
 `peakMemoryMb`, and for entries 7 and 10 an optional
 `reroute {movedKey, delta, changedConnections, savedRoutes{unchanged, changed},
 fixedCopperViolations}`.
+
+Optional fields since story 6: `run {status: solved|timeout|failed|threw, error, capMs}`,
+`unrouted` (the scored connection ids the routes do not realise) and `crossCheck {drcOnly,
+kicadOnly}` (clearance-family signatures on the routed board that only one checker reports). `kicad.addedUncertain` lists the types at exactly 199 on the bare or the routed board, whose
+share of `kicad.added` is a sample difference.
+
+## tscircuit routes full Corney and is scored (story 6)
+
+```sh
+pnpm --dir spikes score:tscircuit   # vite build, then scripts/score-tscircuit.ts; needs kicad-cli
+```
+
+The script serves `dist/` with Vite's `preview()` on port 4175. It opens
+`/?corney=<design>&cap=600000` in headless Chromium, once per design. The page builds the SRJ
+from the committed `.kicad_pcb` (`src/corney.ts`), and the Web Worker only solves:
+`AutoroutingPipelineSolver` runs in `step()`s, with the 600 s cap (10× the bar) checked between
+steps. It returns its status, the error, whatever traces `getOutputSimplifiedPcbTraces()` gives
+(in a try/catch), and the solve time measured inside the worker. Then, in Node, the script:
+
+1. rebuilds the same `RoutingInput` and maps `c<i>` back to `input.connections[i]`
+   (`toRouteSet`),
+2. scores completion with `src/completion.ts`,
+3. runs `drc` on the bare and the routed board,
+4. writes both boards with `writeRoutes`, `writeProject` and `writeRules` to
+   `out/tscircuit-<design>/` (`bare-<design>.*`, `tscircuit-<design>.*`), and runs KiCad on each,
+5. writes `scorecards/tscircuit-<design>.scorecard.json` and prints one summary line.
+
+A cap, a solver failure or a throw is a result, not an exit failure. Whatever traces come back
+are still scored. The exit code is 0 whenever both scorecards are written. An outbound request
+(blocked at the browser level with `context.route`, as in `e2e/route.spec.ts`) fails the run and
+names the URL. So does a missing `kicad-cli`, which names `sudo pacman -S kicad`
+(`scripts/score-tscircuit.test.ts`). `score-tscircuit.ts --probe` loads the page's `?probe` control instead of a design. It
+scores nothing and needs no kicad-cli. `scripts/score-tscircuit-probe.test.ts` builds `dist/`,
+runs it, and asserts a non-zero exit naming `https://example.com/`. `e2e/corney-cap.spec.ts`
+routes wireless with a 200 ms cap and asserts `timeout`, an error, and a stop near the cap.
+`scripts/run-status.ts` maps the worker's response to the scorecard's `run.status`. The shared KiCad helpers are in `scripts/kicad.ts`. The
+script is outside `verify` because a routing result is not a test outcome. The adapter and
+completion unit tests are inside it.
+
+### Adapter (`src/tscircuit-adapter.ts`)
+
+| RoutingInput (KiCad, y down) | SimpleRouteJson (y up) |
+|---|---|
+| point (x, y) | (x, −y); a pad's rotation `r` is CCW on screen in both frames, so `ccwRotationDegrees = r` |
+| top-level Edge.Cuts | `outline`: the largest closed loop of the graphics, arcs flattened with chords ≤ 0.005 mm; `bounds` from it |
+| footprint Edge.Cuts cutouts (wired: 27 LED windows) | both-layer rect obstacles, grown by `boardEdgeClearance − engineClearance` (0.1 mm) on each side |
+| pad | rect obstacle (`size`, `ccwRotationDegrees`), circle pads `shape: 'circle'`; F → `top`, B → `bottom`, TH → both; `connectedTo` = its net + the `c<i>` that end on it; `obstacleId` = pad id |
+| obstacle pad (no net) | same, `connectedTo: []`; NPTH holes are the drill as `isNonPlatedHole` |
+| fixed-copper segment | rotated rect covering its capsule (length + width × width), `connectedTo` = its group net (`fixedCopperNets`) |
+| connection (`key-cell`, `routing`) | `c<index into input.connections>`, `netConnectionName` = net, `nominalTraceWidth` = class width, both pad centres (`layer` or `layers`), each with its own `pointId` `c<i>.A` / `c<i>.B` |
+| `fixed-copper` connection | not sent |
+| `engineClearance` (0.20) | `defaultObstacleMargin`, `minTraceToPadEdgeClearance`, `minViaEdgeToPadEdgeClearance`, `minPadEdgeToPadEdgeClearance`, `minViaHoleEdgeToViaHoleEdgeClearance`, `minPlatedHoleDrillEdgeToDrillEdgeClearance` |
+| `boardEdgeClearance` (0.30) / `holeClearance` (0.25) | `minBoardEdgeClearance` / `minTraceToHoleEdgeClearance` |
+| `via` 0.56 / 0.30 | `minViaPadDiameter` / `minViaHoleDiameter`; `minTraceWidth` = the widest class (0.25) |
+
+Back from tscircuit (`toRouteSet`), each trace's wire points become one polyline per run on one
+layer and width. A via ends a run and the next one starts at it. A layer change with no via starts
+the next run fresh, so the gap stays visible. Names that map to no connection, and jumper or
+through-obstacle hops, are reported in the run's error, never dropped silently.
+
+**Why `pointId`.** tscircuit merges every connection that shares a point (the split rule's chains
+share each inner pad) into one net and routes its own spanning tree. It then names the result
+after the first member (`c253` for `c253__c254__c255_mst0_0`), so the connection ids are lost. A
+`pointId` per connection end stops the merge, and tscircuit routes exactly the split rule's
+pairs. This changes no rule.
+
+**Completion (`src/completion.ts`, engine-neutral).** A connection is routed only when all of its
+traces form one piece, and an end lies on padA's copper and an end on padB's copper, each on a
+layer the pad has. Pieces join at an end on the same layer, or at a via of the net. A layer
+change anywhere else is a gap. `connections.total` and `completionPct` cover `key-cell` and
+`routing`. `fixed-copper` is never sent, so its `routed` is 0 and its `completionPct` is null.
+
+### What tscircuit cannot take (listed, not worked around: C6)
+
+- **Per-class clearance.** Each SRJ clearance field takes one value, so every one gets the
+  strictest class (0.20 mm). Signal copper is held to 0.20 mm, not 0.15 mm. That is stricter, not
+  looser.
+- **Per-class minimum width.** There is one `minTraceWidth`, and tscircuit narrows a connection
+  from its `nominalTraceWidth` towards it where the connection does not fit. So `minTraceWidth`
+  is the widest class (0.25 mm, power), the strictest choice. Signal traces can come out wider
+  than their 0.15 mm class. That is legal, because the class width is a minimum. It also uses
+  more room, which shows up as clearance errors. With 0.15 mm, power traces came out at 0.15 mm
+  (1812 `track-width` errors on wired), which is a loosened rule.
+- **Board-edge clearance to footprint cutouts.** The SRJ has one outline polygon, so cutouts are
+  obstacles grown to the edge clearance (above).
+- **Pad shapes.** Roundrect, oval and chamfered pads are sent as their full rect. That is larger
+  than the copper, which makes it stricter.
+- **Via to NPTH hole.** There is no via-specific hole field. `minTraceToHoleEdgeClearance` is the
+  only hole rule.
+- **Pad layer at a connection's end.** tscircuit sometimes ends a trace at a pad's position on a
+  layer the pad lacks. This happens with wireless RST1 and PWR1, whose F and B copies sit close
+  together. Such traces count as unrouted.
+
+### Memory and time
+
+`workerMs` is measured inside the worker, from receipt of the SRJ to the end of solving. Building
+the SRJ on the page and the message transfer are excluded. `peakMemoryMb` is the maximum, over
+samples every 100 ms, of the worker's **V8 JS heap only** (`Runtime.getHeapUsage().usedSize`, in
+MiB). It does not include process RSS, the page or ArrayBuffer backing stores.
+`performance.memory` does not exist in Chromium workers. So the script calls
+`Target.setAutoAttach {flatten: false}` on a CDP session of the page, and sends the call to the
+worker target with `Target.sendMessageToTarget`. The run fails if it gets no sample.
+
+### Results (2026-10-27, tscircuit 0.0.1010, Chromium 156 headless, KiCad 10.0.7, one run)
+
+| | wired | wireless |
+|---|---|---|
+| run | solved, 247.2 s | solved, 26.6 s |
+| routed (key-cell + routing) | 330 / 333 (99.1%) | 144 / 152 (94.7%) |
+| key-cell / routing | 63/63, 267/270 | 63/63, 81/89 |
+| peak worker JS heap | 951.8 MiB | 458.7 MiB |
+| `drc` baseline + added | 216 + 3418 | 0 + 250 |
+| `drc` on the routed board, by kind | clearance 2634, hole 419, edge 352 (216 of them baseline), short 229, track-width 0 | hole 142, clearance 96, short 12, track-width 0 |
+| KiCad added (clearance family) | 963; `addedUncertain`: copper edge and hole clearance (at 199) | 241 |
+| cross-check `drcOnly` / `kicadOnly` | 2689 / 81 | 16 / 7 |
+
+- **Unrouted.**
+  - Wired: `C3:S12.1.F~S19.1.B`, `R2:D25.1.F~D28.1.F` and `R1:D17.1.B~D23.1.F`. They fail
+    the completion check. I did not diagnose each one on this run.
+  - Wireless:
+    - `GND:MCU1.123.TH~RST1.1.B`: the trace reaches the B.Cu-only RST1 pad on top copper.
+    - The reversible RST1 and PWR1 F/B copies (`GND:RST1.1.B~RST1.1.F`,
+      `GND:RST1.1.F~RST1.3.B`, `GND:RST1.3.B~RST1.3.F`, `RST:RST1.2.B~RST1.2.F`,
+      `RST:RST1.2.F~RST1.4.B`, `RST:RST1.4.B~RST1.4.F`, `BAT_P:PWR1.1.F~PWR1.3.B`).
+      tscircuit ends these on a layer the pad lacks, or joins F and B with no via.
+  - All of these are scored as unrouted. None is dropped.
+- **Added errors are clearance, hole and short errors**, and no longer `track-width`, since
+  `minTraceWidth` is 0.25 mm. tscircuit does not keep its own clearances to the class rules
+  here. These are results for story 13, not tuned away.
+- **KiCad's limit.** On wired, `copper_edge_clearance` and `hole_clearance` stop at exactly 199,
+  so their share of `kicad.added` is a difference of two truncated samples
+  (`kicad.addedUncertain`). `clearance` is not limited (499 seen on an earlier run).
+- **Cross-check.** `drcOnly` on wired is mostly the types KiCad stops at 199. A connection routed
+  on both layers is named by the layer the violation is on: one every item of the violation has,
+  and of those the one where its traces come nearest the violation's point (`drcSignatures` in
+  `scripts/kicad.ts`). The remaining `kicadOnly` entries (wired 81, wireless 7) are listed in
+  the scorecard and not yet explained.
+- Solve time and heap move between runs. Before the width change, wired solved in 143.9 s and
+  148.4 s.

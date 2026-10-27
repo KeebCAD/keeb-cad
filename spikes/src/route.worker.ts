@@ -1,4 +1,4 @@
-import { AutoroutingPipelineSolver } from '@tscircuit/capacity-autorouter'
+import { AutoroutingPipelineSolver, type SimplifiedPcbTraces } from '@tscircuit/capacity-autorouter'
 import type { RouteRequest, RouteResponse } from './protocol'
 
 declare const self: DedicatedWorkerGlobalScope
@@ -14,7 +14,17 @@ self.addEventListener('message', (event: MessageEvent<RouteRequest>) => {
   void handle(event.data).then((response) => self.postMessage(response))
 })
 
-async function handle({ board, probe }: RouteRequest): Promise<RouteResponse> {
+/** Whatever traces the solver has; its output step can itself throw on a partial run. */
+function tracesOf(solver: AutoroutingPipelineSolver | undefined): { traces: SimplifiedPcbTraces; error?: string } {
+  if (!solver) return { traces: [] }
+  try {
+    return { traces: solver.getOutputSimplifiedPcbTraces() }
+  } catch (err) {
+    return { traces: [], error: `no traces: ${message(err)}` }
+  }
+}
+
+async function handle({ board, probe, capMs }: RouteRequest): Promise<RouteResponse> {
   const start = performance.now()
   if (probe) {
     let error: string | null = null
@@ -26,20 +36,31 @@ async function handle({ board, probe }: RouteRequest): Promise<RouteResponse> {
     return { status: 'probed', error, traces: [], ms: performance.now() - start }
   }
 
+  let solver: AutoroutingPipelineSolver | undefined
+  const cap = capMs ?? Infinity
   try {
-    const solver = new AutoroutingPipelineSolver(board)
-    solver.solve()
+    solver = new AutoroutingPipelineSolver(board)
+    // solve() in steps, so the cap is checked between them.
+    while (!solver.solved && !solver.failed) {
+      if (performance.now() - start > cap) {
+        const ms = performance.now() - start
+        const { traces, error } = tracesOf(solver)
+        const why = `not solved within ${cap} ms (${solver.getSolverName()} at iteration ${solver.iterations})`
+        return { status: 'timeout', error: error ? `${why}; ${error}` : why, traces, ms }
+      }
+      solver.step()
+    }
     const ms = performance.now() - start
+    const { traces, error } = tracesOf(solver)
     if (solver.solved && !solver.failed) {
-      return { status: 'solved', error: null, traces: solver.getOutputSimplifiedPcbTraces(), ms }
+      if (error) return { status: 'failed', error, traces, ms, thrown: true }
+      return { status: 'solved', error: null, traces, ms }
     }
-    return {
-      status: 'failed',
-      error: solver.error ?? 'solver finished without solved',
-      traces: [],
-      ms,
-    }
+    const why = solver.error ?? 'solver finished without solved'
+    return { status: 'failed', error: error ? `${why}; ${error}` : why, traces, ms, thrown: false }
   } catch (err) {
-    return { status: 'failed', error: message(err), traces: [], ms: performance.now() - start }
+    const ms = performance.now() - start
+    const { traces } = tracesOf(solver)
+    return { status: 'failed', error: message(err), traces, ms, thrown: true }
   }
 }
