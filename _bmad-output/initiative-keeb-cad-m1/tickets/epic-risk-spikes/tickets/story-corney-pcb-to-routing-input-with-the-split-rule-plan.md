@@ -3,7 +3,7 @@ title: 'Corney PCB to routing input, with the split rule'
 type: 'feature'
 ticket: '4'
 created: '2026-10-27'
-status: 'built'
+status: done
 baseline_revision: '1e65ee2479a458369939fae3c08b1363d4f3aa76'
 route: 'full'
 route_source: 'auto'
