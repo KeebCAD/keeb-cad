@@ -408,3 +408,49 @@ could differ.
   first trace that ended on it. The diff now assigns an added or removed via as described above
   (unit test in `src/reroute.test.ts`).
 
+
+## Custom router routes the key matrix (story 8)
+
+```sh
+pnpm --dir spikes test   # src/custom-router.test.ts prints the routed count and the time
+```
+
+`src/custom-router.ts` has `routeConnections(input, ids, options?)`, which returns
+`{ routes: RouteSet, unrouted: string[] }`. It is pure TypeScript with no Node or DOM APIs, so
+story 9 can run it in the worker unchanged, and it is deterministic.
+
+- **Field.** Pads, netless pads, NPTH holes, fixed copper (net from `fixedCopperNets`), every
+  Edge.Cuts graphic (footprint cutouts included, arcs flattened to 0.002 mm) and the router's own
+  earlier traces and vias are cores (`shapes.ts`). Each is inflated with clipper2-ts by its rule
+  (`engineClearance` for copper, `holeClearance` for holes, `boardEdgeClearance` for the edge),
+  plus the half width of what is placed (each class's `traceWidth`, or the via radius), plus a
+  grid margin of step·√2/2 for traces, plus 0.0041 mm for chords and rounding. Each item keeps
+  its net, and same-net copper never blocks. The inflated items are scan-filled into one raster
+  per layer and per placed width, which the search reads. They are also kept in flatbush for
+  the exact check of a pad stub. Every value comes from `RoutingInput`.
+- **Search.** A* on a two-layer grid (default step 0.1 mm), with 8 directions, a via cost of
+  1.5 mm and a bend cost of 0.2 mm. It runs from the grid points on one pad's copper to those on
+  the other's. A via needs its spot free on both layers. It may not be at a start or right after
+  another via. A stub to the pad centre is added only when no grid point lies on the pad.
+  Collinear runs are simplified. Connections go shortest first (pad centre to pad centre), with
+  ties broken by id. Each routed connection's copper joins the field before the next one. A
+  connection with no path goes into `unrouted` and emits nothing. Unknown and `fixed-copper` ids
+  throw, naming the id.
+- **Chosen set** (`MATRIX_IDS` in the test, for story 9): every `key-cell` connection (63),
+  every `routing` connection on `C0`–`C5` and `R0`–`R3` (63), and 5 MCU connections:
+  `RST:MCU1.122.TH~RST1.1.TH`, `DAT:MCU1.102.TH~TRRS1.3.TH`, `SDA:DISP1.27.B~MCU1.105.B`,
+  `SCL:DISP1.26.B~MCU1.106.B`, and the power one, `GND:MCU1.123.TH~RST1.2.TH`. That makes 131.
+
+### Result (2026-10-27, Node 26.12.1, Vitest 4.1.12, wired Corney)
+
+| | |
+|---|---|
+| routed (`routedConnections`) | 131 / 131, `unrouted` empty |
+| `drc` added over the bare baseline (216) | 0 |
+| copper | 247 traces, 116 vias, 2651.5 mm of trace (2548.7 mm pad to pad in a straight line) |
+| time in Node | about 1.6 s (1588 to 1757 ms over runs) |
+
+The test also routes two chained `R0` connections that share `D6.1.B` (both realised, 0 added),
+boxes `D1.2.B` in a netless ring on both layers (`unrouted`, no traces or vias), checks the GND
+traces are 0.25 mm wide, and checks that two runs give equal `RouteSet`s. The worker run, the
+Chromium timing, peak memory and the scorecard belong to story 9.
