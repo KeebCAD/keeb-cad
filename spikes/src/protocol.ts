@@ -29,6 +29,8 @@ export type RouteResponse =
  */
 export interface ExternalPage {
   routeBoard?: (request: RouteRequest) => Promise<RouteResponse>
+  /** `?external&engine=custom` (story 10): the same, for the custom worker. */
+  routeCustom?: (request: CustomRouteRequest) => Promise<CustomRouteResponse>
 }
 
 /** Main thread → custom worker (`?corney=<design>&engine=custom`). `RoutingInput` is plain data. */
@@ -39,6 +41,11 @@ export interface CustomRouteRequest {
   capMs: number
   /** Negative control (`&probe`): the worker fetches an external URL instead of routing. */
   probe?: boolean
+  /**
+   * Copper already on the board (story 10's saved routes): static obstacles of their own nets,
+   * never moved, ripped up or returned. `routes` holds copper for `ids` only.
+   */
+  fixedRoutes?: RouteSet
 }
 
 /**

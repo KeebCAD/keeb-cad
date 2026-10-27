@@ -1,11 +1,11 @@
 {
   "engine": {
     "name": "custom",
-    "version": "f96ff22"
+    "version": "0c0b6d9"
   },
   "design": "wired",
   "kicadVersion": "10.0.7",
-  "date": "2026-10-27T13:49:08.203Z",
+  "date": "2026-10-27T14:32:06.494Z",
   "connections": {
     "total": 333,
     "routed": 333,
@@ -92,8 +92,8 @@
       ]
     }
   },
-  "workerMs": 13000,
-  "peakMemoryMb": 83.1,
+  "workerMs": 13180,
+  "peakMemoryMb": 96.4,
   "run": {
     "status": "solved",
     "error": null,
@@ -121,5 +121,77 @@
       "copper_edge_clearance|pad:LED27.4.B"
     ],
     "kicadOnly": []
-  }
+  },
+  "reroute": [
+    {
+      "method": "fixed-obstacles",
+      "movedKey": "matrix_middle_home",
+      "delta": {
+        "dx": 1.5,
+        "dy": -0.75
+      },
+      "run": {
+        "status": "solved",
+        "error": "saved conflicts unrouted after the reroute (2/9): ULED_1:LED22.2.F~LED23.4.B, ULED_1:LED23.4.B~LED23.4.F",
+        "capMs": 600000
+      },
+      "workerMs": 5998,
+      "movedConnections": {
+        "total": 19,
+        "routed": 19
+      },
+      "changedConnections": [
+        "C1:MCU1.119.TH~S4.1.B",
+        "C3:S10.1.F~S11.1.B",
+        "C3:S11.1.B~S11.1.F",
+        "C3:S11.1.F~S12.1.B",
+        "C3:S12.1.F~S19.1.B",
+        "middle_home_B:D11.2.B~S11.2.B",
+        "middle_home_B:S11.2.B~S11.2.F",
+        "C4:S15.1.F~S20.1.B",
+        "R1:D8.1.B~D11.1.B",
+        "R1:D11.1.B~D14.1.B",
+        "R1:D17.1.B~D23.1.F",
+        "R1:D29.1.F~D32.1.F",
+        "R1:D32.1.F~D35.1.F",
+        "GND:LED10.3.F~LED11.3.B",
+        "GND:LED11.3.B~LED11.3.F",
+        "GND:LED11.3.F~LED12.3.B",
+        "GND:LED12.3.F~LED13.3.B",
+        "GND:LED23.3.B~LED23.3.F",
+        "GND:LED23.3.F~LED24.3.B",
+        "VCC:LED10.1.F~LED11.1.B",
+        "VCC:LED11.1.B~LED11.1.F",
+        "VCC:LED11.1.F~LED12.1.B",
+        "LED_10:LED10.2.F~LED11.4.B",
+        "LED_10:LED11.4.B~LED11.4.F",
+        "LED_11:LED11.2.B~LED11.2.F",
+        "LED_11:LED11.2.F~LED12.4.B",
+        "ULED_1:LED22.2.F~LED23.4.B",
+        "ULED_1:LED23.4.B~LED23.4.F"
+      ],
+      "savedRoutes": {
+        "unchanged": 305,
+        "changed": 9
+      },
+      "fixedCopperViolations": 0,
+      "drc": {
+        "added": 0
+      },
+      "savedConflicts": {
+        "violations": 30,
+        "connections": [
+          "C1:MCU1.119.TH~S4.1.B",
+          "C3:S12.1.F~S19.1.B",
+          "C4:S15.1.F~S20.1.B",
+          "R1:D17.1.B~D23.1.F",
+          "GND:LED12.3.F~LED13.3.B",
+          "GND:LED23.3.B~LED23.3.F",
+          "GND:LED23.3.F~LED24.3.B",
+          "ULED_1:LED22.2.F~LED23.4.B",
+          "ULED_1:LED23.4.B~LED23.4.F"
+        ]
+      }
+    }
+  ]
 }

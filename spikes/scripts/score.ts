@@ -12,7 +12,8 @@ import { preview } from 'vite'
 import { completionCounts, routedConnections, unroutedConnections } from '../src/completion'
 import { drc, type DrcReport } from '../src/drc'
 import { addedViolations } from '../src/drc-cases'
-import { EMPTY_ROUTES, emptyScorecard, type DrcCounts, type KicadCounts, type RouteSet, type RunStatus, type Scorecard } from '../src/route-set'
+import type { ExternalPage } from '../src/protocol'
+import { EMPTY_ROUTES, emptyScorecard, type DrcCounts, type KicadCounts, type RerouteEntry, type RouteSet, type RunStatus, type Scorecard } from '../src/route-set'
 import type { RoutingInput } from '../src/routing-input'
 import { writeProject, writeRoutes, writeRules } from '../src/write-back'
 import { bag, CLEARANCE_FAMILY, count, drcSignatures, atLimit, kicadSignature, runKicad, takeEach, type KicadReport } from './kicad'
@@ -133,6 +134,80 @@ export async function routeInBrowser<R extends WorkerAnswer>(browser: Browser, p
   } finally {
     clearInterval(sampler)
     await context.close().catch(() => undefined)
+  }
+}
+
+/** The reroute's move (entries 7 and 10): story 4's test move. */
+export const MOVED_KEY = 'matrix_middle_home'
+export const DELTA = { dx: 1.5, dy: -0.75 }
+
+/** Prints one reroute entry's summary line, and its error under it. */
+export function printReroute(e: RerouteEntry): void {
+  console.log(
+    `  reroute ${e.method} (${e.movedKey} +${e.delta.dx},${e.delta.dy}): ${e.run.status} in ${(e.workerMs / 1000).toFixed(1)} s, ` +
+      `moved ${e.movedConnections.routed}/${e.movedConnections.total} routed, ${e.changedConnections.length} connections changed, ` +
+      `saved routes ${e.savedRoutes.unchanged} unchanged / ${e.savedRoutes.changed} changed, ` +
+      `fixed copper +${e.fixedCopperViolations}, drc +${e.drc.added}` +
+      (e.savedConflicts ? `, saved conflicts ${e.savedConflicts.violations} (${e.savedConflicts.connections.length} connections rerouted)` : ''),
+  )
+  if (e.run.error) console.log(`      ${e.run.error}`)
+}
+
+/** A window function of the `?external` page (`routeBoard`, `routeCustom`), its request and response. */
+type ExternalFn = keyof ExternalPage
+type ExternalRequest<F extends ExternalFn> = Parameters<NonNullable<ExternalPage[F]>>[0]
+type ExternalResponse<F extends ExternalFn> = Awaited<ReturnType<NonNullable<ExternalPage[F]>>>
+
+/** One `?external` call: its status, error, the worker's answer (absent on a cap or throw) and its time. */
+export interface ExternalRun<R> {
+  status: RunStatus
+  error: string | null
+  response: R | undefined
+  workerMs: number
+}
+
+/**
+ * An `?external` page (`path`, e.g. `/?external` or `/?external&engine=custom`): routes requests
+ * built in Node, one at a time, through the window function `fn` in the page's one worker, with
+ * the base run's cap and network blocking. A call with no answer within cap + grace is `timeout`
+ * and the page is reloaded (a new worker) for the next; a browser error is `threw`, and reloads
+ * too. No heap samples: a reroute records solve time only.
+ */
+export async function externalSession<F extends ExternalFn>(browser: Browser, path: string, fn: F) {
+  type Res = ExternalResponse<F> & WorkerAnswer
+  const { context, page, blocked } = await blockedPage(browser)
+  const open = async () => {
+    await page.goto(`${ORIGIN}${path}`)
+    await page.locator('#result[data-status="ready"]').waitFor({ timeout: 30_000 })
+  }
+  let ready = false
+  return {
+    blocked,
+    async route(request: ExternalRequest<F>): Promise<ExternalRun<Res>> {
+      try {
+        if (!ready) await open()
+        ready = true
+        const solving = page.evaluate(
+          ({ fn, request }) => (globalThis as unknown as Record<string, (r: unknown) => Promise<unknown>>)[fn]!(request),
+          { fn, request },
+        ) as Promise<Res>
+        solving.catch(() => undefined)
+        let timer: ReturnType<typeof setTimeout> | undefined
+        const response = await Promise.race([
+          solving,
+          new Promise<undefined>((resolve) => (timer = setTimeout(() => resolve(undefined), CAP_MS + GRACE_MS))),
+        ]).finally(() => clearTimeout(timer))
+        if (!response) {
+          ready = false
+          return { status: 'timeout', error: `no answer from the worker within ${CAP_MS + GRACE_MS} ms`, response: undefined, workerMs: CAP_MS + GRACE_MS }
+        }
+        return { status: runStatus(response), error: response.error, response, workerMs: response.ms ?? 0 }
+      } catch (err) {
+        ready = false
+        return { status: 'threw', error: `browser: ${errorText(err)}`, response: undefined, workerMs: 0 }
+      }
+    },
+    close: () => context.close().catch(() => undefined),
   }
 }
 

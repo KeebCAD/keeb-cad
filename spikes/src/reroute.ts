@@ -6,7 +6,7 @@ import { CORNEY_KEYS } from './corney'
 import { drc, type DrcReport } from './drc'
 import { addedViolations } from './drc-cases'
 import { keyReferences } from './move-key'
-import { viaOwners, type RerouteEntry, type RouteSet, type RouteTrace, type RouteVia } from './route-set'
+import { EMPTY_ROUTES, viaOwners, type RerouteEntry, type RouteSet, type RouteTrace, type RouteVia } from './route-set'
 import type { RoutingInput } from './routing-input'
 
 /**
@@ -34,6 +34,29 @@ export function savedRoutes(base: RouteSet, moved: readonly string[]): RouteSet 
     traces: base.traces.filter((t) => !out.has(t.connection)),
     vias: base.vias.filter((_, i) => owners[i]!.length === 0 || owners[i]!.some((o) => !out.has(o))),
   }
+}
+
+/**
+ * The saved routes that clash with the moved board `input` (story 10): the `drc` violations
+ * `saved` adds over the board with no routes, and the saved connections in them (a trace item
+ * by its connection id, a `via:<i>` item by `viaOwners(saved)[i]`; pad, `fixed:`, obstacle and
+ * edge items are skipped), in `input.connections` order.
+ */
+export function savedConflicts(input: RoutingInput, saved: RouteSet): { violations: number; connections: string[] } {
+  const added = addedViolations(drc(input, EMPTY_ROUTES), drc(input, saved))
+  const traced = new Set(saved.traces.map((t) => t.connection))
+  const owners = viaOwners(saved)
+  const hit = new Set<string>()
+  for (const v of added) {
+    for (const item of v.items) {
+      const via = /^via:(\d+)$/.exec(item)
+      if (via) for (const o of owners[Number(via[1])] ?? []) hit.add(o)
+      else if (traced.has(item)) hit.add(item)
+    }
+  }
+  const order = new Map(input.connections.map((c, i) => [c.id, i]))
+  const connections = [...hit].sort((a, b) => (order.get(a) ?? Infinity) - (order.get(b) ?? Infinity) || (a < b ? -1 : 1))
+  return { violations: added.length, connections }
 }
 
 const num = (n: number) => n.toFixed(6)

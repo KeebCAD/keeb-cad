@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { CORNEY, CORNEY_KEYS } from './corney'
 import { keyReferences, moveKey } from './move-key'
 import { drc } from './drc'
-import { movedConnections, rerouteDiff, savedRoutes } from './reroute'
+import { movedConnections, rerouteDiff, savedConflicts, savedRoutes } from './reroute'
 import { DELTA, KEY, straightRoutes } from './reroute-cases'
 import { fixedCopperNets, type RouteSet, type RouteTrace } from './route-set'
 import { toRoutingInput } from './routing-input'
@@ -124,5 +124,46 @@ describe('rerouteDiff', () => {
     const diff = rerouteDiff(input, saved, after, moved)
     expect(diff.changedConnections).toEqual([id])
     expect(diff.savedRoutes.changed).toBe(1)
+  })
+})
+
+// Story 10: saved routes that clash with the moved key are rerouted with it, not kept fixed.
+describe('savedConflicts', () => {
+  const unmoved = toRoutingInput(CORNEY.wireless)
+  // A moved diode pad (D11.2, B.Cu), and a short trace of another saved connection at its new centre.
+  const pad = input.pads.find((p) => p.id === 'D11.2.B')!
+  const other = input.connections.find((c) => savedIds.has(c.id) && c.net !== pad.net)!
+  const clash: RouteSet = {
+    traces: [{ connection: other.id, net: other.net, layer: 'B.Cu', width: 0.2, points: [{ x: pad.x - 0.1, y: pad.y }, { x: pad.x + 0.1, y: pad.y }] }],
+    vias: [],
+  }
+
+  it('a saved route of another net within clearance of a moved pad is a conflict, and is rerouted rather than fixed', () => {
+    expect(moved.some((id) => input.connections.find((c) => c.id === id)!.padA === pad.id || input.connections.find((c) => c.id === id)!.padB === pad.id)).toBe(true)
+    const conflicts = savedConflicts(input, union(saved, clash))
+    expect(conflicts.connections).toContain(other.id)
+    expect(conflicts.violations).toBeGreaterThan(savedConflicts(input, saved).violations)
+    // score-custom routes moved + conflicts, with the rest fixed: the clashing trace is not among them.
+    const fixed = savedRoutes(union(saved, clash), [...moved, ...conflicts.connections])
+    expect(fixed.traces.some((t) => t.connection === other.id)).toBe(false)
+  })
+
+  it('the same trace on the unmoved board is no conflict', () => {
+    expect(savedConflicts(unmoved, clash)).toEqual({ violations: 0, connections: [] })
+  })
+
+  it('a via item is named by the connections its traces join', () => {
+    // An F.Cu stub that clears everything, ending on a via over the B.Cu pad: only the via clashes.
+    const stub: RouteSet = {
+      traces: [{ connection: other.id, net: other.net, layer: 'F.Cu', width: 0.2, points: [{ x: pad.x, y: pad.y }, { x: pad.x + 0.1, y: pad.y }] }],
+      vias: [],
+    }
+    expect(savedConflicts(input, stub)).toEqual({ violations: 0, connections: [] })
+    const via = { at: { x: pad.x, y: pad.y }, diameter: input.rules.via.diameter, drill: input.rules.via.drill, net: other.net }
+    const conflicts = savedConflicts(input, { traces: stub.traces, vias: [via] })
+    expect(conflicts.violations).toBeGreaterThan(0)
+    expect(conflicts.connections).toEqual([other.id])
+    // A via no trace ends on names no connection.
+    expect(savedConflicts(input, { traces: [], vias: [via] }).connections).toEqual([])
   })
 })

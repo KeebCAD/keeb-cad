@@ -20,7 +20,8 @@
 // onto the router's own copper; the placed connections its copper comes within clearance of are
 // ripped up, it is placed, and they are rerouted. The attempt is kept only if all of them reroute,
 // so the routed count only grows. `ripUpRounds` rounds, deterministic. An optional deadline
-// (`deadlineMs` on an injected clock) is checked between connections.
+// (`deadlineMs` on an injected clock) is checked between connections. Optional `fixedRoutes`
+// (story 10's reroute) are static obstacles: never ripped up, moved or returned.
 import { EndType, JoinType, inflatePathsD, type PathsD } from 'clipper2-ts'
 import Flatbush from 'flatbush'
 import type { Point } from '../../fixtures/src/kicad-pcb'
@@ -60,6 +61,12 @@ export interface RouterOptions {
   deadlineMs?: number
   /** The clock `deadlineMs` is on. Default `performance.now`. Injected, so tests (and the router) stay pure. */
   now?: () => number
+  /**
+   * Copper already on the board (story 10's saved routes): each trace segment and via is a static
+   * obstacle of its own net, with the usual copper clearance. The router never moves, rips up or
+   * returns it; it only routes `ids` around it (same-net copper does not block).
+   */
+  fixedRoutes?: RouteSet
 }
 
 export interface RouteResult {
@@ -407,6 +414,14 @@ export function routeConnections(input: RoutingInput, ids: readonly string[], op
   for (const [i, t] of input.fixedCopper.entries()) {
     items.push(shapeItem(codeOf(fixedNets[i]), layersOf([t.layer]), 'copper', traceShape(t.start, t.end, t.width)))
   }
+  // Fixed routes, as the router's own copper would be (`search`'s `added`), but static: the
+  // rip-up search reads static fields only, so it cannot cross them, and `placed` never holds them.
+  for (const t of options.fixedRoutes?.traces ?? []) {
+    for (let k = 1; k < t.points.length; k++) {
+      items.push(shapeItem(codeOf(t.net), layersOf([t.layer]), 'copper', traceShape(t.points[k - 1]!, t.points[k]!, t.width)))
+    }
+  }
+  for (const v of options.fixedRoutes?.vias ?? []) items.push(shapeItem(codeOf(v.net), [true, true], 'copper', viaShape(v.at, v.diameter)))
   for (const e of input.outline) {
     items.push({ net: BLOCK_ALL, layers: [true, true], rule: 'edge', core: { kind: 'polyline', pts: flattenEdge(e, EDGE_DEVIATION) }, r: 0 })
   }

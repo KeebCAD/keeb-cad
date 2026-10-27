@@ -1,11 +1,11 @@
 {
   "engine": {
     "name": "custom",
-    "version": "f96ff22"
+    "version": "0c0b6d9"
   },
   "design": "wireless",
   "kicadVersion": "10.0.7",
-  "date": "2026-10-27T13:49:13.154Z",
+  "date": "2026-10-27T14:32:18.476Z",
   "connections": {
     "total": 152,
     "routed": 152,
@@ -79,8 +79,8 @@
       "capped": []
     }
   },
-  "workerMs": 2618,
-  "peakMemoryMb": 30.6,
+  "workerMs": 2735,
+  "peakMemoryMb": 27.5,
   "run": {
     "status": "solved",
     "error": null,
@@ -90,5 +90,53 @@
   "crossCheck": {
     "drcOnly": [],
     "kicadOnly": []
-  }
+  },
+  "reroute": [
+    {
+      "method": "fixed-obstacles",
+      "movedKey": "matrix_middle_home",
+      "delta": {
+        "dx": 1.5,
+        "dy": -0.75
+      },
+      "run": {
+        "status": "solved",
+        "error": null,
+        "capMs": 600000
+      },
+      "workerMs": 567,
+      "movedConnections": {
+        "total": 9,
+        "routed": 9
+      },
+      "changedConnections": [
+        "C3:S10.1.F~S11.1.B",
+        "C3:S11.1.B~S11.1.F",
+        "C3:S11.1.F~S12.1.B",
+        "C3:S12.1.F~S19.1.B",
+        "middle_home_B:D11.2.B~S11.2.B",
+        "middle_home_B:S11.2.B~S11.2.F",
+        "R1:D8.1.B~D11.1.B",
+        "R1:D11.1.B~D14.1.B",
+        "R1:D17.1.B~D23.1.F",
+        "R1:D29.1.F~D32.1.F",
+        "R1:D32.1.F~D35.1.F"
+      ],
+      "savedRoutes": {
+        "unchanged": 141,
+        "changed": 2
+      },
+      "fixedCopperViolations": 0,
+      "drc": {
+        "added": 0
+      },
+      "savedConflicts": {
+        "violations": 4,
+        "connections": [
+          "C3:S12.1.F~S19.1.B",
+          "R1:D17.1.B~D23.1.F"
+        ]
+      }
+    }
+  ]
 }

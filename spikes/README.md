@@ -187,7 +187,12 @@ limit), `baseline {drc, kicad}` (the bare board's counts, same shapes), `workerM
 `peakMemoryMb`, and for entries 7 and 10 an optional `reroute`: one entry per method,
 `{method, movedKey, delta, run {status, error, capMs}, workerMs, movedConnections {total,
 routed}, changedConnections, savedRoutes {unchanged, changed}, fixedCopperViolations, drc
-{added}}` (`RerouteEntry`; see story 7 below).
+{added}}` (`RerouteEntry`; see story 7 below). `method` is `preloaded-traces` or
+`rect-obstacles` (tscircuit, story 7) or `fixed-obstacles` (custom router, story 10: the saved
+routes' exact shapes, which the router cannot move or rip up). `fixed-obstacles` entries also
+carry `savedConflicts {violations, connections}`: the `drc` violations the saved routes add over
+the moved board with no routes, and the saved connections in them, which are rerouted with the
+moved key (optional, so story 7's entries stay valid).
 
 Optional fields since story 6: `run {status: solved|timeout|failed|threw, error, capMs}`,
 `unrouted` (the scored connection ids the routes do not realise) and `crossCheck {drcOnly,
@@ -223,7 +228,7 @@ names the URL. So does a missing `kicad-cli`, which names `sudo pacman -S kicad`
 scores nothing and needs no kicad-cli. `scripts/score-tscircuit-probe.test.ts` builds `dist/`,
 runs it, and asserts a non-zero exit naming `https://example.com/`. `e2e/corney-cap.spec.ts`
 routes wireless with a 200 ms cap and asserts `timeout`, an error, and a stop near the cap.
-`scripts/run-status.ts` maps the worker's response to the scorecard's `run.status`. The shared KiCad helpers are in `scripts/kicad.ts`. Since story 9 the engine-neutral steps (serving, blocking, heap sampling, steps 2–5, `--probe`) are in `scripts/score.ts`, shared with `score:custom`; `score-tscircuit.ts` keeps the adapter and the reroute. The
+`scripts/run-status.ts` maps the worker's response to the scorecard's `run.status`. The shared KiCad helpers are in `scripts/kicad.ts`. Since story 9 the engine-neutral steps (serving, blocking, heap sampling, steps 2–5, `--probe`) are in `scripts/score.ts`, shared with `score:custom`; `score-tscircuit.ts` keeps the adapter and the reroute. Since story 10 the `?external` session (`externalSession`, generic over the page path and the window function), the reroute's move and its summary line are there too. The
 script is outside `verify` because a routing result is not a test outcome. The adapter and
 completion unit tests are inside it.
 
@@ -466,7 +471,7 @@ the two scorecards compare field for field: port 4175, a 600 s cap plus 120 s of
 off-origin request blocked and fatal, the worker's V8 heap sampled every 100 ms over CDP, `drc`
 and KiCad on the bare and the routed board (`out/custom-<design>/`), `added`, `addedUncertain`,
 `crossCheck` and `unrouted`. It writes `scorecards/custom-<design>.scorecard.json` with every R2
-field but `reroute` (story 10), and prints one line per design. `engine.version` is the git blob
+field (`reroute` since story 10, below), and prints one line per design. `engine.version` is the git blob
 hash of `src/custom-router.ts` (`git hash-object`, 7 characters, or `spike` without git), so it
 names the exact router source the scorecards came from.
 
@@ -508,7 +513,7 @@ names the exact router source the scorecards came from.
 | run | solved, 13.0 s | solved, 244.3 s | solved, 2.6 s | solved, 26.5 s |
 | routed (key-cell + routing) | 333 / 333 (100%) | 330 / 333 (99.1%) | 152 / 152 (100%) | 144 / 152 (94.7%) |
 | key-cell / routing | 63/63, 270/270 | 63/63, 267/270 | 63/63, 89/89 | 63/63, 81/89 |
-| peak worker JS heap | 83.1 MiB | 790.9 MiB | 30.6 MiB | 467.0 MiB |
+| peak worker JS heap | 96.4 MiB | 790.9 MiB | 27.5 MiB | 467.0 MiB |
 | `drc` baseline + added | 216 + 0 | 216 + 3418 | 0 + 0 | 0 + 250 |
 | KiCad added (clearance family) | 0; `addedUncertain`: copper edge clearance (at 199 on both boards) | 950 | 0 | 240 |
 | cross-check `drcOnly` / `kicadOnly` | 17 / 0 | 2712 / 91 | 0 / 0 | 17 / 7 |
@@ -521,7 +526,11 @@ names the exact router source the scorecards came from.
   never blocks, and `RoutingInput` has no via-to-via drill rule. tscircuit has the same kinds
   (wired 16 and 69). Story 13 should decide whether a hole-to-hole rule belongs in
   `RoutingInput`.
-- **Time moves with the machine's state.** The committed cards (router `f96ff22`) are from a run
+- **Time moves with the machine's state.** The committed cards are now story 10's run (router
+  `0c0b6d9`, which adds only `fixedRoutes`): same routes and counts as story 9's `f96ff22` run,
+  wired 13.2 s / 96.4 MiB, wireless 2.7 s / 27.5 MiB (story 9's: 13.0 s / 83.1 MiB and 2.6 s /
+  30.6 MiB). Story 9's
+  cards (router `f96ff22`) were from a run
   where story 8's Node test took 3.6–3.8 s instead of the 1.6 s it took at story 8, at the story-8
   commit too, so the machine, not the code, slowed down. An earlier run of the same router source
   took wired 5.4 s / 79.9 MiB and wireless 1.1 s / 22.4 MiB. Either way, wired
@@ -535,3 +544,84 @@ names the exact router source the scorecards came from.
   comparison (an estimate from the array sizes, not a measurement). tscircuit's share of
   typed arrays is not known.
 
+## Custom router reroutes one moved key (story 10)
+
+Part of `pnpm --dir spikes score:custom`. After each design's base run is scored, the script
+makes story 7's move (`matrix_middle_home` by `{dx: 1.5, dy: -0.75}` mm, `moveKey`) and
+reroutes that key's connections in the custom worker, together with the saved routes that now
+clash with the moved key, with every other base-run route as fixed obstacles. `movedConnections`,
+`savedRoutes` and `rerouteDiff` (`src/reroute.ts`) are story 7's, unchanged, so the entry
+compares with tscircuit's field for field. The cap (600 s, plus 120 s of grace) and the
+outbound-request block are the base run's.
+
+- **Saved conflicts** (`savedConflicts(input, saved)`, `src/reroute.ts`). The saved routes are
+  the base run's, minus the moved connections'. On the moved board some of them clash with the
+  moved key's pads: the `drc` violations `drc(moved input, saved)` adds over `drc(moved input,
+  no routes)`. Their connections (a trace by its connection id, a via by `viaOwners`) are routed
+  again with the moved key's, and every other saved route stays fixed. The entry records them as
+  `savedConflicts {violations, connections}`. `rerouteDiff` still diffs against the full saved
+  routes, so the rerouted conflicting connections show in `changedConnections` and
+  `savedRoutes.changed`. Unit tests (`src/reroute.test.ts`): a short trace of another saved
+  connection at a moved diode pad's new centre is a conflict and is not among the fixed routes;
+  the same trace on the unmoved board is none; a via over the pad names the connection its stub
+  joins.
+- **Story 7's tscircuit entries count these conflicts in their baseline too.** Their `drc.added`
+  and `fixedCopperViolations` are over `drc(moved input, saved)`, so a saved route that shorts a
+  moved pad cancels out there (this run measures wireless 4 and wired 30 such violations on the
+  custom base routes; tscircuit's base routes differ, so its counts are not these). Their cards
+  are not regenerated by this story.
+- **Method `fixed-obstacles`.** `routeConnections(input, ids, { fixedRoutes })`: each fixed
+  trace segment (`traceShape`) and via (`viaShape`, both layers) is a static `copper` item of its
+  own net, exactly as the router's own placed copper would be, with the same clearance. So
+  same-net fixed copper does not block, and another net's does. Static items are in every field,
+  including the rip-up's static-only search, and never in `placed`, so the router cannot cross,
+  move or rip them up, and it returns copper only for the ids it is given (moved plus
+  conflicting). `after` is fixed plus returned. The script notes any returned trace or via (by
+  `viaOwners`) for an id it did not ask for (none), and any conflicting connection that is
+  unrouted after the reroute, in `run.error`: `movedConnections` counts the moved ids only and
+  `drc` has no unrouted kind, so without the note the entry would read clean. Unit tests
+  (`src/custom-router.test.ts`, story 9's crossing box): another net's fixed route across the
+  only path leaves the connection unrouted and is not returned; the same copper on the
+  connection's own net, through its pad, does not block it; and `B` stays unrouted when `A` is
+  fixed, while `[A, B]` routes both (B rips up the router's own A).
+- **Page** (`?external&engine=custom`): it makes the custom worker and sets
+  `window.routeCustom(request)` (`{ input, ids, capMs, fixedRoutes }`), one call at a time, then
+  marks `#result` `data-status="ready"`. `?external` alone is still tscircuit's `routeBoard`.
+  The `RoutingInput` and the fixed routes are built in Node and posted with `page.evaluate`;
+  `workerMs` is routing time only. `e2e/route.spec.ts` routes wireless through `routeCustom`
+  twice in one page: every scored connection, then three of them round the rest as
+  `fixedRoutes`. Another test answers a 1 ms cap with `timeout`, then an unknown id with
+  `failed` + `thrown`, in the same page.
+- A router failure, cap or throw is recorded in the entry (`run.status` from `runStatus`), and
+  the routes that came back are scored. A throw while scoring them is `threw` with none scored.
+  The exit code stays 0.
+
+### Results (2026-10-27, router `0c0b6d9`, Chromium 156 headless, one run), next to story 7's
+
+| | custom wired: fixed-obstacles | tscircuit wired (both methods) | custom wireless: fixed-obstacles | tscircuit wireless: preloaded / rect |
+|---|---|---|---|---|
+| run | solved, 6.0 s | failed, 20.3 s / 44.3 s | solved, 0.6 s | solved, 94.1 s / 14.2 s |
+| saved conflicts (violations, connections) | 30, 9 | not measured (in the baseline) | 4, 2 | not measured (in the baseline) |
+| moved routed | 19 / 19 | 0 / 19 | 9 / 9 | 9 / 9, 6 / 9 |
+| conflicting connections routed again | 7 / 9 | — | 2 / 2 | — |
+| changed connections | 28 (19 moved + 9 conflicting) | 0 | 11 (9 moved + 2 conflicting) | 45, 9 |
+| saved routes unchanged / changed | 305 / 9 | 314 / 0 | 141 / 2 | 104 / 36, 140 / 0 |
+| `fixedCopperViolations` | 0 | 0 | 0 | 0 |
+| `drc` added | 0 | 0 | 0 | 52, 32 |
+
+- **Saved routes changed equals the conflict count by construction**, not a routing result: the
+  router returns copper only for the ids it is given, and the conflicting connections' copper
+  is always replaced. Story 13 should not read it as one. What the entry measures is whether the
+  moved key and the conflicting connections still route (`movedConnections.routed`, and the
+  `run.error` note for conflicts), the `drc` it adds, and the module-zone check
+  (`fixedCopperViolations`). `drc` added 0 is over `drc(moved input, saved)`; a separate Node
+  run of the same routing found no saved conflict left in `after` on either design.
+- **Wired leaves two conflicting connections unrouted:** `ULED_1:LED22.2.F~LED23.4.B` and
+  `ULED_1:LED23.4.B~LED23.4.F`, listed in `run.error`. Their saved routes clashed with the moved
+  key and are gone from `after`, and the router finds no new path for them round the fixed
+  routes and the moved key.
+- **Wired's moved key now routes 19 / 19.** Attempt 1 of this story, which kept the conflicting
+  routes fixed, left `LED_10:LED11.4.B~LED11.4.F` unrouted (the router's order and rip-up, not a
+  fixed obstacle). With the conflicting routes rerouted it routes.
+- Wireless's saved count is 143, not story 7's 140, because the saved routes are each engine's
+  own base run (custom routes all 152, tscircuit 144).

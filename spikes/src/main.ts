@@ -37,6 +37,41 @@ const tscircuitWorker = () =>
     answer({ status: 'failed', error, traces: [], ms: 0, thrown: true }),
   )
 
+/** The custom router's worker (`custom.worker.ts`). */
+const customWorker = (onAnswer: (response: CustomRouteResponse) => void, onError: (message: string) => void) =>
+  listen<CustomRouteResponse>(new Worker(new URL('./custom.worker.ts', import.meta.url), { type: 'module' }), onAnswer, onError)
+
+/** A custom worker failure in the custom response's shape (score-custom reads `routes`, `unrouted`). */
+const customFailure = (error: string, ids: string[]): CustomRouteResponse => ({
+  status: 'failed',
+  error,
+  routes: { traces: [], vias: [] },
+  unrouted: [...ids],
+  ms: 0,
+  thrown: true,
+})
+
+/**
+ * `?external&engine=custom` (story 10): `routeCustom` posts one request to the custom worker and
+ * resolves with its answer, like `routeBoard`. One call at a time.
+ */
+function exposeRouteCustom(): void {
+  let pending: { resolve: (response: CustomRouteResponse) => void; ids: string[] } | undefined
+  const answer = (response: CustomRouteResponse) => {
+    const waiting = pending
+    pending = undefined
+    if (waiting) waiting.resolve(response)
+    else show(response.status, response)
+  }
+  const worker = customWorker(answer, (error) => answer(customFailure(error, pending?.ids ?? [])))
+  ;(window as ExternalPage).routeCustom = (request) =>
+    new Promise<CustomRouteResponse>((resolve, reject) => {
+      if (pending) return reject(new Error('routeCustom: a request is already in flight'))
+      pending = { resolve, ids: request.ids }
+      worker.postMessage(request)
+    })
+}
+
 const loadInput = async (design: string) => {
   const [{ CORNEY }, { toRoutingInput }] = await Promise.all([import('./corney'), import('./routing-input')])
   if (design !== 'wired' && design !== 'wireless') throw new Error(`Unknown Corney design ${design}`)
@@ -73,24 +108,24 @@ const params = new URLSearchParams(location.search)
 const corney = params.get('corney')
 const engine = params.get('engine') ?? 'tscircuit'
 if (params.has('external')) {
-  const worker = tscircuitWorker()
-  ;(window as ExternalPage).routeBoard = (request) =>
-    new Promise<RouteResponse>((resolve, reject) => {
-      if (pending) return reject(new Error('routeBoard: a request is already in flight'))
-      pending = resolve
-      worker.postMessage(request)
-    })
+  if (engine === 'custom') exposeRouteCustom()
+  else {
+    const worker = tscircuitWorker()
+    ;(window as ExternalPage).routeBoard = (request) =>
+      new Promise<RouteResponse>((resolve, reject) => {
+        if (pending) return reject(new Error('routeBoard: a request is already in flight'))
+        pending = resolve
+        worker.postMessage(request)
+      })
+  }
   show('ready', { status: 'ready' })
 } else if (corney !== null) {
   const cap = Number(params.get('cap') ?? CORNEY_CAP_MS)
   const capMs = Number.isFinite(cap) && cap > 0 ? cap : CORNEY_CAP_MS
   if (engine === 'custom') {
-    // A page failure in the custom response's shape (score-custom reads `routes`, `unrouted`).
-    const customFailed = (error: string, ids: string[]) =>
-      show('failed', { status: 'failed', error, routes: { traces: [], vias: [] }, unrouted: ids, ms: 0, thrown: true })
+    const customFailed = (error: string, ids: string[]) => show('failed', customFailure(error, ids))
     customRequest(corney, capMs, params.has('broken'), params.has('probe')).then((request) => {
-      const worker = listen<CustomRouteResponse>(
-        new Worker(new URL('./custom.worker.ts', import.meta.url), { type: 'module' }),
+      const worker = customWorker(
         (response) => show(response.status, response),
         (error) => customFailed(error, request.ids),
       )

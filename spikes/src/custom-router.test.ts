@@ -4,7 +4,8 @@ import { CORNEY } from './corney'
 import { routeConnections, type RouteResult } from './custom-router'
 import { drc } from './drc'
 import { addedViolations } from './drc-cases'
-import { EMPTY_ROUTES } from './route-set'
+import { savedConflicts } from './reroute'
+import { EMPTY_ROUTES, type RouteSet } from './route-set'
 import { toRoutingInput, type FixedTrace, type RoutingInput, type RoutingPad } from './routing-input'
 
 const input = toRoutingInput(CORNEY.wired)
@@ -46,6 +47,11 @@ describe('custom router on wired Corney', () => {
         `${result.routes.traces.length} traces, ${result.routes.vias.length} vias, unrouted ${result.unrouted.length}`,
     )
   }, 120_000)
+
+  it('savedConflicts finds none on the unmoved board with its own drc-clean routes', () => {
+    expect(added(result.routes)).toEqual([])
+    expect(savedConflicts(input, result.routes)).toEqual({ violations: 0, connections: [] })
+  })
 
   it('chooses 131 connections, all of them known and none fixed copper', () => {
     expect(MATRIX_IDS).toHaveLength(131)
@@ -216,5 +222,42 @@ describe('custom router deadline', () => {
     const result = routeConnections(box, ids, { deadlineMs: 1e9, now: () => 0 })
     expect(result.timedOut).toBe(false)
     expect(result.unrouted).toEqual([])
+  })
+})
+
+// Story 10: saved routes passed as `fixedRoutes`, static copper of their own nets.
+describe('custom router fixed routes', () => {
+  const box = crossingBox()
+  const [A, B] = box.connections.map((c) => c.id) as [string, string]
+  /** A trace of `net` across the whole box at height `y`, ring to ring. */
+  const wall = (net: string, y: number): RouteSet => ({
+    traces: [{ connection: `${net}:wall`, net, layer: 'F.Cu', width: 0.15, points: [{ x: -3, y }, { x: 13, y }] }],
+    vias: [],
+  })
+
+  it('a fixed route of another net across the only path leaves the connection unrouted, and is not returned', () => {
+    const { routes, unrouted } = routeConnections(box, [A], { fixedRoutes: wall('B', 0) })
+    expect(unrouted).toEqual([A])
+    expect(routes).toEqual(EMPTY_ROUTES)
+  })
+
+  it("a fixed route of the connection's own net through its pad does not block it", () => {
+    const own = routeConnections(box, [A], { fixedRoutes: wall('A', -1.2) })
+    expect(own.unrouted).toEqual([])
+    expect(routedConnections(box, own.routes)).toEqual([A])
+    expect(own.routes.traces.every((t) => t.connection === A)).toBe(true)
+    // The same copper on another net does block it.
+    expect(routeConnections(box, [A], { fixedRoutes: wall('B', -1.2) }).unrouted).toEqual([A])
+  })
+
+  it('rip-up never moves a fixed route: B, which rips up a routed A, stays unrouted round a fixed A', () => {
+    const fixedA = routeConnections(box, [A]).routes
+    // Contrast: with A the router's own copper, B rips it up and both route.
+    const both = routeConnections(box, [A, B])
+    expect(both.unrouted).toEqual([])
+    expect(routedConnections(box, both.routes).sort()).toEqual([A, B].sort())
+    const { routes, unrouted } = routeConnections(box, [B], { fixedRoutes: fixedA })
+    expect(unrouted).toEqual([B])
+    expect(routes).toEqual(EMPTY_ROUTES)
   })
 })

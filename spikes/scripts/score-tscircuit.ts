@@ -12,21 +12,21 @@ import { join } from 'node:path'
 import type { Browser } from '@playwright/test'
 import type { SimpleRouteJson, SimplifiedPcbTraces } from '@tscircuit/capacity-autorouter'
 import { moveKey } from '../src/move-key'
-import type { ExternalPage, RouteRequest, RouteResponse } from '../src/protocol'
+import type { RouteRequest, RouteResponse } from '../src/protocol'
 import { movedConnections, rerouteDiff, savedRoutes } from '../src/reroute'
 import type { RerouteEntry, RerouteMethod, RouteSet, RunStatus } from '../src/route-set'
 import { toRoutingInput } from '../src/routing-input'
 import { mergeReroute, toRerouteJson, toRouteSet } from '../src/tscircuit-adapter'
 import { kicadVersion } from './kicad'
-import { runStatus } from './run-status'
 import {
-  blockedPage,
   CAP_MS,
+  DELTA,
   DESIGNS,
   errorText,
-  GRACE_MS,
-  ORIGIN,
+  externalSession,
+  MOVED_KEY,
   pcbs,
+  printReroute,
   probe,
   routeInBrowser,
   runScript,
@@ -37,9 +37,6 @@ import {
   writeScorecard,
 } from './score'
 
-/** The reroute's move: story 4's test move. */
-const MOVED_KEY = 'matrix_middle_home'
-const DELTA = { dx: 1.5, dy: -0.75 }
 const METHODS: RerouteMethod[] = ['preloaded-traces', 'rect-obstacles']
 
 /** One `?external` solve: its status, error, the traces tscircuit returned and the solve time. */
@@ -55,46 +52,11 @@ function engineVersion(): string {
   return (JSON.parse(readFileSync(pkg, 'utf8')) as { version: string }).version
 }
 
-/**
- * The `?external` page: routes SRJs built in Node, one at a time, in the page's one worker, with
- * the base run's cap and network blocking. A run with no answer within cap + grace is `timeout`
- * and the page is reloaded (a new worker) for the next; a browser error is `threw`. No heap
- * samples: the reroute records solve time only.
- */
-async function externalSession(browser: Browser) {
-  const { context, page, blocked } = await blockedPage(browser)
-  const open = async () => {
-    await page.goto(`${ORIGIN}/?external`)
-    await page.locator('#result[data-status="ready"]').waitFor({ timeout: 30_000 })
-  }
-  let ready = false
-  return {
-    blocked,
-    async route(board: SimpleRouteJson): Promise<ExternalRun> {
-      const none = { traces: [] }
-      try {
-        if (!ready) await open()
-        ready = true
-        const request: RouteRequest = { board, probe: false, capMs: CAP_MS }
-        const solving = page.evaluate((r) => (globalThis as ExternalPage).routeBoard!(r), request)
-        solving.catch(() => undefined)
-        let timer: ReturnType<typeof setTimeout> | undefined
-        const response = await Promise.race([
-          solving,
-          new Promise<undefined>((resolve) => (timer = setTimeout(() => resolve(undefined), CAP_MS + GRACE_MS))),
-        ]).finally(() => clearTimeout(timer))
-        if (!response) {
-          ready = false
-          return { status: 'timeout', error: `no answer from the worker within ${CAP_MS + GRACE_MS} ms`, workerMs: CAP_MS + GRACE_MS, ...none }
-        }
-        return { status: runStatus(response), error: response.error, traces: response.traces ?? [], workerMs: response.ms ?? 0 }
-      } catch (err) {
-        ready = false
-        return { status: 'threw', error: `browser: ${errorText(err)}`, workerMs: 0, ...none }
-      }
-    },
-    close: () => context.close().catch(() => undefined),
-  }
+/** One `?external` tscircuit solve, as `externalSession` returns it. */
+async function solve(session: Awaited<ReturnType<typeof externalSession<'routeBoard'>>>, board: SimpleRouteJson): Promise<ExternalRun> {
+  const request: RouteRequest = { board, probe: false, capMs: CAP_MS }
+  const { status, error, response, workerMs } = await session.route(request)
+  return { status, error, traces: response?.traces ?? [], workerMs }
 }
 
 /** What `toRouteSet` could not take, as error notes (never dropped silently). */
@@ -114,13 +76,13 @@ async function reroute(browser: Browser, text: string, base: RouteSet): Promise<
   const input = toRoutingInput(moveKey(text, MOVED_KEY, DELTA))
   const moved = movedConnections(input, MOVED_KEY)
   const saved = savedRoutes(base, moved)
-  const session = await externalSession(browser)
+  const session = await externalSession(browser, '/?external', 'routeBoard')
   const entries: RerouteEntry[] = []
   try {
     for (const method of METHODS) {
       let run: ExternalRun
       try {
-        run = await session.route(toRerouteJson(input, saved, moved, method))
+        run = await solve(session, toRerouteJson(input, saved, moved, method))
       } catch (err) {
         run = { status: 'threw', error: `building the SRJ: ${errorText(err)}`, traces: [], workerMs: 0 }
       }
@@ -168,15 +130,7 @@ async function main(): Promise<number> {
       const card = scoreRoutes(design, text, input, routes, conversionNotes(converted), run, version, engine)
       card.reroute = await reroute(browser, text, routes)
       writeScorecard(card, run.heapSamples)
-      for (const e of card.reroute) {
-        console.log(
-          `  reroute ${e.method} (${e.movedKey} +${e.delta.dx},${e.delta.dy}): ${e.run.status} in ${(e.workerMs / 1000).toFixed(1)} s, ` +
-            `moved ${e.movedConnections.routed}/${e.movedConnections.total} routed, ${e.changedConnections.length} connections changed, ` +
-            `saved routes ${e.savedRoutes.unchanged} unchanged / ${e.savedRoutes.changed} changed, ` +
-            `fixed copper +${e.fixedCopperViolations}, drc +${e.drc.added}`,
-        )
-        if (e.run.error) console.log(`      ${e.run.error}`)
-      }
+      for (const e of card.reroute) printReroute(e)
     }
     return 0
   })

@@ -162,8 +162,10 @@ export interface Scorecard {
 /**
  * How the saved routes reach the engine. `preloaded-traces`: as the engine's own fixed traces
  * (tscircuit SRJ `traces`), which it may re-route. `rect-obstacles`: as obstacles it cannot move.
+ * `fixed-obstacles` (custom router, story 10): as their exact shapes (trace segments and vias,
+ * with their nets and the usual clearances), which the router cannot move or rip up.
  */
-export type RerouteMethod = 'preloaded-traces' | 'rect-obstacles'
+export type RerouteMethod = 'preloaded-traces' | 'rect-obstacles' | 'fixed-obstacles'
 
 /**
  * One reroute of one moved key: only the moved key's connections are routed again; every other
@@ -190,6 +192,13 @@ export interface RerouteEntry {
   fixedCopperViolations: number
   /** `drc` violations the rerouted set adds over the moved board with the saved routes. */
   drc: { added: number }
+  /**
+   * `fixed-obstacles` only (story 10): the saved routes that clash with the moved key, i.e. the
+   * `drc` violations the saved routes add over the moved board with no routes, and the saved
+   * connections in them, which are rerouted with the moved key rather than kept fixed.
+   * Optional, so story 7's tscircuit entries stay valid (they count these in their baseline).
+   */
+  savedConflicts?: { violations: number; connections: string[] }
 }
 
 /** `timeout`: not solved within the cap; `failed`: the solver gave up; `threw`: it threw. */

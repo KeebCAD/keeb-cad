@@ -13,7 +13,7 @@ self.addEventListener('message', (event: MessageEvent<CustomRouteRequest>) => {
   void handle(event.data).then((response) => self.postMessage(response))
 })
 
-async function handle({ input, ids, capMs, probe }: CustomRouteRequest): Promise<CustomRouteResponse> {
+async function handle({ input, ids, capMs, probe, fixedRoutes }: CustomRouteRequest): Promise<CustomRouteResponse> {
   const start = performance.now()
   if (probe) {
     let error: string | null = null
@@ -25,7 +25,7 @@ async function handle({ input, ids, capMs, probe }: CustomRouteRequest): Promise
     return { status: 'probed', error, routes: { traces: [], vias: [] }, unrouted: [], ms: performance.now() - start }
   }
   try {
-    const { routes, unrouted, timedOut } = routeConnections(input, ids, { deadlineMs: start + capMs, now: () => performance.now() })
+    const { routes, unrouted, timedOut } = routeConnections(input, ids, { deadlineMs: start + capMs, now: () => performance.now(), fixedRoutes })
     const ms = performance.now() - start
     // Also past the cap when the deadline passed during the last search (nothing left to check).
     if (timedOut || ms > capMs) {
