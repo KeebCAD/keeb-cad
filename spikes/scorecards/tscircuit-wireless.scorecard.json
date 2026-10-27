@@ -5,7 +5,7 @@
   },
   "design": "wireless",
   "kicadVersion": "10.0.7",
-  "date": "2026-10-27T10:57:59.722Z",
+  "date": "2026-10-27T12:42:37.828Z",
   "connections": {
     "total": 152,
     "routed": 144,
@@ -46,9 +46,9 @@
   },
   "kicad": {
     "clearanceFamily": {
-      "clearance": 83,
+      "clearance": 81,
       "hole_clearance": 147,
-      "shorting_items": 11
+      "shorting_items": 12
     },
     "other": {
       "holes_co_located": 1,
@@ -57,7 +57,7 @@
       "unconnected_items": 5
     },
     "capped": [],
-    "added": 241,
+    "added": 240,
     "addedUncertain": []
   },
   "baseline": {
@@ -85,8 +85,8 @@
       "capped": []
     }
   },
-  "workerMs": 26629,
-  "peakMemoryMb": 458.7,
+  "workerMs": 26522,
+  "peakMemoryMb": 467,
   "run": {
     "status": "solved",
     "error": null,
@@ -109,26 +109,139 @@
       "clearance|pad:JST1.22.F|track:GND.F.Cu",
       "clearance|pad:JST1.2.F|via:BAT_P",
       "clearance|track:CS.F.Cu|track:VCC.F.Cu",
+      "clearance|track:CS.F.Cu|track:VCC.F.Cu",
+      "clearance|track:CS.F.Cu|track:VCC.F.Cu",
+      "clearance|track:CS.F.Cu|track:SDA.F.Cu",
+      "clearance|track:CS.F.Cu|track:SDA.F.Cu",
       "clearance|track:C0.B.Cu|track:C5.B.Cu",
-      "clearance|track:C0.B.Cu|track:C5.B.Cu",
-      "clearance|track:C0.B.Cu|track:C5.B.Cu",
-      "shorting_items|track:C5.B.Cu|via:C0",
+      "clearance|track:middle_bottom_B.B.Cu|via:C1",
       "clearance|track:middle_bottom_B.B.Cu|via:C1",
       "clearance|track:middle_bottom_B.B.Cu|via:C1",
       "clearance|track:C2.B.Cu|via:R1",
       "clearance|track:C1.F.Cu|track:C2.F.Cu",
       "clearance|track:C2.F.Cu|via:C1",
-      "clearance|track:C1.F.Cu|via:C0",
-      "clearance|track:C1.F.Cu|via:C0"
+      "clearance|track:C2.F.Cu|via:C1"
     ],
     "kicadOnly": [
       "clearance|via:BAT_P|via:GND",
-      "hole_clearance|pad:S21..TH|via:C5",
-      "hole_clearance|pad:S20..TH|via:C4",
+      "hole_clearance|pad:S7..TH|via:C2",
       "hole_clearance|pad:S10..TH|via:C3",
       "hole_clearance|pad:S8..TH|via:C2",
-      "hole_clearance|pad:S7..TH|via:C2",
-      "clearance|via:C1|via:C3"
+      "clearance|via:C1|via:C3",
+      "hole_clearance|pad:S21..TH|via:C5",
+      "hole_clearance|pad:S20..TH|via:C4"
     ]
-  }
+  },
+  "reroute": [
+    {
+      "method": "preloaded-traces",
+      "movedKey": "matrix_middle_home",
+      "delta": {
+        "dx": 1.5,
+        "dy": -0.75
+      },
+      "run": {
+        "status": "solved",
+        "error": null,
+        "capMs": 600000
+      },
+      "workerMs": 94125,
+      "movedConnections": {
+        "total": 9,
+        "routed": 9
+      },
+      "changedConnections": [
+        "C0:MCU1.120.TH~S1.1.B",
+        "C0:S1.1.B~S1.1.F",
+        "C0:S1.1.F~S2.1.B",
+        "C0:S2.1.B~S2.1.F",
+        "outer_bottom_B:S1.2.B~S1.2.F",
+        "C1:MCU1.119.TH~S4.1.B",
+        "C1:S4.1.F~S5.1.B",
+        "C1:S5.1.B~S5.1.F",
+        "pinky_bottom_B:D4.2.B~S4.2.B",
+        "pinky_bottom_B:S4.2.B~S4.2.F",
+        "C2:MCU1.118.TH~S7.1.B",
+        "C2:S7.1.F~S8.1.B",
+        "C2:S8.1.F~S9.1.B",
+        "C3:MCU1.117.TH~S10.1.B",
+        "C3:S10.1.B~S10.1.F",
+        "C3:S10.1.F~S11.1.B",
+        "C3:S11.1.B~S11.1.F",
+        "C3:S11.1.F~S12.1.B",
+        "C3:S12.1.B~S12.1.F",
+        "C3:S12.1.F~S19.1.B",
+        "middle_bottom_B:S10.2.B~S10.2.F",
+        "middle_home_B:D11.2.B~S11.2.B",
+        "middle_home_B:S11.2.B~S11.2.F",
+        "C4:S13.1.F~S14.1.B",
+        "C4:S14.1.B~S14.1.F",
+        "C4:S14.1.F~S15.1.B",
+        "C4:S15.1.F~S20.1.B",
+        "index_home_B:S14.2.B~S14.2.F",
+        "C5:S17.1.F~S18.1.B",
+        "C5:S18.1.B~S18.1.F",
+        "C5:S18.1.F~S21.1.B",
+        "R2:D7.1.B~D10.1.B",
+        "R2:D10.1.B~D13.1.B",
+        "R2:D13.1.B~D16.1.B",
+        "R2:D16.1.B~D22.1.F",
+        "R2:D28.1.F~D31.1.F",
+        "R2:D31.1.F~D34.1.F",
+        "R1:D8.1.B~D11.1.B",
+        "R1:D11.1.B~D14.1.B",
+        "R1:D14.1.B~D17.1.B",
+        "R1:D17.1.B~D23.1.F",
+        "R1:D29.1.F~D32.1.F",
+        "R1:D32.1.F~D35.1.F",
+        "GND:JST1.2.B~JST1.2.F",
+        "BAT_P:JST1.1.B~JST1.1.F"
+      ],
+      "savedRoutes": {
+        "unchanged": 104,
+        "changed": 36
+      },
+      "fixedCopperViolations": 0,
+      "drc": {
+        "added": 52
+      }
+    },
+    {
+      "method": "rect-obstacles",
+      "movedKey": "matrix_middle_home",
+      "delta": {
+        "dx": 1.5,
+        "dy": -0.75
+      },
+      "run": {
+        "status": "solved",
+        "error": null,
+        "capMs": 600000
+      },
+      "workerMs": 14239,
+      "movedConnections": {
+        "total": 9,
+        "routed": 6
+      },
+      "changedConnections": [
+        "C3:S10.1.F~S11.1.B",
+        "C3:S11.1.B~S11.1.F",
+        "C3:S11.1.F~S12.1.B",
+        "middle_home_B:D11.2.B~S11.2.B",
+        "middle_home_B:S11.2.B~S11.2.F",
+        "R1:D8.1.B~D11.1.B",
+        "R1:D11.1.B~D14.1.B",
+        "R1:D29.1.F~D32.1.F",
+        "R1:D32.1.F~D35.1.F"
+      ],
+      "savedRoutes": {
+        "unchanged": 140,
+        "changed": 0
+      },
+      "fixedCopperViolations": 0,
+      "drc": {
+        "added": 32
+      }
+    }
+  ]
 }

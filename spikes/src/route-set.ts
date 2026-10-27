@@ -74,6 +74,33 @@ export function fixedCopperNets(input: RoutingInput): Array<string | undefined> 
   })
 }
 
+/** Float noise only: a via belongs to a trace that ends on it. */
+const VIA_EPS = 1e-6
+
+/**
+ * The connections each via joins, by index: those with a trace of the via's net that has an end
+ * on the via, in trace order. Empty for a via no trace ends on. RouteVia carries no connection,
+ * so this is geometric and engine-neutral.
+ */
+export function viaOwners(routes: RouteSet): string[][] {
+  return routes.vias.map((v) => [
+    ...new Set(
+      routes.traces
+        .filter(
+          (t) =>
+            t.net === v.net &&
+            [t.points[0], t.points.at(-1)].some((p) => p && Math.hypot(p.x - v.at.x, p.y - v.at.y) <= VIA_EPS),
+        )
+        .map((t) => t.connection),
+    ),
+  ])
+}
+
+/** The first of each via's `viaOwners`, or undefined. */
+export function viaConnections(routes: RouteSet): Array<string | undefined> {
+  return viaOwners(routes).map((o) => o[0])
+}
+
 // --- Scorecard ---------------------------------------------------------------------------
 
 export type DrcKind = 'clearance' | 'short' | 'track-width' | 'edge-clearance' | 'hole-clearance'
@@ -128,15 +155,41 @@ export interface Scorecard {
    * (`type|item|item`). Listed, never hidden (C6).
    */
   crossCheck?: { drcOnly: string[]; kicadOnly: string[] }
-  /** Entries 7 and 10 only: the one-key-move reroute. */
-  reroute?: {
-    movedKey: string
-    delta: { dx: number; dy: number }
-    changedConnections: string[]
-    savedRoutes: { unchanged: number; changed: number }
-    /** `drc` violations that involve the module's fixed copper (`fixed:<i>` items). */
-    fixedCopperViolations: number
-  }
+  /** Entries 7 and 10 only: the one-key-move reroute, one entry per method. */
+  reroute?: RerouteEntry[]
+}
+
+/**
+ * How the saved routes reach the engine. `preloaded-traces`: as the engine's own fixed traces
+ * (tscircuit SRJ `traces`), which it may re-route. `rect-obstacles`: as obstacles it cannot move.
+ */
+export type RerouteMethod = 'preloaded-traces' | 'rect-obstacles'
+
+/**
+ * One reroute of one moved key: only the moved key's connections are routed again; every other
+ * connection's routes from the base run are the saved routes, passed to the engine by `method`.
+ */
+export interface RerouteEntry {
+  method: RerouteMethod
+  movedKey: string
+  delta: { dx: number; dy: number }
+  /** How the reroute ended; the traces it returned are scored whatever the status. */
+  run: { status: RunStatus; error: string | null; capMs: number }
+  /** Solve time inside the worker. */
+  workerMs: number
+  /** The moved key's scored connections, and how many the rerouted set realises. */
+  movedConnections: { total: number; routed: number }
+  /** Connection ids whose traces or vias differ between the saved and the rerouted set. */
+  changedConnections: string[]
+  /** The saved connections only: changed (rerouted or dropped by the engine) or not. */
+  savedRoutes: { unchanged: number; changed: number }
+  /**
+   * Added `drc` violations (over the moved board with the saved routes) that involve the
+   * module's fixed copper (`fixed:<i>` items): the module-zone check.
+   */
+  fixedCopperViolations: number
+  /** `drc` violations the rerouted set adds over the moved board with the saved routes. */
+  drc: { added: number }
 }
 
 /** `timeout`: not solved within the cap; `failed`: the solver gave up; `threw`: it threw. */

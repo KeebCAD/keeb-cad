@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest'
 import type { Point } from '../../fixtures/src/kicad-pcb'
 import { routedConnections } from './completion'
 import { CORNEY, type CorneyDesign } from './corney'
+import { moveKey } from './move-key'
+import { movedConnections, savedRoutes } from './reroute'
+import { DELTA, KEY, straightRoutes } from './reroute-cases'
 import type { RouteSet } from './route-set'
 import { toRoutingInput, type RoutingInput, type RoutingPad } from './routing-input'
 import { padShape } from './shapes'
@@ -10,6 +13,7 @@ import {
   boardLoops,
   connectionIndex,
   OUTLINE_TOLERANCE,
+  toRerouteJson,
   toRouteSet,
   toSimpleRouteJson,
   toSimplifiedPcbTraces,
@@ -283,4 +287,70 @@ describe('toSimpleRouteJson on Corney', () => {
       })
     })
   }
+})
+
+describe('preloaded traces', () => {
+  it('starts a new trace where a connection’s copper does not continue, never bridging the gap', () => {
+    const id = small.connections[0]!.id
+    const routes: RouteSet = {
+      traces: [
+        { connection: id, net: 'ROW1', layer: 'F.Cu', width: 0.15, points: [{ x: 5, y: 6 }, { x: 10, y: 6 }] },
+        { connection: id, net: 'ROW1', layer: 'F.Cu', width: 0.15, points: [{ x: 12, y: 6 }, { x: 25, y: 14 }] },
+      ],
+      vias: [],
+    }
+    const traces = toSimplifiedPcbTraces(small, routes)
+    expect(traces.map((t) => [t.pcb_trace_id, t.connection_name, t.route.length])).toEqual([
+      ['t0', 'c0', 2],
+      ['t0_1', 'c0', 2],
+    ])
+    expect(toRouteSet(small, traces).traces).toEqual(routes.traces)
+  })
+})
+
+describe('toRerouteJson on wireless with one key moved', () => {
+  const input = toRoutingInput(moveKey(CORNEY.wireless, KEY, DELTA))
+  const moved = movedConnections(input, KEY)
+  const scored = input.connections.filter((c) => c.realisedBy !== 'fixed-copper').map((c) => c.id)
+  const saved = savedRoutes(straightRoutes(toRoutingInput(CORNEY.wireless), scored), moved)
+  const full = toSimpleRouteJson(input)
+  const savedConnections = new Set(saved.traces.map((t) => t.connection)).size
+  const segments = saved.traces.reduce((n, t) => n + t.points.length - 1, 0)
+
+  for (const method of ['preloaded-traces', 'rect-obstacles'] as const) {
+    it(`${method}: routes only the moved key's connections, pads still naming every connection`, () => {
+      const srj = toRerouteJson(input, saved, moved, method)
+      expect(srj.connections.map((c) => input.connections[connectionIndex(c.name)!]!.id)).toEqual(moved)
+      expect(srj.connections).toHaveLength(moved.length)
+      const pads = new Set(input.pads.map((p) => p.id))
+      expect(srj.obstacles.filter((o) => pads.has(o.obstacleId!))).toEqual(full.obstacles.filter((o) => pads.has(o.obstacleId!)))
+    })
+  }
+
+  it('preloaded-traces: one SRJ trace per saved connection, and no extra obstacle', () => {
+    const srj = toRerouteJson(input, saved, moved, 'preloaded-traces')
+    expect(srj.traces).toHaveLength(savedConnections)
+    expect(srj.traces).toEqual(toSimplifiedPcbTraces(input, saved))
+    expect(srj.obstacles).toEqual(full.obstacles)
+    const viaHops = srj.traces!.flatMap((t) => t.route.filter((h) => h.route_type === 'via'))
+    expect(viaHops).toHaveLength(saved.vias.length)
+  })
+
+  it('rect-obstacles: one rect per saved segment and one circle per saved via, no traces', () => {
+    const srj = toRerouteJson(input, saved, moved, 'rect-obstacles')
+    expect(srj.traces).toBeUndefined()
+    expect(srj.obstacles).toHaveLength(full.obstacles.length + segments + saved.vias.length)
+    const segs = srj.obstacles.filter((o) => o.obstacleId?.startsWith('saved:'))
+    const vias = srj.obstacles.filter((o) => o.obstacleId?.startsWith('saved-via:'))
+    expect(segs).toHaveLength(segments)
+    expect(vias).toHaveLength(saved.vias.length)
+    const t = saved.traces[0]!
+    const c = input.connections.findIndex((x) => x.id === t.connection)
+    expect(segs[0]).toMatchObject({ layers: [t.layer === 'F.Cu' ? 'top' : 'bottom'], height: t.width, connectedTo: [t.net, `c${c}`] })
+    const [a, b] = [t.points[0]!, t.points[1]!]
+    expect(segs[0]!.width).toBeCloseTo(Math.hypot(b.x - a.x, b.y - a.y) + t.width, 12)
+    expect(vias[0]).toMatchObject({ shape: 'circle', layers: ['top', 'bottom'], width: saved.vias[0]!.diameter })
+    expect(vias[0]!.connectedTo[0]).toBe(saved.vias[0]!.net)
+    expect(vias[0]!.connectedTo).toHaveLength(2)
+  })
 })

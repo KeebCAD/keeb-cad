@@ -184,9 +184,10 @@ leaves out `fixed-copper`, whose `completionPct` is null), `drc {errors, added, 
 signal, default}, byKind{clearance, short, track-width, edge-clearance, hole-clearance}}`, `kicad
 {clearanceFamily, other, capped, added}` (type → count; `capped` lists types at KiCad's 199
 limit), `baseline {drc, kicad}` (the bare board's counts, same shapes), `workerMs`,
-`peakMemoryMb`, and for entries 7 and 10 an optional
-`reroute {movedKey, delta, changedConnections, savedRoutes{unchanged, changed},
-fixedCopperViolations}`.
+`peakMemoryMb`, and for entries 7 and 10 an optional `reroute`: one entry per method,
+`{method, movedKey, delta, run {status, error, capMs}, workerMs, movedConnections {total,
+routed}, changedConnections, savedRoutes {unchanged, changed}, fixedCopperViolations, drc
+{added}}` (`RerouteEntry`; see story 7 below).
 
 Optional fields since story 6: `run {status: solved|timeout|failed|threw, error, capMs}`,
 `unrouted` (the scored connection ids the routes do not realise) and `crossCheck {drcOnly,
@@ -292,16 +293,18 @@ worker target with `Target.sendMessageToTarget`. The run fails if it gets no sam
 
 ### Results (2026-10-27, tscircuit 0.0.1010, Chromium 156 headless, KiCad 10.0.7, one run)
 
+From the story 7 run, which also wrote the `reroute` entries below.
+
 | | wired | wireless |
 |---|---|---|
-| run | solved, 247.2 s | solved, 26.6 s |
+| run | solved, 244.3 s | solved, 26.5 s |
 | routed (key-cell + routing) | 330 / 333 (99.1%) | 144 / 152 (94.7%) |
 | key-cell / routing | 63/63, 267/270 | 63/63, 81/89 |
-| peak worker JS heap | 951.8 MiB | 458.7 MiB |
+| peak worker JS heap | 790.9 MiB | 467.0 MiB |
 | `drc` baseline + added | 216 + 3418 | 0 + 250 |
 | `drc` on the routed board, by kind | clearance 2634, hole 419, edge 352 (216 of them baseline), short 229, track-width 0 | hole 142, clearance 96, short 12, track-width 0 |
-| KiCad added (clearance family) | 963; `addedUncertain`: copper edge and hole clearance (at 199) | 241 |
-| cross-check `drcOnly` / `kicadOnly` | 2689 / 81 | 16 / 7 |
+| KiCad added (clearance family) | 950; `addedUncertain`: copper edge and hole clearance (at 199) | 240 |
+| cross-check `drcOnly` / `kicadOnly` | 2712 / 91 | 17 / 7 |
 
 - **Unrouted.**
   - Wired: `C3:S12.1.F~S19.1.B`, `R2:D25.1.F~D28.1.F` and `R1:D17.1.B~D23.1.F`. They fail
@@ -322,7 +325,86 @@ worker target with `Target.sendMessageToTarget`. The run fails if it gets no sam
 - **Cross-check.** `drcOnly` on wired is mostly the types KiCad stops at 199. A connection routed
   on both layers is named by the layer the violation is on: one every item of the violation has,
   and of those the one where its traces come nearest the violation's point (`drcSignatures` in
-  `scripts/kicad.ts`). The remaining `kicadOnly` entries (wired 81, wireless 7) are listed in
+  `scripts/kicad.ts`). The remaining `kicadOnly` entries (wired 91, wireless 7) are listed in
   the scorecard and not yet explained.
-- Solve time and heap move between runs. Before the width change, wired solved in 143.9 s and
-  148.4 s.
+- Solve time, heap and the KiCad and cross-check counts move between runs (story 6's run: wired
+  247.2 s, 951.8 MiB, KiCad +963, cross-check 2689 / 81; wireless 26.6 s, 458.7 MiB, KiCad +241,
+  16 / 7). Before the width change, wired solved in 143.9 s and 148.4 s.
+
+## tscircuit reroutes one moved key (story 7)
+
+Part of `pnpm --dir spikes score:tscircuit`. After each design's base run is scored, the script
+moves `matrix_middle_home` by `{dx: 1.5, dy: -0.75}` mm with `moveKey` (story 4's test move) and
+reroutes only that key's connections, once per method, in one worker. The saved routes come from
+the scored base run itself, because tscircuit's output is not committed and a second base run
+could differ.
+
+- **Moved connections** (`movedConnections` in `src/reroute.ts`): the scored (`key-cell`,
+  `routing`) connections with a pad on a moved footprint (S_n, D_n, D_{n+21}, LED_n). That gives
+  19 on wired and 9 on wireless.
+- **Saved routes** (`savedRoutes`): every other connection's traces and vias from the base run.
+  A via is dropped only when every trace that ends on it belongs to a moved connection
+  (`viaOwners` in `src/route-set.ts`: `RouteVia` carries no connection, so ownership is
+  geometric). Saved routes that conflict with the moved key are kept, and their violations stay
+  in the baseline.
+- **SRJ** (`toRerouteJson` in `src/tscircuit-adapter.ts`): `toSimpleRouteJson(moved input)`
+  with `connections` cut to the moved ones. Pad `connectedTo` still names every connection.
+  - `preloaded-traces`: the saved routes are SRJ `traces` (`toSimplifiedPcbTraces`, one
+    tscircuit trace per continuous run of a connection, `t<i>` then `t<i>_<k>`). tscircuit
+    returns new traces plus every preloaded trace it changed, marked `__replaces_pcb_trace_id`.
+    `mergeReroute` removes the replaced trace's copper from the saved routes and adds what came
+    back, and the connection counts as changed even if its copper came back the same.
+  - `rect-obstacles`: each saved segment is the rect that covers its capsule (`saved:<k>`), and
+    each saved via is a circle on both layers (`saved-via:<k>`). Both are `connectedTo` their net
+    and their connection's `c<i>`.
+- **Page** (`?external`): it sets `window.routeBoard(request)` and marks `#result`
+  `data-status="ready"`. The script builds the SRJ in Node, because the saved routes exist only
+  there, and calls `routeBoard` with `page.evaluate`. The worker is unchanged, so `workerMs` is
+  still solve time only. The cap (600 s, plus 120 s of grace) and the outbound-request block are
+  the base run's. A run with no answer is `timeout`, and the page is reloaded for the next method.
+  `e2e/route.spec.ts` routes the test board twice through `routeBoard`.
+- **Diff** (`rerouteDiff`, engine-neutral, for entry 10 too) of the whole rerouted set (saved
+  plus returned) against the saved routes on the moved board:
+  - A connection is in `changedConnections` when its traces differ (points to 1e-6 mm), when the
+    engine replaced it, or when a via it joins was added or removed and no other connection that
+    joins the via already changed. The field lists only connections whose copper differs from
+    the saved routes. A moved connection left unrouted, with no traces before or after, is not in
+    it. An unrouted moved key shows in `movedConnections.routed` and `run.status` (on wired,
+    `changedConnections` is `[]`).
+  - `savedRoutes` counts the saved connections only.
+  - `drc.added` is over `drc(moved input, saved routes)`, with vias matched by place, not by
+    index.
+  - `fixedCopperViolations` is the part of `drc.added` that has a `fixed:<i>` item. This is the
+    module-zone check (the zone is its fixed copper, story 4).
+- A build error, solver failure, cap or throw is recorded in the entry with its error. That
+  includes a throw while scoring the returned traces, which is `threw` with none of them scored. Whatever
+  traces came back are scored, and the exit code stays 0.
+
+### Results (same run as the story 6 table above)
+
+| | wired: preloaded-traces | wired: rect-obstacles | wireless: preloaded-traces | wireless: rect-obstacles |
+|---|---|---|---|---|
+| run | failed, 20.3 s | failed, 44.3 s | solved, 94.1 s | solved, 14.2 s |
+| moved routed | 0 / 19 | 0 / 19 | 9 / 9 | 6 / 9 |
+| changed connections | 0 | 0 | 45 (9 moved + 36 saved) | 9 (the moved ones) |
+| saved routes unchanged / changed | 314 / 0 | 314 / 0 | 104 / 36 | 140 / 0 |
+| `fixedCopperViolations` | 0 | 0 | 0 | 0 |
+| `drc` added | 0 | 0 | 52 | 32 |
+
+- **Wired: both methods fail and return no traces.** With preloaded traces, tscircuit's
+  high-density stage finds no path for `c118` (`R1:D29.1.F~D32.1.F`, moved). With rect
+  obstacles, its static reachability precheck finds no legal path for `c265`
+  (`VCC:LED11.1.F~LED12.1.B`, moved). After a failed solve, `getOutputSimplifiedPcbTraces()`
+  throws, so nothing comes back, and the saved routes stand unchanged. The full errors are in
+  the scorecard. Story 13 has to judge this, not tune it away.
+- **Wireless, `preloaded-traces`:** every moved connection is routed, but tscircuit re-routes
+  36 of the 140 saved connections, all listed in `changedConnections`. It does not keep saved
+  routes fixed.
+- **Wireless, `rect-obstacles`:** no saved route changes, but 3 of the 9 moved connections are
+  left unrouted. Their partial traces are still scored.
+- No method adds a violation against the module's fixed copper on either design.
+- A first run of this story counted one saved connection as changed under `rect-obstacles`. A
+  new via joined both a moved trace and a saved trace of the same net, and a via went to the
+  first trace that ended on it. The diff now assigns an added or removed via as described above
+  (unit test in `src/reroute.test.ts`).
+

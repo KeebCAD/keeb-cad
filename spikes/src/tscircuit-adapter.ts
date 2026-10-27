@@ -10,7 +10,7 @@ import type {
 } from '@tscircuit/capacity-autorouter'
 import type { Point, Segment } from '../../fixtures/src/kicad-pcb'
 import type { RouteSet, RouteTrace, RouteVia } from './route-set'
-import { fixedCopperNets } from './route-set'
+import { fixedCopperNets, viaConnections, type RerouteMethod } from './route-set'
 import type { CopperLayer, RoutingInput } from './routing-input'
 import { flattenEdge } from './shapes'
 
@@ -145,6 +145,21 @@ function rect(
   return o
 }
 
+/** A trace segment's capsule as the rect that covers it: its length plus a half width at each end, by its width. */
+function capsuleRect(a: Point, b: Point, width: number, layer: CopperLayer, connectedTo: string[], obstacleId: string): Obstacle {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  return rect(
+    { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+    Math.hypot(dx, dy) + width,
+    width,
+    (Math.atan2(-dy, dx) * 180) / Math.PI,
+    [TO_SRJ[layer]],
+    connectedTo,
+    { obstacleId },
+  )
+}
+
 /**
  * The SRJ for `input`. Rules come from `input.rules` and `input.netClasses` only: every clearance
  * field takes `engineClearance` (the strictest class), except board edge (`boardEdgeClearance`)
@@ -189,21 +204,8 @@ export function toSimpleRouteJson(input: RoutingInput): SimpleRouteJson {
   }
   const fixedNets = fixedCopperNets(input)
   for (const [i, t] of input.fixedCopper.entries()) {
-    const dx = t.end.x - t.start.x
-    const dy = t.end.y - t.start.y
-    // The capsule's cover: its length plus a half width at each end, by its width.
     const net = fixedNets[i]
-    obstacles.push(
-      rect(
-        { x: (t.start.x + t.end.x) / 2, y: (t.start.y + t.end.y) / 2 },
-        Math.hypot(dx, dy) + t.width,
-        t.width,
-        (Math.atan2(-dy, dx) * 180) / Math.PI,
-        [TO_SRJ[t.layer]],
-        net === undefined ? [] : [net],
-        { obstacleId: `fixed:${i}` },
-      ),
-    )
+    obstacles.push(capsuleRect(t.start, t.end, t.width, t.layer, net === undefined ? [] : [net], `fixed:${i}`))
   }
   const { board, cutouts } = boardLoops(input)
   // tscircuit keeps its obstacle margin (engineClearance) from the cutout rect, so growing it by
@@ -336,36 +338,132 @@ export function toRouteSet(input: RoutingInput, traces: SimplifiedPcbTraces): Co
   return out
 }
 
+/** One preloaded tscircuit trace and the RouteSet copper it carries. */
+interface Chain {
+  trace: SimplifiedPcbTrace
+  traces: RouteTrace[]
+  vias: RouteVia[]
+}
+
 /**
- * The inverse of `toRouteSet`, for tests: one tscircuit trace per connection, its RouteSet traces
- * in order, with a via hop wherever one trace ends on a via of the net where the next begins.
+ * A connection's RouteSet traces, in order, as tscircuit traces: a trace continues while the next
+ * starts where it ends, on the same layer or through a via of the net there (a via hop); anything
+ * else starts the next trace, so no wire is invented across a gap. Ids: `t<i>`, then `t<i>_<k>`.
  */
-export function toSimplifiedPcbTraces(input: RoutingInput, routes: RouteSet): SimplifiedPcbTraces {
+function chains(input: RoutingInput, routes: RouteSet): Chain[] {
   const index = new Map(input.connections.map((c, i) => [c.id, i]))
   const byConnection = new Map<string, RouteTrace[]>()
   for (const t of routes.traces) byConnection.set(t.connection, [...(byConnection.get(t.connection) ?? []), t])
   const viaAt = (p: Point, net: string): RouteVia | undefined =>
     routes.vias.find((v) => v.net === net && v.at.x === p.x && v.at.y === p.y)
-  return [...byConnection].map(([id, ts]) => {
+  const out: Chain[] = []
+  for (const [id, ts] of byConnection) {
     const i = index.get(id)
     if (i === undefined) throw new Error(`Unknown connection ${id}`)
-    const route: Hop[] = []
+    let chain: Chain | undefined
     for (const [k, t] of ts.entries()) {
       const prev = ts[k - 1]
-      const via = prev && viaAt(prev.points.at(-1)!, t.net)
-      if (prev && via) {
-        route.push({
+      const end = prev?.points.at(-1)
+      const via = prev && end && prev.layer !== t.layer ? viaAt(end, t.net) : undefined
+      const joins = prev && end && (via || (prev.layer === t.layer && end.x === t.points[0]!.x && end.y === t.points[0]!.y))
+      if (!chain || !joins) {
+        const n = out.filter((c) => c.trace.connection_name === connectionName(i)).length
+        chain = {
+          trace: { type: 'pcb_trace', pcb_trace_id: n === 0 ? `t${i}` : `t${i}_${n}`, connection_name: connectionName(i), route: [] },
+          traces: [],
+          vias: [],
+        }
+        out.push(chain)
+      } else if (via) {
+        chain.trace.route.push({
           route_type: 'via',
           x: via.at.x,
           y: -via.at.y,
-          from_layer: TO_SRJ[prev.layer],
+          from_layer: TO_SRJ[prev!.layer],
           to_layer: TO_SRJ[t.layer],
           via_diameter: via.diameter,
           via_hole_diameter: via.drill,
         })
+        chain.vias.push(via)
       }
-      for (const p of t.points) route.push({ route_type: 'wire', x: p.x, y: -p.y, width: t.width, layer: TO_SRJ[t.layer] })
+      chain.traces.push(t)
+      for (const p of t.points) chain.trace.route.push({ route_type: 'wire', x: p.x, y: -p.y, width: t.width, layer: TO_SRJ[t.layer] })
     }
-    return { type: 'pcb_trace' as const, pcb_trace_id: `t${i}`, connection_name: connectionName(i), route }
-  })
+  }
+  return out
+}
+
+/**
+ * The inverse of `toRouteSet`: each connection's traces as tscircuit traces (one per continuous
+ * run, see `chains`), with a via hop wherever one trace ends on a via of the net where the next
+ * begins. Also the saved routes of a `preloaded-traces` reroute.
+ */
+export function toSimplifiedPcbTraces(input: RoutingInput, routes: RouteSet): SimplifiedPcbTraces {
+  return chains(input, routes).map((c) => c.trace)
+}
+
+// --- One-key-move reroute ---------------------------------------------------------------------
+
+export type { RerouteMethod }
+
+/**
+ * The SRJ of a reroute on the moved board `input`: `toSimpleRouteJson(input)` with `connections`
+ * cut to `moved`. Pads keep every connection in `connectedTo`, so saved copper may end on them.
+ * `preloaded-traces`: `saved` goes in as SRJ `traces`. `rect-obstacles`: each saved segment goes
+ * in as its capsule's cover rect (`saved:<k>`) and each saved via as a both-layer circle
+ * (`saved-via:<k>`), `connectedTo` its net and its connection's name.
+ */
+export function toRerouteJson(input: RoutingInput, saved: RouteSet, moved: readonly string[], method: RerouteMethod): SimpleRouteJson {
+  const srj = toSimpleRouteJson(input)
+  const keep = new Set(moved)
+  const connections = srj.connections.filter((c) => keep.has(input.connections[connectionIndex(c.name)!]!.id))
+  if (method === 'preloaded-traces') return { ...srj, connections, traces: toSimplifiedPcbTraces(input, saved) }
+
+  const index = new Map(input.connections.map((c, i) => [c.id, i]))
+  const nameOf = (id: string | undefined) => {
+    const i = id === undefined ? undefined : index.get(id)
+    return i === undefined ? [] : [connectionName(i)]
+  }
+  const obstacles = [...srj.obstacles]
+  let k = 0
+  for (const t of saved.traces) {
+    for (let j = 1; j < t.points.length; j++) {
+      obstacles.push(capsuleRect(t.points[j - 1]!, t.points[j]!, t.width, t.layer, [t.net, ...nameOf(t.connection)], `saved:${k++}`))
+    }
+  }
+  const owners = viaConnections(saved)
+  for (const [i, v] of saved.vias.entries()) {
+    obstacles.push(
+      rect(v.at, v.diameter, v.diameter, 0, ['top', 'bottom'], [v.net, ...nameOf(owners[i])], {
+        shape: 'circle',
+        obstacleId: `saved-via:${i}`,
+      }),
+    )
+  }
+  return { ...srj, connections, obstacles }
+}
+
+/**
+ * The rerouted set of a `preloaded-traces` reroute: `saved`, less the copper of every preloaded
+ * trace a returned trace replaces (`__replaces_pcb_trace_id`), plus `converted` (all returned
+ * traces, as `toRouteSet` gives them). `replaced` lists the connection ids of the replaced traces.
+ */
+export function mergeReroute(
+  input: RoutingInput,
+  saved: RouteSet,
+  converted: RouteSet,
+  traces: SimplifiedPcbTraces,
+): { routes: RouteSet; replaced: string[] } {
+  const ids = new Set(traces.flatMap((t) => (t.__replaces_pcb_trace_id ? [t.__replaces_pcb_trace_id] : [])))
+  const gone = chains(input, saved).filter((c) => ids.has(c.trace.pcb_trace_id))
+  const goneTraces = new Set(gone.flatMap((c) => c.traces))
+  const goneVias = new Set(gone.flatMap((c) => c.vias))
+  const replaced = [...new Set(gone.flatMap((c) => c.traces.map((t) => t.connection)))]
+  return {
+    routes: {
+      traces: [...saved.traces.filter((t) => !goneTraces.has(t)), ...converted.traces],
+      vias: [...saved.vias.filter((v) => !goneVias.has(v)), ...converted.vias],
+    },
+    replaced,
+  }
 }

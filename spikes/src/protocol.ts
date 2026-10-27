@@ -19,3 +19,12 @@ export type RouteResponse =
   | { status: 'failed'; error: string; traces: SimplifiedPcbTraces; ms: number; thrown: boolean }
   | { status: 'timeout'; error: string; traces: SimplifiedPcbTraces; ms: number }
   | { status: 'probed'; error: string | null; traces: []; ms: number }
+
+/**
+ * `?external`: the page routes boards built elsewhere (the score script builds reroute SRJs in
+ * Node). It sets `data-status="ready"` on `#result` once `routeBoard` exists; each call posts one
+ * request to the page's worker and resolves with its response. One call at a time.
+ */
+export interface ExternalPage {
+  routeBoard?: (request: RouteRequest) => Promise<RouteResponse>
+}

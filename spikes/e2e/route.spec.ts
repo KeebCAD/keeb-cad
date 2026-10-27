@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
-import { connectionNames } from '../src/test-board'
+import type { ExternalPage, RouteResponse } from '../src/protocol'
+import { connectionNames, testBoard } from '../src/test-board'
 
 const LOCAL_ORIGIN = 'http://localhost:4174'
 const PROBE_URL = 'https://example.com/'
@@ -62,5 +63,23 @@ test('broken board: a solver error is reported as failed, not hung', async ({ pa
 
   expect(result.status).toBe('failed')
   expect(result.error, 'tscircuit error').toBeTruthy()
+  expect(blocked, 'outbound requests').toEqual([])
+})
+
+// `?external` (story 7): the page routes a board posted from outside, here the test board twice,
+// in its one worker, with the same response as the built-in modes.
+test('external: routeBoard routes a posted board, one call after another', async ({ page }) => {
+  const blocked = await blockExternal(page)
+  await page.goto('/?external')
+  await expect(page.locator('#result')).toHaveAttribute('data-status', 'ready')
+  for (let i = 0; i < 2; i++) {
+    const result = await page.evaluate(
+      (board) => (globalThis as ExternalPage).routeBoard!({ board, probe: false }),
+      testBoard,
+    ) as RouteResponse
+    expect(result.status).toBe('solved')
+    const routed = new Set(result.traces.map((t) => t.connection_name))
+    for (const name of connectionNames) expect(routed, `trace for ${name}`).toContain(name)
+  }
   expect(blocked, 'outbound requests').toEqual([])
 })

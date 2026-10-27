@@ -1,5 +1,5 @@
 import { brokenBoard, testBoard } from './test-board'
-import type { RouteRequest, RouteResponse } from './protocol'
+import type { ExternalPage, RouteRequest, RouteResponse } from './protocol'
 
 const result = document.querySelector<HTMLPreElement>('#result')
 if (!result) throw new Error('#result missing')
@@ -13,11 +13,17 @@ function show(status: string, body: unknown): void {
 const CORNEY_CAP_MS = 600_000
 
 const worker = new Worker(new URL('./route.worker.ts', import.meta.url), { type: 'module' })
-worker.addEventListener('message', (event: MessageEvent<RouteResponse>) => {
-  show(event.data.status, event.data)
-})
+/** `?external`: the caller waiting on the request in flight. */
+let pending: ((response: RouteResponse) => void) | undefined
+function answer(response: RouteResponse): void {
+  const resolve = pending
+  pending = undefined
+  if (resolve) resolve(response)
+  else show(response.status, response)
+}
+worker.addEventListener('message', (event: MessageEvent<RouteResponse>) => answer(event.data))
 worker.addEventListener('error', (event) => {
-  show('failed', { status: 'failed', error: `worker error: ${event.message}`, thrown: true })
+  answer({ status: 'failed', error: `worker error: ${event.message}`, traces: [], ms: 0, thrown: true })
 })
 
 /**
@@ -36,7 +42,15 @@ async function corneyRequest(design: string, capMs: number): Promise<RouteReques
 
 const params = new URLSearchParams(location.search)
 const corney = params.get('corney')
-if (corney !== null) {
+if (params.has('external')) {
+  ;(window as ExternalPage).routeBoard = (request) =>
+    new Promise<RouteResponse>((resolve, reject) => {
+      if (pending) return reject(new Error('routeBoard: a request is already in flight'))
+      pending = resolve
+      worker.postMessage(request)
+    })
+  show('ready', { status: 'ready' })
+} else if (corney !== null) {
   const cap = Number(params.get('cap') ?? CORNEY_CAP_MS)
   corneyRequest(corney, Number.isFinite(cap) && cap > 0 ? cap : CORNEY_CAP_MS).then(
     (request) => worker.postMessage(request),

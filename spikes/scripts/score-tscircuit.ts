@@ -1,22 +1,37 @@
 // `pnpm score:tscircuit` (after `vite build`): routes each Corney design with tscircuit in the
 // page's Web Worker under headless Chromium, samples the worker's JS heap over CDP, then scores
 // the result in Node: completion per realisation, `drc` against the bare board, and KiCad on the
-// bare and the routed board. Writes spikes/scorecards/tscircuit-<design>.scorecard.json.
-// A routing failure is a result, recorded in the scorecard; the exit code is 0 whenever both
+// bare and the routed board. Then it moves one key and reroutes only that key's connections twice
+// in one worker (`?external`), with the other saved routes as preloaded traces and as rect
+// obstacles, and diffs each result against the saved routes (`reroute`). Writes
+// spikes/scorecards/tscircuit-<design>.scorecard.json.
+// A routing or reroute failure is a result, recorded in the scorecard; the exit code is 0 whenever both
 // scorecards are written. An outbound request or a missing kicad-cli fails the run.
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { chromium, type Browser } from '@playwright/test'
-import type { SimplifiedPcbTraces } from '@tscircuit/capacity-autorouter'
+import { chromium, type Browser, type BrowserContext, type Page } from '@playwright/test'
+import type { SimpleRouteJson, SimplifiedPcbTraces } from '@tscircuit/capacity-autorouter'
 import { preview } from 'vite'
 import { completionCounts, routedConnections, unroutedConnections } from '../src/completion'
 import { drc, type DrcReport } from '../src/drc'
 import { addedViolations } from '../src/drc-cases'
-import type { RouteResponse } from '../src/protocol'
-import { EMPTY_ROUTES, emptyScorecard, type DrcCounts, type KicadCounts, type RouteSet, type RunStatus, type Scorecard } from '../src/route-set'
+import { moveKey } from '../src/move-key'
+import type { ExternalPage, RouteRequest, RouteResponse } from '../src/protocol'
+import { movedConnections, rerouteDiff, savedRoutes } from '../src/reroute'
+import {
+  EMPTY_ROUTES,
+  emptyScorecard,
+  type DrcCounts,
+  type KicadCounts,
+  type RerouteEntry,
+  type RerouteMethod,
+  type RouteSet,
+  type RunStatus,
+  type Scorecard,
+} from '../src/route-set'
 import { toRoutingInput, type RoutingInput } from '../src/routing-input'
-import { toRouteSet } from '../src/tscircuit-adapter'
+import { mergeReroute, toRerouteJson, toRouteSet } from '../src/tscircuit-adapter'
 import { writeProject, writeRoutes, writeRules } from '../src/write-back'
 import {
   bag,
@@ -50,6 +65,11 @@ const GRACE_MS = 120_000
 const HEAP_SAMPLE_MS = 100
 const MiB = 1024 * 1024
 
+/** The reroute's move: story 4's test move. */
+const MOVED_KEY = 'matrix_middle_home'
+const DELTA = { dx: 1.5, dy: -0.75 }
+const METHODS: RerouteMethod[] = ['preloaded-traces', 'rect-obstacles']
+
 interface BrowserRun {
   status: RunStatus
   error: string | null
@@ -64,12 +84,8 @@ function engineVersion(): string {
   return (JSON.parse(readFileSync(pkg, 'utf8')) as { version: string }).version
 }
 
-/**
- * Routes one design in the page's worker. Every request off the preview origin is aborted and
- * fails the run. The worker's JS heap is read every 100 ms with `Runtime.getHeapUsage`, sent to
- * the worker target through the page's CDP session (`performance.memory` is absent in workers).
- */
-async function routeInBrowser(browser: Browser, path: string): Promise<BrowserRun> {
+/** A fresh context and page whose every request off the preview origin is aborted and listed. */
+async function blockedPage(browser: Browser): Promise<{ context: BrowserContext; page: Page; blocked: string[] }> {
   const context = await browser.newContext()
   const blocked: string[] = []
   await context.route('**/*', async (route) => {
@@ -78,7 +94,60 @@ async function routeInBrowser(browser: Browser, path: string): Promise<BrowserRu
     blocked.push(url)
     return route.abort('blockedbyclient')
   })
-  const page = await context.newPage()
+  return { context, page: await context.newPage(), blocked }
+}
+
+const errorText = (err: unknown) => (err instanceof Error ? `${err.name}: ${err.message}` : String(err))
+
+/**
+ * The `?external` page: routes SRJs built in Node, one at a time, in the page's one worker, with
+ * the base run's cap and network blocking. A run with no answer within cap + grace is `timeout`
+ * and the page is reloaded (a new worker) for the next; a browser error is `threw`. No heap
+ * samples: the reroute records solve time only.
+ */
+async function externalSession(browser: Browser) {
+  const { context, page, blocked } = await blockedPage(browser)
+  const open = async () => {
+    await page.goto(`${ORIGIN}/?external`)
+    await page.locator('#result[data-status="ready"]').waitFor({ timeout: 30_000 })
+  }
+  let ready = false
+  return {
+    blocked,
+    async route(board: SimpleRouteJson): Promise<BrowserRun> {
+      const none = { traces: [], peakHeapBytes: 0, heapSamples: 0 }
+      try {
+        if (!ready) await open()
+        ready = true
+        const request: RouteRequest = { board, probe: false, capMs: CAP_MS }
+        const solving = page.evaluate((r) => (globalThis as ExternalPage).routeBoard!(r), request)
+        solving.catch(() => undefined)
+        let timer: ReturnType<typeof setTimeout> | undefined
+        const response = await Promise.race([
+          solving,
+          new Promise<undefined>((resolve) => (timer = setTimeout(() => resolve(undefined), CAP_MS + GRACE_MS))),
+        ]).finally(() => clearTimeout(timer))
+        if (!response) {
+          ready = false
+          return { status: 'timeout', error: `no answer from the worker within ${CAP_MS + GRACE_MS} ms`, workerMs: CAP_MS + GRACE_MS, ...none }
+        }
+        return { status: runStatus(response), error: response.error, traces: response.traces ?? [], workerMs: response.ms ?? 0, peakHeapBytes: 0, heapSamples: 0 }
+      } catch (err) {
+        ready = false
+        return { status: 'threw', error: `browser: ${errorText(err)}`, workerMs: 0, ...none }
+      }
+    },
+    close: () => context.close().catch(() => undefined),
+  }
+}
+
+/**
+ * Routes one design in the page's worker. Every request off the preview origin is aborted and
+ * fails the run. The worker's JS heap is read every 100 ms with `Runtime.getHeapUsage`, sent to
+ * the worker target through the page's CDP session (`performance.memory` is absent in workers).
+ */
+async function routeInBrowser(browser: Browser, path: string): Promise<BrowserRun> {
+  const { context, page, blocked } = await blockedPage(browser)
   const cdp = await context.newCDPSession(page)
   const workers = new Set<string>()
   let peakHeapBytes = 0
@@ -117,7 +186,7 @@ async function routeInBrowser(browser: Browser, path: string): Promise<BrowserRu
       response = JSON.parse((await page.locator('#result').textContent()) ?? '{}') as RouteResponse
     } catch (err) {
       if (!(err instanceof Error && err.name === 'TimeoutError')) {
-        crashed = `browser: ${err instanceof Error ? `${err.name}: ${err.message}` : String(err)}`
+        crashed = `browser: ${errorText(err)}`
       }
     }
     if (blocked.length > 0) throw new Error(`outbound request(s) from the page or worker: ${blocked.join(', ')}`)
@@ -175,15 +244,25 @@ function kicadBoard(dir: string, stem: string, text: string, input: RoutingInput
   return runKicad(board, join(dir, `${stem}.kicad-drc.json`))
 }
 
-function score(design: Design, run: BrowserRun, version: string, engine: Scorecard['engine']): Scorecard {
-  const text = readFileSync(join(pcbs, SOURCES[design]), 'utf8')
-  const input = toRoutingInput(text)
-  const converted = toRouteSet(input, run.traces)
-  const routes: RouteSet = { traces: converted.traces, vias: converted.vias }
-  const notes = [
+/** What `toRouteSet` could not take, as error notes (never dropped silently). */
+function conversionNotes(converted: ReturnType<typeof toRouteSet>): string[] {
+  return [
     converted.unknown.length > 0 ? `traces naming no connection: ${converted.unknown.join(', ')}` : '',
     converted.skipped.length > 0 ? `hops that are not board copper: ${converted.skipped.join(', ')}` : '',
   ].filter(Boolean)
+}
+
+function score(
+  design: Design,
+  text: string,
+  run: BrowserRun,
+  version: string,
+  engine: Scorecard['engine'],
+): { card: Scorecard; routes: RouteSet } {
+  const input = toRoutingInput(text)
+  const converted = toRouteSet(input, run.traces)
+  const routes: RouteSet = { traces: converted.traces, vias: converted.vias }
+  const notes = conversionNotes(converted)
 
   const routed = routedConnections(input, routes)
   const base = drc(input, EMPTY_ROUTES)
@@ -199,7 +278,7 @@ function score(design: Design, run: BrowserRun, version: string, engine: Scoreca
   const bareCounts = kicadCounts(bareKicad)
   const routedCounts = kicadCounts(routedKicad)
   const card = emptyScorecard(engine, design)
-  return {
+  const scored: Scorecard = {
     ...card,
     kicadVersion: version,
     date: new Date().toISOString(),
@@ -217,6 +296,54 @@ function score(design: Design, run: BrowserRun, version: string, engine: Scoreca
     unrouted: unroutedConnections(input, routed),
     crossCheck: { drcOnly: minus(drcSigs, kicadSigs), kicadOnly: minus(kicadSigs, drcSigs) },
   }
+  return { card: scored, routes }
+}
+
+/**
+ * Moves MOVED_KEY by DELTA and reroutes only its connections, once per method, in one
+ * `?external` page. The saved routes are `base` less the moved connections' routes. A build
+ * error, solver failure, cap or throw is recorded in the entry; the returned traces are scored.
+ */
+async function reroute(browser: Browser, text: string, base: RouteSet): Promise<RerouteEntry[]> {
+  const input = toRoutingInput(moveKey(text, MOVED_KEY, DELTA))
+  const moved = movedConnections(input, MOVED_KEY)
+  const saved = savedRoutes(base, moved)
+  const session = await externalSession(browser)
+  const entries: RerouteEntry[] = []
+  try {
+    for (const method of METHODS) {
+      let run: BrowserRun
+      try {
+        run = await session.route(toRerouteJson(input, saved, moved, method))
+      } catch (err) {
+        run = { status: 'threw', error: `building the SRJ: ${errorText(err)}`, traces: [], workerMs: 0, peakHeapBytes: 0, heapSamples: 0 }
+      }
+      const entry = (status: RunStatus, error: string | null, after: RouteSet, replaced: string[]): RerouteEntry => ({
+        method,
+        movedKey: MOVED_KEY,
+        delta: DELTA,
+        run: { status, error, capMs: CAP_MS },
+        workerMs: Math.round(run.workerMs),
+        ...rerouteDiff(input, saved, after, moved, replaced),
+      })
+      try {
+        const converted = toRouteSet(input, run.traces)
+        const { routes: after, replaced } =
+          method === 'preloaded-traces'
+            ? mergeReroute(input, saved, converted, run.traces)
+            : { routes: { traces: [...saved.traces, ...converted.traces], vias: [...saved.vias, ...converted.vias] }, replaced: [] }
+        entries.push(entry(run.status, [run.error, ...conversionNotes(converted)].filter(Boolean).join('; ') || null, after, replaced))
+      } catch (err) {
+        // Scoring the returned traces threw: recorded, with none of them scored (after = saved).
+        const why = `scoring the returned traces: ${errorText(err)}`
+        entries.push(entry('threw', [run.error, why].filter(Boolean).join('; '), saved, []))
+      }
+    }
+  } finally {
+    await session.close()
+  }
+  if (session.blocked.length > 0) throw new Error(`outbound request(s) from the page or worker: ${session.blocked.join(', ')}`)
+  return entries
 }
 
 /**
@@ -248,7 +375,9 @@ async function main(): Promise<number> {
     for (const design of DESIGNS) {
       const run = await routeInBrowser(browser, `/?corney=${design}&cap=${CAP_MS}`)
       if (run.heapSamples === 0) throw new Error(`no worker heap sample for ${design}: is CDP auto-attach reaching the worker?`)
-      const card = score(design, run, version, engine)
+      const text = readFileSync(join(pcbs, SOURCES[design]), 'utf8')
+      const { card, routes } = score(design, text, run, version, engine)
+      card.reroute = await reroute(browser, text, routes)
       const file = join(scorecards, `tscircuit-${design}.scorecard.json`)
       writeFileSync(file, JSON.stringify(card, null, 2) + '\n')
       const r = card.connections.byRealisation
@@ -261,6 +390,15 @@ async function main(): Promise<number> {
           `peak heap ${card.peakMemoryMb} MiB (${run.heapSamples} samples) -> ${file}`,
       )
       if (card.run!.error) console.log(`    ${card.run!.error}`)
+      for (const e of card.reroute) {
+        console.log(
+          `  reroute ${e.method} (${e.movedKey} +${e.delta.dx},${e.delta.dy}): ${e.run.status} in ${(e.workerMs / 1000).toFixed(1)} s, ` +
+            `moved ${e.movedConnections.routed}/${e.movedConnections.total} routed, ${e.changedConnections.length} connections changed, ` +
+            `saved routes ${e.savedRoutes.unchanged} unchanged / ${e.savedRoutes.changed} changed, ` +
+            `fixed copper +${e.fixedCopperViolations}, drc +${e.drc.added}`,
+        )
+        if (e.run.error) console.log(`      ${e.run.error}`)
+      }
     }
   } finally {
     await browser.close()
