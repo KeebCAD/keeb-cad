@@ -103,7 +103,10 @@ const config: IConfiguration = {
     doNotFollow: { path: 'node_modules' },
     // Anchored to the workspace: an unanchored `dist/` or `node_modules/` would also drop
     // resolved npm targets (vue/dist/vue.d.mts), hiding them from only-editor-imports-vue.
-    exclude: { path: '^(packages/[^/]+|app|fixtures)/(dist|node_modules)/' },
+    // fixtures/corney-island/ holds Ergogen's footprint .js files and output, not workspace code.
+    exclude: {
+      path: '^((packages/[^/]+|app|fixtures)/(dist|node_modules)/|fixtures/corney-island/)',
+    },
     tsPreCompilationDeps: true,
     // Absolute: dependency-cruiser hands TypeScript a cwd-relative name, and TypeScript
     // then resolves this tsconfig's relative `extends` against the wrong directory.

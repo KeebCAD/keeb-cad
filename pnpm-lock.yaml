@@ -289,6 +289,10 @@ importers:
         version: 3.3.13(typescript@6.0.3)
 
   fixtures:
+    dependencies:
+      yaml:
+        specifier: 2.9.1
+        version: 2.9.1
     devDependencies:
       '@types/node':
         specifier: ^24.13.4

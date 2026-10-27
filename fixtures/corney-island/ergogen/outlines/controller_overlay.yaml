@@ -1,0 +1,151 @@
+models:
+    export:
+        models:
+            a:
+                models:
+                    a:
+                        models: {}
+                        origin:
+                            - 0
+                            - 0
+                    b:
+                        models:
+                            a:
+                                models: {}
+                                origin:
+                                    - 0
+                                    - 0
+                            b:
+                                models:
+                                    a:
+                                        models: {}
+                                        origin:
+                                            - 0
+                                            - 0
+                                    b:
+                                        paths:
+                                            p1:
+                                                type: line
+                                                origin:
+                                                    - 205.113
+                                                    - -101.77697755907997
+                                                end:
+                                                    - 205.113
+                                                    - -53.49
+                                            p2:
+                                                type: line
+                                                origin:
+                                                    - 205.613
+                                                    - -52.99
+                                                end:
+                                                    - 224.333
+                                                    - -52.99
+                                            p3:
+                                                type: line
+                                                origin:
+                                                    - 224.833
+                                                    - -53.49
+                                                end:
+                                                    - 224.833
+                                                    - -112.58497459811554
+                                            p4:
+                                                type: line
+                                                origin:
+                                                    - 224.08299999999997
+                                                    - -113.01798729811554
+                                                end:
+                                                    - 205.36299999999997
+                                                    - -102.20999025907994
+                                        origin:
+                                            - 0
+                                            - 0
+                                origin:
+                                    - 0
+                                    - 0
+                            fillet_0_0:
+                                paths:
+                                    fillet0:
+                                        origin:
+                                            - 205.613
+                                            - -53.49
+                                        radius: 0.5
+                                        startAngle: 90
+                                        endAngle: 180
+                                        type: arc
+                                    fillet1:
+                                        origin:
+                                            - 224.333
+                                            - -53.49
+                                        radius: 0.5
+                                        startAngle: 0
+                                        endAngle: 90
+                                        type: arc
+                                    fillet2:
+                                        origin:
+                                            - 224.333
+                                            - -112.58497459811554
+                                        radius: 0.5
+                                        startAngle: 239.99999989158133
+                                        endAngle: 0
+                                        type: arc
+                                    fillet3:
+                                        origin:
+                                            - 205.613
+                                            - -101.77697755907997
+                                        radius: 0.5
+                                        startAngle: 180
+                                        endAngle: 239.9999998915797
+                                        type: arc
+                                origin:
+                                    - 0
+                                    - 0
+                        origin:
+                            - 0
+                            - 0
+                origin:
+                    - 0
+                    - 0
+            b:
+                models:
+                    a:
+                        models:
+                            a:
+                                models: {}
+                                origin:
+                                    - 0
+                                    - 0
+                            b:
+                                paths:
+                                    circle:
+                                        type: circle
+                                        origin:
+                                            - 207.762
+                                            - -100.476
+                                        radius: 1.1
+                                origin:
+                                    - 0
+                                    - 0
+                        origin:
+                            - 0
+                            - 0
+                    b:
+                        paths:
+                            circle:
+                                type: circle
+                                origin:
+                                    - 222.194
+                                    - -108.995
+                                radius: 1.1
+                        origin:
+                            - 0
+                            - 0
+                origin:
+                    - 0
+                    - 0
+        origin:
+            - 0
+            - 0
+units: mm
+origin:
+    - 0
+    - 0
