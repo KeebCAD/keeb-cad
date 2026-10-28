@@ -7,7 +7,7 @@ paradigm: 'single source of truth with derived views (functional core / imperati
 scope: 'keeb-cad milestone 1: layout model, authored geometry, parameters, electrical model, keymap, case operations, routing state, design file format, generation pipeline, package boundaries, stack'
 status: final
 created: '2026-10-24'
-updated: '2026-10-26'
+updated: '2026-10-28'
 binds: [FR-1, FR-2, FR-3, FR-4, FR-6, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13, FR-14, FR-15, FR-16, FR-17, FR-18]
 sources:
   - _bmad-output/prd-keeb-cad-m1/prd-keeb-cad-m1.md
@@ -18,6 +18,7 @@ sources:
   - _bmad-output/layout-model/paper-test-v0.md
   - _bmad-output/architecture-keeb-cad-layout-model/stack-research.md
   - _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md
+  - _bmad-output/initiative-keeb-cad-m1/tickets/epic-risk-spikes/geometry-verdict.md
   - _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md
 ---
 
@@ -78,6 +79,8 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | **construction point** | A helper point computed from other geometry (e.g. intersection of two lines); a possible anchor; not a part |
 | **outline** | The shape designated as the board edge |
 | **plate** | A named definition: a shape + the cutout roles it includes |
+| **region** | A resolved shape piece: one outer loop plus its hole loops, as exact paths (AD-16) |
+| **flatten** | Turning a region's exact paths into polygons with `model`'s one function and `FLATTEN_TOL` (AD-16) |
 | **case operation** | A node in the case's 3D operation graph (extrude, offset, boolean, z-position; extensible) |
 | **template** | A payload of parameters + case operations, inserted once |
 | **net** | A set of pads that must be connected; has a stable net id |
@@ -232,6 +235,7 @@ graph LR
   - **Every stage output type is defined in `model`** (`PlatesOutput`, `PcbPlacement`, `RouteSet`, `DrcResult`, `CaseOutput`, `FirmwareOutput`).
   - **Stage signatures:** `(resolved) → { output, violations[] }` for plates, pcb, case, firmware. `routing(resolved, placement, savedRoutes)` and `drc(resolved, placement, routes)`. `exports(resolved, outputs)` packages what `pipeline` hands it.
   - **Named stage-to-stage flows, all via `pipeline`:** pcb placement → routing and drc; every stage output → exports. No others.
+  - Only `model` imports `makerjs`. Only `case` imports `clipper2-ts`.
   - Only `editor` imports Vue. Only `viewer3d` imports three.js; only `editor` imports `viewer3d`. Nothing imports `editor`.
   - **Enforcement:** pnpm strict dependencies, plus dependency-cruiser rules in CI.
 
@@ -316,17 +320,34 @@ graph TD
   - case: STEP and STL
   - PCB: gerber (copper, mask, silkscreen, edge) + Excellon drill, **only when `pipeline` holds a DRC result with zero `error` violations and no unrouted connections, tagged with the same revision and routing hash as the routes being exported**; a KiCad 10 board file as the escape hatch, always available
   - firmware: a ZMK shield with the `zmk,physical-layout` node, wired split over UART and RGB underglow when the population fits them, and the keymap
-  - Every export except the KiCad board is **blocked while the resolved slice it reads carries a `model` violation of severity `error`**, reported as `blocked: <kind>`. Warnings never block. The KiCad board exports whatever resolved.
+  - Every export except the KiCad board is **blocked while the resolved slice it reads carries a `model` violation of severity `error`**, reported as `blocked: <kind>`. Warnings never block. The KiCad board exports whatever resolved; when the board edge failed it is written with no Edge.Cuts, never a stale outline.
 
 ### AD-16: Shapes are authored and evaluated once, in `model` [ADOPTED]
 - **Binds:** model, plates, pcb, case, drc, exports
-- **Prevents:** plate, PCB edge, case and gerbers disagreeing on one offset or fillet; a mismatch with Ergogen's geometry.
+- **Prevents:** plate, PCB edge, case and gerbers disagreeing on one offset or fillet; a mismatch with Ergogen's geometry; a wrong boolean or offset result passed on silently; overlapping hole loops; stages flattening or composing plates their own way.
 - **Rule:**
   - Shapes, vertices and construction points are authored sections. Every primitive and vertex is anchored (AD-3). Shapes reference shapes by id. Exactly one shape is the outline.
   - Milestone-1 construction point kind: intersection of two lines. New kinds are added to the schema in `model`.
-  - `model.resolve` is the **single shape evaluator**, using `makerjs`. The resolved shape type is **exact paths** (lines, arcs, circles). No stage re-evaluates a shape.
-  - A stage that needs polygons flattens at its own boundary with the one flatten function and tolerance exported by `model`.
-  - A plate is its shape minus the part cutouts whose role it includes, plus any user cutout shapes.
+  - `model.resolve` is the **single shape evaluator**, and the only package that imports `makerjs`. No stage re-evaluates a shape.
+  - It also composes every plate and the board edge (the outline minus its `pcb`-target cutouts). `plates`, `pcb`, `drc` and `exports` read these composed regions and run no booleans of their own.
+  - **Resolved shape type:** a list of **regions**, each `{ outer, holes[] }`. Every loop is a closed chain of **exact paths** (lines, arcs, circles). A circle that a boolean leaves whole stays one circle path.
+    - Outer loops run counter-clockwise and holes clockwise (y up).
+    - Regions are ordered by their outer loop's lowest-then-leftmost point, and every loop starts at its own lowest-then-leftmost point.
+  - **Every resolved shape is normalised and checked before output**, whatever produced it (primitive, polygon, boolean or offset).
+    - Collinear lines are merged: lines that share an end within 1e-6 mm and run the same way within 1e-6 rad become one. The merge never drops or invents a segment.
+    - Every chain must close within 1e-6 mm.
+    - An offset result must also be one region per source region, with its signed area grown (positive distance) or shrunk (negative), and every flattened point within 0.05 mm of the offset distance from the source.
+    - On any failure the shape is not output and `model` reports `shape-failed`, naming the shape and its operands.
+  - A shape `offset` is makerjs `model.outline`, run on the normalised paths of its source.
+  - A failed or undefined shape is in the dependency graph (AD-3) with its dependents. Plates, the board edge and case operations that read it produce nothing and report nothing of their own.
+  - **Flatten:** `model` exports `flatten(region)` and the constant `FLATTEN_TOL = 0.005 mm` (maximum chord deviation). No stage passes its own tolerance.
+    - Lines stay as they are.
+    - Each arc becomes `max(1, ceil(|sweep| / (2·acos(1 − tol/r))))` equal chords. A full circle becomes its own loop of at least 3 chords.
+    - The output keeps the region form, winding and order.
+    - A stage that needs polygons flattens at its own boundary with this function.
+  - **Plates:** a plate is its shape minus the part cutouts whose role it includes, plus any user cutout shapes.
+    - A cutout whose every point is more than 2 × `FLATTEN_TOL` from the plate boundary and from every other cutout becomes a hole of the region it lies in, with no boolean.
+    - Every other cutout is subtracted, in cutout id order.
 
 ### AD-17: Parameters and expressions are design-wide [ADOPTED]
 - **Binds:** model, editor, every authored section
@@ -346,6 +367,12 @@ graph TD
   - A template is inserted **once** (`insertTemplate`): it adds parameters plus editable case operations whose values are expressions over them. Milestone 1 ships one template, `tray`, in `library`.
   - The `case` stage is an interpreter of the operation graph. Adding an operation type means a schema in `model` plus an interpreter in `case`; nothing else changes.
   - Milestone-1 operation types: extrude, offset, boolean (add, subtract, intersect), z-position.
+  - A case `offset` runs in the `case` stage on the flattened region (AD-16), with `clipper2-ts` `inflatePathsD`: `EndType.Polygon`, precision 6, arc tolerance 0.001 mm. It never calls makerjs.
+  - **Corner styles:** `model` defines one corner-style enum for case offsets, and `case` maps it in one table.
+    - `round` maps to `JoinType.Round`.
+    - `sharp` maps to `JoinType.Miter` with a miter limit of 1000, so no corner is squared off.
+    - `sharp` with a fillet radius r is the sharp offset, then opened (−r then +r, round) and closed (+r then −r, round), which rounds convex and concave corners with radius r.
+  - The `tray` template authors Corney's walls (Ergogen `expand` with pointed joints and `fillet: 0.5`) as case offsets, not as shape offsets.
 
 ### AD-19: Keymap is firmware-neutral [ADOPTED]
 - **Binds:** model, firmware, editor
@@ -391,7 +418,7 @@ graph TD
 | Naming | Glossary terms only. Packages: `@keeb-cad/<name>`. KDL node names are lowercase glossary terms. Commands are verb+noun camelCase (`setGap`). |
 | Ids | Kebab-case, minted by `model`. Resolved: `<side>/<id>`. Block nodes: `<instance-id>/<block-node-id>`. Pads: `<side>/<slot-id>.<component>.<pin>`. Nets: derived from ids (AD-14). |
 | Units in files | Quoted with an explicit unit or as an expression: `"19mm"`, `"1u"`, `"-15deg"`, `"wall + gap"`. |
-| Violations | `{ kind, severity: error \| warning, ids, message }`. Design problems never throw. Commands that can't apply return a typed rejection. Each kind has one owner. `model`: `anchor-cycle`, `construction-undefined` (error: a construction point from parallel or coincident lines; ids name the point and its two lines; it and its dependents are not evaluated), `unresolvable-reference` (warning when a key-cell reference names a cell not defined yet, the slot placing with no footprint; error otherwise), `unit-mismatch`, `unsupported-form`, `pitch-below-min`, `overlap`, `binding-unsupported`, `format-too-new`, `migration-failed`. `routing`: `unrouted`. `drc`: `drc`. A stage reports only its own kinds. |
+| Violations | `{ kind, severity: error \| warning, ids, message }`. Design problems never throw. Commands that can't apply return a typed rejection. Each kind has one owner. `model`: `anchor-cycle`, `construction-undefined` (error: a construction point from parallel or coincident lines; ids name the point and its two lines; it and its dependents are not evaluated), `unresolvable-reference` (warning when a key-cell reference names a cell not defined yet, the slot placing with no footprint; error otherwise), `shape-failed` (error: a resolved shape fails AD-16's checks; ids name the shape and its operands; it and its dependents are not output), `unit-mismatch`, `unsupported-form`, `pitch-below-min`, `overlap`, `binding-unsupported`, `format-too-new`, `migration-failed`. `routing`: `unrouted`. `drc`: `drc`. A stage reports only its own kinds. |
 | Stable outputs | Same file + same app version → same bytes for every export. No clocks, randomness, locale or random UUIDs in outputs; tool-generated ids (KiCad UUIDs) are derived from design ids. Only routes are history-dependent, and they are saved. |
 | Testing | Golden fixtures: Corney Island v0.3 wired and wireless, as two designs (`fixtures/`, from `layout-model/sources/`). Internal: key positions within 0.01 mm of Ergogen. Acceptance: key centres, outline vertices, plate cutouts and case dimensions within ±0.05 mm. Every stage has golden-file tests. KiCad output opens in KiCad 10; ZMK output builds. A cross-stage netlist test enforces AD-14. LambBT and Corax56 are paper checks. |
 | Editor state | UI state (selection, viewport, panels, gesture in progress) lives in Pinia, never in the design. The design store exposes `dispatch(command)`, the gesture API and read access only. |
@@ -400,7 +427,7 @@ graph TD
 
 ## Stack
 
-Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check) and 2026-10-26 (renderers, npm).
+Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-26 (renderers, npm) and 2026-10-28 (clipper2-ts and makerjs, npm and GitHub).
 
 | Name | Version |
 | --- | --- |
@@ -415,6 +442,7 @@ Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check) and 2026-1
 | dependency-cruiser | 18.7.0 |
 | Prettier | 3.9.10 |
 | makerjs (maintenance mode; geometry unchanged since 0.18.1, which Ergogen uses) | 0.19.2 |
+| clipper2-ts (BSL-1.0; case offsets only, AD-18). Pinned exactly: semver sorts the older stable `2.0.1` above it, and that lacks the `inflatePathsD` and `ClipperD` scaling fixes | 2.0.1-18 (exact) |
 | replicad / replicad-opencascadejs | 1.2.0 / 1.1.0 |
 | @bgotink/kdl (KDL v2) | 0.4.1 |
 | @tarikjabiri/dxf | 2.9.0 |
@@ -485,12 +513,13 @@ graph TD
 | Decision | Why it can wait | Revisit when |
 | --- | --- | --- |
 | **Routing spike (scheduled first):** tscircuit capacity-autorouter vs Freerouting via CheerpJ, on Corney Island: incremental routing with fixed existing routes, a pre-routed module zone, and the connection split rule (AD-14). Exit criteria: no network at runtime (CheerpJ's free licence requires loading from its servers; Freerouting is GPL-3.0); installs under pnpm strict with TypeScript 6 | Hidden behind AD-12 | First work item. If it fails, SM-3 counts the KiCad export routed outside keeb-cad as done |
-| **Geometry spike (alongside):** Corney outline via makerjs within ±0.05 mm; arc booleans with coincident/tangent edges and makerjs issues #509, #377, #387, #477; outline latency on the main thread | Hidden inside `model` | First work item. Failure reopens AD-16 (the resolved shape type would change) |
+| makerjs booleans not covered by the geometry verdict (2026-10-28): arc against arc (a cut through a fillet), #377 with one shared edge or a partial overlap (might give a closed but wrong shape that `shape-boolean-failed` misses), #477 union cost on a 50-key plate, and whether plate hole loops export the same as a subtraction | Corney and LambBT pass; the verdict covers the rest | epic-shapes-and-plates, before relying on them. A failure reopens AD-16 (compare against clipper2 there) |
+| Shape `offset` latency: makerjs `model.outline` takes about 70 ms on Corney's outline, more than a live frame | No M1 shape uses an offset: Corney's walls are case offsets in `tray` (AD-18), and LambBT has none | When a design's outline uses an offset and live editing hurts: own exact offset or a worker |
 | **ZMK wired split vs Corney's single-wire TRRS** (`R2: DAT`): v0.3.0 supports only two-wire full-duplex UART; half-duplex is experimental. Choose: rewire for TX/RX, hardware-test half-duplex, or BLE split | Netlist comes from catalogue pin roles either way | Before the firmware story; blocks SM-4 for the wired design |
 | Gerber + drill writer: own vs `circuit-json-to-gerber`; ground pours | Hidden inside `exports` | After the routing spike |
 | KiCad writer: `kicadts` vs own; KiCad schematic export | Hidden inside `pcb`; the board file suffices as escape hatch | First pcb story |
-| Flatten tolerance value | Constant in `model` | Geometry spike |
-| Live latency target | Needs live stages to measure | Once live stages exist |
+| Case-offset corner mapping (AD-18: sharp with a fillet, done as open and close) against Ergogen's `expand` with pointed joints and `fillet: 0.5` | Untested; the case stage runs in the background | epic-tray-case, against Corney's case fixture within ±0.05 mm, before relying on it. A failure reopens AD-18's corner table |
+| Live latency target, set on the max, not the median (Corney's outline: median 1.7–6.9 ms, max 28.4 ms under load) | Needs live stages to measure | Once live stages exist; move the evaluator off the main thread if the max misses it |
 | Corney Island's own ZMK keymap (sizes the neutral vocabulary) | Not in `layout-model/sources` | Before the keymap story |
 | Footprint licence (ceoloide derivation with attribution) | Data, not structure | Before footprint library work |
 | Construction point kinds beyond line intersection; averaged anchors | Corney uses intersection only | During the Corney rebuild |
