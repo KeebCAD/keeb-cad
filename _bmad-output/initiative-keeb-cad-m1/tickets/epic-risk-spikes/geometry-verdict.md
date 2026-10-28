@@ -3,7 +3,7 @@ title: 'Geometry verdict'
 epic: epic-risk-spikes
 stories: ['11', '12']
 date: '2026-10-28'
-status: 'draft, awaiting sign-off'
+status: 'signed off 2026-10-28'
 covers: [R5, R6, R8]
 ---
 
@@ -152,6 +152,6 @@ Other makerjs behaviour found:
    arc-against-arc booleans (a cut through a fillet), the #377 single-edge and partial-overlap
    cases, and #477 at plate scale move to epic-shapes-and-plates.
 
-## Draft Decision line for the epic's Notes
+## Decision line for the epic's Notes
 
-> - Decision (2026-10-28, geometry verdict, stories 11–12): makerjs stays AD-16's single shape evaluator with exact paths. Corney's outline is within 1.0e-7 mm, and LambBT's r = 150 mm subtraction is within 1.6e-7 mm of an independent exact reference. Main-thread builds take a median of 0.6–6.9 ms and a max of 1.3–28.4 ms; the 28.4 ms max under load is more than a 16 ms frame, so the live latency target is set on the max. The flatten tolerance is fixed at 0.005 mm. Boolean results are collinear-merged and must close, or they are a typed error. makerjs #377 was reproduced (two shared edges, an open result). The single-edge and partial-overlap cases are untested. Offsets run in clipper2 on flattened polygons (makerjs #387 reproduced, caused by collinear splits, about 70 ms). #509 was not reproduced. #477, arc-on-arc cuts and the remaining #377 cases move to epic-shapes-and-plates. AD-16 changes go to `bmad-architecture` (`geometry-verdict.md`). Signed off by the user on YYYY-MM-DD.
+> - Decision (2026-10-28, geometry verdict, stories 11–12): makerjs stays AD-16's single shape evaluator with exact paths. Corney's outline is within 1.0e-7 mm, and LambBT's r = 150 mm subtraction is within 1.6e-7 mm of an independent exact reference. Main-thread builds take a median of 0.6–6.9 ms and a max of 1.3–28.4 ms; the 28.4 ms max under load is more than a 16 ms frame, so the live latency target is set on the max. The flatten tolerance is fixed at 0.005 mm. Boolean results are collinear-merged and must close, or they are a typed error. makerjs #377 was reproduced (two shared edges, an open result). The single-edge and partial-overlap cases are untested. Offsets run in clipper2 on flattened polygons (makerjs #387 reproduced, caused by collinear splits, about 70 ms). #509 was not reproduced. #477, arc-on-arc cuts and the remaining #377 cases move to epic-shapes-and-plates. AD-16 changes go to `bmad-architecture` (`geometry-verdict.md`). Signed off by the user on 2026-10-28.
