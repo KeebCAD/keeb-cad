@@ -3,7 +3,7 @@ title: 'Routing verdict signed off'
 type: 'chore'
 ticket: '13'
 created: '2026-10-28'
-status: 'built'
+status: done
 baseline_revision: 'f5b9444ff60d6140929bfef6868536a7c2a735fd'
 route: 'full'
 route_source: 'auto'
