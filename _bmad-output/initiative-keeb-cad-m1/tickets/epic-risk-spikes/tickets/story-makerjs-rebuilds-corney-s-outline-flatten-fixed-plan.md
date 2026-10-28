@@ -3,7 +3,7 @@ title: "makerjs rebuilds Corney's outline, flatten fixed"
 type: 'feature'
 ticket: '11'
 created: '2026-10-28'
-status: 'built'
+status: done
 baseline_revision: '2425cd0f9733b03a3e3f511846ea4bd2669170fe'
 route: 'full'
 route_source: 'auto'

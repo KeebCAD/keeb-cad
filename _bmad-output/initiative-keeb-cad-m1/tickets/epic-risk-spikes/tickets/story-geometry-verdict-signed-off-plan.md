@@ -3,7 +3,7 @@ title: 'Geometry verdict signed off'
 type: 'feature'
 ticket: '12'
 created: '2026-10-28'
-status: 'built'
+status: done
 baseline_revision: '35b70704493239794bcd88c7d28c071af0943d52'
 route: 'full'
 route_source: 'auto'
