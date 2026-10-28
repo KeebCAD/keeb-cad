@@ -1,5 +1,6 @@
 // makerjs exact paths to KiCad-frame segments, the one flatten of those into polyline loops, and
-// the symmetric distance between a polyline and an exact outline (story 11).
+// the symmetric distance between a polyline and an exact outline (stories 11 and 12; story 12 adds
+// whole circles and `fromSegments`).
 //
 // Frame: makerjs paths are in Ergogen's (y up); `toSegments` maps them to KiCad's `(x, −y)`.
 // Everything else here is in KiCad's frame.
@@ -12,7 +13,8 @@ const toKicad = (p: makerjs.IPoint): Point => ({ x: p[0]!, y: -p[1]! })
 /**
  * Every line and arc in the model (nested models and origins applied), as KiCad-frame
  * `Segment`s: a line keeps its ends; an arc becomes start / mid / end, mid at the mid-angle.
- * Circles and other path types throw: Corney's outline has none.
+ * A full circle (story 12: a circle makerjs leaves whole) becomes a `circle` segment. Other path
+ * types throw.
  */
 export function toSegments(model: makerjs.IModel): Segment[] {
   const segments: Segment[] = []
@@ -32,12 +34,34 @@ export function toSegments(model: makerjs.IModel): Segment[] {
             arc.origin[1]! + arc.radius * Math.sin((deg * Math.PI) / 180),
           ])
         segments.push({ kind: 'arc', start: at(arc.startAngle), mid: at((arc.startAngle + end) / 2), end: at(end) })
+      } else if (makerjs.isPathCircle(path)) {
+        const circle = path as makerjs.IPathCircle
+        segments.push({ kind: 'circle', centre: toKicad(circle.origin), radius: circle.radius })
       } else {
         throw new Error(`toSegments: unsupported path type ${path.type}`)
       }
     },
   })
   return segments
+}
+
+/**
+ * The inverse of `toSegments`: one flat makerjs model (Ergogen frame) with a path per segment.
+ * Story 12 rebuilds a model from `mergeCollinear`'s output this way, so `makerjs.model.outline`
+ * never sees a split edge (makerjs #387).
+ */
+export function fromSegments(segments: readonly Segment[]): makerjs.IModel {
+  const ergogen = (p: Point): makerjs.IPoint => [p.x, -p.y]
+  const paths: makerjs.IPathMap = {}
+  for (const [index, s] of segments.entries()) {
+    paths[`s${index}`] =
+      s.kind === 'line'
+        ? new makerjs.paths.Line(ergogen(s.start), ergogen(s.end))
+        : s.kind === 'arc'
+          ? new makerjs.paths.Arc(ergogen(s.start), ergogen(s.mid), ergogen(s.end))
+          : new makerjs.paths.Circle(ergogen(s.centre), s.radius)
+  }
+  return { paths }
 }
 
 /** An arc's circle and its sweep from start through mid to end (signed, radians). */
@@ -89,12 +113,21 @@ const reversed = (s: Segment): Segment => (s.kind === 'circle' ? s : { ...s, sta
 
 /**
  * The one flatten: the model's (or segments') closed loops as polylines, KiCad frame. Lines stay
- * as they are; each arc becomes `chordCount` equal chords, so no chord deviates more than `tol`.
- * Each loop lists its vertices once (the closing edge back to the first is implied).
+ * as they are; each arc becomes `chordCount` equal chords, so no chord deviates more than `tol`. A
+ * whole circle is a loop of its own, `chordCount(r, 2π, tol)` equal chords. Each loop lists its vertices once (the closing edge back to the first is implied).
  */
 export function flatten(input: makerjs.IModel | readonly Segment[], tol: number): Point[][] {
   const segments = Array.isArray(input) ? (input as readonly Segment[]) : toSegments(input as makerjs.IModel)
   return chainLoops(segments).map((loop) => {
+    const only = loop[0]!
+    if (only.kind === 'circle') {
+      // A full circle is a loop of its own: `chordCount` equal chords round it.
+      const n = chordCount(only.radius, 2 * Math.PI, tol)
+      return Array.from({ length: n }, (_, i) => ({
+        x: only.centre.x + only.radius * Math.cos((2 * Math.PI * i) / n),
+        y: only.centre.y + only.radius * Math.sin((2 * Math.PI * i) / n),
+      }))
+    }
     const out: Point[] = []
     let tip: Point | undefined
     for (const raw of loop) {
@@ -141,7 +174,13 @@ export function distanceToSegment(p: Point, s: Segment): number {
 /** Points along the segment no more than `step` apart, both ends included. */
 function sampleSegment(s: Segment, step: number): Point[] {
   if (s.kind === 'line') return sampleEdge(s.start, s.end, step)
-  if (s.kind === 'circle') throw new Error('sampleSegment: circles are not supported')
+  if (s.kind === 'circle') {
+    const n = Math.max(3, Math.ceil((2 * Math.PI * s.radius) / step))
+    return Array.from({ length: n + 1 }, (_, i) => ({
+      x: s.centre.x + s.radius * Math.cos((2 * Math.PI * i) / n),
+      y: s.centre.y + s.radius * Math.sin((2 * Math.PI * i) / n),
+    }))
+  }
   const { centre, radius, startAngle, sweep } = arcGeometry(s)
   const n = Math.max(1, Math.ceil((Math.abs(sweep) * radius) / step))
   return Array.from({ length: n + 1 }, (_, i) => {

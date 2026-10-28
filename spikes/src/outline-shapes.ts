@@ -1,11 +1,13 @@
-// AD-16 model shapes for Corney Island's `_pcb_outline` (story 11), and the one evaluator that
-// turns them into makerjs exact paths.
+// AD-16 model shapes for Corney Island's `_pcb_outline` (story 11) and LambBT's `pcb` (story 12),
+// and the one evaluator that turns them into makerjs exact paths.
 //
-// Shapes are data: `polygon` (vertices), `add`, `fillet` and `shape-ref` by id. A vertex is an
+// Shapes are data: `polygon` (vertices), `add`, `fillet`, `circle` (an anchored centre and a
+// radius), `subtract` and `shape-ref` by id. A vertex is an
 // anchor (a point name) plus a shift taken in the anchor's frame. A construction point is the
 // intersection of two lines, each through a vertex at an angle in that vertex's anchor frame.
-// Anchor poses come from Ergogen's `points.yaml`: layout is not this spike's job, and Ergogen's
-// outline code is not replayed.
+// Corney's anchor poses come from Ergogen's `points.yaml`; LambBT's from `lambbtPoses()`, a
+// transcription of Ergogen v4's column layout (no Ergogen run). Layout is not this spike's job,
+// and Ergogen's outline code is not replayed.
 //
 // Frame: Ergogen's (mm, y up, rotation in degrees counter-clockwise). KiCad is `(x, −y)`; see
 // `flatten.ts`.
@@ -31,6 +33,10 @@ export type Shape =
   | { id: string; kind: 'add'; parts: readonly ShapeRef[] }
   /** Every corner of every chain of `of` rounded with `radius`, where makerjs can. */
   | { id: string; kind: 'fillet'; of: ShapeRef; radius: number }
+  /** A full circle about an anchored centre (story 12). */
+  | { id: string; kind: 'circle'; centre: Vertex; radius: number }
+  /** `from` minus each of `cut`, in order (makerjs `combineSubtraction`, story 12). */
+  | { id: string; kind: 'subtract'; from: ShapeRef; cut: readonly ShapeRef[] }
 
 export type OutlineShapes = { constructions: readonly Construction[]; shapes: readonly Shape[] }
 
@@ -129,11 +135,12 @@ export function resolveConstructions(shapes: OutlineShapes, points: ReadonlyMap<
 }
 
 /**
- * Evaluates shape `id` into a fresh makerjs model of exact paths (lines and arcs, Ergogen
- * frame), or the first undefined construction it depends on (then nothing depending on it is
- * built). Unions are `makerjs.model.combine` keeping each side's outside; fillets run
- * `makerjs.chain.fillet` on every chain, which leaves a corner sharp when makerjs cannot round
- * it (collinear lines).
+ * Evaluates shape `id` into a fresh makerjs model of exact paths (lines, arcs and circles,
+ * Ergogen frame), or the first undefined construction it depends on (then nothing depending on
+ * it is built). Unions are `makerjs.model.combineUnion`; subtractions `combineSubtraction`, one
+ * cut at a time; a circle is a makerjs `paths.Circle`, and one a subtraction leaves whole stays
+ * a circle. Fillets run `makerjs.chain.fillet` on every chain, which leaves a corner sharp when
+ * makerjs cannot round it (collinear lines).
  */
 export function evaluate(shapes: OutlineShapes, id: string, points: ReadonlyMap<string, Pose>): Evaluated {
   const resolved = resolveConstructions(shapes, points)
@@ -163,6 +170,22 @@ export function evaluate(shapes: OutlineShapes, id: string, points: ReadonlyMap<
         }
         return { kind: 'model', model: result ?? { models: {} } }
       }
+      case 'circle': {
+        const at = place(shape.centre, points, resolved)
+        if ('kind' in at) return at
+        return { kind: 'model', model: { paths: { circle: new makerjs.paths.Circle([at.x, at.y], shape.radius) } } }
+      }
+      case 'subtract': {
+        const base = build(shape.from.id, inner)
+        if (base.kind !== 'model') return base
+        let result = base.model
+        for (const part of shape.cut) {
+          const cut = build(part.id, inner)
+          if (cut.kind !== 'model') return cut
+          result = makerjs.model.combineSubtraction(result, cut.model)
+        }
+        return { kind: 'model', model: result }
+      }
       case 'fillet': {
         const base = build(shape.of.id, inner)
         if (base.kind !== 'model') return base
@@ -176,6 +199,33 @@ export function evaluate(shapes: OutlineShapes, id: string, points: ReadonlyMap<
     }
   }
   return build(id, [])
+}
+
+/**
+ * A polygon shape's vertices and a circle shape's centre, placed (Ergogen frame), without
+ * makerjs: the inputs of story 12's independent reference (`circle-cut.ts`).
+ */
+export function placedPolygon(shapes: OutlineShapes, id: string, points: ReadonlyMap<string, Pose>): [number, number][] {
+  const shape = shapes.shapes.find((s) => s.id === id)
+  if (shape?.kind !== 'polygon') throw new Error(`${id} is not a polygon`)
+  const resolved = resolveConstructions(shapes, points)
+  return shape.vertices.map((vertex) => {
+    const at = place(vertex, points, resolved)
+    if ('kind' in at) throw new Error(`${id}: ${at.id} is undefined`)
+    return [at.x, at.y]
+  })
+}
+
+export function placedCircle(
+  shapes: OutlineShapes,
+  id: string,
+  points: ReadonlyMap<string, Pose>,
+): { centre: [number, number]; radius: number } {
+  const shape = shapes.shapes.find((s) => s.id === id)
+  if (shape?.kind !== 'circle') throw new Error(`${id} is not a circle`)
+  const at = place(shape.centre, points, resolveConstructions(shapes, points))
+  if ('kind' in at) throw new Error(`${id}: ${at.id} is undefined`)
+  return { centre: [at.x, at.y], radius: shape.radius }
 }
 
 // Corney Island v0.3 (choc_v2 preset: ks = kp = 19), transcribed from
@@ -245,3 +295,144 @@ export const CORNEY_OUTLINE_SHAPES: OutlineShapes = {
 
 /** The 37-segment board outline's shape id. */
 export const CORNEY_OUTLINE_ID = '_pcb_outline'
+
+// LambBT (story 12), from `_bmad-output/layout-model/sources/lambbt.yaml` (points lines 19–103,
+// `board` 149–190, `cutout_circle_small` 119–124, `pcb: [+board, -cutout_circle_small]` 349).
+// No Ergogen run: the key poses come from a transcription of Ergogen v4's column layout below
+// (spread, cumulative stagger, splay pushed as a rotation about its origin, every earlier
+// rotation applied to later columns). Units: kx = cx = 18, ky = cy = 17, pd = 2, px = 20, py = 19.
+
+type Rotation = { angle: number; origin: readonly [number, number] }
+
+function rotateAbout(p: readonly [number, number], deg: number, o: readonly [number, number]): [number, number] {
+  const c = Math.cos(rad(deg))
+  const s = Math.sin(rad(deg))
+  const dx = p[0] - o[0]
+  const dy = p[1] - o[1]
+  return [o[0] + dx * c - dy * s, o[1] + dx * s + dy * c]
+}
+
+/** A pose shifted by `[sx, sy]` in its own frame. */
+const shifted = (pose: Pose, [sx, sy]: readonly [number, number]): Pose => {
+  const c = Math.cos(rad(pose.r))
+  const s = Math.sin(rad(pose.r))
+  return { x: pose.x + sx * c - sy * s, y: pose.y + sx * s + sy * c, r: pose.r }
+}
+
+type ZoneColumn = { name: string; stagger?: number; splay?: number; origin?: readonly [number, number] }
+
+/** Ergogen v4 `render_zone`, for the keys LambBT uses (no per-key orient, rotate or shift). */
+function renderZone(
+  zone: string,
+  anchor: Pose,
+  columns: readonly ZoneColumn[],
+  rows: readonly string[],
+  spread: number,
+  padding: number,
+  out: Map<string, Pose>,
+): void {
+  const rotations: Rotation[] = [{ angle: anchor.r, origin: [anchor.x, anchor.y] }]
+  let zx = anchor.x
+  let zy = anchor.y
+  for (const [index, col] of columns.entries()) {
+    if (index > 0) zx += spread
+    zy += col.stagger ?? 0
+    if (col.splay) {
+      const [ox, oy] = col.origin ?? [0, 0]
+      let origin: [number, number] = [zx + ox, zy + oy]
+      for (const r of rotations) origin = rotateAbout(origin, r.angle, r.origin)
+      rotations.push({ angle: col.splay, origin })
+    }
+    let p: [number, number] = [zx, zy]
+    let r = 0
+    for (const rot of rotations) {
+      p = rotateAbout(p, rot.angle, rot.origin)
+      r += rot.angle
+    }
+    let pose: Pose = { x: p[0], y: p[1], r }
+    for (const row of rows) {
+      out.set(`${zone}_${col.name}_${row}`, pose)
+      pose = shifted(pose, [0, padding])
+    }
+  }
+}
+
+const kx = 18
+const ky = 17
+const pd = 2
+const px = kx + pd
+const py = ky + pd
+
+/** Every LambBT key pose (Ergogen frame), plus `board_thumb_rise`, the `board` polygon's fifth vertex frame. */
+export function lambbtPoses(): Map<string, Pose> {
+  const poses = new Map<string, Pose>()
+  renderZone(
+    'matrix',
+    { x: 150, y: -150, r: 0 },
+    [
+      { name: 'pinky', splay: 15 },
+      { name: 'ring', stagger: 17, splay: -10, origin: [0, -ky] },
+      { name: 'middle', stagger: 17 / 3, splay: -5, origin: [0, -ky] },
+      { name: 'index', stagger: -17 / 3, splay: -5, origin: [0, -ky] },
+      { name: 'inner', stagger: -17 / 6 },
+    ],
+    ['bottom', 'home', 'top'],
+    kx,
+    ky,
+    poses,
+  )
+  renderZone(
+    'thumbs',
+    shifted(poses.get('matrix_inner_bottom')!, [0, -24]),
+    [
+      { name: 'inner', splay: -15 },
+      { name: 'outer', splay: -10, origin: [-9, -9.5] },
+    ],
+    ['cluster'],
+    kx,
+    ky,
+    poses,
+  )
+  // `[{ref: matrix_inner_top, affect: r}, {shift: [0, 2.675py]}]`: the previous vertex's
+  // position with matrix_inner_top's rotation.
+  const previous = shifted(poses.get('thumbs_outer_cluster')!, [0.5 * px, 0.5 * py])
+  poses.set('board_thumb_rise', { x: previous.x, y: previous.y, r: poses.get('matrix_inner_top')!.r })
+  return poses
+}
+
+export const LAMBBT_POSES: ReadonlyMap<string, Pose> = lambbtPoses()
+
+/**
+ * LambBT's `pcb`: `board` (its 15-vertex `stack` polygon, `fillet: 1` dropped) minus
+ * `cutout_circle_small` (r = 150 at `matrix_middle_bottom` shifted `[-13, -188]`).
+ */
+export const LAMBBT_OUTLINE_SHAPES: OutlineShapes = {
+  constructions: [],
+  shapes: [
+    {
+      id: 'board',
+      kind: 'polygon',
+      vertices: [
+        v('matrix_pinky_top', [-0.5 * px, 0.5 * py]),
+        v('matrix_pinky_bottom', [-0.5 * px, -0.5 * py]),
+        v('thumbs_outer_cluster', [0.5 * px, -0.5 * py]),
+        v('thumbs_outer_cluster', [0.5 * px, 0.5 * py]),
+        v('board_thumb_rise', [0, 2.675 * py]),
+        v('matrix_inner_top', [0.5 * px, -0.5 * py]),
+        v('matrix_inner_top', [0.5 * px, 0.5 * py]),
+        v('matrix_inner_top', [-0.5 * px + pd, 0.5 * py]),
+        v('matrix_index_top', [0.5 * px, 0.5 * py]),
+        v('matrix_index_top', [-0.66 * px, 0.5 * py]),
+        v('matrix_middle_top', [0.5 * px, 0.5 * py]),
+        v('matrix_middle_top', [-0.5 * px, 0.5 * py]),
+        v('matrix_ring_top', [0.64 * px, 0.5 * py]),
+        v('matrix_ring_top', [-0.5 * px, 0.5 * py]),
+        v('matrix_pinky_top', [0.77 * px, 0.5 * py]),
+      ],
+    },
+    { id: 'cutout_circle_small', kind: 'circle', centre: v('matrix_middle_bottom', [-13, -188]), radius: 150 },
+    { id: 'pcb', kind: 'subtract', from: ref('board'), cut: [ref('cutout_circle_small')] },
+  ],
+}
+
+export const LAMBBT_OUTLINE_ID = 'pcb'

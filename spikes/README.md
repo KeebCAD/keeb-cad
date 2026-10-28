@@ -724,3 +724,110 @@ Tolerance sweep (`flatten` of the same segments, mean of 20 runs after a warm-up
 - ☝️ **Ergogen itself uses makerjs.** A pass shows that makerjs reproduces Corney when driven
   from our shape model, not that makerjs is sound on unusual arc booleans; entry 12's LambBT case
   covers that.
+
+## Geometry verdict cases (story 12)
+
+`pnpm test` (`src/circle-cut.test.ts`) and `pnpm route` (`e2e/outline.spec.ts`,
+`?outline=lambbt`). Story 11 only showed makerjs rebuilding Corney, which Ergogen already builds
+with makerjs. This entry checks makerjs's arc booleans against a reference that does not use
+makerjs: LambBT's r = 150 mm concave cut, the vertex, tangent and re-cut edge cases, and the
+cases the plan pins to makerjs issues #509, #377 and #387. The verdict is
+`_bmad-output/initiative-keeb-cad-m1/tickets/epic-risk-spikes/geometry-verdict.md`.
+
+- **Shape model** (`src/outline-shapes.ts`): two new kinds. `circle` is an anchored centre
+  (a `Vertex`) plus a radius, built as a makerjs `paths.Circle`. `subtract` is `from` minus each
+  `cut` in order, built with `makerjs.model.combineSubtraction`. Corney's shapes and results are
+  unchanged.
+- **LambBT** (`LAMBBT_POSES`, `LAMBBT_OUTLINE_SHAPES`): no Ergogen run. The key poses come from
+  `lambbtPoses()`, a transcription of Ergogen v4's column layout (spread 18, padding 17, stagger
+  accumulating, each splay pushed as a rotation about its origin and applied to every later
+  column, the thumb zone anchored on `matrix_inner_bottom` shifted `[0, −24]` in its −5° frame).
+  The rotations come out as in `sources/README.md` §B: pinky 15, ring 5, middle 0, index −5,
+  inner −5, thumbs −20 and −30. `board` is LambBT's 15-vertex `stack` polygon (simple, 9149 mm²,
+  about 127 × 99 mm). Its fifth vertex `[{ref: matrix_inner_top, affect: r}, {shift: [0, 2.675py]}]`
+  is the pose `board_thumb_rise`, the fourth vertex's position with `matrix_inner_top`'s
+  rotation. `fillet: 1` is dropped, as the plan allows. `pcb` = `board` − `cutout_circle_small`
+  (r = 150 at `matrix_middle_bottom` shifted `[−13, −188]`), as in LambBT.
+- **Reference** (`src/circle-cut.ts`): `subtractCircle(polygon, centre, r)` gives the exact
+  boundary of polygon − disc. Each edge is split where it meets the circle, and each piece is
+  kept when its midpoint is outside the disc. The circle is split at those points, and each arc
+  is kept when its mid-angle point is inside the polygon (even-odd). A vertex within 1e-9 mm of
+  the circle is on it, and a line within 1e-9 mm of tangency touches it at its foot. Kept pieces
+  that continue each other through a point that ends no other kept piece (a tangent touch) are
+  joined back. `circleMinusPolygon` is the same with the keep tests swapped (disc − polygon, for
+  #509). Six hand-computed unit tests cover them: a circle through (1, 0) and (9, 0) under a
+  10 mm square, a quarter disc about a corner, a circle through two vertices, a tangent from
+  outside, a hole and a miss, and disc − square.
+- **Checks**, as in story 11. The exact check is
+  `compareSegments(reference, mergeCollinear(toSegments(makerjs)))`. The flattened check is
+  `flattenedDeviation(reference, flatten(makerjs, 0.005))`, with its upper bound ≤ 0.05 mm. The
+  clipper2 check (`clipperSubtract`) subtracts the circle as `chordCount(150, 2π, 0.001)` equal
+  chords with `differenceD` at 1e-6 mm. The symmetric deviation between that and makerjs's
+  flattened loop must be ≤ 0.05 mm (upper bound).
+- `toSegments` now emits a `circle` segment for a whole circle. `flatten` turns one into its own
+  loop of `chordCount` chords, and `fromSegments` is its inverse (one flat makerjs model).
+- **Latency**: `?outline=lambbt` is story 11's page (5 warm-up builds, then 30 timed builds on the
+  main thread) on LambBT's `pcb`. `?outline` alone is still Corney. A build is now the pipeline
+  the verdict prescribes: evaluate, `toSegments`, `mergeCollinear`, then flatten the segments
+  (story 11's build flattened the model without the merge, so Corney now has 114 vertices, not
+  115).
+- **Offset timing** (#387): each run gets a fresh input built outside the timer, so the times
+  are the offset alone (makerjs `model.outline`, or clipper2 `inflatePathsD` of an
+  already-flattened outline). Each offset that passes must also enclose more area than the
+  source (9204.6 mm²), so an inward 1.45 mm offset cannot pass the distance check.
+
+### Results (2026-10-28, makerjs 0.19.2, clipper2-ts 2.0.1-18, Node 26.12.1, Vitest 4.1.12, Chromium headless from Playwright 1.64.1)
+
+| Case | makerjs result | Check |
+|---|---|---|
+| LambBT cut | 16 paths (15 lines + 1 arc), 0 collinear joins, one closed chain | exact: pass, 16 / 16, max 1.6e-7 mm. Arc centre 4.6e-13 mm off, radius 4.0e-13 mm off |
+| LambBT flattened, tol 0.005 | 1 loop, 57 vertices | 0.00485 mm (upper bound 0.00735) |
+| clipper2 cross-check | 1 loop, 109 vertices | clipper2 vs makerjs 0.00485 mm (bound 0.00735); clipper2 vs reference 0.00100 mm (bound 0.00350) |
+| Arc through a vertex (r = 150.194044, through the pinky bottom-left corner) | 15 paths, one chain, shortest 2.83 mm | exact: pass, 15 / 15, no duplicate or zero-length segment; the arc ends on the vertex |
+| Tangent outside (r 150 touching the left edge at its midpoint) | 16 paths, 0 arcs: the touched edge comes back as two lines | raw: fail (one edge split). After `mergeCollinear`: pass, 15 / 15, one join 5.6e-8 mm from the touch point |
+| Concentric re-cut ((board − circle) − circle) | 16 paths, one chain | exact: pass against the single cut, so the cut is idempotent |
+| Mounting hole (board − r 1.1 circle at `matrix_middle_home`, wholly inside) | 16 paths: the 15 board lines + 1 whole `circle` path | exact: pass against `subtractCircle` (a hole), 16 / 16. Flattens to 2 loops, within 0.05 mm |
+| #377 coincident edges (100² − 50² box sharing top and right) | 8 paths, open chain: A's shared edges stay, B's inner edges added | raw: fail. `model.simplify`: 6 paths, still fail (the shared edges stay) |
+| #377 workaround (cutter extended 10 mm past the shared edges) | 6 lines, one loop | exact: pass, 6 / 6 |
+| #509 stray lines (r 402.7 circle − triangle (300, 0), (400, ±100)) | 5 paths (2 arcs, 3 lines), 2 closed loops (the body and a 2.7 mm sliver right of x = 400) | every path on the true boundary (sampled every 0.5 mm, 1e-6 mm). Exact against `circleMinusPolygon`: pass, 5 / 5. Not reproduced |
+| #387 `model.outline(_pcb_outline, 1.45)` | 6 loops of about 43 vertices round single corners, no outer loop | worst \|d − 1.45\| = 1.44 mm. Reproduced. Offset alone 73.4 ms median, 93.7 ms max (Node, 10 runs). `_plate_outline` (no split) gives 1 loop; `_backplate_outline` (split, no fillet) gives 0 loops (both asserted) |
+| #387 flat model, split kept (`fromSegments(toSegments(…))`, no merge) | the same 6 loops | worst \|d − 1.45\| = 1.44 mm, still broken. 69.3 ms median, 76.6 ms max |
+| #387 workaround (`fromSegments(mergeCollinear(…))` first) | 1 loop, 128 vertices, 9818.4 mm² | worst \|d − 1.45\| = 0.00499 mm, outward, pass. 71.1 ms median, 80.9 ms max |
+| #387 alternative: clipper2 `inflatePathsD` of the flattened outline (round joins, arc tol 0.001) | 1 loop, 315 vertices, 9818.4 mm² | worst \|d − 1.45\| = 0.00444 mm, outward, pass. 1.5 ms median, 3.3 ms max |
+| Negative control (circle centre moved 0.06 mm along y) | — | exact: fail (lines #2 and #3 and the arc, up to 0.176 mm). Flattened: 0.0600 mm > 0.05, fail |
+| Latency, `?outline=lambbt` (evaluate + `toSegments` + `mergeCollinear` + flatten) | 1 loop, 57 vertices | median 0.60–0.70 ms, max 1.30–4.60 ms over 30 builds, two runs of the spec. Corney in the same runs: median 2.20–2.35 ms, max 4.20–5.30 ms, 114 vertices |
+
+- **The LambBT cut is exact.** makerjs's intersection points agree with the reference to
+  1.6e-7 mm (makerjs rounds intersections to about 7 decimals), and its arc lies on the cutting
+  circle to 1e-12. The only error in the flattened loop is the arc's sagitta at tol 0.005, as on
+  Corney. clipper2's polygon is within 0.001 mm of the reference, as built (its circle at tol
+  0.001).
+- **Finding: tangency splits an edge.** A circle touching an edge from outside removes nothing,
+  but makerjs breaks the edge at the touch point. `mergeCollinear` (story 11) joins it back, so
+  the evaluator's output should always go through it before anything compares or flattens it.
+- **Finding #377, reproduced: coincident edges give a wrong, open result.** When the cutter
+  shares edges with the shape, makerjs keeps the shape's shared edges where they should go, adds
+  the cutter's inner edges, and leaves an open chain. `model.simplify` does not fix it. Extending
+  the cutter past the shared edges gives the exact L. That is an authoring workaround, so an
+  evaluator should check that every result chain closes and report a typed error when one does
+  not.
+- **#509, not reproduced** on the plan's case. A large circle minus a triangle whose vertical
+  edge crosses the circle gives only boundary paths, in two closed loops (a thin sliver
+  included).
+- **Finding #387, reproduced: `model.outline` breaks on a split edge, and it is slow.** On
+  Corney's `_pcb_outline` it returns six loops round single corners and no outer loop.
+  `_backplate_outline` gives no loop, and `_plate_outline` works. The cause is the collinear
+  split (story 11's union split at 205.113), not the nested model: the same paths in one flat
+  model, split kept, fail the same way, and merging the split alone fixes it (exactly 1.45 mm,
+  within 0.005 from flattening). The offset itself still takes about 70 ms in Node, more than
+  four 16 ms frames. clipper2's `inflatePathsD` of the flattened outline is within 0.0044 mm and
+  takes 1.5 ms.
+- **#477 (slow union of many shapes)**: not tested, as the plan says. Corney's two unions take
+  1.7 ms in all.
+- ☝️ **Arc-against-arc is only partly covered.** LambBT's `fillet: 1` is dropped, so the r = 150
+  circle cuts only lines. The re-cut (an arc on the same circle) and #509 (arcs on one circle) are
+  the only arc-on-arc cases.
+- ☝️ **#377 was tested in one configuration only**: a cutter sharing two whole edges (top and
+  right) with the shape. There, makerjs's result is open, so a closed-chain check catches it. A
+  cutter sharing one edge, or overlapping an edge only in part, was not tested and might give a
+  closed but wrong shape that such a check would miss.

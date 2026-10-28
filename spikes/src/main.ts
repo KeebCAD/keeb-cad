@@ -110,21 +110,29 @@ const OUTLINE_RUNS = 30
 const OUTLINE_TOL = 0.005
 
 /**
- * `?outline`: Corney's `_pcb_outline` built from its model shapes (evaluate + flatten) on the
- * page's main thread, `OUTLINE_RUNS` times after `OUTLINE_WARMUP` builds. Shows the median and
- * max ms and the flattened vertex count.
+ * `?outline` (or `?outline=corney`): Corney's `_pcb_outline` built from its model shapes;
+ * `?outline=lambbt` (story 12): LambBT's `pcb`, its board polygon minus the r = 150 circle
+ * (makerjs `combineSubtraction`). Evaluate, `toSegments`, `mergeCollinear` and flatten on the
+ * page's main thread, `OUTLINE_RUNS` times after `OUTLINE_WARMUP` builds. Shows the median and max ms and the flattened vertex count.
  */
-async function outlineLatency(): Promise<void> {
-  const [{ CORNEY_POINTS }, shapes, { flatten, vertexCount }] = await Promise.all([
+async function outlineLatency(design: string): Promise<void> {
+  const [{ CORNEY_POINTS }, shapes, { flatten, mergeCollinear, toSegments, vertexCount }] = await Promise.all([
     import('./corney'),
     import('./outline-shapes'),
     import('./flatten'),
   ])
-  const points = shapes.readPoints(CORNEY_POINTS)
+  const outline =
+    design === 'corney'
+      ? { shapes: shapes.CORNEY_OUTLINE_SHAPES, id: shapes.CORNEY_OUTLINE_ID, points: shapes.readPoints(CORNEY_POINTS) }
+      : design === 'lambbt'
+        ? { shapes: shapes.LAMBBT_OUTLINE_SHAPES, id: shapes.LAMBBT_OUTLINE_ID, points: shapes.LAMBBT_POSES }
+        : undefined
+  if (!outline) throw new Error(`Unknown outline ${design}`)
   const build = () => {
-    const evaluated = shapes.evaluate(shapes.CORNEY_OUTLINE_SHAPES, shapes.CORNEY_OUTLINE_ID, points)
+    const evaluated = shapes.evaluate(outline.shapes, outline.id, outline.points)
     if (evaluated.kind !== 'model') throw new Error(`${evaluated.id}: ${evaluated.reason}`)
-    return flatten(evaluated.model, OUTLINE_TOL)
+    // The verdict's pipeline: exact paths, collinear splits merged, then the one flatten.
+    return flatten(mergeCollinear(toSegments(evaluated.model)).segments, OUTLINE_TOL)
   }
   for (let i = 0; i < OUTLINE_WARMUP; i++) build()
   const times: number[] = []
@@ -138,6 +146,7 @@ async function outlineLatency(): Promise<void> {
   const medianMs = (sorted[(sorted.length - 1) >> 1]! + sorted[sorted.length >> 1]!) / 2
   show('solved', {
     status: 'solved',
+    outline: design,
     medianMs,
     maxMs: sorted.at(-1)!,
     runs: OUTLINE_RUNS,
@@ -151,7 +160,7 @@ const params = new URLSearchParams(location.search)
 const corney = params.get('corney')
 const engine = params.get('engine') ?? 'tscircuit'
 if (params.has('outline')) {
-  outlineLatency().catch((err: unknown) => show('failed', { status: 'failed', error: `page: ${String(err)}` }))
+  outlineLatency(params.get('outline') || 'corney').catch((err: unknown) => show('failed', { status: 'failed', error: `page: ${String(err)}` }))
 } else if (params.has('external')) {
   if (engine === 'custom') exposeRouteCustom()
   else {
