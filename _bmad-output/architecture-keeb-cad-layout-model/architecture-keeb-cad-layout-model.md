@@ -19,6 +19,7 @@ sources:
   - _bmad-output/architecture-keeb-cad-layout-model/stack-research.md
   - _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md
   - _bmad-output/initiative-keeb-cad-m1/tickets/epic-risk-spikes/geometry-verdict.md
+  - _bmad-output/initiative-keeb-cad-m1/tickets/epic-risk-spikes/routing-verdict.md
   - _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md
 ---
 
@@ -64,7 +65,7 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | **module** | A ready-made board used as a part (nice!nano, nice!view) |
 | **catalogue** | The available part definitions, each with an id and an immutable version |
 | **component** | A named footprint inside a part or key cell (`switch`, `diode`, `led`); has pins |
-| **pad** | A pin on a board: `<side-qualified slot id>.<component>.<pin>` |
+| **pad** | One copper pad of a pin on a board: `<side>/<slot-id>.<component>.<pin>.<copper>[.<copy>]` (Ids convention) |
 | **cutout** | Geometry removed from a plate, PCB or case: part-owned (catalogue, with a role and target) or a user shape |
 | **cutout role** | A cutout's purpose (`switch`, `screw`, `mcu-window`, `display-window`, …); plates select roles |
 | **keep-out** | An area routing must avoid; part-owned (catalogue) or authored |
@@ -87,7 +88,7 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | **netlist** | Every net: matrix rows and columns, power, ground, LED chain, TRRS/UART, display bus, battery |
 | **connection** | One pad pair that a net is split into; realised by a key cell, a part, or routing |
 | **route** | The copper path for one routed connection |
-| **design rules** | Net classes (width, clearance), edge clearance, and keep-out switches |
+| **design rules** | Net classes (width, clearance, via size), edge, hole and drill clearances, and keep-out switches (AD-20) |
 | **DRC** | The design-rule check, implemented once in `drc` |
 | **binding** | What one key does on one keymap layer, from the firmware-neutral vocabulary |
 | **keymap layer** | One ordered entry of the keymap: an id, an editable name, and bindings keyed by side-qualified slot id. PCB layers (F.Cu, B.Cu) are always **copper layers** |
@@ -233,9 +234,9 @@ graph LR
   - `model` imports no other workspace package. `resolve(authored, catalogue)` receives catalogue data from its caller. `insertTemplate(payload)` receives the template from `editor`, which reads it from `library`; `model` mints the ids and suffixes clashing parameter names.
   - **Shared derivations live in `model.resolve`, and only there:** expression evaluation, per-side placements, shapes, the netlist, connections, catalogue lookup.
   - **Every stage output type is defined in `model`** (`PlatesOutput`, `PcbPlacement`, `RouteSet`, `DrcResult`, `CaseOutput`, `FirmwareOutput`).
-  - **Stage signatures:** `(resolved) → { output, violations[] }` for plates, pcb, case, firmware. `routing(resolved, placement, savedRoutes)` and `drc(resolved, placement, routes)`. `exports(resolved, outputs)` packages what `pipeline` hands it.
+  - **Stage signatures:** `(resolved) → { output, violations[] }` for plates, pcb, case, firmware. `routing(resolved, placement, fixedRoutes, { connectionIds, deadline, signal })`, which returns routes for the requested ids only, and `drc(resolved, placement, routes)`. `exports(resolved, outputs)` packages what `pipeline` hands it.
   - **Named stage-to-stage flows, all via `pipeline`:** pcb placement → routing and drc; every stage output → exports. No others.
-  - Only `model` imports `makerjs`. Only `case` imports `clipper2-ts`.
+  - Only `model` imports `makerjs`. Only `case` and `routing` import `clipper2-ts`. Only `routing` and `drc` import `flatbush`.
   - Only `editor` imports Vue. Only `viewer3d` imports three.js; only `editor` imports `viewer3d`. Nothing imports `editor`.
   - **Enforcement:** pnpm strict dependencies, plus dependency-cruiser rules in CI.
 
@@ -267,8 +268,8 @@ graph TD
 - **Prevents:** a UI that blocks on slow geometry; stale outputs shown as current; cache false hits after an app update or a non-geometric edit.
 - **Rule:**
   - **Live:** resolve, plates, pcb placement with key-cell and part tracks, firmware, and DRC of saved routes against the current placement. The preview is `editor` rendering of these, not a stage.
-  - **Background** (Web Workers): case (replicad) and routing. They report progress and partial or failed results; a newer committed revision cancels them. Background stages start only at committed revisions, or after a gesture has been idle for a debounce interval.
-  - **Cache key** = stage id + stage version + catalogue versions used + hash of the resolved slice the stage reads (+ routing hash for drc and exports).
+  - **Background** (Web Workers): case (replicad) and routing. They report progress and partial or failed results; a newer committed revision cancels them. Background stages start only at committed revisions, or after a gesture has been idle for a debounce interval; routing starts only at committed revisions (AD-12). A cancelled routing request stops like a deadline (AD-12): it returns what it placed, which is re-validated before it is kept.
+  - **Cache key** = stage id + stage version + catalogue versions used + hash of the resolved slice the stage reads (+ routing hash for drc and exports; routing hash + requested connection ids for routing). A routing result cut short by a deadline or a cancel is never cached.
   - Every output is tagged with the revision it was computed from (+ routing hash where it reads routes). An output whose tag differs from the current one is shown marked stale, never as current, including on cache hits.
   - The case solid may be cached by its cache key in memory or browser storage; it is never written to the design file.
   - `CaseOutput` carries **bodies**, each `{ id, kind, faces, edges }`, typed arrays shaped like replicad's `mesh()` and `meshEdges()` output, transferred from the case worker without copying, plus the STEP and STL bytes written in the case worker. A body's id is the id of the case operation whose result it is. `model` and `case` never import three.js.
@@ -279,14 +280,20 @@ graph TD
 - **Prevents:** routing on the undo stack; drags destroying routes; stale routes applied blindly; two writers of the routing section.
 - **Rule:**
   - Connections realised by a key cell or a part's fixed tracks are pcb placement and move live. Routing handles only the rest.
+  - Connections are per board and never join pads on two boards; a link between the halves is realised by the cable part. In `split-reversible` the one board's pads are the `left/` placements' pads (with their F, B and TH copies).
   - The routing section holds, per board, routes keyed by connection id. A route is never hand-edited.
   - **A saved route is valid when** its connection still exists, both pads are at the same world positions, and `drc` passes it against the current board.
   - **Only `pipeline` writes the routing section, and only at committed revisions.** At each committed revision it drops invalid routes and requests routing for unrouted connections, passing valid routes as fixed obstacles. During a gesture, saved routes are checked for display only.
+    - The connections whose saved routes were just dropped as invalid (e.g. those a moved part now clashes with) are routed in the same request as the moved part's connections.
+  - **Fixed obstacles** cannot be crossed, moved or ripped up. Another net's fixed copper blocks at the same clearance as the engine's own copper; same-net fixed copper does not block, except that every drill keeps AD-20's drill clearances from every other drill, same net included. The engine returns copper only for the connection ids it is asked to route.
+  - **Deadline:** `pipeline` sets one per request (value Deferred). The engine checks it, and the abort signal, between connections and bounds each connection's search; past it, it returns what it placed and reports the rest unrouted. It never hangs. Golden tests run with no deadline.
+  - **Reroute** is an explicit user action owned by `pipeline`, outside commands and undo: it drops the saved routes in a chosen scope (the whole board, or the routes around a chosen unrouted connection) and routes them again. Automatic routing never moves a valid saved route. `pipeline` does not retry the same unrouted set at the same revision and routing hash.
   - A routing result for an older committed revision is re-validated route by route against the current one before it is kept.
   - The routing section is outside commands and undo. Undo and redo may change copper while staying electrically equal.
-  - Unrouted connections are `unrouted` violations; the UI always shows the count.
-  - Any engine sits behind this one stage interface and runs in a Web Worker in the browser. No helper program, no server, no network.
-  - **Fallback:** whatever the engine can't route stays unrouted and is finished in KiCad after export (escape hatch).
+  - Unrouted connections are `unrouted` violations, including a connection whose saved route was dropped and did not route again; the UI always shows the count.
+  - Any engine sits behind this one stage interface and runs in a Web Worker in the browser. No helper program, no server, no network. The interface stays engine-neutral.
+  - **Milestone-1 engine:** keeb-cad's own keyboard router in `routing`: a two-layer grid A* with rip-up and reroute of its own copper, on `clipper2-ts` and `flatbush`, in TypeScript with no Node or DOM APIs (routing verdict, 2026-10-28). tscircuit capacity-autorouter 0.0.1010 was rejected.
+  - **Fallback:** whatever the engine can't route stays unrouted and is finished in KiCad after export (escape hatch). The verdict graded the engine pass with fallback, so this per-connection fallback is live in milestone 1; the whole-board SM-3 fallback is not triggered.
 
 ### AD-13: Storage behind one interface; milestone 1 is local-only [ADOPTED]
 - **Binds:** editor, storage, library, pipeline
@@ -307,7 +314,13 @@ graph TD
 - **Rule:**
   - `model.resolve` produces the one netlist from component pin roles, the key cell and parts, and splits each net into connections. pcb, routing, drc and firmware consume them and derive none of their own.
   - **Net ids are stable:** derived from ids, never from indices or positions (e.g. column net `col:<chain-id>`, LED link `led:<slot-id>`).
-  - **The split of a net into connections depends only on ids and the netlist, never on positions.** Connection id = net id + the two pads in canonical order. The exact split rule is fixed at the routing spike.
+  - **The split of a net into connections depends only on ids and the netlist, never on positions.** Fixed by the routing spike (`spikes/SPLIT-RULE.md`):
+    - Order the net's pads (on one board, AD-12) and connect each pad to the next: n − 1 connections for n pads, none for fewer than two. No star.
+    - **Order** is the netlist's authored order: a matrix net by each key's index along its chain (matrix assignment rule below), an LED net by LED chain order. Natural order of pad ids breaks ties and orders every other net.
+    - Natural order compares digit runs as numbers (`d2` < `d10`) and other runs by code unit, locale-free. Digit runs equal in value but spelled differently are decided there, by code unit (`"01"` < `"1"`, so `a01b` < `a1a`).
+    - **Connection id** = `<net-id>:<padA>~<padB>`, padA first in natural order. Pad ids follow the Ids convention.
+    - Reversible copies are distinct pads, joined by visible connections and never assumed connected. Pins with no number or no net are obstacles, not pads. No id contains a position.
+  - Each connection carries how it is realised: `fixed-tracks` (a part's fixed tracks), `key-cell` or `routing` (AD-12's first bullet). `model` tags it from the pin pairs that the key cell and catalogue parts declare their tracks join, never from positions; `drc` checks that the placed tracks do join them. Only `routing` connections go to the engine.
   - **Matrix assignment rule:** for each key, the nearest enclosing chain running along *x* gives the column, the nearest running along *y* gives the row. Keys outside an x+y pair go into an additional row in chain order.
   - Matrix row/column, MCU pin assignment and LED chain order can be overridden; overrides are stored in the design. A future optimiser must be a command that writes overrides.
   - A cross-stage golden test asserts that the firmware matrix equals the PCB nets.
@@ -318,7 +331,7 @@ graph TD
 - **Rule:** Milestone-1 exports:
   - plates: DXF, SVG, and gerber + drill (edge + holes board, same writer as the PCB)
   - case: STEP and STL
-  - PCB: gerber (copper, mask, silkscreen, edge) + Excellon drill, **only when `pipeline` holds a DRC result with zero `error` violations and no unrouted connections, tagged with the same revision and routing hash as the routes being exported**; a KiCad 10 board file as the escape hatch, always available
+  - PCB: gerber (copper, mask, silkscreen, edge) + Excellon drill, **only when `pipeline` holds a DRC result with zero `error` violations and no unrouted connections, tagged with the same revision and routing hash as the routes being exported**; a KiCad 10 project (board file plus project and custom-rules files carrying AD-20's values, drill clearances at severity error) as the escape hatch, always available
   - firmware: a ZMK shield with the `zmk,physical-layout` node, wired split over UART and RGB underglow when the population fits them, and the keymap
   - Every export except the KiCad board is **blocked while the resolved slice it reads carries a `model` violation of severity `error`**, reported as `blocked: <kind>`. Warnings never block. The KiCad board exports whatever resolved; when the board edge failed it is written with no Edge.Cuts, never a stale outline.
 
@@ -387,12 +400,13 @@ graph TD
   - Firmware writers translate the vocabulary. A writer is a pure addition.
 
 ### AD-20: One DRC, one set of design rules [ADOPTED]
-- **Binds:** drc, routing, pipeline, exports, model
-- **Prevents:** routes the router calls valid failing the export gate; checkers that disagree; keep-outs that can't be adapted per design.
+- **Binds:** drc, routing, pipeline, pcb, exports, model
+- **Prevents:** routes the router calls valid failing the export gate; checkers that disagree; keep-outs that can't be adapted per design; an engine loosening a class rule to route; co-located drills reaching fab.
 - **Rule:**
-  - `design-rules` is an authored section: net classes (width, clearance) assigned to nets, edge clearance, and per-slot switches that disable a catalogue keep-out (e.g. the nice!nano antenna on a wired design).
-  - `drc` is the only implementation of the check. Routing uses it for route validity; `pipeline` runs it as a stage for live warnings and the export gate.
-  - DRC findings are `drc` violations naming the pads, connections or shapes involved.
+  - `design-rules` is an authored section: net classes (width, clearance, via diameter and drill) assigned to nets, edge clearance, hole clearance (copper to a non-plated hole's edge), two **drill clearances**, drill edge to drill edge, same net or not: **via-to-via** (default 0.25 mm, KiCad's default) and **pad-hole** (a pad hole to any other drill, default 0.45 mm, JLCPCB's 2026-10-28 figure), and per-slot switches that disable a catalogue keep-out (e.g. the nice!nano antenna on a wired design). Pairs inside one catalogue footprint are checked by a `library` test, not by `drc`. The KiCad export writes these values into its project rules.
+  - **Clearance policy:** engines route at the strictest net-class clearance and respect the drill clearances. `drc` checks each net class's own width and clearance and reports violations per net class. No rule is loosened to make an engine route.
+  - `drc` is the only implementation of the check. Routing uses it for route validity; `pipeline` runs it as a stage for live warnings and the export gate. KiCad's DRC is a cross-check only (KiCad 10.0.7 stops some types at 199, and it did not report the spike's one case of crossing traces of different nets).
+  - DRC findings are `drc` violations naming the pads, connections or shapes involved. Every clearance finding, drill clearances included, has severity `error` (blocks gerber + drill, AD-15).
 
 ### AD-21: One design, one electronics configuration [ADOPTED]
 - **Binds:** model, every stage, exports, fixtures
@@ -416,7 +430,7 @@ graph TD
 | Concern | Convention |
 | --- | --- |
 | Naming | Glossary terms only. Packages: `@keeb-cad/<name>`. KDL node names are lowercase glossary terms. Commands are verb+noun camelCase (`setGap`). |
-| Ids | Kebab-case, minted by `model`. Resolved: `<side>/<id>`. Block nodes: `<instance-id>/<block-node-id>`. Pads: `<side>/<slot-id>.<component>.<pin>`. Nets: derived from ids (AD-14). |
+| Ids | Kebab-case, minted by `model`. Resolved: `<side>/<id>`. Block nodes: `<instance-id>/<block-node-id>`. Pads: `<side>/<slot-id>.<component>.<pin>.<copper>[.<copy>]`, where copper is `F`, `B` or `TH` (through-hole) and `.<copy>` (2, 3, …) numbers repeats of one pin and copper in the catalogue footprint's pad order. Reversible copies are distinct pads. Nets: derived from ids (AD-14). |
 | Units in files | Quoted with an explicit unit or as an expression: `"19mm"`, `"1u"`, `"-15deg"`, `"wall + gap"`. |
 | Violations | `{ kind, severity: error \| warning, ids, message }`. Design problems never throw. Commands that can't apply return a typed rejection. Each kind has one owner. `model`: `anchor-cycle`, `construction-undefined` (error: a construction point from parallel or coincident lines; ids name the point and its two lines; it and its dependents are not evaluated), `unresolvable-reference` (warning when a key-cell reference names a cell not defined yet, the slot placing with no footprint; error otherwise), `shape-failed` (error: a resolved shape fails AD-16's checks; ids name the shape and its operands; it and its dependents are not output), `unit-mismatch`, `unsupported-form`, `pitch-below-min`, `overlap`, `binding-unsupported`, `format-too-new`, `migration-failed`. `routing`: `unrouted`. `drc`: `drc`. A stage reports only its own kinds. |
 | Stable outputs | Same file + same app version → same bytes for every export. No clocks, randomness, locale or random UUIDs in outputs; tool-generated ids (KiCad UUIDs) are derived from design ids. Only routes are history-dependent, and they are saved. |
@@ -427,7 +441,7 @@ graph TD
 
 ## Stack
 
-Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-26 (renderers, npm) and 2026-10-28 (clipper2-ts and makerjs, npm and GitHub).
+Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-26 (renderers, npm) and 2026-10-28 (clipper2-ts and makerjs, npm and GitHub); 2026-10-28 (flatbush, npm).
 
 | Name | Version |
 | --- | --- |
@@ -442,7 +456,8 @@ Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-2
 | dependency-cruiser | 18.7.0 |
 | Prettier | 3.9.10 |
 | makerjs (maintenance mode; geometry unchanged since 0.18.1, which Ergogen uses) | 0.19.2 |
-| clipper2-ts (BSL-1.0; case offsets only, AD-18). Pinned exactly: semver sorts the older stable `2.0.1` above it, and that lacks the `inflatePathsD` and `ClipperD` scaling fixes | 2.0.1-18 (exact) |
+| clipper2-ts (BSL-1.0; case offsets (AD-18) and the router (AD-12)). Pinned exactly: semver sorts the older stable `2.0.1` above it, and that lacks the `inflatePathsD` and `ClipperD` scaling fixes | 2.0.1-18 (exact) |
+| flatbush (ISC; `routing` and `drc` spatial index) | 4.6.2 |
 | replicad / replicad-opencascadejs | 1.2.0 / 1.1.0 |
 | @bgotink/kdl (KDL v2) | 0.4.1 |
 | @tarikjabiri/dxf | 2.9.0 |
@@ -512,19 +527,23 @@ graph TD
 
 | Decision | Why it can wait | Revisit when |
 | --- | --- | --- |
-| **Routing spike (scheduled first):** tscircuit capacity-autorouter vs Freerouting via CheerpJ, on Corney Island: incremental routing with fixed existing routes, a pre-routed module zone, and the connection split rule (AD-14). Exit criteria: no network at runtime (CheerpJ's free licence requires loading from its servers; Freerouting is GPL-3.0); installs under pnpm strict with TypeScript 6 | Hidden behind AD-12 | First work item. If it fails, SM-3 counts the KiCad export routed outside keeb-cad as done |
+| Router reroute coverage: after the wired Corney move, `ULED_1:LED22.2.F~LED23.4.B` and `ULED_1:LED23.4.B~LED23.4.F` (dropped as invalid) did not route again; the reroute was tested on one key, one delta, one run, on Corney only, with a router tuned on that board | Unrouted connections stay visible (AD-12); the routing verdict graded pass with fallback | epic-routing-and-fab (pinned to epic-risk-spikes 2.13): route them, by Reroute (AD-12) or otherwise, or show why not; test more moves and a board the router was not tuned on |
+| Router memory budget: the spike measured the worker JS heap only (wired 96.4 MiB), without typed arrays (about 120 MiB more, estimated) | No M1 budget is set; Corney fits | epic-routing-and-fab: measure with typed arrays and set a budget |
+| Drill clearances untested in the router: the graded runs had no via-to-via or pad-hole rule (wired Corney got 45 `hole_to_hole` and 27 `holes_co_located` KiCad warnings), so completion with AD-20's drill clearances is unmeasured | The verdict's grade stands on the rules it ran | First routing story of epic-routing-and-fab: rerun the Corney scorecards with both drill clearances in the router's input |
+| Bare wired Corney fails AD-20 before routing: 216 LED pads sit 0.21 mm from their own footprint cutout against the 0.30 mm edge clearance (and 4 `invalid_outline`), all `error`, so its gerbers are blocked | Routing is graded on added errors (verdict Decision 1) | epic-parts-and-pcb: change the LED footprint or add a catalogue-declared exemption, before the first gerber story |
+| Routing deadline value per request | Set by `pipeline`; Corney routes in about 13 s | epic-routing-and-fab, first routing story |
 | makerjs booleans not covered by the geometry verdict (2026-10-28): arc against arc (a cut through a fillet), #377 with one shared edge or a partial overlap (might give a closed but wrong shape that `shape-boolean-failed` misses), #477 union cost on a 50-key plate, and whether plate hole loops export the same as a subtraction | Corney and LambBT pass; the verdict covers the rest | epic-shapes-and-plates, before relying on them. A failure reopens AD-16 (compare against clipper2 there) |
 | Shape `offset` latency: makerjs `model.outline` takes about 70 ms on Corney's outline, more than a live frame | No M1 shape uses an offset: Corney's walls are case offsets in `tray` (AD-18), and LambBT has none | When a design's outline uses an offset and live editing hurts: own exact offset or a worker |
 | **ZMK wired split vs Corney's single-wire TRRS** (`R2: DAT`): v0.3.0 supports only two-wire full-duplex UART; half-duplex is experimental. Choose: rewire for TX/RX, hardware-test half-duplex, or BLE split | Netlist comes from catalogue pin roles either way | Before the firmware story; blocks SM-4 for the wired design |
-| Gerber + drill writer: own vs `circuit-json-to-gerber`; ground pours | Hidden inside `exports` | After the routing spike |
-| KiCad writer: `kicadts` vs own; KiCad schematic export | Hidden inside `pcb`; the board file suffices as escape hatch | First pcb story |
+| Gerber + drill writer: own vs `circuit-json-to-gerber`; ground pours | Hidden inside `exports` | epic-routing-and-fab, before the first gerber story |
+| KiCad writer: `kicadts` vs own; KiCad schematic export | Hidden inside `exports` (it reads placement and routes); the project suffices as escape hatch | First pcb story |
 | Case-offset corner mapping (AD-18: sharp with a fillet, done as open and close) against Ergogen's `expand` with pointed joints and `fillet: 0.5` | Untested; the case stage runs in the background | epic-tray-case, against Corney's case fixture within ±0.05 mm, before relying on it. A failure reopens AD-18's corner table |
 | Live latency target, set on the max, not the median (Corney's outline: median 1.7–6.9 ms, max 28.4 ms under load) | Needs live stages to measure | Once live stages exist; move the evaluator off the main thread if the max misses it |
 | Corney Island's own ZMK keymap (sizes the neutral vocabulary) | Not in `layout-model/sources` | Before the keymap story |
 | Footprint licence (ceoloide derivation with attribution) | Data, not structure | Before footprint library work |
 | Construction point kinds beyond line intersection; averaged anchors | Corney uses intersection only | During the Corney rebuild |
 | Default LED-order and MCU pin assignment rules | Overrides cover Corney (AD-14) | First netlist story |
-| `split-mirrored` and `unibody` implementation | Model ready (AD-6) | When a reference board is chosen, or at the routing verdict if reversible Corney doesn't route in the browser (epic-risk-spikes story 13) |
+| `split-mirrored` and `unibody` implementation | Model ready (AD-6) | When a reference board is chosen (reversible Corney routes in the browser: routing verdict 2026-10-28) |
 | Konva copper layer under the PCB SVG (konva 10.9.0 + vue-konva 4.0.1) | Corney is ~100 keys; SVG covers M1 (AD-22) | If PCB canvas frame time hurts during gestures; selectable items stay SVG |
 | Assembly view: plate and PCB bodies at real heights | Deferred past M1 (initiative Decision 2026-10-26); the 3D viewer already takes a list of bodies (AD-22) | After milestone 1 |
 | MX, Choc v1, EC11, stabilisers and wide-key rules | Not needed by Corney | Milestone 2 |
