@@ -104,10 +104,55 @@ const BROKEN_ID = 'NOPE:X1.1.F~X2.1.F'
 
 const pageFailed = (err: unknown) => show('failed', { status: 'failed', error: `page: ${String(err)}`, traces: [], ms: 0, thrown: true })
 
+/** `?outline` (story 11): builds after a warm-up, timed one by one on the main thread. */
+const OUTLINE_WARMUP = 5
+const OUTLINE_RUNS = 30
+const OUTLINE_TOL = 0.005
+
+/**
+ * `?outline`: Corney's `_pcb_outline` built from its model shapes (evaluate + flatten) on the
+ * page's main thread, `OUTLINE_RUNS` times after `OUTLINE_WARMUP` builds. Shows the median and
+ * max ms and the flattened vertex count.
+ */
+async function outlineLatency(): Promise<void> {
+  const [{ CORNEY_POINTS }, shapes, { flatten, vertexCount }] = await Promise.all([
+    import('./corney'),
+    import('./outline-shapes'),
+    import('./flatten'),
+  ])
+  const points = shapes.readPoints(CORNEY_POINTS)
+  const build = () => {
+    const evaluated = shapes.evaluate(shapes.CORNEY_OUTLINE_SHAPES, shapes.CORNEY_OUTLINE_ID, points)
+    if (evaluated.kind !== 'model') throw new Error(`${evaluated.id}: ${evaluated.reason}`)
+    return flatten(evaluated.model, OUTLINE_TOL)
+  }
+  for (let i = 0; i < OUTLINE_WARMUP; i++) build()
+  const times: number[] = []
+  let loops: ReturnType<typeof build> = []
+  for (let i = 0; i < OUTLINE_RUNS; i++) {
+    const start = performance.now()
+    loops = build()
+    times.push(performance.now() - start)
+  }
+  const sorted = times.toSorted((a, b) => a - b)
+  const medianMs = (sorted[(sorted.length - 1) >> 1]! + sorted[sorted.length >> 1]!) / 2
+  show('solved', {
+    status: 'solved',
+    medianMs,
+    maxMs: sorted.at(-1)!,
+    runs: OUTLINE_RUNS,
+    vertices: vertexCount(loops),
+    loops: loops.length,
+    tol: OUTLINE_TOL,
+  })
+}
+
 const params = new URLSearchParams(location.search)
 const corney = params.get('corney')
 const engine = params.get('engine') ?? 'tscircuit'
-if (params.has('external')) {
+if (params.has('outline')) {
+  outlineLatency().catch((err: unknown) => show('failed', { status: 'failed', error: `page: ${String(err)}` }))
+} else if (params.has('external')) {
   if (engine === 'custom') exposeRouteCustom()
   else {
     const worker = tscircuitWorker()

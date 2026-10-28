@@ -625,3 +625,102 @@ outbound-request block are the base run's.
   fixed obstacle). With the conflicting routes rerouted it routes.
 - Wireless's saved count is 143, not story 7's 140, because the saved routes are each engine's
   own base run (custom routes all 152, tscircuit 144).
+
+## makerjs rebuilds Corney's outline (story 11)
+
+`pnpm test` (`src/outline.test.ts`) and `pnpm route` (`e2e/outline.spec.ts`). AD-16 leaves the
+flatten function and its tolerance to this spike: can makerjs, driven from our own shape model,
+rebuild Corney's `_pcb_outline` within ±0.05 mm, and how long does it take on the main thread?
+
+- **Shape model** (`src/outline-shapes.ts`). Shapes are data: `polygon` (vertices), `add` (union
+  of `shape-ref`s, in order), `fillet` (`of` a `shape-ref`, `radius`). A vertex is an anchor (a
+  point name) plus a shift in the anchor's frame (rotated by its `r`). A construction point is
+  the intersection of two lines, each through a vertex at an angle in that vertex's frame (90 =
+  its y axis, which is what Ergogen's `aggregate: intersect` uses); its frame has `r = 0`.
+  `CORNEY_OUTLINE_SHAPES` is transcribed from `config.yaml` (`ks = kp = 19`): `_matrix_outline`
+  (18 vertices), a 5-vertex plate polygon, `_plate_outline` = their `add`, the 4-vertex
+  `_backplate_additional_outline`, `_backplate_outline` = `add` of those, and `_pcb_outline` =
+  `fillet` 0.5 of that. Anchor poses come from `points.yaml` (`readPoints`, a line parser like
+  `keysOf`), except the two construction points `mcu_cover_bottom_left` and
+  `plate_additional_outline_bottom_left`, which are computed.
+- **Evaluator** (`evaluate(shapes, id, points)`): `polygon` → `makerjs.models.ConnectTheDots`
+  (closed), `add` → `makerjs.model.combineUnion`, `fillet` → `makerjs.chain.fillet` on every
+  chain of `makerjs.model.findChains`. It returns a fresh makerjs model (exact lines and arcs,
+  Ergogen frame), or a typed `{kind: 'construction-undefined', id, reason}` when a construction
+  point it needs has parallel lines; nothing that depends on it is built and nothing throws.
+- **Exact check**: `toSegments(model)` (`src/flatten.ts`) walks the paths into KiCad-frame
+  `Segment`s (`(x, −y)`; arc mid at the mid-angle), then `compareSegments(edgeCuts, candidate)`
+  against each design's Edge.Cuts (read from `CORNEY` with `readKicadPcb`).
+- **Flatten** (`flatten(model | segments, tol)`): chains the segments into loops
+  (`chainLoops`), keeps lines, and turns each arc into `n = ceil(sweep / (2·acos(1 − tol/r)))`
+  equal chords, so no chord's sagitta exceeds `tol`. **Flattened check**
+  (`flattenedDeviation(reference, polyline)`): the symmetric max distance between the polyline
+  and the fixture's exact segments (exact point-to-line and point-to-arc distances), both ways,
+  sampling each curve every 0.005 mm. The sampled max is a lower bound; `+ step/2` is an upper
+  bound (distance is 1-Lipschitz along a curve), and the test asserts the upper bound ≤ 0.05 mm.
+- **Negative control**: `matrix_outer_bottom`'s vertex shifted 0.06 mm in x (in the shape data)
+  fails `compareSegments` and has a flattened deviation (lower bound) of 0.063 mm, so both
+  checks can fail. Parallel lines (`mcu_cover_bottom_left` built from two `r = 0` y axes) give
+  `construction-undefined` with no throw; the backplate union and the fillet are not called,
+  and `_plate_outline`, which does not need that point, still evaluates.
+- **Latency**: `?outline` runs 5 warm-up builds, then 30 timed builds (evaluate + flatten at
+  the chosen tol) one by one on the page's main thread, and shows `{status, medianMs, maxMs,
+  runs, vertices, loops, tol}`. `e2e/outline.spec.ts` blocks every non-local request and fails on
+  any console error, warning or page error.
+
+### Results (2026-10-28, makerjs 0.19.2, Node 26.12.1, Vitest 4.1.12, Chromium headless from Playwright 1.64.1)
+
+Wired and wireless share one `_pcb_outline` (their Edge.Cuts are identical, 19 lines + 18
+arcs), so every number below is the same for both.
+
+| | wired | wireless |
+|---|---|---|
+| makerjs paths (before / after the collinear merge) | 38 / 37 | 38 / 37 |
+| exact: `compareSegments` | pass, 37 / 37 | pass, 37 / 37 |
+| exact: max deviation | 1.0e-7 mm | 1.0e-7 mm |
+| construction points vs `points.yaml` | 2.1e-10 mm each | (same points) |
+| flattened at tol 0.005: deviation (lower / upper bound) | 0.0046 / 0.0071 mm | 0.0046 / 0.0071 mm |
+| flattened vertices (1 loop) | 115 | 115 |
+| main thread, evaluate + flatten, 30 builds | median 1.70–6.90 ms, max 2.60–28.4 ms over six runs (spec alone or in `verify`; the high ones on a loaded machine, load average about 11) | (one build serves both) |
+
+Tolerance sweep (`flatten` of the same segments, mean of 20 runs after a warm-up, Node):
+
+| tol mm | vertices | flattened deviation mm | upper bound mm | flatten ms |
+|---|---|---|---|---|
+| 0.001 | 226 | 0.00091 | 0.00341 | 0.13–0.20 |
+| 0.005 | 115 | 0.00457 | 0.00707 | 0.07–0.10 |
+| 0.01 | 85 | 0.00967 | 0.01217 | 0.10–0.20 |
+| 0.025 | 68 | 0.01704 | 0.01954 | 0.08 |
+
+- **Latency**: the median is two to seven milliseconds a build, so a typical rebuild fits a
+  16 ms frame on the main thread. The max is the noisy figure: 2.6 ms on a quiet run, but up to
+  28.4 ms on a loaded machine (likely GC or scheduling), which would drop a frame. No worker is
+  needed for Corney's outline, but the live latency target (architecture Deferred) should be set
+  on the max, not the median.
+- **Chosen tolerance: 0.005 mm, fixed.** Flattening then costs under 0.005 mm of the 0.05 mm
+  budget (a tenth), leaving the rest for everything downstream (offsets, clipper booleans, KiCad
+  export rounding). 0.001 doubles the vertex count (226) for no gain at this budget; 0.01 and
+  0.025 save only 30–47 vertices while eating a fifth to a third of the budget. Flatten time is
+  well under a millisecond at every value, so time does not decide it; vertex count (what every
+  later polygon operation pays for) and budget share do. The flattened deviation is the arcs'
+  sagitta: the exact paths match the fixture to 1e-7 mm, so flatten is the only error, as the
+  plan's design note expected.
+- **makerjs quirk: the union splits one edge.** `combineUnion(_plate_outline,
+  _backplate_additional_outline)` breaks the plate's top edge (y = 52.99) at
+  `mcu_cover_top_left` (205.113, 52.99), where the other polygon's vertex lies on it: 38 paths,
+  and the fixture's line #17 is two collinear lines. Ergogen's own export of
+  `_backplate_outline` (makerjs, `combine` with its own options) does not split there. Per the
+  plan, `mergeCollinear` joins lines that share an end within 1e-6 mm and run the same way
+  within 1e-6 rad, before `compareSegments`; it records each join (exactly one, at 205.113) and
+  never drops or invents a segment. The fixture's own collinear-looking corner at (224.518,
+  113.997) is a source polygon vertex 3.8e-5 rad off straight, so it is not merged, and makerjs
+  leaves it unfilleted exactly as Ergogen did. The flattened polyline keeps the split's extra
+  vertex (it is in the 115); a production flatten should merge collinear lines first.
+- **makerjs quirk: `chain.fillet` leaves near-collinear corners sharp** (that corner above), and
+  the fixture has the same sharp corner, so this matches Ergogen rather than being a defect here.
+- **makerjs typings**: `IPoint` is an index signature, not a tuple, and `findChains` returns a
+  union with its map form, so `src/` casts `IPathLine` / `IPathArc` / `IChain[]` after the type
+  guards.
+- ☝️ **Ergogen itself uses makerjs.** A pass shows that makerjs reproduces Corney when driven
+  from our shape model, not that makerjs is sound on unusual arc booleans; entry 12's LambBT case
+  covers that.

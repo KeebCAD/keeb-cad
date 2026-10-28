@@ -23,3 +23,6 @@ export function keysOf(pointsYaml: string): string[] {
 }
 
 export const CORNEY_KEYS: readonly string[] = keysOf(points)
+
+/** points.yaml's text (anchor poses, read by `readPoints` in `outline-shapes.ts`). */
+export const CORNEY_POINTS: string = points
