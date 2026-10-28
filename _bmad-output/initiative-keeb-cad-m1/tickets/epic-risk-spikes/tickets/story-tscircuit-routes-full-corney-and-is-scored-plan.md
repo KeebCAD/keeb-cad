@@ -3,7 +3,7 @@ title: 'tscircuit routes full Corney and is scored'
 type: 'feature'
 ticket: '6'
 created: '2026-10-27'
-status: 'built'
+status: done
 baseline_revision: 'adb172958caca4bbfd62017acd90568ecac2fb87'
 route: 'full'
 route_source: 'auto'

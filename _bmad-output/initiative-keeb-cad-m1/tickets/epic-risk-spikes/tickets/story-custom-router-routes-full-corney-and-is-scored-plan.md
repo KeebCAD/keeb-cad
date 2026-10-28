@@ -3,7 +3,7 @@ title: 'Custom router routes full Corney and is scored'
 type: 'feature'
 ticket: '9'
 created: '2026-10-27'
-status: 'built'
+status: done
 baseline_revision: '2ce65d14b3bd083c7e302fd6cf7feaa7198b2e45'
 route: 'full'
 route_source: 'auto'

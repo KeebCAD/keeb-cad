@@ -3,7 +3,7 @@ title: 'Custom router routes the key matrix'
 type: 'feature'
 ticket: '8'
 created: '2026-10-27'
-status: 'built'
+status: done
 baseline_revision: 'f5c84b43b514850931fcc3f34406a88e4cbae17a'
 route: 'full'
 route_source: 'auto'

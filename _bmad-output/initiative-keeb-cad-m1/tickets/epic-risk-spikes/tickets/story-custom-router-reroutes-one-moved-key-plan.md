@@ -3,7 +3,7 @@ title: 'Custom router reroutes one moved key'
 type: 'feature'
 ticket: '10'
 created: '2026-10-27'
-status: 'built'
+status: done
 baseline_revision: 'c3a69f1e97b11dbf04a9ded6df52119fa8167247'
 route: 'full'
 route_source: 'auto'

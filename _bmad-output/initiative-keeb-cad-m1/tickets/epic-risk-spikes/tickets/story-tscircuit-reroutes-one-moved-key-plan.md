@@ -3,7 +3,7 @@ title: 'tscircuit reroutes one moved key'
 type: 'feature'
 ticket: '7'
 created: '2026-10-27'
-status: 'built'
+status: done
 baseline_revision: 'a4523508576e19eb6457ef48b63920e42acaa7ad'
 route: 'full'
 route_source: 'auto'

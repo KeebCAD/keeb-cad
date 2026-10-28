@@ -3,7 +3,7 @@ title: 'Routes written back and checked by drc'
 type: 'feature'
 ticket: '5'
 created: '2026-10-27'
-status: 'built'
+status: done
 baseline_revision: '91867ab6dd575afdcbe431e1e881398e89ca431c'
 route: 'full'
 route_source: 'auto'
