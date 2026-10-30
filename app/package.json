@@ -5,12 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
+    "build": "vite build",
     "preview": "vite preview",
     "test:unit": "vitest",
-    "test:e2e": "playwright test",
-    "build-only": "vite build",
-    "type-check": "vue-tsc --build"
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "pinia": "^4.0.3",
@@ -19,14 +17,13 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
-    "@tsconfig/node24": "^24.0.5",
+    "@tsconfig/node26": "^26.0.1",
     "@types/jsdom": "^30.0.0",
-    "@types/node": "^24.13.4",
+    "@types/node": "^26.6.6",
     "@vitejs/plugin-vue": "^6.0.8",
     "@vue/test-utils": "^2.5.0",
     "@vue/tsconfig": "^0.9.1",
     "jsdom": "^30.0.1",
-    "npm-run-all2": "^9.0.3",
     "typescript": "catalog:",
     "vite": "^8.2.2",
     "vite-plugin-vue-devtools": "^8.2.1",

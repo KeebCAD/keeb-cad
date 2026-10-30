@@ -15,14 +15,14 @@
     "format": "prettier --write .",
     "depcruise": "depcruise packages app/src fixtures --config .dependency-cruiser.mts",
     "test": "vitest run",
-    "build": "pnpm --filter @keeb-cad/editor build-only",
+    "build": "pnpm --filter @keeb-cad/editor build",
     "smoke": "pnpm --filter @keeb-cad/editor test:e2e",
     "check:fast": "pnpm lint && pnpm format:check && pnpm depcruise",
     "check": "pnpm typecheck && pnpm check:fast && pnpm test && pnpm build && pnpm smoke"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@types/node": "^24.13.4",
+    "@types/node": "^26.6.6",
     "@vitest/eslint-plugin": "^1.6.27",
     "@vue/compiler-sfc": "3.5.44",
     "@vue/eslint-config-prettier": "10.2.0",

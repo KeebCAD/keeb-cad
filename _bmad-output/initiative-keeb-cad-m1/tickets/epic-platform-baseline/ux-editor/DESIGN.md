@@ -338,6 +338,10 @@ The posture is **calm drafting table**: the canvas carries the color, the chrome
 
 **Precedence.** Where a mock conflicts with the spine documents (DESIGN.md, EXPERIENCE.md), the spines win.
 
+**Logo and favicon (decided 2026-10-30).** The mark is Sergii's split logo: two 2×2 halves, each rotated as a group so the outer columns sit lower, with a dimension line across the split. → `brand/logo-mark.svg`. The wordmark "Keeb / CAD" is HTML text set beside the mark, never baked into the SVG. The favicon is one half of the mark → `brand/favicon.svg` (served as `app/public/favicon.svg`). Below about 48px, use the favicon rather than the full mark.
+
+**Brand colors are not UI colors.** Blue `#667eea` and purple `#764ba2` appear only in the logo and the favicon. On dark backgrounds the purple is lifted to `#9b7fd4`, because `#764ba2` reaches only 1.9:1 on Frappé. They never style chrome, canvas or states, so they cannot be mistaken for Mauve, which means selection.
+
 ## Colors
 
 Every color is a Catppuccin role with one job. Values are in the frontmatter. → `mockups/color-themes-1.html` (variation 5 for colors, except its superseded Peach selection), `mockups/selection-accent-1.html` (option c, Mauve), `mockups/latte-canvas-1.html` (option b, the Latte canvas).

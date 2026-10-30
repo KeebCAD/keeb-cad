@@ -70,7 +70,7 @@ export default defineConfigWithVueTs(
 
   {
     ...pluginVitest.configs.recommended,
-    files: ['**/*.spec.ts', '**/__tests__/**'],
+    files: ['**/*.spec.ts'],
     ignores: ['app/e2e/**'],
   },
 

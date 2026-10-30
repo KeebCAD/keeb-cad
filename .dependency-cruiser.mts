@@ -20,7 +20,7 @@ export const VUE = String.raw`(^|/)node_modules/(${VUE_NAMES})/|^(${VUE_NAMES})(
 const ANY_PACKAGE = ws('[^/]+')
 // Editor and fixtures targets belong to their own rules, so nothing double-reports.
 const OWNED_ELSEWHERE = [EDITOR, FIXTURES]
-const TEST_FILE = String.raw`\.(spec|test)\.ts$|(^|/)__tests__/`
+const TEST_FILE = String.raw`\.(spec|test)\.ts$`
 
 /** `from` packages may import only their own files plus `allowed` packages. */
 const importsOnly = (

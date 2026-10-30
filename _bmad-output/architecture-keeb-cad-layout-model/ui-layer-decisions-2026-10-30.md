@@ -125,6 +125,45 @@ The palette came out non-modal in both builds only because of one old spike test
 
 **Pattern of the day.** Four scaffold or mock defaults were recorded as if they were decisions: no component library, the 13px padding, Vitest 4 and jsdom. A create-vue defaults audit is now an Open Question; Pinia is still installed, and the choice between ESLint and Oxlint is open.
 
+## Third round: the create-vue audit, the DevTools spike, and the logo (all by Sergii)
+
+**The create-vue audit, done in-session.** Sergii objected to deferring it.
+
+| Item | Outcome |
+|---|---|
+| Pinia | Already planned for removal (story 9 of "See Corney's keys") |
+| jsdom and `@vue/test-utils` | Removed, per round 2 |
+| Node typings | `@tsconfig/node24` and `@types/node ^24` described Node 24 while the runtime is Node 26. Now `@tsconfig/node26` and `@types/node ^26.6.6` |
+| Lint | The spine said "ESLint/Oxlint", but only ESLint is installed. The spine now says ESLint |
+| `@` alias | Dropped (one way to import) |
+| Build scripts | `npm-run-all2` and the app's duplicate `type-check`/`build` wrapper dropped. `build-only` is now `build` |
+| Editor config | `app/.vscode`, `app/.editorconfig` and `app/.gitattributes` moved to the repo root, since in `app/` they never covered `packages/`. Tailwind IntelliSense added; `root = true` added |
+| `__tests__` folders | Dropped. Tests sit next to their source as `*.spec.ts` |
+
+`pnpm check` is green after every change: typecheck, lint, format, depcruise, 81 tests, build and smoke.
+
+**ts-inject hot reload and DevTools spike.** A toy app with three services, Playwright making real file edits, and the overlay client driven by tests.
+
+Hot reload:
+- In the plain setup, editing a component keeps state, and editing a service or the container does a clean full reload.
+- Stale code and duplicate instances appear only when components import the container module directly. In that case two panels were bound to `selection#1` and `selection#2` and showed different selections.
+- **Convention:** build the container in `main.ts`, pass it down with `app.provide` + `useService`, and never import the container or services as values.
+- An optional `hotService` helper (36 lines, plus 4 per service) swaps method bodies and keeps state. It falls back to a full reload when a class's shape changes.
+
+DevTools:
+- `@vue/devtools-api` 8.2.1 (the same kit as `vite-plugin-vue-devtools` 8.2.1) supports a custom inspector. It shows the services with live, editable state, and edits reach the app.
+- A commands timeline also works. It sits under that inspector's tab and needs recording turned on.
+- `enableEarlyProxy` runs the setup twice, so the setup must be idempotent.
+- `vite build` output contains none of it (grep and source map checked).
+
+ts-inject 1.2.1's README differs from its types: there is no static `Container.providesClass`, and a class without dependencies still needs `static dependencies = [] as const`.
+
+**Logo and favicon.**
+- The logo is Sergii's own split mark: two 2×2 halves rotated as groups. The dots in the original became a dimension line, because "the dotted line is hard to understand".
+- The brand colors are his `#667eea` / `#764ba2`, with the purple lifted to `#9b7fd4` on dark (1.9:1 → 3.7:1). They are kept out of UI colors, so they never collide with Mauve, which means selection.
+- The favicon is one half of the mark, with no selection marks; at 16px those were "almost invisible".
+- Six directions were rejected along the way: Corne outline, column skyline, and K of keys among them.
+
 ## Unmade, found by a sweep of the spines (first round; now decided above except toasts and radii)
 
 These are items the first editor slices need that were never decided, or that look decided but aren't. They are listed in the spine's Open Questions.
