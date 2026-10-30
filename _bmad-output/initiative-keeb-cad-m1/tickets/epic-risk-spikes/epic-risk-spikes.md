@@ -8,6 +8,7 @@ companions: [_bmad-output/initiative-keeb-cad-m1/tickets/epic-risk-spikes/resear
 after: []
 refined: true
 risk: high
+status: done
 ---
 
 # Routing and geometry risks answered
@@ -59,8 +60,8 @@ The two highest risks are answered before the epics that depend on them start.
 
 ## Notes
 
-- Assumption: the reference machine for the routing time budget of about 60 s is the user's own development laptop.
-- Assumption: converting `.kicad_pcb` to engine input is shared spike glue, written once and used by both routers.
+- Assumption (confirmed 2026-10-30): the reference machine for the routing time budget of about 60 s is the user's own development laptop.
+- Assumption (confirmed 2026-10-30): converting `.kicad_pcb` to engine input is shared spike glue, written once and used by both routers.
 - Decision (2026-10-26): licence gate relaxed. GPL code is allowed only as a separately loaded worker module that exchanges standard file formats (DSN/SES), with its source offered. keeb-cad itself stays permissive. A native helper stays out (C1, AD-12).
 - Decision (2026-10-26): the autorouter research (companion) is adopted. Freerouting, krt-wasm and Topola are dropped as runtime candidates.
 - Decision (2026-10-26): the routing spike tests tscircuit `@tscircuit/capacity-autorouter`, plus a timeboxed custom TypeScript keyboard-router prototype (clipper2-ts + flatbush) on the same Corney board, for a head-to-head comparison.
@@ -84,3 +85,4 @@ The two highest risks are answered before the epics that depend on them start.
 - Decision (2026-10-28, routing verdict, stories 5–10): the custom keyboard router is M1's routing engine, graded pass with fallback; tscircuit capacity-autorouter is graded fail; the tie-break was not needed and the SM-3 fallback is not triggered. The custom router routes reversible Corney in full in a Web Worker, wired 333/333 in 13.2 s and wireless 152/152 in 2.7 s, with `drc` and KiCad errors added 0. After a single-key move it reroutes the key in full (19/19, 9/9), leaves every valid saved route unchanged, reroutes the invalid ones and adds no copper to the module zone. Wired is 331/333 after the move (two `ULED_1` connections unrouted), which sets the tier, and those two become an epic-routing-and-fab requirement. tscircuit adds 3418/950 (wired) and 250/240 (wireless) `drc`/KiCad errors, fails the wired reroute under both methods and takes 244.3 s on wired. The split rule is fixed as `spikes/SPLIT-RULE.md` (natural-order chain, `<net>:<padA>~<padB>`). The clearance policy is shown, and AD-20 gains a hole-to-hole rule. Split-reversible stays the M1 form, since reversible Corney routes in the browser. Limits: one run, one move, only Corney, a router tuned on its test board, and the cost of owning a router not weighed. AD-12, AD-14 and AD-20 changes go to `bmad-architecture` (`routing-verdict.md`). Signed off by the user on 2026-10-28.
 - Decision (2026-10-28, architecture update, commit 8eee956): the routing verdict landed in AD-10, AD-11, AD-12, AD-14, AD-15 and AD-20. Three of the user's architecture calls supersede the verdict's text: the split chains a net's pads in authored order (each key's index along its chain, LED chain order; natural order of pad ids breaks ties), not natural order alone; design-rules carries two drill clearances, via-to-via 0.25 mm and pad-hole 0.45 mm, both errors, in place of the verdict's single hole-to-hole rule; a connection blocked by valid saved routes is resolved by an explicit Reroute action in `pipeline`, never by automatic rip-up. The verdict's follow-ups moved to epic-routing-and-fab and epic-parts-and-pcb.
 - Decision (2026-10-28): both verdicts signed off, so `spikes/` is archived on branch `archive/spikes` at commit af42eec7714ad1f023eaf4dc17d873be6f2bfa5d and removed from main. The verdicts' and the architecture's `spikes/...` paths (README, scorecards, SPLIT-RULE.md, tests) resolve on that branch.
+- Decision (2026-10-30): epic closed on the user's confirmation after the closure check. Every Done when and R1–R8 is met by evidence: `fixtures/` and its harness are committed and `pnpm check` passes, both verdicts are signed off, `spikes/` is archived and no spike code ships. Nothing was dropped. Carried forward: the AD-20 drill-clearance violations on wired Corney (stacked same-net vias) must become Requirements when epic-routing-and-fab and epic-parts-and-pcb are refined, and downstream entries are pinned to 2.2, 2.4, 2.12 and 2.13 as those epics are sliced.
