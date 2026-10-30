@@ -18,7 +18,7 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | Rotation handle, Anchor link, Pick marks, Nudge-step control | drag keys (15) | 15.5, 15.6 |
 | Anchor picker | drag keys (15) | 15.6 |
 | Command palette, Context menu, Cheat sheet | drag keys (15) | to plan |
-| Outline context line, Shapes marks (pieces, vertices, construction points) | outline follows the keys (17), extended by draw custom pieces (18) | to plan |
+| Outline context line, Outline marks (pieces, vertices, construction points) | outline follows the keys (17), extended by draw custom pieces (18) | to plan |
 | Operation list, Vertex table | draw custom pieces (18) | to plan |
 | Part field, Part picker | plates to DXF (19) | 19.2 |
 | Plate fields, Export menu | plates to DXF (19) | 19.3, to plan |

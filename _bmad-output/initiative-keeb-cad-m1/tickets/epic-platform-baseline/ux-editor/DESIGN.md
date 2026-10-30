@@ -2,7 +2,7 @@
 name: keeb-cad editor
 description: Browser-only visual keyboard CAD for one expert builder. Catppuccin Frappé dark by default, Latte light; calm density; canvas first, chrome quiet.
 status: final
-updated: 2026-10-26
+updated: 2026-10-30
 colors:
   # Unsuffixed = dark (Catppuccin Frappé, primary). `-light` = Catppuccin Latte.
   # Comment = Catppuccin color name. Latte uses the same name unless a decided fix says otherwise.
@@ -32,7 +32,7 @@ colors:
   key-edge: '#949cbb'            # Overlay2, 1px keycap boundary
   key-top-face: '#949cbb'        # Overlay2 (lighter than the body)
   key-legend: '#232634'          # Crust: every text drawn on a keycap
-  key-outline-faint: '#949cbb'   # Overlay2, 1px, full opacity (Shapes, PCB, unfitted slots)
+  key-outline-faint: '#949cbb'   # Overlay2, 1px, full opacity (Outline, PCB, unfitted slots)
   group-frame: '#949cbb'         # Overlay2, dashed
   anchor-link: '#81c8be'         # Teal, dashed
   rotation-handle: '#ca9ee6'     # Mauve ring; shown only on the selection
@@ -41,7 +41,7 @@ colors:
   overlap-warning-fill: '#e5c89040'   # Yellow at 25% [ASSUMPTION]
   overlap-warning-stroke: '#e5c890'   # Yellow, dashed
   cycle-path: '#e78284'          # Red: anchor-cycle path
-  outline-shape: '#b5bfe2'       # Subtext1
+  outline-piece: '#b5bfe2'       # Subtext1
   vertex: '#eebebe'              # Flamingo
   construction-point: '#99d1db'  # Sky [ASSUMPTION]
   plate-fill: '#949cbb'          # Overlay2; cutouts show the canvas through
@@ -94,7 +94,7 @@ colors:
   overlap-warning-fill-light: '#df8e1d40'
   overlap-warning-stroke-light: '#4c4f69'  # Text, dashed (Yellow is 2.31)
   cycle-path-light: '#d20f39'
-  outline-shape-light: '#5c5f77'
+  outline-piece-light: '#5c5f77'
   vertex-light: '#dd7878'        # with 1px Text casing [ASSUMPTION]
   construction-point-light: '#04a5e5'  # with 1px Text casing [ASSUMPTION]
   plate-fill-light: '#7c7f93'
@@ -432,9 +432,9 @@ General states: hover fills `{colors.hover}` (no Mauve bar); pressed/on fills `{
 - **Anchor picker** — anchor field and a 3×3 attach-point grid (cells at least `{spacing.target-min}`); the chosen point fills `{colors.selection}` `[ASSUMPTION]`.
 - **Part field** — field-styled trigger with ▾; opens the Part picker (see Overlays).
 - **Binding field** — expression-field styling; while capturing, Mauve focus ring and the hint `Tab, Esc, Ctrl+… → pick from list (↓)` in muted text below.
-- **Operation list** — mono rows `name = op(args)`, args in `{colors.text-muted}` (Text when selected), `row-selected` for the selection; outline marked ★ in Yellow; `+ add operation` row in muted text. Collapsed list: a muted `▸ N more` row above the selected entry; collapsed sections show a mono count (`Plates 3`). → `mockups/key-shapes.html`, `mockups/key-case.html`.
+- **Operation list** — mono rows `name = op(args)`, args in `{colors.text-muted}` (Text when selected), `row-selected` for the selection; outline marked ★ in Yellow; `+ add operation` row in muted text. Collapsed list: a muted `▸ N more` row above the selected entry; collapsed sections show a mono count (`Plates 3`). → `mockups/key-shapes.html`, `mockups/key-case.html`. `[CONTRADICTED in Case: spine AD-18 — the user edits only the build style's settings plus their own recipe; see EXPERIENCE.md › Open Items]`
 - **Vertex table** — mono rows: index, anchor, offset; `row-selected` for the selection.
-- **Plate fields** — shape dropdown, cutout-role checkboxes, user cutout list, export buttons (`button`) per plate.
+- **Plate fields** — piece dropdown, cutout-role checkboxes, user cutout list, export buttons (`button`) per plate.
 
 ### Overlays
 
@@ -469,7 +469,7 @@ File menu, Export menu, Design info, Autocomplete dropdown and Context menu use 
 - **Outline context line** (Layout) — 1px `{colors.outline-context}`, behind keys, not hit-testable.
 - **Overlap area** — error: `{colors.overlap-fill}` with a solid `{colors.error}` outline; warning: `{colors.overlap-warning-fill}` with a dashed `{colors.overlap-warning-stroke}` outline.
 - **Violation marker** — ● / ▲ badge on the id's top-right corner; anchor-cycle path drawn in `{colors.cycle-path}` with arrowheads.
-- **Shapes marks** — outline shape `{colors.outline-shape}`; vertex markers `{colors.vertex}` dots with mono `v-NN` labels; construction point `{colors.construction-point}` crosshair with faint guide lines in `{colors.text-faint}`; plate preview `{colors.plate-fill}` with cutouts as holes; polygon being picked drawn as a 2px `{colors.selection}` polyline. → `mockups/key-shapes.html`.
+- **Outline marks** — the outline piece `{colors.outline-piece}`; vertex markers `{colors.vertex}` dots with mono `v-NN` labels; construction point `{colors.construction-point}` crosshair with faint guide lines in `{colors.text-faint}`; plate preview `{colors.plate-fill}` with cutouts as holes; polygon being picked drawn as a 2px `{colors.selection}` polyline. → `mockups/key-shapes.html`.
 - **Pick marks** — in a pick mode, candidate attach points light as small `{colors.pick-point}` dots; the hovered one gets a ring; a 1px `{colors.pick-point}` rubber band runs from the last picked point to the cursor `[ASSUMPTION: width]`.
 - **PCB marks** — board edge `{colors.edge}`; component outlines `{colors.component-outline}`; pads and routes in their layer's copper (right board swapped, see Colors); ratsnest dashed `{colors.ratsnest}`. Overlays: R·C labels, zero-based (`R0·C0`; overridden labels use the Override style: `*` + Yellow); LED chain numbered `{colors.led-chain}` path with numbers in Text inside Teal-outlined badges. → `mockups/pcb-overrides-1.html` (option a), `mockups/key-pcb.html` (both boards, Matrix and LED chain on, Export menu open).
 - **Track tool** (key-cell tracks) — in isolated cell mode: tracks in layer copper at net-class width, vias as `{colors.via}` discs with a `{colors.via-hole}` hole, pads in layer copper with Crust drill holes, the track being drawn at full opacity with its next segment dashed.
