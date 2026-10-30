@@ -2,7 +2,7 @@
 title: keeb-cad milestone 1
 status: final
 created: 2026-10-25
-updated: 2026-10-26
+updated: 2026-10-30
 ---
 
 # PRD: keeb-cad — Milestone 1
@@ -41,7 +41,7 @@ Positioning: *"Ergogen's power with a visual editor, all the way to gerbers, cas
 - **Anchor** — the node (default: parent) a node or geometry point is positioned from.
 - **Arrangement** — how a group places its children: a chain (each child relative to the previous sibling) or free.
 - **Slot** — a place in the layout that holds a part. Has a size (for example 1.5u).
-- **Construction point** — a helper point derived from other geometry (for example the intersection of two lines), used as an anchor for shape vertices. Not a physical part.
+- **Construction point** — a helper point derived from other geometry (for example the intersection of two lines), used as an anchor for piece vertices. Not a physical part.
 - **Part** — a component from the curated catalogue, placed in a slot (switch, MCU, display, TRRS jack, battery connector, power switch, reset button, screw). Parts may carry footprints, cutouts and keep-outs.
 - **Key cell** — the template for what every key carries (switch footprint, diodes, LED placement and their local tracks). Can be overridden for a group of keys.
 - **Module** — a ready-made board used as a part (nice!nano, nice!view).
@@ -49,11 +49,13 @@ Positioning: *"Ergogen's power with a visual editor, all the way to gerbers, cas
 - **Form** — `split-reversible` (one geometry; one PCB, flipped for the other half), `split-mirrored` (right half derived from the left, with overrides) or `unibody`.
 - **Parameter** — a named value with a unit (for example `wall = 1.2mm`), usable in any length or angle.
 - **Expression** — a length or angle written with numbers, units, parameters and `+ - * / ( )` (for example `wall + gap`).
-- **Shape** — a named 2D geometry built from **geometry operations**: key outline, primitive (rectangle, circle, polygon), boolean (add, subtract, intersect) and offset (expand/shrink with corner style). Shapes can reference other shapes.
-- **Outline** — the shape that defines the board edge. Plate, PCB edge and case derive from it.
+- **Piece** — a named 2D geometry of the board body. A **derived** piece fits a group of keys (and their parts) with a margin and follows the layout. A **drawn** piece is built from **geometry operations** (key outline, primitive: rectangle, circle, polygon; boolean: add, subtract, intersect; offset: expand/shrink with corner style), stays put, and is checked against the keys' fit. **Accents** (rounded corners, cut arcs) go on top. Pieces can reference other pieces.
+- **Outline** — the piece that defines the board edge. Plate, PCB edge and case derive from it.
 - **Cutout** — geometry removed from a plate, PCB or case. Either part-owned (comes with a part) or user-drawn.
-- **Plate** — a derived 2D shape exported for cutting. A design can have several.
-- **Case** — 3D solids built from 3D operations (extrude, offset, boolean, z-position).
+- **Plate** — a 2D piece exported for cutting. A design can have several.
+- **Build style** — the case's live setting (tray in milestone 1), switchable at any time. The user sees and edits only its settings.
+- **Recipe** — a reusable, versioned case feature with settings (for example magnet pockets). The user's own case operations form their own recipe, applied after the build style.
+- **Case** — 3D solids derived from the build style plus recipes.
 - **Routing** — creating PCB traces for the connections between key cells, modules and peripherals.
 - **Design rules** — trace widths per net class, clearances and keep-outs that routing and the design-rule check (DRC) enforce.
 - **Keymap** — what each key does, by layer. Firmware-neutral.
@@ -69,10 +71,10 @@ What the user shapes in each output, and what happens when the layout changes.
 | Output | User controls | Follows a layout change by | Update | FRs |
 |---|---|---|---|---|
 | Layout | Nodes, anchors, offsets, rotations and pivots; arrangements; pitch; switch type; form; key cell; slots and parts; parameters | — (source of truth) | live | FR-1–4 |
-| Outline | Shapes built from geometry operations; every primitive and polygon vertex anchored to a node | Anchored geometry moves with its anchor; only what is anchored to the changed nodes moves | live | FR-6–7 |
-| Plate | Which shapes form each plate; extra user cutouts | Recomputed from its shapes plus part-owned cutouts (switch holes, screws) | live | FR-9–10 |
+| Outline | Pieces: by default one derived piece per group of keys, joined automatically; drawn pieces with anchored vertices where the silhouette isn't a fit; accents | Derived pieces refit to the keys; drawn pieces move only where anchored to the changed nodes; a key or part sticking out is reported | live | FR-6–7 |
+| Plate | Which pieces form each plate; extra user cutouts | Recomputed from its pieces plus part-owned cutouts (switch holes, screws) | live | FR-9–10 |
 | PCB | Parts in slots; key cell and group overrides; per-side population; matrix, pin and LED-order overrides | Footprints and key-cell tracks move with their nodes live; nets and matrix re-derived; saved routes kept where still valid, broken connections rerouted in the background | placement + key-cell tracks live; routing background | FR-8, FR-11–13 |
-| Case | Tray template parameters and the 3D operations underneath (parameters stay in effect after the operations are edited) | Recomputed from the outline plus part-owned cutouts (USB/MCU wall window, screws) | background | FR-14 |
+| Case | Build style (tray) and its settings; the user's own case operations, applied after the style | Re-derived from the outline, part-owned cutouts (USB/MCU wall window, screws) and settings | background | FR-14 |
 | Firmware | Keymap (keys, layers) | Matrix, pins and ZMK physical layout re-derived; keymap entries stay attached to their keys | live | FR-15–16 |
 | Editor | Views and gestures (decided in the UX session) | Shows every output updating; background stages show progress | — | FR-17–18 |
 
@@ -105,20 +107,21 @@ The user can copy a design as a new design (`Copy design…`: new name and id, r
 - Saving to another file (`Save to file…`) keeps the same design and id; only `Copy design…` makes a new design.
 - In milestone 1, a layout change made after the copy is made in each design separately. [NON-GOAL for milestone 1: several electronics setups in one design; layout changes propagating between designs]
 
-### 4.2 Shapes and outline
+### 4.2 Pieces and outline
 
-**Description:** The board edge and every derived 2D shape are built from a small, composable set of geometry operations, the same set Ergogen uses, but anchored to the layout and edited visually.
+**Description:** The board body is composed of pieces. Derived pieces fit the keys and follow the layout; drawn pieces use a small, composable set of geometry operations, the same set Ergogen uses, anchored to the layout and edited visually.
 
-#### FR-6: Geometry operations
-The user can build named shapes from key outlines, primitives (rectangle, circle, polygon), booleans (add, subtract, intersect) and offset (expand/shrink with corner style and fillet), and reference one shape from another.
+#### FR-6: Drawn pieces
+The user can draw named pieces from key outlines, primitives (rectangle, circle, polygon), booleans (add, subtract, intersect) and offset (expand/shrink with corner style and fillet), and reference one piece from another.
 - Corney Island's 18-vertex outline with its fillets, and LambBT's 150 mm-radius circle subtraction, are expressible (see the addendum for the operation inventory).
 
-#### FR-7: Anchored geometry
-Every primitive and polygon vertex is anchored to a node (key, group or board origin) with an offset in that node's frame.
-- Vertices can also anchor to construction points (for example intersection of two lines) and to other vertices, and can be reused across shapes.
-- Moving a column moves exactly the vertices anchored to that column's nodes (directly or via construction points); others stay put.
+#### FR-7: The body follows the keys
+The user builds the board body from pieces. By default each group of keys gets one derived piece, which fits its keys and parts with a margin, follows every layout change, and joins the others automatically. Where the intended silhouette isn't a fit, the user adds a drawn piece (FR-6) whose primitives and vertices are anchored to keys, groups, construction points or other vertices, and reusable across pieces. Accents (rounded corners, cut arcs) go on top.
+- A key or part that sticks out of the body is reported, never silently clipped.
+- Moving a column moves the derived pieces with it. Drawn pieces move only where they are anchored to the moved nodes (directly or via construction points).
+- Corney Island's outline is reproduced as the same shape within ±0.05 mm. If derived pieces can't match it, a drawn piece does.
 
-**Notes:** This reverses the paper test's conclusion that the outline is derived, not authored. All three reference boards author their outlines, so keeb-cad must too.
+**Notes:** the user writes intent (fit the keys), not construction. Drawn pieces remain because all three reference boards hand-author their outlines.
 
 ### 4.3 Parts and cutouts
 
@@ -128,13 +131,13 @@ The user can place catalogue parts in slots anchored to any node. Milestone 1's 
 - Footprints come from keeb-cad's own library, likely derived from ceoloide's footprints with attribution (licence: §8 Q6).
 
 #### FR-9: Part-owned and user cutouts
-Parts bring their own cutouts (switch hole in the plate, screw holes, USB/MCU window in the case wall) and keep-outs. The user can add other cutouts as shapes subtracted with booleans.
+Parts bring their own cutouts (switch hole in the plate, screw holes, USB/MCU window in the case wall) and keep-outs. The user can add other cutouts as pieces subtracted with booleans.
 - Moving a part moves its cutouts in plate, PCB and case together.
 
 ### 4.4 Plate
 
-#### FR-10: Plates as derived shapes
-The user can define one or more plates (Corney Island: front/switch plate, backplate and MCU cover) as shapes, and export each as DXF/SVG for cutting or as gerbers to fab it as a PCB (as Corney Island does).
+#### FR-10: Plates as pieces
+The user can define one or more plates (Corney Island: front/switch plate, backplate and MCU cover) as pieces, and export each as DXF/SVG for cutting or as gerbers to fab it as a PCB (as Corney Island does).
 - Plates update live when the layout or outline changes.
 
 ### 4.5 PCB and routing
@@ -160,10 +163,12 @@ When routing completes, keeb-cad exports fab-ready gerbers and drill files direc
 
 ### 4.6 Case
 
-#### FR-14: Tray case template
-The user can add a tray case from a template with parameters (wall thickness, PCB-to-wall gap, floor thickness, height), and open it to edit the 3D operations it is built from (extrude, offset, boolean, z-position). The parameters stay in effect after the operations are edited: changing `wall` still updates every operation that uses it. The user can export it as STL and STEP.
-- The case follows the outline and part-owned cutouts, rebuilding in the background with visible progress.
-- The 3D operation set is extensible (tilt, chamfer, loft later); the model does not assume straight extrusion.
+#### FR-14: Tray build style
+The user gives the case a build style; milestone 1 ships tray. The style has settings (wall thickness, PCB-to-wall gap, floor thickness, height), and the case is re-derived from them on every change. The user edits only the settings, never the style's inner operations. The style is a setting, not a one-time choice: switching it re-derives the case without losing the design.
+- The user can add their own case operations on top (for example a pocket or a cut). They are kept with the design as the user's own recipe, applied after the style, and follow the layout like everything else.
+- The style and every recipe are versioned. An app update never changes a saved case; moving to a newer version is the user's deliberate choice.
+- The case follows the outline and part-owned cutouts, rebuilding in the background with visible progress. It exports STL and STEP.
+- The operation set grows with the app (tilt, chamfer and more later); the model does not assume straight extrusion.
 
 ### 4.7 Firmware and keymap
 
@@ -216,11 +221,11 @@ The user can save and open a design as one file, and undo/redo every edit (every
 ## 7. Success Metrics
 
 **Primary (check 1)**
-- **SM-1:** Corney Island rebuilt in keeb-cad from a blank canvas, without config: key centres, outline vertices and plate cutouts within ±0.05 mm of its Ergogen output (footprint geometry may differ; see FR-8). Validates FR-1–FR-10.
+- **SM-1:** Corney Island rebuilt in keeb-cad from a blank canvas, without config. Key centres and plate cutouts are within ±0.05 mm of its Ergogen output, and the outline and each plate are the same shape within ±0.05 mm: every point of each boundary lies within 0.05 mm of Ergogen's (footprint geometry may differ; see FR-8). Validates FR-1–FR-10.
 - **SM-2:** The tray case matches Corney Island's case within ±0.05 mm on: wall thickness, PCB-to-wall gap, floor thickness, wall height, screw-hole positions and radii, and the MCU/USB wall cutout position and size (see the addendum, Tray case reference numbers). Validates FR-14.
 - **SM-3:** Both designs (wired and wireless) route fully in the browser, pass DRC, and export gerbers + drill directly from keeb-cad that pass the fab's checks. If the routing spike shows that browser routing is not achievable, milestone 1 is re-scoped: it counts as done when the KiCad export, routed outside keeb-cad, produces fab-ready files. The PCB is compared with Corney Island's by parts and nets, not by copper, because keeb-cad uses its own footprint library. Validates FR-11–FR-13.
 - **SM-4:** ZMK firmware for both designs builds from the export (wired design: see §8 Q2). Validates FR-15–FR-16.
-- **SM-5:** A short edit script runs with zero manual fix-ups in any output: move one thumb-fan key; rotate the thumb fan; shift one column's stagger; change pitch-x, then pitch-y (each to a value at or above the switch's minimum); change a case parameter. After each step, the outline, plate, PCB, case and firmware of the edited design are current (or visibly updating). One layout change updating both boards is a milestone-2 metric. Validates FR-17.
+- **SM-5:** A short edit script runs with zero manual fix-ups in any output: move one thumb-fan key; rotate the thumb fan; shift one column's stagger; change pitch-x, then pitch-y (each to a value at or above the switch's minimum); change a case setting. After each step, the outline, plate, PCB, case and firmware of the edited design are current (or visibly updating). One layout change updating both boards is a milestone-2 metric. Validates FR-17.
 
 **Counter-metrics (do not optimise)**
 - **SM-C1:** Corney Island-specific shortcuts. Passing SM-1 by hard-coding Corney Island shapes defeats the point; LambBT and Corax56 stay as paper checks for generality.
@@ -234,3 +239,5 @@ The user can save and open a design as one file, and undo/redo every edit (every
 5. **Demand from others** is unproven (research confidence medium-low; no interviews). Milestone 2 tests it.
 6. **Footprint licence:** confirm the licence of ceoloide's footprints allows deriving keeb-cad's library with attribution.
 7. **Split-mirrored form:** which reference board to use when it is built (Heatwave is a candidate)?
+8. **Joining fitted pieces (FR-7):** how the default derived pieces join, for example whether the gap between the main keys and the thumbs is filled.
+9. **Build styles and tenting in milestone 1 (FR-14, §5):** which build styles milestone 1 ships beyond tray, and whether tenting (a wedge recipe, or a stand part plus a mount recipe) is in. §5 stays as written until this is decided.

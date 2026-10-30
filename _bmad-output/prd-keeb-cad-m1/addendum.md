@@ -23,3 +23,9 @@ The architecture spine (`architecture-keeb-cad-layout-model`) was updated on 202
 - Design file sections for shapes, parameters, keymap and case operations (AD-8, AD-17, AD-18, AD-19).
 - ZMK only, firmware-neutral keymap (AD-19); the single-wire TRRS gap is PRD §8 Q2.
 - One rotation per node, carried along the chain (AD-4); the PRD was revised to match (FR-2).
+
+## Architecture impact (2026-10-30)
+The spine fold of 2026-10-30 (commit f6bf8a2) supersedes the shapes and case lines above:
+- The body is composed of pieces: derived pieces fit the keys and follow the layout; drawn, anchored pieces are the fallback (AD-16). FR-6 and FR-7 were revised to match.
+- The case is a live build style plus an ordered list of live, versioned recipes with declared inputs and outputs; the user's own operations are their own recipe (AD-18). FR-14 was revised to match.
+- Acceptance compares the outline and plates as the same shape within ±0.05 mm, not by vertices (spine Fixtures convention). SM-1 was revised to match.
