@@ -4,7 +4,7 @@ type: architecture-spine
 purpose: build-substrate
 altitude: initiative
 paradigm: 'one reactive graph from authored sections to pixels (single source of truth; commands the only writers; background stages behind one crossing)'
-scope: 'keeb-cad milestone 1: layout model, outline pieces, parameters, electrical model, keymap, case styles and recipes, routing state, design file format, reactive graph and commands, generation pipeline, package boundaries and wiring, verification, stack'
+scope: 'keeb-cad milestone 1: layout model, outline pieces, parameters, electrical model, keymap, case styles and recipes, routing state, design file format, reactive graph and commands, generation pipeline, package boundaries and wiring, editor UI layer, verification, stack'
 status: final
 created: '2026-10-24'
 updated: '2026-10-30'
@@ -23,6 +23,7 @@ sources:
   - _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md
   - _bmad-output/architecture-keeb-cad-layout-model/directions-2026-10-30.md
   - _bmad-output/architecture-keeb-cad-layout-model/code-decisions-list-2026-10-30.md
+  - _bmad-output/architecture-keeb-cad-layout-model/ui-layer-decisions-2026-10-30.md
 ---
 
 # Architecture Spine: keeb-cad, layout model and generation core
@@ -267,8 +268,9 @@ graph LR
 - **Rule:**
   - Dependencies point only as drawn below. Stages depend only on `model`, `geometry` and `reactive` (each as drawn) and never import each other. **One named exception:** `routing` imports `drc`.
   - `model` imports only `reactive` and `geometry`. It receives catalogue and recipe data from its caller. `applyRecipe` receives the recipe from `editor`, which reads it from `library`; `model` mints the ids.
-  - **One reactive graph.** The core uses Vue's reactivity API directly, with no interface of its own. `@vue/reactivity` is imported only by **`reactive`**, through one re-export file; every other package that derives, `model` and the live stages included, uses it through `reactive`. `reactive` also holds the crossing (AD-11) and the recompute trace. Only `editor` imports `vue` (components). No Pinia: UI state lives in ts-inject services holding Vue refs, like design state. Worker code never imports `reactive`.
+  - **One reactive graph.** The core uses Vue's reactivity API directly, with no interface of its own. `@vue/reactivity` is imported only by **`reactive`**, through one re-export file; every other package that derives, `model` and the live stages included, uses it through `reactive`. `reactive` also holds the crossing (AD-11) and the recompute trace. Only `editor` and `ui` import `vue` (components) and `@vueuse/core`. No Pinia: UI state lives in ts-inject services holding Vue refs, like design state. Worker code never imports `reactive`.
   - **Two infrastructure packages** sit below `model` and import no workspace package: `reactive` (the reactive graph's edges) and `geometry` (the 2D kernel, AD-16). Each holds one concept.
+  - **`ui`** (the editor's widget layer, AD-26) imports no workspace package; only `editor` imports it. Only `ui` imports `reka-ui` and `@zag-js/hotkeys`.
   - **Shared derivations are small computeds defined in `model`, and only there:** expression evaluation, per-side placements, pieces, the netlist, connections, catalogue lookup. No stage re-derives them. There is no single `resolve` function.
   - **Every stage output type is defined in `model`** (`PlatesOutput`, `PcbPlacement`, `RouteSet`, `DrcResult`, `CaseOutput`, `FirmwareOutput`).
   - **Stage signatures:** `(resolved) → { output, violations[] }` for plates, pcb, case, firmware; a live stage's function is wrapped in a computed through `reactive` by `pipeline`, its one owner; stage packages export plain functions, never computeds. `pipeline` also holds the routing section and background results in shallow refs. `routing(resolved, placement, fixedRoutes, { connectionIds, deadline, signal })`, which returns routes for the requested ids only, and `drc(resolved, placement, routes)`. `exports(resolved, outputs)` packages what `pipeline` hands it.
@@ -285,6 +287,7 @@ graph TD
   editor --> library
   editor --> storage
   editor --> viewer3d
+  editor --> ui
   viewer3d --> model
   pipeline --> plates & pcb & routing & drc & case & firmware & exports
   pipeline --> model
@@ -478,7 +481,7 @@ graph TD
 - **Binds:** editor, viewer3d, model
 - **Prevents:** workspaces choosing their own renderers; the Layout canvas and Case camera disagreeing; canvases flipping y or re-deriving geometry; Assembly needing a new viewer.
 - **Rule:**
-  - Every 2D canvas (Layout, Shapes, PCB, Firmware, isolated cell mode) is inline SVG rendered by Vue templates in `editor`. Canvas items are DOM elements: focus, `aria-*`, pointer hit-testing, theme tokens as CSS custom properties, and reduced motion through CSS. Canvas marks meet 3:1 non-text contrast in both themes; handles keep the 8px canvas hit radius (DESIGN.md `spacing.canvas-hit-radius`) in screen pixels at any zoom.
+  - Every 2D canvas (Layout, Shapes, PCB, Firmware, isolated cell mode) is inline SVG rendered by Vue templates in `editor`. Canvas items are DOM elements: focus, `aria-*`, pointer hit-testing, theme tokens as CSS custom properties (the same ones `ui`'s Tailwind `@theme` defines, AD-26), and reduced motion through CSS. Canvas marks meet 3:1 non-text contrast in both themes; handles keep the 8px canvas hit radius (DESIGN.md `spacing.canvas-hit-radius`) in screen pixels at any zoom.
   - One **viewport** (centre in model mm, y up; zoom) lives in a viewport service and is shared by the 2D workspaces. Isolated cell mode has its own zoom. The model-to-screen y-flip happens once, in the viewport transform (AD-7). Text and handles are positioned through that transform but drawn in screen space, so they are never flipped or scaled.
   - Canvases draw only the resolved design and stage outputs; they compute no geometry (AD-10).
   - `viewer3d` is framework-free: it renders a list of bodies and owns the camera and its pointer and keyboard controls on its own canvas element, and honours `prefers-reduced-motion` (the Home camera move jumps). It never handles `contextmenu`; it exposes picking (screen point → body id) and a top view set from the viewport. `editor` hosts it and owns focus regions, menus and the viewport. Home/0 is the top view derived from the viewport.
@@ -510,6 +513,17 @@ graph TD
   - Inside a package, folders are **by concept**, not by kind.
   - The packages are those drawn in AD-10; no merges. Each closes its public surface through package `exports`.
 
+### AD-26: Editor UI layer: Reka primitives wrapped in `ui`, Tailwind on the design tokens [ADOPTED]
+- **Binds:** ui, editor
+- **Prevents:** hand-rolled ARIA widgets; a primitive library leaking into workspace code; two token vocabularies; shortcuts that drift from the command register; styling with ad-hoc values.
+- **Rule:**
+  - Every ARIA widget (menu, context menu, combobox, listbox, dialog, popover, tabs, tree, tooltip, toast, checkbox, toggle, focus trap) is a **Reka UI** primitive, never hand-built. Reka is wrapped in **`ui`**; nothing else imports it (AD-10).
+  - `ui` components are **written from scratch**; shadcn-vue is reading material only (no CLI, no `cn`). `ui` holds the design tokens, thin wrappers, the hotkey layer and **generic widgets that take plain data** (a command menu takes `{ id, label, hotkey, disabledReason }[]`, not the register). Domain components (expression field, part picker, the register fed into menus and the palette) live in `editor`, by concept.
+  - **Shortcuts** go through `@zag-js/hotkeys`, fed **from** the command register (AD-2): every hotkey id is a registered command; the store is never a second register. Every `kbd` hint is formatted by its formatter. **VueUse** covers low-level Vue utilities.
+  - **Styling** is **Tailwind 4**. The tokens live in `ui`'s `@theme` (DESIGN.md names, Catppuccin values), so classes and the SVG canvas's `var(--…)` read one source. Spacing is Tailwind's 4px grid with DESIGN.md's named sizes as aliases. No arbitrary values (`p-[7px]`, `bg-[#…]`), checked by lint.
+  - **States** (on/off, active, selected, highlighted, disabled) are styled through ARIA and data-attribute variants (`aria-pressed:`, `data-[state=active]:`, `data-[disabled]:`) on one class list. A true variant is a plain object from a prop to classes. No `cn`, no `cva`. Callers pass a `ui` component only **outer layout classes** (margin, `flex-1`, `self-*`), never what the component styles itself; this is a reviewer rule (Agents convention), not a check.
+  - The known Reka glue lives in `ui`, each with a test: Home/End taken by `ListboxFilter`; keyboard-opened context menus anchored at an element (synthetic `contextmenu`); first-item focus after a pointer open; Tab accepts the active option; `aria-disabled` and no `select` on disabled listbox items; the handler order Enter-to-accept relies on. Evidence: `ui-layer-decisions-2026-10-30.md`.
+
 ## Consistency Conventions
 
 | Concern | Convention |
@@ -530,7 +544,7 @@ graph TD
 
 ## Stack
 
-Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-26 (renderers, npm) and 2026-10-28 (clipper2-ts and makerjs, npm and GitHub); 2026-10-28 (flatbush, npm); 2026-10-30 (Vue, `@vue/reactivity`, `@snap/ts-inject`, npm).
+Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-26 (renderers, npm) and 2026-10-28 (clipper2-ts and makerjs, npm and GitHub); 2026-10-28 (flatbush, npm); 2026-10-30 (Vue, `@vue/reactivity`, `@snap/ts-inject`, npm); 2026-10-30 (reka-ui, @zag-js/hotkeys, @vueuse/core, tailwindcss, npm and spikes, `ui-layer-decisions-2026-10-30.md`).
 
 | Name | Version |
 | --- | --- |
@@ -550,6 +564,10 @@ Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-2
 | replicad / replicad-opencascadejs | 1.2.0 / 1.1.0 |
 | @bgotink/kdl (KDL v2) | 0.4.1 |
 | @tarikjabiri/dxf | 2.9.0 |
+| reka-ui (MIT; widget primitives, `ui` only, AD-26) | 2.11.0 |
+| @zag-js/hotkeys (MIT; shortcuts, `ui` only, AD-26; standalone, depends only on `@zag-js/dom-query`) | 1.47.0 |
+| @vueuse/core (`ui` and `editor`) | 14.4.0 |
+| tailwindcss / @tailwindcss/vite (`ui` tokens in `@theme`, AD-26) | 4.3.3 / 4.3.3 |
 | 2D canvas: inline SVG via Vue templates (no library) | — |
 | three (3D viewer, `viewer3d` only) | 0.186.1 |
 | replicad-threejs-helper (`viewer3d` only) | 1.2.0 |
@@ -578,6 +596,8 @@ keeb-cad/
     storage/    # storage interface + browser/file backends
     library/    # versioned catalogue data, footprints + attribution, versioned recipes (styles, partial)
     viewer3d/   # 3D viewer: three.js scene of bodies, camera + controls (no Vue)
+    ui/         # editor widget layer: design tokens (Tailwind @theme), Reka wrappers, hotkey layer,
+                # generic widgets on plain data (no workspace imports; only reka-ui/@zag-js/hotkeys importer)
   app/          # editor: Vue app (create-vue), package @keeb-cad/editor; SVG canvases
   fixtures/     # Corney Island wired + wireless as layout-command scripts, Ergogen reference output
 ```
@@ -628,6 +648,9 @@ Raised in `directions-2026-10-30.md` (Open) or `code-decisions-list-2026-10-30.m
 | Deep read-only typing (TypeScript `readonly` is shallow); a dependency-cruiser fence as backstop; runtime freezing (leaned away from) | AD-2 | First command story |
 | Invalid states: suggest-only vs sometimes auto-apply fixes; keeping world position vs expression links when re-anchoring; whether AD-2's refusals and AD-3's cycle rejection become flagged breaks ("structure always valid, meaning flagged" was proposed); `unresolvable-reference` for every reference (AD-24) | AD-2, AD-3, Violations | First break-and-fix story |
 | Caching who-points-at as a computed for a live "used by" panel | AD-24 | A panel needs it |
+| Reka's `useHideOthers` puts `aria-hidden` on the whole page while a combobox is open: right for the modal palette, wrong for the inline expression autocomplete; no prop found to turn it off (an upstream issue, or glue) | AD-26 | First expression-field story |
+| Whether `@zag-js/hotkeys` binds by physical key (`KeyboardEvent.code`), which EXPERIENCE.md requires for non-US layouts (spike) | AD-26 | First shortcut story |
+| Editor foundations nobody decided (sweep of 2026-10-30): rail icon source; JetBrains Mono delivery (self-hosted?); dark/light switching (OS preference or toggle, where stored); long-list virtualization (Reka has `TreeVirtualizer`); what vue-router is for; component tests or a workbench for `ui`; UI number formatting; the toast mechanism, timing and position and the 3/4/6 px radii (both `[ASSUMPTION]`) | AD-26, DESIGN.md, EXPERIENCE.md | The first editor slice that needs each |
 | Registers for everything picked from a list (recipes, parts, exports) | AD-2, AD-25 | Second list-picker |
 | ts-inject: convention and test against the silent override miss across a merged `PartialContainer`; a rule for code spanning two concepts; whether stateful services get their own folder | AD-25 | First package with services |
 | Joining fitted pieces (the thumb gap: filled or not) | AD-16 | First outline story |

@@ -20,7 +20,7 @@ sources:
 
 Desktop web (Chromium, Firefox), mouse or trackpad and keyboard, heavy shortcut use. Floor: a 1366×768 laptop; larger monitors just get more canvas. Sole user: Sergii, an expert builder (hobby stakes).
 
-No UI component library: custom Vue components on Catppuccin tokens. `DESIGN.md` is the visual reference; this spine is the behavior. Mocks are linked inline.
+Widgets are Reka UI primitives wrapped in `packages/ui` and styled with Tailwind 4 on the Catppuccin tokens; shortcuts go through `@zag-js/hotkeys`, fed from the command register (architecture AD-26, decided 2026-10-30). `DESIGN.md` is the visual reference; this spine is the behavior. Mocks are linked inline.
 
 **Words.** Domain words are architecture Glossary terms only (route, component, module, pad, side-qualified id, revision…). UI chrome terms that are not domain words: workspace, inspector, slide-out, chip, palette, status strip, badge, toast, banner, keycap, legend.
 

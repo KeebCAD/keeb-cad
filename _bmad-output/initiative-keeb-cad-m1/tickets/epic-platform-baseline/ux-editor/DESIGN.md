@@ -154,9 +154,11 @@ rounded:
   full: 9999px
 spacing:
   # Calm density (chosen). Named sizes from the calm variation of mockups/color-themes-1.html.
+  # Every size sits on Tailwind's 4px grid (decided 2026-10-30, architecture AD-26); the names are
+  # aliases in ui's Tailwind @theme.
   row: 30px
   field-height: 28px
-  pad: 13px
+  pad: 12px                      # was 13px (a mock artifact); decided 2026-10-30
   top-bar: 42px
   banner: 36px
   status-strip: 30px
@@ -166,10 +168,10 @@ spacing:
   target-min: 24px               # chrome controls (attach grid cells, chips, chevrons, tab +)
   canvas-hit-radius: 8px         # canvas handles at any zoom (vertex, grab tab, rotation handle)
   focus-offset: 2px
-  # Small scale [ASSUMPTION]; '3' equals pad by intent
+  # Small scale = Tailwind's default spacing 1 / 2 / 3 / 5 (decided 2026-10-30); '3' equals pad by intent
   '1': 4px
   '2': 8px
-  '3': 13px
+  '3': 12px
   '4': 20px
 components:
   top-bar:
