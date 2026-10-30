@@ -4,15 +4,16 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 
 | Component (DESIGN.md › Components) | Owning slice | Story |
 | --- | --- | --- |
-| Primitives: Button, Kbd | see Corney's keys (13) | frame story, to plan |
+| Primitives: Button, Kbd (and the Tabs and Tree wrappers) | see Corney's keys (13) | 13.11 (Tree wrapper 13.7) |
 | Chip | outline follows the keys (17) | to plan |
-| Top bar, Workspace tabs, Tab badge, Status strip | see Corney's keys (13) | frame story, to plan |
-| Left rail + slide-out (Tree tab) | see Corney's keys (13) | frame story, to plan |
+| Top bar, Workspace tabs, Status strip | see Corney's keys (13) | 13.15 |
+| Tab badge, status strip output-state entries | route and fab (7) | 7.2 |
+| Left rail + slide-out (Tree tab) | see Corney's keys (13) | 13.15, filled by 13.7 |
 | Left rail + slide-out (Parameters tab) | change a parameter (14) | to plan |
 | Canvas, viewport, selection; Canvas keys, Right half, Mirror axis, Group frame, Unfitted slot | see Corney's keys (13) | 13.7, 13.8 |
 | Banner, Toast | keep my work (16) | 16.1, 16.3 |
 | Start screen, File menu, Design info | keep my work (16) | to plan |
-| Inspector, Design settings, Population toggle | change a parameter (14) | 14.5 |
+| Inspector, Design settings, Population toggle (moved from 13.8 on 2026-10-30) | change a parameter (14) | 14.5 |
 | Expression field, Autocomplete dropdown | change a parameter (14) | to plan |
 | Violations panel, Violation marker, Overlap area | change a parameter (14) | 14.4, 14.6 |
 | Rotation handle, Anchor link, Pick marks, Nudge-step control | drag keys (15) | 15.5, 15.6 |

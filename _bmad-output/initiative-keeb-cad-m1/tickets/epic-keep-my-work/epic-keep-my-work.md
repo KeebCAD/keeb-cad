@@ -43,3 +43,4 @@ For Sergii: a design is never lost: it saves to a file, reopens in both browsers
 - Waits on epic 13 because: the design file and autosave
 - Waits on epic 14 because: parameters and the command register
 - Waits on epic 15 because: gestures and revisions
+- Decision (2026-10-30, from epic-see-corneys-keys planning): 13.14 owns browser autosave with 20 rolling versions; 16.2 adds named points and the file backend on top of it and should stop restating the rolling versions. Revise it in place when this epic is refined.

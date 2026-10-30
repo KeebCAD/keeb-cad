@@ -1,24 +1,82 @@
 # Stories of epic-see-corneys-keys. Table order is build order.
+# Re-planned 2026-10-30 at refinement: ids kept, 5 moves to epic-routing-and-fab, 10-15 added.
+
+next_id = 16
 
 [[entry]]
 id = 9
 type = "story"
 title = "The workspace matches the 2026-10-30 spine"
-description = "Scaffolds @keeb-cad/reactive and @keeb-cad/geometry with their AD-10 dependency-cruiser fences and violation fixtures (only reactive imports @vue/reactivity, only geometry imports makerjs, worker code never imports reactive, both import no workspace package), adds @snap/ts-inject, pins @vue/reactivity exactly through one pnpm catalog entry with a test that one copy is installed. (Pinia was already removed from app/ on 2026-10-30, together with jsdom, when Vitest 5 browser mode came in.)"
-verify = "pnpm check passes, and each new fence rejects its violation fixture."
+description = "Scaffolds @keeb-cad/reactive, @keeb-cad/geometry and @keeb-cad/ui as stub packages with package exports (story 11 fills ui), adds @snap/ts-inject, immer and valibot (both pinned exactly), and pins @vue/reactivity exactly through one pnpm catalog entry with a test that one copy is installed. Rewrites the existing dependency-cruiser rules that contradict AD-10 (model may import reactive and geometry; plates, pcb and case may import geometry; plates, pcb, firmware, drc and storage may import reactive; ui may import vue and @vueuse/core; the vue rule must not catch reactive's @vue/reactivity import) and adds the new fences (only reactive imports @vue/reactivity, only geometry imports makerjs, only model's register concept imports immer, only ui imports reka-ui and @zag-js/hotkeys, worker code never imports reactive, reactive, geometry and ui import no workspace package), each with a violation fixture. Pinia, jsdom and @vue/test-utils were already removed on 2026-10-30."
+verify = "pnpm check passes, and each new or rewritten fence rejects its violation fixture."
 covers = []
 after = ["1.3"]
 hitl = false
 risk = "low"
 
 [[entry]]
+id = 10
+type = "story"
+title = "Commands run through the register"
+description = "model's register concept: the design service holding the authored sections in a shallowRef; defineCommand and defineAction (name, input schema, availability check over the read-only design, apply step); the command register service built from the root container's appended commands array, refusing duplicates; run parses every input with its Valibot schema to a fresh copy, applies it through one new Immer({ autoFreeze: true }) instance, keeps a returned Rejection outside the recipe, runs the structural-check hook, and returns { ok: true } or a Rejection; replaceDesign takes unknown, migrates (none yet), parses and deep-freezes. Frozen<T> and Writable<T>; Id, Length, Expression and ref(kind) Valibot helpers with one toJsonSchema overrideAction. The root container in main.ts with each package's <package>Services partial and the disjoint-getTokens test; story 12 provides it to components. Proven with a test-only command; design sections come in story 1."
+verify = "Unit tests: a test command changes the design and the result is deeply frozen with no proxy; its caller's input stays unfrozen; a Vue reactive input is stored as plain data; a returned Rejection leaves the design untouched; an invalid input is refused with its path; an unavailable command is refused; a duplicate command name fails at startup; every exported command is registered; every command's input schema converts to JSON Schema; a nested write outside apply fails to compile (type test); the partials' tokens are disjoint."
+covers = ["R4"]
+after = [9]
+hitl = false
+risk = "high"
+
+[[entry]]
 id = 1
 type = "story"
-title = "A new design autosaves and reopens byte-identical"
-description = "model gets the KDL v2 schema skeleton for all 14 AD-8 sections in order, the canonical writer, id minting and a newDesign operation (design id, name, form split-reversible) that story 2 registers as a command; storage gets its interface (save, load, listVersions) with the browser autosave backend, reporting autosave failed when browser storage is full; pipeline registers one live stage that tags its output with the design's revision. The thinnest path from command to canonical file to browser storage and back, through the pipeline. epic-layout story 1 fills the layout and meta sections on this skeleton."
-verify = "A test creates a design by command, autosaves it, reloads it from browser storage and saves again, and the two files are byte-identical and the live output carries the reloaded revision; a file with sections out of order is rewritten in AD-8 order."
-covers = ["R1", "R8"]
-after = ["1.1", 9]
+title = "A new design writes and reads back byte-identical"
+description = "model gets the KDL v2 schema skeleton for all 14 AD-8 sections in order (the layout a tree, every other section a list, AD-23), declared in Valibot, with the canonical writer, id minting and the newDesign command (design id, name, form split-reversible) registered through story 10's register; reading a file goes through replaceDesign. Layer-3 generic checks over every registered command, so later stories' commands are covered automatically: after run the design is deeply frozen with no proxy and the caller's input unfrozen, and file write -> read round-trips. Story 2 fills the layout and meta sections; story 14 stores the file."
+verify = "A test creates a design by command, writes it, reads it back through replaceDesign and writes again; the two files are byte-identical and the read design is deeply frozen; a file with sections out of order is rewritten in AD-8 order; the generic checks run over every registered command."
+covers = ["R5"]
+after = ["1.1", 10]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 14
+type = "story"
+title = "A new design autosaves and reopens from the browser"
+description = "storage gets its interface (save, load, listVersions, listDesigns) and the browser autosave backend: autosave after every applied command, 20 rolling versions, through the crossing in reactive with plain values only; failure is reported only when no rolling version is left to prune. pipeline wraps one live stage as a computed through reactive, with a must-not-recompute check. model's violations list computed starts here, empty until story 3 adds anchor-cycle and unresolvable-reference; story 15's status strip reads it. Story 12 reopens the last design through listDesigns."
+verify = "A test runs a command, finds the design autosaved in browser storage, reopens it through load and replaceDesign byte-identical; the 21st autosave prunes the oldest; only plain data passes the crossing; the live stage does not recompute when an unrelated section changes."
+covers = ["R5"]
+after = [1]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 11
+type = "story"
+title = "The ui foundation renders in the workbench"
+description = "packages/ui per AD-26: Tailwind 4 @theme tokens from DESIGN.md (Frappé and Latte, the 4px grid aliases, radii 2/4/8), lint against arbitrary values, the OS-default theme with the localStorage override and the inline index.html script, self-hosted JetBrains Mono, the Icon component on @lucide/vue, Button, Kbd and a Tabs wrapper over Reka's tabs, the number formatter, and the hotkey layer on @zag-js/hotkeys taking plain { id, hotkey } data (story 12 feeds it from the register) with the register test rules (no unmodified or Shift-only symbol keys except a character-matched alias, no Alt+letter, no swap-pair letters). The workbench Vite entry renders every component in every state in both themes; browser-mode component tests mount the same state files."
+verify = "Browser-mode tests in Chromium and Firefox pass for Button, Kbd, Icon, Tabs, the formatter and the hotkey layer (R fires on a Ukrainian layout via KeyboardEvent.code); the workbench builds and nothing in the app imports it; lint rejects an arbitrary-value class."
+covers = ["R6"]
+after = [9]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 12
+type = "story"
+title = "The app opens the last design"
+description = "app wiring: story 10's root container provided through app.provide and useService, with lint stopping components importing services as values; the idempotent dev-only devtools.ts and a build check that it never ships; vue-router hash history at /#/design/<id>/<workspace>; the hotkey layer fed from the register; the Firefox Playwright project. Launch reopens the last autosaved design through story 14's listDesigns, or creates one by newDesign when storage is empty. Story 15 draws the chrome around it."
+verify = "In the locally served build, in Chromium and Firefox: with empty storage, launch opens /#/design/<id>/layout for a new design; a reload reopens the same design; a registered test hotkey runs its command; the production bundle holds no devtools code; lint rejects a component importing a service as a value."
+covers = ["R5", "R6"]
+after = [10, 14, 11]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 15
+type = "story"
+title = "The editor frame shows the design"
+description = "The chrome per EXPERIENCE.md › Global chrome and DESIGN.md › Components: the top bar (design name), workspace tabs on story 11's Tabs wrapper (role=tablist, keys 1-5, the URL follows), the status strip (error and warning counts from story 14's violations list, cursor, zoom), the left rail with the Tree slide-out shell (T, Esc, empty text; story 7 fills it with nodes), the docked 320px right-panel region and the canvas region with the empty Layout hint; F6 cycles regions; both themes at 1366x768. Tab badges, the save state, the File and Export menus and undo/redo are owned by other slices."
+verify = "In the locally served build at 1366x768, in both themes and in Chromium and Firefox: 1-5 switch workspaces and the URL follows; T opens the tree slide-out and Esc closes it; F6 cycles regions; the empty Layout shows its hint; the status strip shows 0 errors and 0 warnings."
+covers = ["R4", "R6"]
+after = [12]
 hitl = false
 risk = "medium"
 
@@ -26,9 +84,9 @@ risk = "medium"
 id = 2
 type = "story"
 title = "One Corney column resolves from a chain"
-description = "Fills the layout and meta schema sections (groups, slots, chain +x/+y with gap and offset, pitch-x/pitch-y, u and mm units) with add-group, add-slot, duplicate and delete commands (delete cascading per AD-2), the free arrangement (default anchor = the parent origin), and model.resolve turns a group of chained slots into world frames. The thinnest path from command to design file to resolved placement to the golden harness, using epic-risk-spikes story 1's harness and epic-design-document's commands and file. epic-layout-editor entry 1 draws its resolve and calls its commands."
-verify = "A design built by commands with one Corney column as a chain resolves and the harness passes that column's key centres within ±0.05 mm; saving and reopening it resolves the same."
-covers = ["R2", "R3"]
+description = "Fills the layout and meta schema sections (groups, slots, chain +x/+y with gap and offset, pitch-x/pitch-y, u and mm units) with addGroup, addSlot, duplicateNode and deleteNode commands, the free arrangement (default anchor = the parent origin), and model's per-side placement computeds with plain functions such as placeSlot that turn a group of chained slots into world frames. Owns AD-24's who-points-at walk (deleteNode cascades over it; story 3's anchor graph uses it) and the test rejecting pass-through schema kinds. Starts Corney's layout-command script in fixtures/ with one column."
+verify = "A design built by Corney's script with one column as a chain places each key per the AD-4 step rule; deleting a group removes everything referencing it; the reference walk finds every reference in a design built from every section; saving and reopening it places the same."
+covers = ["R1", "R2"]
 after = [1]
 hitl = false
 risk = "medium"
@@ -37,42 +95,31 @@ risk = "medium"
 id = 3
 type = "story"
 title = "Explicit anchors move dependants, cycles rejected"
-description = "Anchors any node to any slot attach point or group origin by id (vertex and construction-point anchors arrive with epic-shapes-and-plates), replacing the default anchor; resolving moves dependants transitively. A command that would create a cycle is rejected and a loaded cycle reports anchor-cycle as a {kind, severity, ids, message} violation; an unknown anchor id reports unresolvable-reference. epic-layout-editor entry 7 shows its violations."
-verify = "Moving an anchored-to node moves its whole dependency chain in the resolved placements; a cycle-creating command is rejected and a file with a cycle and one with an unknown id each report their violation with ids."
-covers = ["R1", "R6"]
-after = [2]
+description = "setAnchor anchors any node to any slot attach point or group origin by id (part, vertex and construction-point anchors arrive with later slices), replacing the default anchor; placement moves dependants transitively. Anchors are a declared reference kind (AD-24), walked by story 2's walk. A command that would close a cycle is rejected through the register's structural check with a typed rejection naming the cycle's ids; a loaded cycle reports anchor-cycle in story 14's violations list as a { kind, severity, ids, message, fixes } violation and its members are not placed; an unknown anchor id reports unresolvable-reference."
+verify = "Moving an anchored-to node moves its whole dependency chain; a cycle-closing setAnchor is rejected and the design is unchanged; a file with a cycle and one with an unknown id each report their violation with ids."
+covers = ["R1", "R4"]
+after = [2, 14]
 hitl = false
 risk = "medium"
 
 [[entry]]
 id = 4
 type = "story"
-title = "Corney wired's key centres match Ergogen"
-description = "Rotation about the pivot carries along a chain, an explicit anchor stops the carry and keeps the index, empty slots advance the chain; Corney Island wired's columns, stagger and 3-key thumb fan are authored through commands without absolute coordinates."
-verify = "The harness passes every key centre of Corney Island wired (left side) within ±0.05 mm, from a design built only by commands."
+title = "Corney wired's left half from commands"
+description = "Rotation about the pivot carries along a chain, an explicit anchor stops the carry and keeps the index, empty slots advance the chain. Corney's layout-command script authors Corney Island wired's left half (columns, stagger, 3-key thumb fan) through commands without absolute coordinates. A spike check compares its key centres with Ergogen using the existing fixtures/ key-centres harness (initiative Decision 2026-10-30)."
+verify = "Invariant tests for rotation carry, the anchor stop and empty slots pass; the spike check matches every left-half key centre of Corney wired within ±0.05 mm of Ergogen; the script holds no absolute coordinates."
 covers = ["R1", "R2"]
 after = [3]
 hitl = false
 risk = "high"
 
 [[entry]]
-id = 5
-type = "story"
-title = "Live stages tag outputs by revision"
-description = "pipeline generalises story 1's live stage: it runs registered live stages on every revision from story 3, tags each output with its revision (and routing hash where it reads routes), caches by the AD-11 cache key, and exposes each output's state (current, waiting for edit to finish, stale); an output whose tag differs is never reported current, cache hits included. epic-editor-shell's status strip and tab badges show these states."
-verify = "With a test live stage, a revision change marks its output stale until recomputed, a cache hit from an older revision is reported stale."
-covers = ["R6"]
-after = [1]
-hitl = false
-risk = "medium"
-
-[[entry]]
 id = 6
 type = "story"
 title = "Right side derived, population per side"
-description = "model.resolve derives the right side of a split-reversible design by reflection across the centre frame's y-axis, with side-qualified ids and attach points swapped; population sets fitted per side per slot, an unfitted slot keeps its place and index; geometric right-side overrides are rejected; split-mirrored and unibody files load and report unsupported-form. epic-layout-editor entry 8 draws it."
-verify = "Corney wired's right-side key centres match the harness within ±0.05 mm; unfitting right/<id> leaves the left fitted and both chains unchanged; a split-mirrored file reports unsupported-form."
-covers = ["R4", "R6"]
+description = "model derives the right side of a split-reversible design by reflection across the centre frame's y-axis, with side-qualified ids and attach points swapped; setFitted sets population per side per slot, an unfitted slot keeps its place and index; geometric right-side overrides are rejected; split-mirrored and unibody files load and report unsupported-form. Corney's script gains the right side's population, and the headless slice scenario runs it."
+verify = "Each right-side key is the reflection of its left key across the centre frame; unfitting right/<id> leaves the left fitted and both chains unchanged; a split-mirrored file and a unibody file each report unsupported-form; the headless slice scenario on Corney's script passes."
+covers = ["R3"]
 after = [4]
 hitl = false
 risk = "medium"
@@ -81,20 +128,31 @@ risk = "medium"
 id = 7
 type = "story"
 title = "Layout canvas shows resolved keys and adds groups and slots"
-description = "The Layout workspace's 2D canvas, inline SVG drawn by Vue templates (AD-22), draws resolved placements as keycaps with group frames and anchor links in both themes; G adds a group, S a slot, Ctrl+D duplicates, Delete deletes; click selects, the tree slide-out stays synced; wheel zoom to cursor, middle or Space drag and trackpad pan, F fits; the viewport is shared across 2D workspaces; the empty Layout shows its hint. Uses epic-editor-shell's chrome and epic-layout story 1's commands and resolve. Its canvas, selection and viewport are what every later 2D story builds on."
-verify = "In the locally served build, a new design shows the empty hint; G then S adds a key that appears on the canvas and in the tree, selecting either selects both, Ctrl+Z removes it, and a switch to Shapes and back keeps zoom and pan; an automated check finds every canvas mark at 3:1 contrast in both themes and handles at the canvas hit radius at three zoom levels."
-covers = ["R1", "R8"]
-after = ["1.5", 2]
+description = "The Layout workspace's 2D canvas, inline SVG drawn by Vue templates (AD-22), draws placed keys as keycaps with group frames and anchor links in both themes; G adds a group, S a slot, Ctrl+D duplicates, Delete deletes, each through the register; click selects, and story 15's tree slide-out lists the nodes on a Tree wrapper over Reka's tree in ui and stays synced; wheel zoom to cursor, middle or Space drag and trackpad pan, F fits; the viewport is a service stored per design id in localStorage and shared across 2D workspaces. Its canvas, selection and viewport are what every later 2D story builds on."
+verify = "In the locally served build: G then S adds a key that appears on the canvas and in the tree, selecting either selects both, Delete removes it; a switch to Outline and back keeps zoom and pan, and so does a reload; an automated check finds every canvas mark at 3:1 contrast in both themes and handles at the canvas hit radius at three zoom levels."
+covers = ["R1", "R6"]
+after = [15, 2]
 hitl = false
 risk = "medium"
 
 [[entry]]
 id = 8
 type = "story"
-title = "Both halves drawn, population per side"
-description = "The canvas draws the derived right half beside the left with a dashed mirror axis, at lower opacity until selected, selectable on the canvas and in the tree; its geometry fields are read-only with derived from left/<id> and the split-mirrored lock; the Population toggle Fitted: left / right sets fitted per side, one undo step for a multi-selection; unfitted slots keep their place. Uses epic-layout story 6."
-verify = "Selecting right/thumb-home shows read-only geometry and clicking derived from selects left/thumb-home; unticking right on two slots is one undo step and the left stays fitted."
-covers = ["R5", "R8"]
+title = "Both halves drawn"
+description = "The canvas draws the derived right half beside the left with a dashed mirror axis, at lower opacity until selected, selectable on the canvas and in the tree; unfitted slots keep their place, drawn as unfitted. The Population toggle and the read-only derived-from fields are 14.5's. Adds the slice's e2e journey: browser storage seeded with the autosave of a design built by Corney's script in a Node test, the app reopens it, both halves are drawn, a key is added and deleted, a reload is unchanged. Sergii approves the screenshot baseline."
+verify = "Selecting right/thumb-home on the canvas selects it in the tree; an unfitted right slot draws as unfitted while its left stays fitted; the e2e journey passes in Chromium and Firefox, with its screenshot baseline approved by Sergii."
+covers = ["R3", "R6"]
 after = [6, 7]
-hitl = false
+hitl = true
 risk = "medium"
+
+[[entry]]
+id = 13
+type = "story"
+title = "Refactor sweep"
+description = "Cleanup only, scoped at its start from the epic's plans and the review findings it deferred. Scope pushed out of another story becomes a new story, not part of this one."
+verify = "pnpm check and every test of the slice pass, and each cleanup item from the scope list is closed or recorded as deferred."
+covers = []
+after = [9, 10, 1, 14, 11, 12, 15, 2, 3, 4, 6, 7, 8]
+hitl = false
+risk = "low"

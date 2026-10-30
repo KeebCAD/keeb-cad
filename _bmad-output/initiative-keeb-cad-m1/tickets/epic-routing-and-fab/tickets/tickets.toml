@@ -2,9 +2,20 @@
 id = 1
 type = "story"
 title = "Background stages run in workers with progress and cancel"
-description = "pipeline runs background stages in Web Workers from committed revisions or after a gesture's debounce pause; they report progress, partial and failed results, and a newer committed revision cancels them. Proven with a test stage in fixtures/; case and routing plug in later. Adds a Firefox Playwright project and a test page hosting the packages, which stories 8 and 9 reuse."
+description = "pipeline runs background stages in Web Workers from committed revisions or after a gesture's debounce pause; they report progress, partial and failed results, and a newer committed revision cancels them. Proven with a test stage in fixtures/; case and routing plug in later. Adds a test page hosting the packages, which stories 8 and 9 reuse (the Firefox Playwright project comes from 13.12)."
 verify = "In Chromium and Firefox, a slow test stage reports rising progress, a new commit cancels it and restarts on the new revision, a throwing stage reports failed with its message while the last good output stays marked stale, and during a gesture its state reads waiting for edit to finish."
 covers = ["R6"]
-after = ["13.5"]
+after = ["13.1"]
 hitl = false
 risk = "high"
+
+[[entry]]
+id = 2
+type = "story"
+title = "Background outputs tagged by input slice"
+description = "Moved to epic-routing-and-fab at epic-see-corneys-keys refinement (2026-10-30): background outputs tagged and cached by input-slice hash (AD-11), and the Tab badge and status-strip output-state entries (current, waiting for edit to finish, stale). Revise in place when that epic is refined."
+verify = "With a test background stage, an input-slice change marks its output stale until recomputed, and a cache hit from an older input slice is reported stale."
+covers = []
+after = [1]
+hitl = false
+risk = "medium"

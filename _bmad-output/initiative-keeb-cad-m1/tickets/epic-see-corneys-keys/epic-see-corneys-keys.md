@@ -3,13 +3,8 @@ type: epic
 title: "See Corney's keys"
 parent: initiative-keeb-cad-m1
 covers: [R1, R2, R4, R17, R18]
-sources:
-  - _bmad-output/initiative-keeb-cad-m1/initiative-keeb-cad-m1.md
-companions:
-  - _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md
-  - _bmad-output/initiative-keeb-cad-m1/component-ownership.md
-  - _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md
-  - _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md
+sources: [_bmad-output/initiative-keeb-cad-m1/initiative-keeb-cad-m1.md]
+companions: [_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md, _bmad-output/initiative-keeb-cad-m1/component-ownership.md, _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md, _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md]
 after: []
 refined: true
 risk: high
@@ -83,3 +78,7 @@ For Sergii: Corney Island's keys appear in the editor from its layout-command sc
 - Decision (2026-10-30, refinement): 13.4 adds a spike check beside its invariant checks: the left half's key centres compared with Ergogen within ±0.05 mm using the existing fixtures/ harness, so a wrong Corney script shows up in this slice and not at milestone accepted. This is the spike comparison the initiative's per-slice rule allows. Rejected: invariants only.
 - Decision (2026-10-30, refinement): no second fixture in this slice. A small non-split fixture, so the command language isn't only ever tested on Corney, is raised when epic-change-a-parameter is refined.
 - Decision (2026-10-30, refinement): the bmad-architecture run settled this slice's spine questions in the initiative spine (c0686bb); the spine stays the adopted companion. Requirements R1 to R6 and Constraints C1 to C3 written and approved; the epic is refined.
+- Decision (2026-10-30, planning): 13.12 (the app opens the last design) is the tracer bullet: the first path through browser, register, design file, autosave and reload. The order stays as drafted, with 13.4 (the riskiest, Corney's left half) after 13.2 and 13.3 that it needs; the ui lane (13.11) runs beside the model lane. Rejected: the model lane before any UI.
+- Decision (2026-10-30, planning): launch reopens the last autosaved design through listDesigns, or creates one by newDesign when storage is empty (EXPERIENCE.md); the top bar's file save state waits for epic-keep-my-work. Rejected: a new design on every launch.
+- Decision (2026-10-30, planning): 13.8's e2e journey seeds browser storage with the autosave of a design built by Corney's script in a Node test, and the app reopens it through 13.12's launch path; no test entry point ships in the app. Rejected: a dev-only script hook.
+- Decision (2026-10-30, planning): breakdown approved: 9, 10, 1, 14, 11, 12, 15, 2, 3, 4, 6, 7, 8 and the refactor sweep 13; 13.1 and the frame split into 13.1/13.14 and 13.12/13.15 for session size; 5 moved to epic-routing-and-fab as 7.2 (after 7.1); 19.3 repointed to 13.1 with model-error blocking; 14.5 takes the Population toggle and waits on 13.8; 14.6 waits on 13.7; component-ownership.md names the owning stories.

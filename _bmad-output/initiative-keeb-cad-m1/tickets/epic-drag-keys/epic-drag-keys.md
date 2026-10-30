@@ -42,3 +42,4 @@ For Sergii: Corney's thumb fan and columns are edited by hand the way EXPERIENCE
 - Decision (2026-10-30, replan): created as a vertical slice; every slice runs on Corney's layout-command script with its own invariant checks, golden comparisons only in milestone accepted.
 - Waits on epic 14 because: the command register, undo and the inspector
 - Waits on epic 13 because: resolved keys and the Layout canvas
+- Decision (2026-10-30, from epic-see-corneys-keys planning): 15.2 and 15.4 describe gestures (begin, update, commit, cancel); the spine now has none: a drag moves only the dragged nodes on the canvas and applies one command on drop, and a nudge burst applies one command when it ends (AD-2). Revise them in place when this epic is refined.
