@@ -1,0 +1,10 @@
+[[entry]]
+id = 1
+type = "story"
+title = "Background stages run in workers with progress and cancel"
+description = "pipeline runs background stages in Web Workers from committed revisions or after a gesture's debounce pause; they report progress, partial and failed results, and a newer committed revision cancels them. Proven with a test stage in fixtures/; case and routing plug in later. Adds a Firefox Playwright project and a test page hosting the packages, which stories 8 and 9 reuse."
+verify = "In Chromium and Firefox, a slow test stage reports rising progress, a new commit cancels it and restarts on the new revision, a throwing stage reports failed with its message while the last good output stays marked stale, and during a gesture its state reads waiting for edit to finish."
+covers = ["R6"]
+after = ["13.5"]
+hitl = false
+risk = "high"

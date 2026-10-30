@@ -4,7 +4,7 @@ type: architecture-spine
 purpose: build-substrate
 altitude: initiative
 paradigm: 'one reactive graph from authored sections to pixels (single source of truth; commands the only writers; background stages behind one crossing)'
-scope: 'keeb-cad milestone 1: layout model, body pieces, parameters, electrical model, keymap, case styles and recipes, routing state, design file format, reactive graph and commands, generation pipeline, package boundaries and wiring, verification, stack'
+scope: 'keeb-cad milestone 1: layout model, outline pieces, parameters, electrical model, keymap, case styles and recipes, routing state, design file format, reactive graph and commands, generation pipeline, package boundaries and wiring, verification, stack'
 status: final
 created: '2026-10-24'
 updated: '2026-10-30'
@@ -124,7 +124,7 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | **preview** | The editor's 2D rendering of resolved placements, pieces and stage outputs, in SVG |
 | **viewport** | The one 2D view position shared by the 2D workspaces (not isolated cell mode): centre (mm, y up) and zoom |
 | **3D viewer** | The Case workspace's interactive rendering of bodies, in `viewer3d` |
-| **body** | One named triangulated solid shown in the 3D viewer: id, kind, faces, edges. Milestone 1 has case bodies only. The 2D "key body" colour is a keycap face, not a body |
+| **body** | One named triangulated solid shown in the 3D viewer: id, kind, faces, edges. Milestone 1 has case bodies only. The 2D "key body" colour is a keycap face, not a body. The 2D board shape is the **outline**, never a body |
 | **escape hatch** | Exporting a KiCad project to finish outside keeb-cad; the export no longer syncs |
 
 ## Design Paradigm
@@ -382,15 +382,15 @@ graph TD
   - firmware: a ZMK shield with the `zmk,physical-layout` node, wired split over UART and RGB underglow when the population fits them, and the keymap
   - Every export except the KiCad board is **blocked while the resolved slice it reads carries a `model` violation of severity `error`**, reported as `blocked: <kind>`. Warnings never block. The KiCad board exports whatever resolved; when the board edge failed it is written with no Edge.Cuts, never a stale outline.
 
-### AD-16: The body is a composition of pieces, evaluated once, in `model` [ADOPTED]
+### AD-16: The outline is a composition of pieces, evaluated once, in `model` [ADOPTED]
 - **Binds:** model, plates, pcb, case, drc, exports
-- **Prevents:** the user writing construction instead of intent; a body that doesn't follow the layout; a second body vocabulary; outline, plates and case built by different mechanisms; plate, PCB edge, case and gerbers disagreeing on one offset or fillet; a mismatch with Ergogen's geometry; a wrong boolean or offset result passed on silently; overlapping hole loops; stages implementing booleans, offsets or flattening their own way.
+- **Prevents:** the user writing construction instead of intent; an outline that doesn't follow the layout; a second outline vocabulary; outline, plates and case built by different mechanisms; plate, PCB edge, case and gerbers disagreeing on one offset or fillet; a mismatch with Ergogen's geometry; a wrong boolean or offset result passed on silently; overlapping hole loops; stages implementing booleans, offsets or flattening their own way.
 - **Rule:**
-  - **Piece** is the one term for 2D body geometry: the outline, plates and the 2D profiles inside recipes. 3D results are **solids** (AD-18), never pieces. Pieces, vertices and construction points are authored sections, in list shape (AD-23).
+  - **Piece** is the one term for 2D geometry: the outline, plates and the 2D profiles inside recipes. 3D results are **solids** (AD-18), never pieces. Pieces, vertices and construction points are authored sections, in list shape (AD-23).
   - A piece is **derived** (the fit of a group of keys, or of parts, plus a margin; it follows the layout) or **drawn** (anchored primitives and vertices, AD-3; it stays put). Derived pieces are the main authoring path; drawn pieces are the fallback. A piece may be built on other named pieces through declared references (AD-24). **Accents** (rounded corners, cut arcs) go on top. Exactly one piece is the outline.
-  - **Fit** is a constraint region: key cells, part envelopes and margin. Derived pieces are computed from it; drawn pieces are checked against it. A key or part whose fit sticks out of the body is `fit-violated`. The default for a new design is one fitted piece per group, joined automatically.
+  - **Fit** is a constraint region: key cells, part envelopes and margin. Derived pieces are computed from it; drawn pieces are checked against it. A key or part whose fit sticks out of the outline is `fit-violated`. The default for a new design is one fitted piece per group, joined automatically.
   - Milestone-1 construction point kind: intersection of two lines. New kinds are added to the schema in `model`.
-  - `model` evaluates the body's pieces (as computeds, AD-10). No stage re-evaluates them. `case` evaluates the 2D profiles inside recipes with the kernel.
+  - `model` evaluates the outline's pieces (as computeds, AD-10). No stage re-evaluates them. `case` evaluates the 2D profiles inside recipes with the kernel.
   - **Geometry kernel.** `geometry` holds the one implementation of boolean, offset, normalise-and-check and flatten, and the region type, as pure functions; it is the only package that imports `makerjs` and knows nothing of designs or reactivity. No other package implements its own; `model`, `plates`, `pcb` and `case` compose with it.
   - **Composition by owner.** `plates` composes every plate. `pcb` composes the board edge (the outline minus its `pcb`-target cutouts). `drc` and `exports` read the board edge from pcb placement; `case` reads plates through the plates → case flow (AD-10).
   - **Resolved piece type:** a list of **regions**, each `{ outer, holes[] }`. Every loop is a closed chain of **exact paths** (lines, arcs, circles). A circle that a boolean leaves whole stays one circle path.
@@ -517,7 +517,7 @@ graph TD
 | Naming | Glossary terms only. Packages: `@keeb-cad/<name>`. KDL node names are lowercase glossary terms. Commands are verb+noun camelCase (`setGap`). |
 | Ids | Kebab-case, minted by `model`. Resolved: `<side>/<id>`. Block nodes: `<instance-id>/<block-node-id>`. Pads: `<side>/<slot-id>.<component>.<pin>.<copper>[.<copy>]`, where copper is `F`, `B` or `TH` (through-hole) and `.<copy>` (2, 3, …) numbers repeats of one pin and copper in the catalogue footprint's pad order. Reversible copies are distinct pads. Nets: derived from ids (AD-14). |
 | Units in files | Quoted with an explicit unit or as an expression: `"19mm"`, `"1u"`, `"-15deg"`, `"wall + gap"`. |
-| Violations | `{ kind, severity: error \| warning, ids, message, fixes }`; `fixes` lists registered entry names plus inputs (AD-2), possibly empty. Design problems never throw. Commands that can't apply return a typed rejection. Each kind has one owner. `model`: `anchor-cycle`, `construction-undefined` (error: a construction point from parallel or coincident lines; ids name the point and its two lines; it and its dependents are not evaluated), `unresolvable-reference` (warning when a key-cell reference names a cell not defined yet, the slot placing with no footprint; error otherwise), `piece-failed` (error: a resolved piece fails AD-16's checks; ids name the piece and its operands; it and its dependents are not output), `fit-violated` (a key or part sticks out of the body; ids name it and the piece; severity open), `unit-mismatch`, `unsupported-form`, `pitch-below-min`, `overlap`, `binding-unsupported`, `format-too-new`, `migration-failed`. `routing`: `unrouted`. `drc`: `drc`. A stage reports only its own kinds. |
+| Violations | `{ kind, severity: error \| warning, ids, message, fixes }`; `fixes` lists registered entry names plus inputs (AD-2), possibly empty. Design problems never throw. Commands that can't apply return a typed rejection. Each kind has one owner. `model`: `anchor-cycle`, `construction-undefined` (error: a construction point from parallel or coincident lines; ids name the point and its two lines; it and its dependents are not evaluated), `unresolvable-reference` (warning when a key-cell reference names a cell not defined yet, the slot placing with no footprint; error otherwise), `piece-failed` (error: a resolved piece fails AD-16's checks; ids name the piece and its operands; it and its dependents are not output), `fit-violated` (a key or part sticks out of the outline; ids name it and the piece; severity open), `unit-mismatch`, `unsupported-form`, `pitch-below-min`, `overlap`, `binding-unsupported`, `format-too-new`, `migration-failed`. `routing`: `unrouted`. `drc`: `drc`. A stage reports only its own kinds. |
 | Stable outputs | Same file + same app version → same bytes for every export. No clocks, randomness, locale or random UUIDs in outputs; tool-generated ids (KiCad UUIDs) are derived from design ids. Only routes are history-dependent, and they are saved. |
 | Verification | Layered: (1) compile time: types, ts-inject, package `exports`, dependency-cruiser; (2) unit tests, written test-first, for functions and services; (3) generic checks over every registered command (do → undo → identical; redo), file save → load round-trip, and only plain data at the crossing; (4) invariants on generated designs, the same rules the app reports as violations (the AD-14 netlist test among them); (5) headless slice scenarios, the ongoing marker; (6) end to end in a real browser, one small journey per slice, screenshot baselines approved by a person; (7) reactive and resource checks: must-not-recompute, frame budget, worker memory; (8) golden end results at milestone acceptance only. |
 | Fixtures | Corney Island v0.3 wired and wireless enter as **scripts of layout commands** in tests (`fixtures/`), plus Ergogen's reference output (from `layout-model/sources/`). There is no importer and no hand-written Corney design file. Acceptance (layer 8): key centres, the outline and plates as the same shape, plate cutouts and case dimensions within ±0.05 mm of Ergogen; KiCad output opens in KiCad 10; the fab checker accepts it; ZMK output builds. LambBT and Corax56 are paper checks. |
@@ -601,7 +601,7 @@ graph TD
 | FR-3 pitch, slot size, key cell, group and per-target overrides | model, pcb | AD-4, AD-5 |
 | FR-4 form readiness | model | AD-6 |
 | FR-5 second design from a copy | separate designs | AD-21, AD-9 |
-| FR-6–7 body pieces, anchored geometry | model | AD-16, AD-3, AD-24 |
+| FR-6–7 outline pieces, anchored geometry | model | AD-16, AD-3, AD-24 |
 | FR-8–9 parts, cutouts, keep-outs | model (schema), library (data) | AD-5 |
 | FR-10 plates | plates, exports | AD-16, AD-15 |
 | FR-11 PCB, netlist, overrides | model, pcb | AD-14, AD-6 |

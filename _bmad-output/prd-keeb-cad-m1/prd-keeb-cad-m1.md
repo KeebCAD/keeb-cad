@@ -49,7 +49,7 @@ Positioning: *"Ergogen's power with a visual editor, all the way to gerbers, cas
 - **Form** — `split-reversible` (one geometry; one PCB, flipped for the other half), `split-mirrored` (right half derived from the left, with overrides) or `unibody`.
 - **Parameter** — a named value with a unit (for example `wall = 1.2mm`), usable in any length or angle.
 - **Expression** — a length or angle written with numbers, units, parameters and `+ - * / ( )` (for example `wall + gap`).
-- **Piece** — a named 2D geometry of the board body. A **derived** piece fits a group of keys (and their parts) with a margin and follows the layout. A **drawn** piece is built from **geometry operations** (key outline, primitive: rectangle, circle, polygon; boolean: add, subtract, intersect; offset: expand/shrink with corner style), stays put, and is checked against the keys' fit. **Accents** (rounded corners, cut arcs) go on top. Pieces can reference other pieces.
+- **Piece** — a named 2D geometry of the board outline. A **derived** piece fits a group of keys (and their parts) with a margin and follows the layout. A **drawn** piece is built from **geometry operations** (key outline, primitive: rectangle, circle, polygon; boolean: add, subtract, intersect; offset: expand/shrink with corner style), stays put, and is checked against the keys' fit. **Accents** (rounded corners, cut arcs) go on top. Pieces can reference other pieces.
 - **Outline** — the piece that defines the board edge. Plate, PCB edge and case derive from it.
 - **Cutout** — geometry removed from a plate, PCB or case. Either part-owned (comes with a part) or user-drawn.
 - **Plate** — a 2D piece exported for cutting. A design can have several.
@@ -109,15 +109,15 @@ The user can copy a design as a new design (`Copy design…`: new name and id, r
 
 ### 4.2 Pieces and outline
 
-**Description:** The board body is composed of pieces. Derived pieces fit the keys and follow the layout; drawn pieces use a small, composable set of geometry operations, the same set Ergogen uses, anchored to the layout and edited visually.
+**Description:** The board outline is composed of pieces. Derived pieces fit the keys and follow the layout; drawn pieces use a small, composable set of geometry operations, the same set Ergogen uses, anchored to the layout and edited visually.
 
 #### FR-6: Drawn pieces
 The user can draw named pieces from key outlines, primitives (rectangle, circle, polygon), booleans (add, subtract, intersect) and offset (expand/shrink with corner style and fillet), and reference one piece from another.
 - Corney Island's 18-vertex outline with its fillets, and LambBT's 150 mm-radius circle subtraction, are expressible (see the addendum for the operation inventory).
 
-#### FR-7: The body follows the keys
-The user builds the board body from pieces. By default each group of keys gets one derived piece, which fits its keys and parts with a margin, follows every layout change, and joins the others automatically. Where the intended silhouette isn't a fit, the user adds a drawn piece (FR-6) whose primitives and vertices are anchored to keys, groups, construction points or other vertices, and reusable across pieces. Accents (rounded corners, cut arcs) go on top.
-- A key or part that sticks out of the body is reported, never silently clipped.
+#### FR-7: The outline follows the keys
+The user builds the board outline from pieces. By default each group of keys gets one derived piece, which fits its keys and parts with a margin, follows every layout change, and joins the others automatically. Where the intended silhouette isn't a fit, the user adds a drawn piece (FR-6) whose primitives and vertices are anchored to keys, groups, construction points or other vertices, and reusable across pieces. Accents (rounded corners, cut arcs) go on top.
+- A key or part that sticks out of the outline is reported, never silently clipped.
 - Moving a column moves the derived pieces with it. Drawn pieces move only where they are anchored to the moved nodes (directly or via construction points).
 - Corney Island's outline is reproduced as the same shape within ±0.05 mm. If derived pieces can't match it, a drawn piece does.
 

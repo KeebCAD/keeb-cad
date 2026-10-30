@@ -1,0 +1,25 @@
+# Stories of epic-plates-to-dxf. Table order is build order.
+
+next_id = 4
+
+[[entry]]
+id = 2
+type = "story"
+title = "Part picker places parts"
+description = "P places a slot with the Part picker open beside it; the inspector's Part field opens the picker, searchable by name, rows with name, version and a preview of the part's envelope outline and cutouts (footprints come with epic-parts-and-pcb), Enter picks; changing a part is one undo step. Uses epic-layout story 5's catalogue."
+verify = "P then typing 'choc' and Enter places a Choc v2 slot; switching it to the M2 screw and undoing restores Choc v2."
+covers = ["R6", "R8"]
+after = ["14.5", "14.7"]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 3
+type = "story"
+title = "Export registry reports available or blocked"
+description = "pipeline's export registry: each stage registers its exports, each reports available or blocked with a reason derived from output states (for example, blocked while its source is stale or failed, or blocked: <kind> while the resolved slice it reads carries a model error; the KiCad board is exempt; AD-15), and an export of the same file and app version gives the same bytes. epic-editor-shell's Export menu lists it; plates, pcb, case and firmware register their exports."
+verify = "With a test export, the registry lists it as blocked with its reason while its stage is stale and available once current, and two exports of the same file are byte-identical."
+covers = ["R7"]
+after = ["13.5"]
+hitl = false
+risk = "low"

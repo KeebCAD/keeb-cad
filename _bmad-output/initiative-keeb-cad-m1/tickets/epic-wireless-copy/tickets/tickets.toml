@@ -1,0 +1,12 @@
+# Stories of epic-wireless-copy. Table order is build order.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Copy design records provenance"
+description = "A copyDesign operation makes a new design with a new name and id that records its source design, revision and source licence in meta, keeps every other id, saves it as its own design and leaves the original untouched; it stays available in read-only mode; Save to file keeps the same design and id. epic-editor-shell's Copy design… and Design info use it; epic-parts-and-pcb builds Corney wireless with it."
+verify = "Copying a saved design gives a file with a new id and copied from <id> · rev <hash>, the original's bytes unchanged, and a Save to file of the original keeping its id."
+covers = ["R10"]
+after = ["16.3"]
+hitl = false
+risk = "low"

@@ -1,0 +1,78 @@
+# Stories of epic-change-a-parameter. Table order is build order.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Commands undo and redo, with cascading removal"
+description = "One command registry in model: each command has a name and a display label, applies or returns a typed rejection, and lands on an undo stack with redo; a helper removes everything keyed to a removed item in the same command. epic-editor-shell's toasts and palette read the labels; every later epic adds its commands here, starting with epic-layout story 1."
+verify = "Tests show a sequence of commands undone and redone back to byte-identical files, a rejected command leaving the design unchanged with its typed reason, and one undo restoring a removed item with everything keyed to it."
+covers = ["R3"]
+after = ["13.1"]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 2
+type = "story"
+title = "Parameters and expressions evaluate in resolve"
+description = "The parameters section and one hand-written parser for the AD-17 grammar (numbers with mm, u, deg; names; + - * /; parentheses), evaluated only in model.resolve, which this story creates as resolve(authored, catalogue), with unit checks; unit-mismatch and unresolvable-reference violations; setParameter, renameParameter rewriting every use, and deleteParameter rejected while referenced, naming its users. epic-editor-shell's expression field and Parameters slide-out call these; epic-layout story 1 resolves on it and epic-layout story 8's write-back edits its literal mm/deg terms."
+verify = "Tests show wall + gap evaluating to its sum, mm + deg reporting unit-mismatch, renaming ks rewriting every expression that uses it, deleting a used parameter rejected with its users, and a parameter change re-evaluating its dependents."
+covers = ["R5"]
+after = [1]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 3
+type = "story"
+title = "Pitch overrides, slot size and key-cell references"
+description = "Group pitch-x/pitch-y overrides inherit from the design, u resolves per axis tag and is unit-mismatch on untagged properties, slots are 1u or 1.5u, and groups reference a key cell by id, inherited from the nearest ancestor and overridable per group; a reference to a key cell that does not exist yet reports unresolvable-reference as a warning. Choc v2 at 19 mm is expressible. epic-layout-editor entry 4 edits it."
+verify = "Changing design pitch-x re-spaces every chain except an overriding group; a 1.5u slot steps by its size; u on rotation reports unit-mismatch; a slot reports the key cell of its nearest ancestor."
+covers = ["R3", "R6"]
+after = ["13.4"]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 7
+type = "story"
+title = "Catalogue schema with Choc v2 and M2 entries"
+description = "The catalogue schema in model (components, pins and roles, minimum pitch, 3D envelope, cutouts with role and target, keep-outs, fixed tracks, part parameters) and versioned Choc v2 hotswap and M2 screw entries in library; slots hold a part pinned by id and version, set by a set-part command (one undo step), and pitch below the switch's minimum reports pitch-below-min. epic-layout-editor entry 5's Part picker calls it."
+verify = "A slot holding Choc v2 resolves its cutouts per target; the design's catalogue-refs pin id and version; pitch-x below the Choc v2 minimum reports pitch-below-min and the pitch is unchanged."
+covers = ["R3", "R5", "R6"]
+after = [3]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 4
+type = "story"
+title = "Overlapping keys report overlap"
+description = "The layout stage reports overlap between key footprints on either side, with side-qualified ids and the overlap size in the message, error or warning by severity rule, recomputed live on every resolve. epic-layout-editor entry 7 shows its violations."
+verify = "Rotating Corney's thumb fan into its neighbour reports overlap naming both side-qualified ids and the depth; undoing removes it."
+covers = ["R6"]
+after = [3, 7]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 5
+type = "story"
+title = "Inspector and Design settings edit the selection"
+description = "The inspector shows the selection's anchor, offset, chain and key-cell fields with epic-editor-shell's expression field, mixed for differing values and one undo step for multi-selection typing; with nothing selected, Design settings show the form read-only, pitch-x, pitch-y and the default key cell (none until epic-parts-and-pcb creates one); a group shows pitch and key-cell overrides with inherits <value>. Uses epic-layout story 4."
+verify = "Typing 0.25u into a column offset previews live and commits on Enter; u on rotation shows unit-mismatch and the canvas keeps the last value; changing pitch-x re-spaces every chain except a group that overrides it."
+covers = ["R4", "R8"]
+after = ["13.7", 3]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 6
+type = "story"
+title = "Violations on the canvas and in the panel"
+description = "Layout violations from epic-layout show on the canvas (overlap outlined solid or dashed, the anchor-cycle path, ●/▲ on ids) and in the violations panel (V, or the status strip counts), grouped by workspace and kind, errors first, tagged by revision; a click switches workspace, selects the named ids, fits and flashes them; F8 / Shift+F8 step; nothing is dismissed. The panel is the shared one later workspaces add their kinds to."
+verify = "Rotating the thumb fan into its neighbour outlines the overlap and lists it in the panel; clicking it selects both keys and fits them; F8 steps to it with the panel closed; undo removes it from both."
+covers = ["R7", "R8"]
+after = [4, "13.3"]
+hitl = false
+risk = "medium"

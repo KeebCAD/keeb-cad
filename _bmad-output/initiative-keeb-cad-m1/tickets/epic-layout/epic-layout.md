@@ -6,6 +6,7 @@ covers: [R1, R2, R3, R4, R8, R17]
 sources: [_bmad-output/initiative-keeb-cad-m1/initiative-keeb-cad-m1.md, _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md]
 companions: [_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md, _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md]
 after: []
+status: dropped
 refined: true
 risk: medium
 ---
@@ -64,3 +65,5 @@ Corney Island's key positions, authored as layout commands, match Ergogen (SM-1,
 - Decision (2026-10-26): tracer bullet is entry 1 (one Corney column: command → file → resolve → harness). Entry 3, the full Corney match, is the least certain and follows directly. Entry 6 runs last in the resolve lane because of its reversibility unknown; entries 8–9 are a parallel lane after 3.
 - Decision (2026-10-26): in M1 a key-cell reference may name a cell that does not exist yet; it reports `unresolvable-reference` as a warning and Design settings show `none`. epic-parts-and-pcb creates the first key cell. No built-in default cell is seeded (initiative C4, no Corney-specific shortcuts).
 - Decision (2026-10-30, replan): `_bmad-output/architecture-keeb-cad-layout-model/directions-2026-10-30.md` extends this epic. Story 2's anchors may also name spots that case recipes declare (D10), and its unresolvable-reference check applies to declared references (D3). Story 5's part 3D envelopes and case cutouts become the body's fit constraint and the tray's inputs (D4, D6). Recipes are versioned like catalogue parts (D8). Re-check stories 1, 2 and 5 after bmad-architecture folds the directions in; nothing here is rewritten yet.
+- Dropped: (2026-10-30, replan) replaced by vertical slices (code-decisions item 12); its planned entries moved to the slices that first need them, its refactor sweep dropped.
+- Dropped: (2026-10-30, replan) entry 10, Refactor sweep: this epic is dropped; each slice plans its own sweep.

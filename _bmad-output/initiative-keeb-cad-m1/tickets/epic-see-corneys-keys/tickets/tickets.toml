@@ -1,0 +1,100 @@
+# Stories of epic-see-corneys-keys. Table order is build order.
+
+[[entry]]
+id = 9
+type = "story"
+title = "The workspace matches the 2026-10-30 spine"
+description = "Scaffolds @keeb-cad/reactive and @keeb-cad/geometry with their AD-10 dependency-cruiser fences and violation fixtures (only reactive imports @vue/reactivity, only geometry imports makerjs, worker code never imports reactive, both import no workspace package), adds @snap/ts-inject, pins @vue/reactivity exactly through one pnpm catalog entry with a test that one copy is installed, and removes create-vue's Pinia from app/."
+verify = "pnpm check passes, and each new fence rejects its violation fixture."
+covers = []
+after = ["1.3"]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 1
+type = "story"
+title = "A new design autosaves and reopens byte-identical"
+description = "model gets the KDL v2 schema skeleton for all 14 AD-8 sections in order, the canonical writer, id minting and a newDesign operation (design id, name, form split-reversible) that story 2 registers as a command; storage gets its interface (save, load, listVersions) with the browser autosave backend, reporting autosave failed when browser storage is full; pipeline registers one live stage that tags its output with the design's revision. The thinnest path from command to canonical file to browser storage and back, through the pipeline. epic-layout story 1 fills the layout and meta sections on this skeleton."
+verify = "A test creates a design by command, autosaves it, reloads it from browser storage and saves again, and the two files are byte-identical and the live output carries the reloaded revision; a file with sections out of order is rewritten in AD-8 order."
+covers = ["R1", "R8"]
+after = ["1.1", 9]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 2
+type = "story"
+title = "One Corney column resolves from a chain"
+description = "Fills the layout and meta schema sections (groups, slots, chain +x/+y with gap and offset, pitch-x/pitch-y, u and mm units) with add-group, add-slot, duplicate and delete commands (delete cascading per AD-2), the free arrangement (default anchor = the parent origin), and model.resolve turns a group of chained slots into world frames. The thinnest path from command to design file to resolved placement to the golden harness, using epic-risk-spikes story 1's harness and epic-design-document's commands and file. epic-layout-editor entry 1 draws its resolve and calls its commands."
+verify = "A design built by commands with one Corney column as a chain resolves and the harness passes that column's key centres within ±0.05 mm; saving and reopening it resolves the same."
+covers = ["R2", "R3"]
+after = [1]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 3
+type = "story"
+title = "Explicit anchors move dependants, cycles rejected"
+description = "Anchors any node to any slot attach point or group origin by id (vertex and construction-point anchors arrive with epic-shapes-and-plates), replacing the default anchor; resolving moves dependants transitively. A command that would create a cycle is rejected and a loaded cycle reports anchor-cycle as a {kind, severity, ids, message} violation; an unknown anchor id reports unresolvable-reference. epic-layout-editor entry 7 shows its violations."
+verify = "Moving an anchored-to node moves its whole dependency chain in the resolved placements; a cycle-creating command is rejected and a file with a cycle and one with an unknown id each report their violation with ids."
+covers = ["R1", "R6"]
+after = [2]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 4
+type = "story"
+title = "Corney wired's key centres match Ergogen"
+description = "Rotation about the pivot carries along a chain, an explicit anchor stops the carry and keeps the index, empty slots advance the chain; Corney Island wired's columns, stagger and 3-key thumb fan are authored through commands without absolute coordinates."
+verify = "The harness passes every key centre of Corney Island wired (left side) within ±0.05 mm, from a design built only by commands."
+covers = ["R1", "R2"]
+after = [3]
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 5
+type = "story"
+title = "Live stages tag outputs by revision"
+description = "pipeline generalises story 1's live stage: it runs registered live stages on every revision from story 3, tags each output with its revision (and routing hash where it reads routes), caches by the AD-11 cache key, and exposes each output's state (current, waiting for edit to finish, stale); an output whose tag differs is never reported current, cache hits included. epic-editor-shell's status strip and tab badges show these states."
+verify = "With a test live stage, a revision change marks its output stale until recomputed, a cache hit from an older revision is reported stale."
+covers = ["R6"]
+after = [1]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 6
+type = "story"
+title = "Right side derived, population per side"
+description = "model.resolve derives the right side of a split-reversible design by reflection across the centre frame's y-axis, with side-qualified ids and attach points swapped; population sets fitted per side per slot, an unfitted slot keeps its place and index; geometric right-side overrides are rejected; split-mirrored and unibody files load and report unsupported-form. epic-layout-editor entry 8 draws it."
+verify = "Corney wired's right-side key centres match the harness within ±0.05 mm; unfitting right/<id> leaves the left fitted and both chains unchanged; a split-mirrored file reports unsupported-form."
+covers = ["R4", "R6"]
+after = [4]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 7
+type = "story"
+title = "Layout canvas shows resolved keys and adds groups and slots"
+description = "The Layout workspace's 2D canvas, inline SVG drawn by Vue templates (AD-22), draws resolved placements as keycaps with group frames and anchor links in both themes; G adds a group, S a slot, Ctrl+D duplicates, Delete deletes; click selects, the tree slide-out stays synced; wheel zoom to cursor, middle or Space drag and trackpad pan, F fits; the viewport is shared across 2D workspaces; the empty Layout shows its hint. Uses epic-editor-shell's chrome and epic-layout story 1's commands and resolve. Its canvas, selection and viewport are what every later 2D story builds on."
+verify = "In the locally served build, a new design shows the empty hint; G then S adds a key that appears on the canvas and in the tree, selecting either selects both, Ctrl+Z removes it, and a switch to Shapes and back keeps zoom and pan; an automated check finds every canvas mark at 3:1 contrast in both themes and handles at the canvas hit radius at three zoom levels."
+covers = ["R1", "R8"]
+after = ["1.5", 2]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 8
+type = "story"
+title = "Both halves drawn, population per side"
+description = "The canvas draws the derived right half beside the left with a dashed mirror axis, at lower opacity until selected, selectable on the canvas and in the tree; its geometry fields are read-only with derived from left/<id> and the split-mirrored lock; the Population toggle Fitted: left / right sets fitted per side, one undo step for a multi-selection; unfitted slots keep their place. Uses epic-layout story 6."
+verify = "Selecting right/thumb-home shows read-only geometry and clicking derived from selects left/thumb-home; unticking right on two slots is one undo step and the left stays fitted."
+covers = ["R5", "R8"]
+after = [6, 7]
+hitl = false
+risk = "medium"

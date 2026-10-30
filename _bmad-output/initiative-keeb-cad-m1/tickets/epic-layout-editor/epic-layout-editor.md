@@ -6,6 +6,7 @@ covers: [R1, R2, R3, R4, R8, R17]
 sources: [_bmad-output/initiative-keeb-cad-m1/initiative-keeb-cad-m1.md]
 companions: [_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md, _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md]
 after: []
+status: dropped
 refined: true
 risk: medium
 ---
@@ -73,3 +74,5 @@ Sergii builds Corney Island's key layout from a blank canvas in the Layout works
 - Decision (2026-10-26): the Part picker's rows preview the part's envelope outline and cutouts (entry 5); epic-parts-and-pcb swaps in the footprint preview.
 - Decision (2026-10-26, initiative item 8): entry 10 reviews the UX assumptions and bundles after the Corney layout rebuild, not at milestone acceptance, so the chrome and later workspaces build on settled decisions. It runs after epic-layout-editor, the first point where the editor is usable, rather than after epic-layout, which has no UI since the split.
 - Decision (2026-10-26): the chrome and the expression field now come from epic-editor-shell (split from epic-design-document at its refinement); the two decisions above stand with that epic in place of epic-design-document.
+- Dropped: (2026-10-30, replan) replaced by vertical slices (code-decisions item 12); its planned entries moved to the slices that first need them, its refactor sweep dropped.
+- Dropped: (2026-10-30, replan) entry 9, Refactor sweep: this epic is dropped; each slice plans its own sweep.

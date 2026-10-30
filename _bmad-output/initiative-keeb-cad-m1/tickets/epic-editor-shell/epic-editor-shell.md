@@ -6,6 +6,7 @@ covers: [R5, R17, R18]
 sources: []
 companions: [_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md, _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md]
 after: []
+status: dropped
 refined: false
 risk: medium
 ---
@@ -48,3 +49,4 @@ Sergii opens, saves, copies and undoes designs and edits parameters in the edito
 - Decision (2026-10-26, from epic-layout refinement; moved here from epic-design-document at its split): this epic builds the expression field component (live preview, error underline and message, autocomplete, `Create parameter…`, Ctrl+click to a parameter), beside the evaluator and the Parameters slide-out (EXPERIENCE.md › Fields and pickers). epic-layout uses it in the inspector.
 - Decision (2026-10-26, architecture update, commit 15bf969): the Start screen's recent designs come from `storage.listDesigns` (newest first; launch reopens the first). Opening a file whose design is stored at a newer revision keeps that revision as a version, and a toast names both. The Export menu shows `blocked: <kind>` for a `model` error, and the KiCad board stays enabled (AD-13, AD-15). Write it into Requirements when this epic is refined.
 - Decision (2026-10-26, architecture update, commit 680fbc0): Design info › Versions shows each version's reason (`file`, `saved`, `switch`, `migration`, `copy`, `autosave`) from AD-13's retention rule; the ux-editor spines still show `file` / `browser` and list retention as open, pending a `bmad-ux` touch-up. Write it into Requirements when this epic is refined.
+- Dropped: (2026-10-30, replan) the editor frame is built by 'see Corney's keys' and every other shell component by the first slice that needs it (component-ownership map); no shell layer first.

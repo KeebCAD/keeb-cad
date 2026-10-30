@@ -1,0 +1,78 @@
+# Stories of epic-drag-keys. Table order is build order.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Gestures yield live revisions and one undo step"
+description = "The gesture API (begin, update, commit, cancel): each update yields a new revision, a content hash of the authored sections, that subscribers receive; commit is one undo step, cancel restores the pre-gesture design; a command dispatched mid-gesture commits the gesture first. epic-layout story 8 runs drag, nudge and rotate inside it."
+verify = "A test gesture with ten updates emits ten revisions and leaves one undo step; cancel restores the starting bytes; dispatching a command mid-gesture leaves two undo steps in order."
+covers = ["R4"]
+after = ["14.1"]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 2
+type = "story"
+title = "Move and rotate commands with chain rule and write-back"
+description = "Move takes a world delta converted into each node's anchor frame, moving only selected nodes with no selected ancestor; in a chain the along-direction part goes to gap and the perpendicular part to offset.y, and compensate takes it off the next step; rotate changes the deg term; write-back edits a plain literal or the last literal mm/deg term, appending one if none, rounded to 0.01 mm and 0.1°. Each runs inside epic-design-document's gesture (3.3) (begin, update, commit, cancel) and is one undo step. epic-layout-editor wires drag, nudge and the rotation handle to these commands."
+verify = "Headless tests show a chain move changing only gap and offset.y, compensate leaving later siblings in place, 0.25u becoming 0.25u + 0.37mm, and one undo restoring each."
+covers = ["R7"]
+after = ["13.4", "14.2"]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 3
+type = "story"
+title = "Re-anchor keeps the node in place"
+description = "A re-anchor command moves a node's anchor to another target while keeping its world placement, flattening its offsets to plain numbers relative to the new anchor, as one undo step; a cycle-creating target is rejected. epic-layout-editor's anchor picker calls it."
+verify = "Re-anchoring a rotated thumb key to another key leaves its resolved frame unchanged within 0.01 mm, its offsets plain numbers, and one undo restores the expressions."
+covers = ["R1", "R7"]
+after = [2]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 4
+type = "story"
+title = "Keys and groups drag by the chain rule"
+description = "Left-drag on a key, or on a group frame's tab, calls epic-layout story 8's move command live as one gesture; Alt-drag compensates, Ctrl-drag where Alt collides; box select and Shift box select; a multi-selection moves only its roots; Esc cancels a drag. Alt-drag and the Ctrl chords are checked by hand in Chromium and Firefox."
+verify = "Dragging Corney's thumb-home moves thumb-reachy with it and writes + 0.37mm into its offset; Alt-drag leaves thumb-reachy still; one Ctrl+Z undoes each; the manual chord check is recorded for both browsers."
+covers = ["R1", "R8"]
+after = ["13.7", 2]
+hitl = true
+risk = "high"
+
+[[entry]]
+id = 5
+type = "story"
+title = "Rotation handle, rotate and nudge keys"
+description = "A selected key or group shows the rotation handle about its pivot with a delta readout, Shift snapping 5°; [ and ] rotate 1° (Shift 5°); arrows nudge 0.25 / 1 / 0.05 mm, set in the nudge-step control this story adds to epic-editor-shell's status strip, Alt+arrow compensates; a burst is one gesture; the keys act only while the canvas has focus. All through epic-layout story 8's commands."
+verify = "Dragging the thumb group's handle 5° writes 5 into its rotation and one undo restores it; three arrow presses within 600 ms are one undo step; with a field focused, arrows and brackets do nothing on the canvas."
+covers = ["R2", "R8"]
+after = [4]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 6
+type = "story"
+title = "Anchor picker and re-anchor"
+description = "Clicking an anchor field enters pick mode: candidate attach points light, a target node and a 3x3 attach point are picked on the canvas or in the grid, or by typed id and Tab, Enter confirms; cycle-creating targets are dimmed; re-anchoring calls epic-layout story 9 and shows its toast. No drag-to-anchor."
+verify = "Anchoring the thumb group to a key's bottom-right attach point by keyboard alone leaves the group in place with flattened offsets and the toast; a target that would create a cycle cannot be confirmed."
+covers = ["R3", "R8"]
+after = [5, 3]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 7
+type = "story"
+title = "UX assumptions reviewed after the Corney layout rebuild"
+description = "With Sergii, after rebuilding Corney's key layout in the locally served editor, a bmad-ux Update run on the editor spines (epic-platform-baseline/ux-editor/) decides each [ASSUMPTION] in EXPERIENCE.md › Open Items that the chrome and Layout workspace exercise (about 22 of 28) and the five facilitator-proposed bundles (output state, violations, file lifecycle, shortcuts, expression editing). Each remaining assumption is recorded with the epic whose workspace exercises it. Changes to built behaviour become new stories in the owning epic."
+verify = "EXPERIENCE.md's Open Items list no exercised assumption still undecided, each other one names the epic that will decide it, and the five bundles are confirmed or changed, with the run's decisions in its memlog."
+covers = ["R8"]
+after = [6]
+hitl = true
+risk = "low"

@@ -6,6 +6,7 @@ covers: [R5, R17, R18]
 sources: [_bmad-output/initiative-keeb-cad-m1/initiative-keeb-cad-m1.md, _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md, _bmad-output/prd-keeb-cad-m1/prd-keeb-cad-m1.md]
 companions: [_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md, _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md]
 after: []
+status: dropped
 refined: true
 risk: medium
 ---
@@ -68,3 +69,5 @@ Every later epic edits the design through commands and sees revision-tagged outp
 - Decision (2026-10-26, architecture update, commit 15bf969): AD-13 now lists designs (`listDesigns`) and never lets a file open overwrite a newer stored copy; AD-15 blocks exports on `model` errors. R7 and R8 updated; story 8's unknown is answered.
 - Decision (2026-10-26, architecture update, commit 680fbc0): AD-13 settles version retention: named points are kept until the design is deleted, plus a rolling 20 autosaves, which are pruned first. R8 and story 8 updated.
 - Decision (2026-10-30, replan): this epic does not start before the code-decisions session. Its stories 1–6 depend on questions left open in `_bmad-output/architecture-keeb-cad-layout-model/directions-2026-10-30.md`: how the design lives in memory (two worlds with a boundary was rejected), undo, the pipeline, invalid states, and search vs index for references. Stories 1 and 2 are also extended by D2 (layout tree, every other section a list with ids) and D3 (references declared in the schema).
+- Dropped: (2026-10-30, replan) replaced by vertical slices (code-decisions item 12); its planned entries moved to the slices that first need them, its refactor sweep dropped.
+- Dropped: (2026-10-30, replan) entry 12, Refactor sweep: this epic is dropped; each slice plans its own sweep.

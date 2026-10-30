@@ -1,126 +1,7 @@
 # Epic 3 "A design file that saves, reopens and undoes": stories in build order.
 # Lanes: model (1-4, 7, 10), pipeline (5, 6, 11), storage (8, 9). Some after links are collision guards (shared code), not needs.
 
-[[entry]]
-id = 1
-type = "story"
-title = "A new design autosaves and reopens byte-identical"
-description = "model gets the KDL v2 schema skeleton for all 14 AD-8 sections in order, the canonical writer, id minting and a newDesign operation (design id, name, form split-reversible) that story 2 registers as a command; storage gets its interface (save, load, listVersions) with the browser autosave backend, reporting autosave failed when browser storage is full; pipeline registers one live stage that tags its output with the design's revision. The thinnest path from command to canonical file to browser storage and back, through the pipeline. epic-layout story 1 fills the layout and meta sections on this skeleton."
-verify = "A test creates a design by command, autosaves it, reloads it from browser storage and saves again, and the two files are byte-identical and the live output carries the reloaded revision; a file with sections out of order is rewritten in AD-8 order."
-covers = ["R1", "R8"]
-after = ["1.1"]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 2
-type = "story"
-title = "Commands undo and redo, with cascading removal"
-description = "One command registry in model: each command has a name and a display label, applies or returns a typed rejection, and lands on an undo stack with redo; a helper removes everything keyed to a removed item in the same command. epic-editor-shell's toasts and palette read the labels; every later epic adds its commands here, starting with epic-layout story 1."
-verify = "Tests show a sequence of commands undone and redone back to byte-identical files, a rejected command leaving the design unchanged with its typed reason, and one undo restoring a removed item with everything keyed to it."
-covers = ["R3"]
-after = [1]
-hitl = false
-risk = "low"
-
-[[entry]]
-id = 3
-type = "story"
-title = "Gestures yield live revisions and one undo step"
-description = "The gesture API (begin, update, commit, cancel): each update yields a new revision, a content hash of the authored sections, that subscribers receive; commit is one undo step, cancel restores the pre-gesture design; a command dispatched mid-gesture commits the gesture first. epic-layout story 8 runs drag, nudge and rotate inside it."
-verify = "A test gesture with ten updates emits ten revisions and leaves one undo step; cancel restores the starting bytes; dispatching a command mid-gesture leaves two undo steps in order."
-covers = ["R4"]
-after = [2]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 5
-type = "story"
-title = "Live stages tag outputs by revision"
-description = "pipeline generalises story 1's live stage: it runs registered live stages on every revision from story 3, tags each output with its revision (and routing hash where it reads routes), caches by the AD-11 cache key, and exposes each output's state (current, waiting for edit to finish, stale); an output whose tag differs is never reported current, cache hits included. epic-editor-shell's status strip and tab badges show these states."
-verify = "With a test live stage, a revision change marks its output stale until recomputed, a cache hit from an older revision is reported stale."
-covers = ["R6"]
-after = [3]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 6
-type = "story"
-title = "Background stages run in workers with progress and cancel"
-description = "pipeline runs background stages in Web Workers from committed revisions or after a gesture's debounce pause; they report progress, partial and failed results, and a newer committed revision cancels them. Proven with a test stage in fixtures/; case and routing plug in later. Adds a Firefox Playwright project and a test page hosting the packages, which stories 8 and 9 reuse."
-verify = "In Chromium and Firefox, a slow test stage reports rising progress, a new commit cancels it and restarts on the new revision, a throwing stage reports failed with its message while the last good output stays marked stale, and during a gesture its state reads waiting for edit to finish."
-covers = ["R6"]
-after = [5]
-hitl = false
-risk = "high"
-
-[[entry]]
-id = 4
-type = "story"
-title = "Parameters and expressions evaluate in resolve"
-description = "The parameters section and one hand-written parser for the AD-17 grammar (numbers with mm, u, deg; names; + - * /; parentheses), evaluated only in model.resolve, which this story creates as resolve(authored, catalogue), with unit checks; unit-mismatch and unresolvable-reference violations; setParameter, renameParameter rewriting every use, and deleteParameter rejected while referenced, naming its users. epic-editor-shell's expression field and Parameters slide-out call these; epic-layout story 1 resolves on it and epic-layout story 8's write-back edits its literal mm/deg terms."
-verify = "Tests show wall + gap evaluating to its sum, mm + deg reporting unit-mismatch, renaming ks rewriting every expression that uses it, deleting a used parameter rejected with its users, and a parameter change re-evaluating its dependents."
-covers = ["R5"]
-after = [3]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 7
-type = "story"
-title = "Old files migrate, newer and broken ones are refused safely"
-description = "Loading migrates older format versions forward through a migration chain (proven with a test format 0), reporting the source version for the shell's Upgraded from format N toast; a newer format opens read-only with format-too-new, through a read-only mode that gates every authored-section command and that story 9 extends; a failed migration reports migration-failed and never overwrites; an unparseable or schema-invalid file reports where it fails and replaces nothing."
-verify = "Tests load a format-0 fixture and save it as the current format, open a format-99 file read-only, and show a corrupt file reporting its line with the open design unchanged."
-covers = ["R2"]
-after = [4]
-hitl = false
-risk = "low"
-
-[[entry]]
-id = 8
-type = "story"
-title = "Save and open files in Chromium and Firefox"
-description = "storage's file backend: in Chromium, the first save asks for a location through the File System Access API and later saves write in place; in Firefox, each save downloads <design>.rev<hash>.<ext>; Open uses the file picker; the design exposes its save state (saved, unsaved changes; in Firefox, saved to browser with the last downloaded revision) and a failed save reports save failed with its reason and stays unsaved; storage's listDesigns lists the designs in browser storage newest first (design id, name, revision, last saved) for the Start screen and reopening the last on launch; opening a file whose design is stored at another revision opens the file's revision and keeps the stored one as a version, never overwriting it; listVersions keeps named points (file, saved, switch, migration, copy) until the design is deleted plus the last 20 autosave versions, each with its reason, pruning only autosave versions under storage pressure (AD-13); every save writes the whole design atomically with the routing section valid for that revision; no network call. epic-editor-shell's File menu calls it. A person confirms one real Chromium save and one Firefox download."
-verify = "Playwright runs in both browsers show the Chromium save writing in place (picker stubbed) and the Firefox save downloading the revision-named file, and reopening each gives the same bytes; a person confirms one real Chromium save and one Firefox download; a test with 25 autosaves and one file open lists the file version plus the last 20 autosaves, each with its reason."
-covers = ["R8"]
-after = [1, 3, 6]
-hitl = true
-risk = "medium"
-
-[[entry]]
-id = 9
-type = "story"
-title = "One tab edits, others are read-only until they take over"
-description = "A second tab opening the same design gets it read-only, through story 7's read-only mode, and never writes, including the routing section; taking over makes the editing tab cancel its gesture, stop autosave and drop in-flight background results, and become read-only. epic-editor-shell shows the banner and the Take over editing action."
-verify = "A two-page Playwright test shows the second page read-only with writes refused, then after take over the first page read-only with its gesture cancelled and its pending background result dropped."
-covers = ["R9"]
-after = [6, 7, 8]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 10
-type = "story"
-title = "Copy design records provenance"
-description = "A copyDesign operation makes a new design with a new name and id that records its source design, revision and source licence in meta, keeps every other id, saves it as its own design and leaves the original untouched; it stays available in read-only mode; Save to file keeps the same design and id. epic-editor-shell's Copy design… and Design info use it; epic-parts-and-pcb builds Corney wireless with it."
-verify = "Copying a saved design gives a file with a new id and copied from <id> · rev <hash>, the original's bytes unchanged, and a Save to file of the original keeping its id."
-covers = ["R10"]
-after = [9]
-hitl = false
-risk = "low"
-
-[[entry]]
-id = 11
-type = "story"
-title = "Export registry reports available or blocked"
-description = "pipeline's export registry: each stage registers its exports, each reports available or blocked with a reason derived from output states (for example, blocked while its source is stale or failed, or blocked: <kind> while the resolved slice it reads carries a model error; the KiCad board is exempt; AD-15), and an export of the same file and app version gives the same bytes. epic-editor-shell's Export menu lists it; plates, pcb, case and firmware register their exports."
-verify = "With a test export, the registry lists it as blocked with its reason while its stage is stale and available once current, and two exports of the same file are byte-identical."
-covers = ["R7"]
-after = [6]
-hitl = false
-risk = "low"
+next_id = 13
 
 [[entry]]
 id = 12
@@ -129,6 +10,6 @@ title = "Refactor sweep"
 description = "Cleanup only, scoped at its start from the plans and review findings this epic deferred."
 verify = "pnpm check passes with no behaviour change."
 covers = []
-after = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+after = []
 hitl = false
 risk = "low"

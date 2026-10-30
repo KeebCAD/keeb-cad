@@ -1,104 +1,7 @@
 # Epic 4 "Corney Island's keys and parts placed by the layout model": stories in build order.
 # Lanes: resolve and schema (1-3, 4, 5, 7, 6, one lane since they share resolve; some after links are collision guards, not needs), edit commands (8-9, after 3), sweep (10).
 
-[[entry]]
-id = 1
-type = "story"
-title = "One Corney column resolves from a chain"
-description = "Fills the layout and meta schema sections (groups, slots, chain +x/+y with gap and offset, pitch-x/pitch-y, u and mm units) with add-group, add-slot, duplicate and delete commands (delete cascading per AD-2), the free arrangement (default anchor = the parent origin), and model.resolve turns a group of chained slots into world frames. The thinnest path from command to design file to resolved placement to the golden harness, using epic-risk-spikes story 1's harness and epic-design-document's commands and file. epic-layout-editor entry 1 draws its resolve and calls its commands."
-verify = "A design built by commands with one Corney column as a chain resolves and the harness passes that column's key centres within ±0.05 mm; saving and reopening it resolves the same."
-covers = ["R2", "R3"]
-after = ["3.4", "2.1"]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 2
-type = "story"
-title = "Explicit anchors move dependants, cycles rejected"
-description = "Anchors any node to any slot attach point or group origin by id (vertex and construction-point anchors arrive with epic-shapes-and-plates), replacing the default anchor; resolving moves dependants transitively. A command that would create a cycle is rejected and a loaded cycle reports anchor-cycle as a {kind, severity, ids, message} violation; an unknown anchor id reports unresolvable-reference. epic-layout-editor entry 7 shows its violations."
-verify = "Moving an anchored-to node moves its whole dependency chain in the resolved placements; a cycle-creating command is rejected and a file with a cycle and one with an unknown id each report their violation with ids."
-covers = ["R1", "R6"]
-after = [1]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 3
-type = "story"
-title = "Corney wired's key centres match Ergogen"
-description = "Rotation about the pivot carries along a chain, an explicit anchor stops the carry and keeps the index, empty slots advance the chain; Corney Island wired's columns, stagger and 3-key thumb fan are authored through commands without absolute coordinates."
-verify = "The harness passes every key centre of Corney Island wired (left side) within ±0.05 mm, from a design built only by commands."
-covers = ["R1", "R2"]
-after = [2]
-hitl = false
-risk = "high"
-
-[[entry]]
-id = 8
-type = "story"
-title = "Move and rotate commands with chain rule and write-back"
-description = "Move takes a world delta converted into each node's anchor frame, moving only selected nodes with no selected ancestor; in a chain the along-direction part goes to gap and the perpendicular part to offset.y, and compensate takes it off the next step; rotate changes the deg term; write-back edits a plain literal or the last literal mm/deg term, appending one if none, rounded to 0.01 mm and 0.1°. Each runs inside epic-design-document's gesture (3.3) (begin, update, commit, cancel) and is one undo step. epic-layout-editor wires drag, nudge and the rotation handle to these commands."
-verify = "Headless tests show a chain move changing only gap and offset.y, compensate leaving later siblings in place, 0.25u becoming 0.25u + 0.37mm, and one undo restoring each."
-covers = ["R7"]
-after = [3, "3.4"]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 9
-type = "story"
-title = "Re-anchor keeps the node in place"
-description = "A re-anchor command moves a node's anchor to another target while keeping its world placement, flattening its offsets to plain numbers relative to the new anchor, as one undo step; a cycle-creating target is rejected. epic-layout-editor's anchor picker calls it."
-verify = "Re-anchoring a rotated thumb key to another key leaves its resolved frame unchanged within 0.01 mm, its offsets plain numbers, and one undo restores the expressions."
-covers = ["R1", "R7"]
-after = [8]
-hitl = false
-risk = "low"
-
-[[entry]]
-id = 4
-type = "story"
-title = "Pitch overrides, slot size and key-cell references"
-description = "Group pitch-x/pitch-y overrides inherit from the design, u resolves per axis tag and is unit-mismatch on untagged properties, slots are 1u or 1.5u, and groups reference a key cell by id, inherited from the nearest ancestor and overridable per group; a reference to a key cell that does not exist yet reports unresolvable-reference as a warning. Choc v2 at 19 mm is expressible. epic-layout-editor entry 4 edits it."
-verify = "Changing design pitch-x re-spaces every chain except an overriding group; a 1.5u slot steps by its size; u on rotation reports unit-mismatch; a slot reports the key cell of its nearest ancestor."
-covers = ["R3", "R6"]
-after = [3]
-hitl = false
-risk = "low"
-
-[[entry]]
-id = 5
-type = "story"
-title = "Catalogue schema with Choc v2 and M2 entries"
-description = "The catalogue schema in model (components, pins and roles, minimum pitch, 3D envelope, cutouts with role and target, keep-outs, fixed tracks, part parameters) and versioned Choc v2 hotswap and M2 screw entries in library; slots hold a part pinned by id and version, set by a set-part command (one undo step), and pitch below the switch's minimum reports pitch-below-min. epic-layout-editor entry 5's Part picker calls it."
-verify = "A slot holding Choc v2 resolves its cutouts per target; the design's catalogue-refs pin id and version; pitch-x below the Choc v2 minimum reports pitch-below-min and the pitch is unchanged."
-covers = ["R3", "R5", "R6"]
-after = [4]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 7
-type = "story"
-title = "Overlapping keys report overlap"
-description = "The layout stage reports overlap between key footprints on either side, with side-qualified ids and the overlap size in the message, error or warning by severity rule, recomputed live on every resolve. epic-layout-editor entry 7 shows its violations."
-verify = "Rotating Corney's thumb fan into its neighbour reports overlap naming both side-qualified ids and the depth; undoing removes it."
-covers = ["R6"]
-after = [5]
-hitl = false
-risk = "low"
-
-[[entry]]
-id = 6
-type = "story"
-title = "Right side derived, population per side"
-description = "model.resolve derives the right side of a split-reversible design by reflection across the centre frame's y-axis, with side-qualified ids and attach points swapped; population sets fitted per side per slot, an unfitted slot keeps its place and index; geometric right-side overrides are rejected; split-mirrored and unibody files load and report unsupported-form. epic-layout-editor entry 8 draws it."
-verify = "Corney wired's right-side key centres match the harness within ±0.05 mm; unfitting right/<id> leaves the left fitted and both chains unchanged; a split-mirrored file reports unsupported-form."
-covers = ["R4", "R6"]
-after = [7]
-hitl = false
-risk = "medium"
+next_id = 11
 
 [[entry]]
 id = 10
@@ -107,6 +10,6 @@ title = "Refactor sweep"
 description = "Cleanup only, scoped at its start from the plans and review findings this epic deferred."
 verify = "pnpm check passes and the Corney harness still passes, with no behaviour change."
 covers = []
-after = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+after = []
 hitl = false
 risk = "low"

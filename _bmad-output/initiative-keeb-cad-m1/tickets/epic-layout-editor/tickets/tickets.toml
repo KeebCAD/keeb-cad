@@ -3,93 +3,7 @@
 # Some after links are collision guards (shared canvas or inspector code), not needs.
 # Every story meets R8 (physical-key shortcuts, Esc order, focus ring, reduced motion, contrast, hit radius) for what it adds.
 
-[[entry]]
-id = 1
-type = "story"
-title = "Layout canvas shows resolved keys and adds groups and slots"
-description = "The Layout workspace's 2D canvas, inline SVG drawn by Vue templates (AD-22), draws resolved placements as keycaps with group frames and anchor links in both themes; G adds a group, S a slot, Ctrl+D duplicates, Delete deletes; click selects, the tree slide-out stays synced; wheel zoom to cursor, middle or Space drag and trackpad pan, F fits; the viewport is shared across 2D workspaces; the empty Layout shows its hint. Uses epic-editor-shell's chrome and epic-layout story 1's commands and resolve. Its canvas, selection and viewport are what every later 2D story builds on."
-verify = "In the locally served build, a new design shows the empty hint; G then S adds a key that appears on the canvas and in the tree, selecting either selects both, Ctrl+Z removes it, and a switch to Shapes and back keeps zoom and pan; an automated check finds every canvas mark at 3:1 contrast in both themes and handles at the canvas hit radius at three zoom levels."
-covers = ["R1", "R8"]
-after = ["1.5", "epic-editor-shell", "4.1"]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 2
-type = "story"
-title = "Keys and groups drag by the chain rule"
-description = "Left-drag on a key, or on a group frame's tab, calls epic-layout story 8's move command live as one gesture; Alt-drag compensates, Ctrl-drag where Alt collides; box select and Shift box select; a multi-selection moves only its roots; Esc cancels a drag. Alt-drag and the Ctrl chords are checked by hand in Chromium and Firefox."
-verify = "Dragging Corney's thumb-home moves thumb-reachy with it and writes + 0.37mm into its offset; Alt-drag leaves thumb-reachy still; one Ctrl+Z undoes each; the manual chord check is recorded for both browsers."
-covers = ["R1", "R8"]
-after = [1, "4.8"]
-hitl = true
-risk = "high"
-
-[[entry]]
-id = 3
-type = "story"
-title = "Rotation handle, rotate and nudge keys"
-description = "A selected key or group shows the rotation handle about its pivot with a delta readout, Shift snapping 5°; [ and ] rotate 1° (Shift 5°); arrows nudge 0.25 / 1 / 0.05 mm, set in the nudge-step control this story adds to epic-editor-shell's status strip, Alt+arrow compensates; a burst is one gesture; the keys act only while the canvas has focus. All through epic-layout story 8's commands."
-verify = "Dragging the thumb group's handle 5° writes 5 into its rotation and one undo restores it; three arrow presses within 600 ms are one undo step; with a field focused, arrows and brackets do nothing on the canvas."
-covers = ["R2", "R8"]
-after = [2]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 4
-type = "story"
-title = "Inspector and Design settings edit the selection"
-description = "The inspector shows the selection's anchor, offset, chain and key-cell fields with epic-editor-shell's expression field, mixed for differing values and one undo step for multi-selection typing; with nothing selected, Design settings show the form read-only, pitch-x, pitch-y and the default key cell (none until epic-parts-and-pcb creates one); a group shows pitch and key-cell overrides with inherits <value>. Uses epic-layout story 4."
-verify = "Typing 0.25u into a column offset previews live and commits on Enter; u on rotation shows unit-mismatch and the canvas keeps the last value; changing pitch-x re-spaces every chain except a group that overrides it."
-covers = ["R4", "R8"]
-after = [1, "4.4"]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 5
-type = "story"
-title = "Part picker places parts"
-description = "P places a slot with the Part picker open beside it; the inspector's Part field opens the picker, searchable by name, rows with name, version and a preview of the part's envelope outline and cutouts (footprints come with epic-parts-and-pcb), Enter picks; changing a part is one undo step. Uses epic-layout story 5's catalogue."
-verify = "P then typing 'choc' and Enter places a Choc v2 slot; switching it to the M2 screw and undoing restores Choc v2."
-covers = ["R6", "R8"]
-after = [4, "4.5"]
-hitl = false
-risk = "low"
-
-[[entry]]
-id = 6
-type = "story"
-title = "Anchor picker and re-anchor"
-description = "Clicking an anchor field enters pick mode: candidate attach points light, a target node and a 3x3 attach point are picked on the canvas or in the grid, or by typed id and Tab, Enter confirms; cycle-creating targets are dimmed; re-anchoring calls epic-layout story 9 and shows its toast. No drag-to-anchor."
-verify = "Anchoring the thumb group to a key's bottom-right attach point by keyboard alone leaves the group in place with flattened offsets and the toast; a target that would create a cycle cannot be confirmed."
-covers = ["R3", "R8"]
-after = [3, 5, "4.9"]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 7
-type = "story"
-title = "Violations on the canvas and in the panel"
-description = "Layout violations from epic-layout show on the canvas (overlap outlined solid or dashed, the anchor-cycle path, ●/▲ on ids) and in the violations panel (V, or the status strip counts), grouped by workspace and kind, errors first, tagged by revision; a click switches workspace, selects the named ids, fits and flashes them; F8 / Shift+F8 step; nothing is dismissed. The panel is the shared one later workspaces add their kinds to."
-verify = "Rotating the thumb fan into its neighbour outlines the overlap and lists it in the panel; clicking it selects both keys and fits them; F8 steps to it with the panel closed; undo removes it from both."
-covers = ["R7", "R8"]
-after = [6, "4.7", "4.2"]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 8
-type = "story"
-title = "Both halves drawn, population per side"
-description = "The canvas draws the derived right half beside the left with a dashed mirror axis, at lower opacity until selected, selectable on the canvas and in the tree; its geometry fields are read-only with derived from left/<id> and the split-mirrored lock; the Population toggle Fitted: left / right sets fitted per side, one undo step for a multi-selection; unfitted slots keep their place. Uses epic-layout story 6."
-verify = "Selecting right/thumb-home shows read-only geometry and clicking derived from selects left/thumb-home; unticking right on two slots is one undo step and the left stays fitted."
-covers = ["R5", "R8"]
-after = [7, "4.6"]
-hitl = false
-risk = "medium"
+next_id = 11
 
 [[entry]]
 id = 9
@@ -98,17 +12,7 @@ title = "Refactor sweep"
 description = "Cleanup only, scoped at its start from the plans and review findings this epic deferred."
 verify = "pnpm check passes, including the smoke test, with no behaviour change."
 covers = []
-after = [1, 2, 3, 4, 5, 6, 7, 8]
+after = []
 hitl = false
 risk = "low"
 
-[[entry]]
-id = 10
-type = "story"
-title = "UX assumptions reviewed after the Corney layout rebuild"
-description = "With Sergii, after rebuilding Corney's key layout in the locally served editor, a bmad-ux Update run on the editor spines (epic-platform-baseline/ux-editor/) decides each [ASSUMPTION] in EXPERIENCE.md › Open Items that the chrome and Layout workspace exercise (about 22 of 28) and the five facilitator-proposed bundles (output state, violations, file lifecycle, shortcuts, expression editing). Each remaining assumption is recorded with the epic whose workspace exercises it. Changes to built behaviour become new stories in the owning epic."
-verify = "EXPERIENCE.md's Open Items list no exercised assumption still undecided, each other one names the epic that will decide it, and the five bundles are confirmed or changed, with the run's decisions in its memlog."
-covers = ["R8"]
-after = [9]
-hitl = true
-risk = "low"

@@ -1,0 +1,34 @@
+# Stories of epic-keep-my-work. Table order is build order.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Old files migrate, newer and broken ones are refused safely"
+description = "Loading migrates older format versions forward through a migration chain (proven with a test format 0), reporting the source version for the shell's Upgraded from format N toast; a newer format opens read-only with format-too-new, through a read-only mode that gates every authored-section command and that story 9 extends; a failed migration reports migration-failed and never overwrites; an unparseable or schema-invalid file reports where it fails and replaces nothing."
+verify = "Tests load a format-0 fixture and save it as the current format, open a format-99 file read-only, and show a corrupt file reporting its line with the open design unchanged."
+covers = ["R2"]
+after = ["14.2"]
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 2
+type = "story"
+title = "Save and open files in Chromium and Firefox"
+description = "storage's file backend: in Chromium, the first save asks for a location through the File System Access API and later saves write in place; in Firefox, each save downloads <design>.rev<hash>.<ext>; Open uses the file picker; the design exposes its save state (saved, unsaved changes; in Firefox, saved to browser with the last downloaded revision) and a failed save reports save failed with its reason and stays unsaved; storage's listDesigns lists the designs in browser storage newest first (design id, name, revision, last saved) for the Start screen and reopening the last on launch; opening a file whose design is stored at another revision opens the file's revision and keeps the stored one as a version, never overwriting it; listVersions keeps named points (file, saved, switch, migration, copy) until the design is deleted plus the last 20 autosave versions, each with its reason, pruning only autosave versions under storage pressure (AD-13); every save writes the whole design atomically with the routing section valid for that revision; no network call. epic-editor-shell's File menu calls it. A person confirms one real Chromium save and one Firefox download."
+verify = "Playwright runs in both browsers show the Chromium save writing in place (picker stubbed) and the Firefox save downloading the revision-named file, and reopening each gives the same bytes; a person confirms one real Chromium save and one Firefox download; a test with 25 autosaves and one file open lists the file version plus the last 20 autosaves, each with its reason."
+covers = ["R8"]
+after = ["13.1", "15.1"]
+hitl = true
+risk = "medium"
+
+[[entry]]
+id = 3
+type = "story"
+title = "One tab edits, others are read-only until they take over"
+description = "A second tab opening the same design gets it read-only, through story 7's read-only mode, and never writes, including the routing section; taking over makes the editing tab cancel its gesture, stop autosave and drop in-flight background results, and become read-only. epic-editor-shell shows the banner and the Take over editing action."
+verify = "A two-page Playwright test shows the second page read-only with writes refused, then after take over the first page read-only with its gesture cancelled and its pending background result dropped."
+covers = ["R9"]
+after = [1, 2]
+hitl = false
+risk = "medium"
