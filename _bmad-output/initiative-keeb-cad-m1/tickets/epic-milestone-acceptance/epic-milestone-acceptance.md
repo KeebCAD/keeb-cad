@@ -40,3 +40,4 @@ Milestone 1 is shown done on the locally served static build.
 - Waits on epic 8 because: the case
 - Waits on epic 9 because: firmware
 - Decision (2026-10-26): "deployed app" now reads "locally served static build". Milestone 1 runs locally only (epic-platform-baseline Decision 2026-10-26).
+- Decision (2026-10-30, replan): SM-1's "outline vertices within ±0.05 mm" is contradicted by `_bmad-output/architecture-keeb-cad-layout-model/directions-2026-10-30.md` D4 (the same shape within ±0.05 mm). It changes through the initiative's planned bmad-prd update; refine this epic against the new wording.
