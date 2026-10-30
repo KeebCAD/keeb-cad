@@ -98,7 +98,34 @@ shadcn gave a real head start in two places only: prop forwarding and the comman
 
 The palette came out non-modal in both builds only because of one old spike test. EXPERIENCE.md already says the palette is modal.
 
-## Unmade, found by a sweep of the spines
+## Second round: the never-decided list, one by one (all by Sergii)
+
+1. **Icons.** `@lucide/vue` 1.65.0 sits behind one `ui` `Icon`. Hand-drawn SVGs are only for domain icons, and state glyphs stay text.
+   - Rejected `@iconify/vue`: it fetches icons from an API at runtime.
+   - Rejected `@phosphor-icons/vue`: no release since 2024-04.
+   - Rejected `unplugin-icons`: a build plugin for about 10 icons.
+2. **Fonts.** JetBrains Mono is self-hosted (`@fontsource-variable/jetbrains-mono` 5.3.0, OFL, about 55 kB of woff2), and the Inter fallback is dropped.
+   - Facts: `ui-monospace` works only in Safari. Canvas legends are mono, and whether they fit a 19 mm cap depends on the glyph widths.
+3. **Theme.** The OS preference is the default. A palette override (`Theme: dark / light / system`) is stored in `localStorage`. Themes swap token values and never use `dark:`.
+4. **Virtualization.** None until a frame-budget check fails. Reka's `Tree`/`Listbox`/`Combobox`/`AutocompleteVirtualizer` are the switch.
+5. **Router.** It is the one owner of design + workspace: `/#/design/<id>/<workspace>`.
+   - It uses hash history, so any static host works. `createWebHistory` would need the host to fall back to `index.html` for every path.
+   - Sergii added: the viewport is stored per design in `localStorage`, so a reload keeps zoom and position.
+6. **Workbench.** A separate Vite entry inside `packages/ui`. Sergii wants no "dev-only" code in the app.
+   - Histoire was checked and dropped. It is `1.0.0-beta.1`, unreleased since 2026-01, and its peer is `vite ^7.3`. We run Vite 8 with `strictPeerDependencies`, so it does not install.
+   - Ladle is React-only, and Vitebook and vue-styleguidist are dead.
+7. **Tests.** Every DOM test runs in Vitest browser mode, and jsdom is removed. Sergii: "jsdom is a trap for styles or focus; I don't want to bet on simulations."
+   - **Vitest 5** (5.0.5). Vitest 4 was never chosen: create-vue shipped `^4.1.11`.
+   - Checked: v5 needs Node 22+ and Vite 6.4+. `@vitest/eslint-plugin` declares `vitest: "*"` as its peer. The breaking changes (mocks cleared by default, `sequential` removed, `$` quotes in `test.each` titles, locator objects) don't touch the four spec files we have.
+8. **Numbers.** One formatter:
+   - always `.`
+   - at most 2 decimals, without trailing zeros
+   - `≈` when rounding hides the value
+   - results in mm
+
+**Pattern of the day.** Four scaffold or mock defaults were recorded as if they were decisions: no component library, the 13px padding, Vitest 4 and jsdom. A create-vue defaults audit is now an Open Question; Pinia is still installed, and the choice between ESLint and Oxlint is open.
+
+## Unmade, found by a sweep of the spines (first round; now decided above except toasts and radii)
 
 These are items the first editor slices need that were never decided, or that look decided but aren't. They are listed in the spine's Open Questions.
 

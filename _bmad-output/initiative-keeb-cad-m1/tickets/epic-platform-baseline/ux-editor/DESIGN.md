@@ -116,33 +116,33 @@ colors:
   via-hole-light: '#eff1f5'      # [ASSUMPTION]
 typography:
   ui:
-    fontFamily: 'system-ui, Inter, sans-serif'
+    fontFamily: 'system-ui, sans-serif'
     fontSize: 14px
     fontWeight: '400'
     lineHeight: '1.3'
   ui-strong:
-    fontFamily: 'system-ui, Inter, sans-serif'
+    fontFamily: 'system-ui, sans-serif'
     fontSize: 14px
     fontWeight: '600'
     lineHeight: '1.3'
   section-label:
-    fontFamily: 'system-ui, Inter, sans-serif'
+    fontFamily: 'system-ui, sans-serif'
     fontSize: 11px
     fontWeight: '600'
     lineHeight: '1.3'
     letterSpacing: 0.07em
   mono:
-    fontFamily: '"JetBrains Mono", ui-monospace, monospace'
+    fontFamily: '"JetBrains Mono", monospace'
     fontSize: 13px
     fontWeight: '400'
     lineHeight: '1.3'
   mono-small:
-    fontFamily: '"JetBrains Mono", ui-monospace, monospace'
+    fontFamily: '"JetBrains Mono", monospace'
     fontSize: 12px
     fontWeight: '400'
     lineHeight: '1.3'
   canvas-label:
-    fontFamily: '"JetBrains Mono", ui-monospace, monospace'
+    fontFamily: '"JetBrains Mono", monospace'
     fontSize: 11px
     fontWeight: '400'
     lineHeight: '1.2'
@@ -382,8 +382,8 @@ Overlay0 (2.87:1) never carries text. Muted text never sits on a selected or act
 
 Two families. → `mockups/typography-1.html` (option b).
 
-- **Sans — `{typography.ui}`** (system-ui, Inter fallback): chrome, labels, menus, messages. `{typography.ui-strong}` for the active tab and inspector headings. `{typography.section-label}` uppercase for inspector and panel section headers.
-- **Mono — `{typography.mono}`** (JetBrains Mono, ui-monospace fallback) at 13px: expression and value fields, ids, coordinates, status-strip counts, revision hashes, and code inside messages (`unit-mismatch: u on rotation`). `{typography.mono-small}` (12px) for `kbd` shortcut hints.
+- **Sans — `{typography.ui}`** (system-ui; no web font, decided 2026-10-30): chrome, labels, menus, messages. `{typography.ui-strong}` for the active tab and inspector headings. `{typography.section-label}` uppercase for inspector and panel section headers.
+- **Mono — `{typography.mono}`** (JetBrains Mono, self-hosted with the app, decided 2026-10-30: canvas legends must fit by its glyph widths, and `ui-monospace` works only in Safari) at 13px: expression and value fields, ids, coordinates, status-strip counts, revision hashes, and code inside messages (`unit-mismatch: u on rotation`). `{typography.mono-small}` (12px) for `kbd` shortcut hints.
 - **Canvas labels — `{typography.canvas-label}`**: slot ids, R·C matrix labels (zero-based, `R0·C0`), LED numbers, legends, rotation readout (signed delta, `−3.4°`).
 - **Tabular digits everywhere** (`font-variant-numeric: tabular-nums`), so changing numbers never jitter.
 
