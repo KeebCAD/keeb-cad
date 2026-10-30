@@ -25,7 +25,7 @@ sources:
 
 # Architecture Spine: keeb-cad, layout model and generation core
 
-> ⚠️ **Proposed directions pending (2026-10-30).** `directions-2026-10-30.md` records approach directions that change the paradigm and AD-3, AD-5, AD-10, AD-16 and AD-18. Until `bmad-architecture` folds them in, read the affected ADs together with that record and don't build the physical body (shapes, plates, case) from AD-16/AD-18 as written.
+> ⚠️ **Proposed directions pending (2026-10-30).** `directions-2026-10-30.md` records approach directions that change AD-3, AD-5, AD-16 and AD-18 and leave an open question against AD-10. Until `bmad-architecture` folds them in, read the affected ADs together with that record and don't build the physical body (shapes, plates, case) from AD-16/AD-18 as written.
 
 **Principles (they bind every AD):** explicit over terse · one way to do each thing · a small, coherent set of concepts.
 
@@ -231,7 +231,7 @@ graph LR
   - **Milestone 2:** the design embeds an untouched base copy of the source; pulling is a three-way merge (base, new source, local) keyed by id; conflicting changes are surfaced, never auto-resolved; a pull carries layout and electronics changes alike.
 
 ### AD-10: Package dependency direction, shared derivations, stage contracts [ADOPTED]
-> ⚠️ Contradicted by `directions-2026-10-30.md` D1: one reactive world on Vue's reactivity engine, including the core. The wording is to be amended openly.
+> ⚠️ Open question in `directions-2026-10-30.md` ("How the design lives in memory"): "two worlds" (an immutable core plus a reactive UI) was rejected, but how the one world works is undecided. One option raised, Vue's reactivity engine in the core, would require amending this AD openly. Until it's decided, this AD stands as written.
 - **Binds:** all packages
 - **Prevents:** stages coupling to each other; UI framework or rendering libraries leaking into the core; stages each evaluating geometry, expressions or nets their own way; two shapes for one output.
 - **Rule:**

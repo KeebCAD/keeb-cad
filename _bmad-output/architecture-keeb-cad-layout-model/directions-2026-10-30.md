@@ -4,26 +4,17 @@ type: directions-record
 status: proposed
 created: '2026-10-30'
 origin: 'party-mode session, 2026-10-30 (room: Winston, Amelia, Sally, Mary, John, Sofia, Smithy; guest Priya)'
-affects: [paradigm, AD-3, AD-5, AD-10, AD-16, AD-18]
+affects: [AD-3, AD-5, AD-10 (open question only), AD-16, AD-18]
 next: 'bmad-architecture folds these into the spine as ADs; until then the spine banner points here'
 ---
 
 # Approach directions, 2026-10-30
 
-These are **directions** that Sergii decided in a party session. They aren't spine rules yet. Each one says *what* was chosen and *why*. The precise rules belong to `bmad-architecture`, when it folds them into `architecture-keeb-cad-layout-model.md`. Anything listed under **Open** was raised but not decided. Treat it as undecided, even where the room leaned one way.
+These are **directions** that Sergii decided in a party session. They aren't spine rules yet. Each one says *what* was chosen and *why*. The precise rules belong to `bmad-architecture`, when it folds them into `architecture-keeb-cad-layout-model.md`. Anything listed under **Open** was raised but not decided. (D1 was recorded as decided at first and moved to Open the same day: only the rejection of "two worlds" was decided.) Treat it as undecided, even where the room leaned one way.
 
 **Why this record exists:** the session started from "do we need more code-architecture decisions before coding?" The answer was **yes, but mostly not the ones expected**. The biggest gap was in the domain model. The physical body (outline, plates, case) had been taken over from Ergogen and general CAD without a first-principles pass.
 
 ## Decided
-
-### D1. One reactive world
-- **Direction:** the design lives in **one reactive graph**, built on Vue's reactivity engine, from the model through to the pixels. **Commands are the only writers.** Plain data appears only at **three doors**: workers, the file, and undo.
-- **Why:** an immutable core plus a reactive UI is two worlds with a boundary between them, a "split brain" that is hard to reason about.
-- **Affects:** spine `paradigm` (functional core / imperative shell) and AD-10 (no UI framework in the core). AD-10's wording must be **amended openly**, not reinterpreted.
-- **Watch:**
-  - "Only commands write" must be **enforced** by a lint or dependency-cruiser rule, not just documented.
-  - "Why did this recompute?" is hard for agents to debug.
-  - This ties the core to Vue's reactivity engine, a one-way door.
 
 ### D2. Two storage shapes, capped
 - **Direction:** the **layout is a tree** (containment). **Every other section is a list of items with ids.** The case graph counts as a list. A third shape needs its own decision.
@@ -78,6 +69,7 @@ These are **directions** that Sergii decided in a party session. They aren't spi
 
 | Item | Notes |
 | --- | --- |
+| **How the design lives in memory (was D1, moved here 2026-10-30)** | **Rejected:** two worlds with a boundary (an immutable core plus a reactive UI), because a split brain is hard to reason about. **Undecided:** what the one world is. Raised but not chosen: Vue's reactivity engine in the core (would mean amending AD-10's "no UI framework in the core"), plain data only at three doors (workers, file, undo), commands as the only writers (already AD-2), enforcement by a lint or dependency-cruiser rule. Risks raised: "why did this recompute?" debugging for agents, and tying the core to Vue's engine. A time-boxed spike was suggested as a way to get evidence. |
 | Invalid states | Proposed: "structure is always valid, problems with meaning get flagged", and "refuse and show what depends on it" when deleting something that's referenced. The spine is already mixed (AD-2 refuses some deletes; anchor-cycle, construction-undefined, shape-failed and unresolvable-reference are flagged). With D3, `unresolvable-reference` could apply to every reference. |
 | Search vs index for "who points at X" | Cheap and reversible |
 | Common recipe spot names | A shared set every style declares, so attachments survive a style switch |
