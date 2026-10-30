@@ -3,10 +3,15 @@ type: epic
 title: "See Corney's keys"
 parent: initiative-keeb-cad-m1
 covers: [R1, R2, R4, R17, R18]
-sources: []
-companions: []
+sources:
+  - _bmad-output/initiative-keeb-cad-m1/initiative-keeb-cad-m1.md
+companions:
+  - _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md
+  - _bmad-output/initiative-keeb-cad-m1/component-ownership.md
+  - _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md
+  - _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md
 after: []
-refined: false
+refined: true
 risk: high
 ---
 
@@ -20,6 +25,21 @@ On the locally served app, Corney Island's left half resolves from its layout-co
 
 For Sergii: Corney Island's keys appear in the editor from its layout-command script and survive a reload, proving the reactive graph, model, autosave and the editor frame end to end.
 
+## Requirements
+
+- R1 (parent R1): A layout is built from a blank canvas with groups and slots, each placed by anchor + offset (offset, then rotate about the pivot). Any node anchors to a slot attach point or a group origin, and moving a node moves everything anchored to it, transitively.
+- R2 (parent R2): Children are arranged freely or as a chain. Corney's cumulative column stagger and 3-key thumb fan are expressed without absolute coordinates; each node has one rotation, carried along its chain, and an explicit anchor stops the carry. Shown by Corney's layout-command script resolving the left half, and 13.4's spike check of its key centres within ±0.05 mm of Ergogen.
+- R3 (parent R4): A split-reversible design derives its right half (one geometry, side-qualified ids), with population per side per slot set by command. Split-mirrored and unibody files load and report `unsupported-form`.
+- R4 (parent R17): A command that would create an anchor cycle is rejected, naming the cycle's ids. A loaded file with a cycle reports `anchor-cycle`, and an unknown anchor reports `unresolvable-reference`. The status strip shows the error and warning counts.
+- R5 (parent R18): A new design autosaves in the browser after every applied command and reopens from autosave byte-identical, as one versioned canonical file.
+- R6 (parent R1, R17): The layout is built and seen in the editor frame, in both themes: top bar, workspace tabs, status strip (violation counts, cursor, zoom), left rail with the Tree slide-out, the docked right-panel region, and the Layout canvas drawing both halves with viewport (zoom, pan, fit) and selection synced with the tree. G, S, Ctrl+D and Delete add, duplicate and delete. The open design and workspace are in the URL. Shown by one e2e journey in Chromium and Firefox.
+
+## Constraints
+
+- C1 (parent C3): Architecture AD-1 to AD-26 bind every story. This slice builds AD-2's register (Immer, Valibot inputs, nothing in progress in the design), AD-8's design file, AD-13's storage, AD-10's `reactive` and `geometry`, AD-25's wiring and AD-26's `ui` layer as written there.
+- C2 (parent C1): Current desktop Chromium and Firefox; everything runs client-side.
+- C3 (parent C4): No Corney-specific shortcuts. Checks are invariants plus the headless slice scenario on Corney's layout-command script; the only golden comparison is 13.4's spike check (initiative Decision 2026-10-30).
+
 ## Done when
 
 - Corney's layout-command script resolves the left half and the derived right half; both are drawn on the Layout canvas in the editor frame.
@@ -30,12 +50,20 @@ For Sergii: Corney Island's keys appear in the editor from its layout-command sc
 ## Boundaries
 
 - Out: what the other slices of the initiative own (initiative breakdown, component-ownership map).
+- Out, owned by epic-change-a-parameter: undo and redo, the Inspector, the Population toggle, the Violations panel.
+- Out, owned by epic-drag-keys: drag, the anchor picker, the command palette.
+- Out, owned by epic-keep-my-work: Save to file, Open, the start screen, banners and toasts.
+- Out, owned by epic-outline-follows-the-keys: the outline.
+- Out, owned by epic-routing-and-fab: Tab badges and the status strip's output-state entries.
+- Out: anchors to parts, vertices and construction points (the slices that add them).
 
 ## References
 
 - parent — _bmad-output/initiative-keeb-cad-m1/initiative-keeb-cad-m1.md, section Requirements
-- architecture — _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md
+- architecture — _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md, AD-1 to AD-26 (AD-2, AD-8, AD-10, AD-13, AD-24 to AD-26 for this slice)
 - companion — _bmad-output/initiative-keeb-cad-m1/component-ownership.md
+- design — _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md, Components
+- design — _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md, Global chrome, Layout workspace, Edit model, Shortcuts
 
 ## Notes
 
@@ -54,3 +82,4 @@ For Sergii: Corney Island's keys appear in the editor from its layout-command sc
 - Decision (2026-10-30, refinement): the spine Open Questions this slice's stories hit are settled by a bmad-architecture run on this epic before its stories are planned: update library, command-input schema format, deep read-only typing, ts-inject silent-override convention, physical-key hotkeys, 3/4/6 px radii, cycle rejection as flagged breaks. Rejected: leaving each to the first story that hits it, and spiking only the update library.
 - Decision (2026-10-30, refinement): 13.4 adds a spike check beside its invariant checks: the left half's key centres compared with Ergogen within ±0.05 mm using the existing fixtures/ harness, so a wrong Corney script shows up in this slice and not at milestone accepted. This is the spike comparison the initiative's per-slice rule allows. Rejected: invariants only.
 - Decision (2026-10-30, refinement): no second fixture in this slice. A small non-split fixture, so the command language isn't only ever tested on Corney, is raised when epic-change-a-parameter is refined.
+- Decision (2026-10-30, refinement): the bmad-architecture run settled this slice's spine questions in the initiative spine (c0686bb); the spine stays the adopted companion. Requirements R1 to R6 and Constraints C1 to C3 written and approved; the epic is refined.
