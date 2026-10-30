@@ -44,3 +44,4 @@ For Sergii: the wired Corney routes in the browser and produces fab-checked gerb
 - Waits on epic 20 because: connections
 - Waits on epic 13 because: live stage outputs
 - Decision (2026-10-30, replan): moved-in entry 7.1 (workers: AD-11 input slices as cache key and freshness tag, the crossing in `reactive`) contradicts the spine as worded; revise it in place when this epic is refined, before it starts.
+- Decision (2026-10-30, from epic-see-corneys-keys refinement): this slice, the first with a background output, takes over from retired entry 13.5: background outputs tagged and cached by input-slice hash (AD-11), and the Tab badge and status-strip output-state entries (current, waiting, stale). Plan them when this epic is refined.
