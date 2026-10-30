@@ -1,11 +1,12 @@
 ---
 name: 'keeb-cad: approach directions, 2026-10-30'
 type: directions-record
-status: proposed
+status: folded
 created: '2026-10-30'
 origin: 'party-mode session, 2026-10-30 (room: Winston, Amelia, Sally, Mary, John, Sofia, Smithy; guest Priya)'
 affects: [AD-3, AD-5, AD-10 (open question only), AD-16, AD-18]
-next: 'bmad-architecture folds these into the spine as ADs; until then the spine banner points here'
+updated: '2026-10-30'
+next: 'folded into architecture-keeb-cad-layout-model.md on 2026-10-30; kept as history. Open items live in the spine''s Open Questions table'
 ---
 
 # Approach directions, 2026-10-30
