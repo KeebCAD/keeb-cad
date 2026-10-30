@@ -147,10 +147,10 @@ typography:
     fontWeight: '400'
     lineHeight: '1.2'
 rounded:
-  # [ASSUMPTION] lifted from the mocks, never chosen explicitly
-  sm: 3px
+  # decided 2026-10-30 from a side-by-side preview (on the 4px grid)
+  sm: 2px
   md: 4px
-  lg: 6px
+  lg: 8px
   full: 9999px
 spacing:
   # Calm density (chosen). Named sizes from the calm variation of mockups/color-themes-1.html.
@@ -405,7 +405,7 @@ Docked surfaces are flat and separated by tone and a 1px `{colors.border}` hairl
 
 ## Shapes
 
-Small, tool-like radii `[ASSUMPTION]`: `{rounded.sm}` fields and badges, `{rounded.md}` buttons and chips, `{rounded.lg}` overlays. `{rounded.full}` only for the progress ring, status dots and the rotation handle. Canvas geometry is drawn true to the model — keycap radius is part geometry, not a UI token.
+Small, tool-like radii (decided 2026-10-30): `{rounded.sm}` fields and badges, `{rounded.md}` buttons and chips, `{rounded.lg}` overlays. `{rounded.full}` only for the progress ring, status dots and the rotation handle. Canvas geometry is drawn true to the model — keycap radius is part geometry, not a UI token.
 
 ## Components
 
@@ -424,7 +424,7 @@ General states: hover fills `{colors.hover}` (no Mauve bar); pressed/on fills `{
 - **Tab badge** — worst output state: progress ring (`{colors.progress}`), stale hatch, ▲ `{colors.warning}`, ● `{colors.error}`; mono count beside ● / ▲.
 - **Left rail + slide-out** — the rail holds Tree and Parameters icons (the icon whose panel is open: `{colors.fill-on}` and a Mauve left bar). One slide-out (`{spacing.slide-out-width}`, `{colors.chrome}`, full work-area height, right corners `{rounded.lg}`, Tree / Parameters tabs) floats over the canvas edge. Tree rows show mono ids with group/slot glyphs; parameter rows show `name = expression = value`.
 - **Status strip** — one entry per output (Outline, Plates, PCB, Case, Firmware) with label, glyph and mono state; then ● / ▲ counts, cursor coordinates, zoom, nudge-step control. `{colors.chrome}`. Pick mode and track drawing show their hint at the left end in mono Text. When entries do not fit (at 1366 px wide), each compresses to `status-entry-compact`: glyph and number (`◌`, `41/56`, `62%`).
-- **Nudge-step control** — mono `0.25 mm` button; its small popover holds three expression fields (arrow, Shift+arrow, Ctrl+arrow steps).
+- **Nudge-step control** — mono `0.25 mm` button; its small popover holds four expression fields (arrow, Shift+arrow, Ctrl+arrow steps; rotate step for R / Shift+R).
 - **Banner** — `{spacing.banner}` full-width under the top bar, `{colors.chrome}`, 1px `{colors.warning}` bottom edge, ▲ in `{colors.warning}` and a Text label, optional inline `button` (`Take over editing`). → `mockups/key-start.html` (frames 2–3).
 - **Toast** — `{colors.panel}`, plain text, above the status strip at the right `[ASSUMPTION: position]`; rejections lead with ▲.
 - **Start screen** — `start-card` centered near the top of `{colors.canvas}`, flat: two equal buttons (New design; Open file with a `Ctrl+O` kbd), `{typography.section-label}` `Recent autosaved designs`, mono rows with `rev <hash>` right-aligned in `{colors.text-muted}`. → `mockups/key-start.html` (frame 1).

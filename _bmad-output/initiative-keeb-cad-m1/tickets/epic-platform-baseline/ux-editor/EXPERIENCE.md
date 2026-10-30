@@ -98,7 +98,7 @@ Behavioral. Visual specs live in DESIGN.md › Components. Every interactive ite
 | Workspace tabs | Top bar | `role=tablist`; keys 1–5 when no field is focused; arrows move between tabs when focused. Each tab carries a tab badge. |
 | Tab badge | Workspace tabs | Repeats the worst output state of that workspace (see State Patterns › Output states). Accessible name = the state text (`PCB: routing 41/56`). |
 | Status strip | Bottom, global | One entry per output — Outline, Plates (worst across plates), PCB (always shows the unrouted count, even `0 unrouted`), Case, Firmware — showing its output state (see State Patterns › Output states). When the strip overflows (at 1366 px wide), entries compress to glyph and number; the full state text shows in a tooltip and stays the accessible name. Click → that workspace. Warning/error counts open the violations panel. The left end shows pick-mode / track-drawing hints. |
-| Nudge-step control | Status strip | Click opens three expression fields (arrow, Shift, Ctrl step); defaults 0.25 / 1 / 0.05 mm. |
+| Nudge-step control | Status strip | Click opens four expression fields (arrow, Shift, Ctrl step; rotate step); defaults 0.25 / 1 / 0.05 mm and 1°. |
 | Export menu | Top bar, all workspaces | Lists every output. Unavailable items are `aria-disabled` with an inline reason (`blocked: 2 DRC errors, 15 unrouted`) linking to the violations panel. An export whose geometry has a `model` error is blocked (AD-15); that reason comes first, as count + kind: `blocked: 1 construction-undefined`, or `blocked: 2 model errors (anchor-cycle, …)` for several kinds. Warnings never block. KiCad 10 project always enabled, even with model errors. STL/STEP enabled only when Case is `current`; otherwise `blocked: case stale (rev <hash>)` or `blocked: case failed: <message>`. |
 | Toast | Global | Undo/redo (`Undid: <command label>` — one display label per command from the model command registry), rejections (`rejected: <what>` with ▲), re-anchor, format migration, save failure, version switch, and opening a file over a newer stored copy (see State Patterns › File). `role=status`; auto-hides after ~4 s `[ASSUMPTION]`. |
 | Banner | Under top bar | Read-only, format-too-new, autosave failure. Pushes the canvas down; never covers it. `role=alert`. → `mockups/key-start.html`. |
@@ -112,14 +112,14 @@ Behavioral. Visual specs live in DESIGN.md › Components. Every interactive ite
 | Violations panel | Status strip counts, V | Non-modal, slides up. Grouped by workspace then kind, errors first; each group tagged with its source revision. Stale groups show `stale` and F8 skips them. Unrouted connections appear as `unrouted` entries; while routing runs they collapse to one counted row. Click a violation → switch workspace, select all named ids (side-qualified ids select that half), fit the viewport to them, flash them once. F8 / Shift+F8 step next/previous without opening the panel. No dismiss or mute: a violation leaves only when fixed. Empty: `0 violations`. |
 | Command palette | Ctrl+K, everywhere | Modal. Every named command with its shortcut; jump to any node, piece, parameter or violation by id; jump to a workspace. No match: `no match for "<query>"` `[ASSUMPTION]`. |
 | Context menu | Right-click, Shift+F10, Menu key | Palette commands filtered to the selection (or focused item), each with its shortcut. Arrows, Enter, Esc. Right-click is always a context menu, never a direct action — in 3D too. |
-| Cheat sheet | ? | Modal. Every shortcut, grouped by workspace, including focus-dependent keys (Delete). |
+| Cheat sheet | F1, ? | Modal. Every shortcut, grouped by workspace, including focus-dependent keys (Delete). |
 
 ### Fields and pickers
 
 | Component | Use | Behavioral rules |
 |---|---|---|
-| Expression field | Every length/angle | Authored text and evaluated suffix (`0.25u + 0.37mm = 5.12 mm`); plain literals show value and unit. Each keystroke that parses and unit-checks previews live as a gesture. Enter commits one undo step; Esc restores; on blur, valid commits and invalid restores. Ctrl+Z inside a field = native text undo. A command dispatched during a field gesture (palette, Ctrl+click, workspace switch) commits the gesture first. Invalid (parse, unit-mismatch, unresolvable reference, cycle): error underline and message, `aria-invalid` + `aria-describedby`; the canvas keeps the last valid value; Enter does not commit. Ctrl+click a parameter name to open it in the Parameters slide-out. |
-| Autocomplete dropdown | Expression field | Parameter names with values (`ks = 19 mm`). Open: ↑↓ move, Tab or Enter accept only (no commit). Closed: Enter commits, Tab commits and moves focus. An unknown name offers `Create parameter <name>…`: it opens the new parameter's value field and leaves the in-progress gesture uncommitted. |
+| Expression field | Every length/angle | Authored text and evaluated suffix (`0.25u + 0.37mm = 5.12 mm`); plain literals show value and unit. A value that parses and unit-checks is applied as a command after a typing pause (~300 ms `[ASSUMPTION]`), and at once on Enter or blur; every command from one focus session coalesces into one undo step (decided 2026-10-30). Esc undoes that step and restores the text; on blur, an invalid value restores. Ctrl+Z inside a field = native text undo. A command dispatched while a field holds an unapplied valid value (palette, Ctrl+click, workspace switch) applies it first. Invalid (parse, unit-mismatch, unresolvable reference, cycle): error underline and message, `aria-invalid` + `aria-describedby`; the canvas keeps the last valid value; Enter does not commit. Ctrl+click a parameter name to open it in the Parameters slide-out. |
+| Autocomplete dropdown | Expression field | Parameter names with values (`ks = 19 mm`). Open: ↑↓ move, Tab or Enter accept only (no commit). Closed: Enter commits, Tab commits and moves focus. An unknown name offers `Create parameter <name>…`: it opens the new parameter's value field and leaves the original field's typed value unapplied. |
 | Anchor picker | Anchor fields, vertex rows, construction-point lines | Click the field → click a target node on the canvas → pick an attach point from the 3×3 grid or on the canvas (lit attach points; see Pick modes). Keyboard: type an id (autocomplete) or Tab/Shift+Tab through candidate targets, arrows in the 3×3 grid, Enter confirms. Targets that would create an anchor cycle are dimmed with `would create anchor cycle` `[ASSUMPTION]`. No canvas drag-to-anchor. Re-anchor: see Interaction Primitives. |
 | Part field | Inspector, slot | Opens the Part picker anchored beside the field: searchable by name; rows show name, version, footprint preview; Enter picks. Changing part = one undo step; connections re-derive. P on the canvas places a new slot with the Part picker open. |
 | Binding field | Firmware inspector | Selecting a key focuses it. While focused, plain keys, Shift and Alt combinations are captured as bindings; Ctrl combinations always reach the app and are never captured. Tab captures nothing: it advances to the next key — left half then right half, row-major by matrix row/column `[ASSUMPTION]`. Esc always leaves the field (no focus trap). To bind Tab, Esc or a Ctrl combination, use the picker: the field hint reads `Tab, Esc, Ctrl+… → pick from list (↓)`, and ↓ opens the picker. Picker: binding-type dropdown and searchable key list; mod-tap / layer-tap get two fields. Select 2+ keys → `Add combo`. |
@@ -131,8 +131,8 @@ Behavioral. Visual specs live in DESIGN.md › Components. Every interactive ite
 | Component | Use | Behavioral rules |
 |---|---|---|
 | Canvas keys, Group frame, Anchor link | 2D canvas | Selection and drag: see Interaction Primitives. Anchor links show each node's anchor; not draggable. Unfitted slots keep their place and index. |
-| Rotation handle | Selected key or group (Layout, isolated cell mode) | Drag rotates about the pivot (⊕ shown); a group's pivot defaults to its group origin and is editable in the group inspector (Offset → pivot). The readout during the drag is the delta (`−3.4°`); the inspector shows the absolute rotation. Shift snaps 5°. One gesture, one undo step; writes the deg term. Multi-selection: each node about its own pivot `[ASSUMPTION]`. → `mockups/key-layout.html`. |
-| Outline context line | Layout | The piece holding the outline marker ★, thin and non-editable, behind keys; follows live during a gesture. Plates are not shown in Layout. |
+| Rotation handle | Selected key or group (Layout, isolated cell mode) | Drag rotates about the pivot (⊕ shown); a group's pivot defaults to its group origin and is editable in the group inspector (Offset → pivot). The readout during the drag is the delta (`−3.4°`); the inspector shows the absolute rotation. Shift snaps 5°. Only the dragged keys move until release; the drop is one command, one undo step, and writes the deg term. Multi-selection: each node about its own pivot `[ASSUMPTION]`. → `mockups/key-layout.html`. |
+| Outline context line | Layout | The piece holding the outline marker ★, thin and non-editable, behind keys; updates after each applied command (a drop, the end of a nudge burst, a field's typing pause). Plates are not shown in Layout. |
 | Canvas marks | All 2D canvases | Vertices, construction points, overlap areas, violation markers, anchor-cycle paths, ratsnest, LED chain, combos: display only, except vertex drag in Outline. Clicking a violation marker selects its ids. |
 | Overlay chips (PCB) | PCB | Toggle buttons with `aria-pressed`: Matrix (M), LED chain (L), Pins (I); off by default, combinable, remembered for the session. Matrix: R·C label per key, zero-based (`R0·C0`), overrides with `*`; row/column overrides are set in the inspector for the selected keys. LED chain: numbered path; `Pick LED order` (pick mode) turns it on while active. Pins: hover or focus the MCU module to show pin → net labels; the inspector lists pins → nets as a keyboard-usable list; pick a pin to reassign. → `mockups/pcb-overrides-1.html` (option a), `mockups/key-pcb.html`. |
 | Layer and view chips | PCB, Layout, Case, isolated cell mode | Toggle buttons with `aria-pressed`. PCB layer chips: F.Cu, B.Cu, Edge, Keep-outs; on by default. Outline chip (Layout, O): on by default. |
@@ -159,7 +159,7 @@ This table is the one home for the status strip, tab badges and staleness.
 | State | Status strip / tab badge | In the workspace |
 |---|---|---|
 | current | ✓ + `current` | — |
-| waiting for edit to finish | ◌ + text | During a gesture or nudge burst, live outputs (placement, Outline, Plates) update continuously; background outputs (PCB, Case) wait, then start after commit or a debounce pause (AD-11) |
+| waiting for edit to finish | ◌ + text | Live outputs (placement, Outline, Plates) update after each applied command; during a drag or nudge burst only the moved keys move on the canvas; background outputs (PCB, Case) wait, then start after each applied command (AD-11) |
 | rebuilding / routing | spinner + `rebuilding N%` / `routing N/M`; badge progress ring | — |
 | stale | hatch + `stale` | Geometry desaturated and hatched with `stale · rev <hash>`; connections being rerouted drawn as dashed ratsnest, never as finished routes; 3D: last good solid grayed under the progress bar until the new one lands |
 | failed `[ASSUMPTION]` | ● + `failed: <message>` | Last good output stays, marked stale; message also in the violations panel |
@@ -177,7 +177,7 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 | save (Firefox) | Ctrl+S | Degrades openly: downloads `<design>.rev<hash>.<ext>`; Open uses the standard file picker |
 | save failed `[ASSUMPTION]` | Toast | `save failed: <reason>`; state stays `unsaved changes` |
 | autosave failed `[ASSUMPTION]` | Banner | `Autosave failed: browser storage full. Save to file (Ctrl+S).` Shown only once no autosave versions are left to prune (AD-13) |
-| read-only (second tab) | Banner | `Read-only — this design is open for editing in another tab.` + `Take over editing`. Read-only disables every command that changes the authored sections; selection, navigation, export and `Copy design…` stay enabled `[ASSUMPTION]`. Take over: this tab edits; the other tab cancels its gesture, stops autosave, drops in-flight background results and shows the banner |
+| read-only (second tab) | Banner | `Read-only — this design is open for editing in another tab.` + `Take over editing`. Read-only disables every command that changes the authored sections; selection, navigation, export and `Copy design…` stay enabled `[ASSUMPTION]`. Take over: this tab edits; the other tab cancels its drag or nudge burst, stops autosave, drops in-flight background results and shows the banner |
 | format-too-new | Banner | `Made with a newer keeb-cad (format N). Read-only here.` Older formats migrate silently with toast `Upgraded from format N`; the next save writes the new format |
 | open over a newer stored copy | Toast | Opening a file whose design is stored at a newer revision opens the file's revision and keeps the stored one in Design info › Versions (AD-13): `Opened rev <hash> from file · newer rev <hash> kept in versions`. Nothing is overwritten |
 | cannot open `[ASSUMPTION]` | Start screen + toast | `cannot open corney.kdl: <parse or schema error> at line N`; nothing replaced |
@@ -210,11 +210,11 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 
 ## Interaction Primitives
 
-**Gesture model.** begin → update → commit | cancel (AD-2). One gesture = one undo step. The undo toast names the command; no history panel in M1.
+**Edit model.** Nothing in progress changes the design (decided 2026-10-30, AD-2). A drag moves only the dragged nodes on the canvas and applies one command on drop. A nudge burst moves the selection on the canvas and applies one command when it ends. An expression field applies after a typing pause and on Enter or blur, coalesced into one undo step per focus session. Outputs update after each applied command. The undo toast names the command; no history panel in M1.
 
 **2D pointer map.** Wheel zooms to cursor; middle-drag or Space+drag pans; trackpad two-finger scroll pans, pinch zooms. Left-drag starting on a key moves it; left-drag on a group frame's handle tab moves the group. Click on empty space inside a frame selects the group; drag from empty space (inside or outside frames) box-selects; Shift+drag always box-selects, adding to the selection. Shift-click adds. F fits the selection (or the whole board). Tree and canvas selection stay synced.
 
-**Gestures per workspace.** Layout: key, group and rotation-handle drags, nudge, rotate. Outline: vertex drag only; other primitives are edited in fields `[ASSUMPTION]`. PCB board: select only. Isolated cell mode: component drag, rotation handle, track tool. Firmware and Case: select only. Right half, any workspace: select only.
+**Direct edits per workspace.** Layout: key, group and rotation-handle drags, nudge, rotate. Outline: vertex drag only; other primitives are edited in fields `[ASSUMPTION]`. PCB board: select only. Isolated cell mode: component drag, rotation handle, track tool. Firmware and Case: select only. Right half, any workspace: select only.
 
 **Chain drag rule.** Dragging a key in a chain changes its own step; later siblings follow. The movement along the chain direction goes to `gap`, the perpendicular part to `offset.y`; rotation is untouched. Deltas are converted into the node's anchor frame. Alt-drag compensates: it takes the same change off the next step, so only the dragged key moves (Ctrl-drag if Alt collides). Groups drag by the same rule.
 
@@ -222,9 +222,9 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 
 **Write-back.** On a plain literal, a drag/nudge/rotate changes the value. On an expression, the last literal mm (or deg) term is the drag term, whoever wrote it; if there is none, one is appended (`0.25u` → `0.25u + 0.37mm`). To protect a typed constant, put it earlier or use a parameter. Values round to 0.01 mm and 0.1°.
 
-**Nudge.** Arrows move the selection 0.25 mm, Shift 1 mm, Ctrl 0.05 mm (see Nudge-step control); Alt+arrow compensates the next step. A burst of nudges/rotates is one gesture and one undo step; the burst ends after 600 ms idle, on any non-nudge key, or on any pointer action `[ASSUMPTION]`.
+**Nudge.** Arrows move the selection 0.25 mm, Shift 1 mm, Ctrl 0.05 mm (see Nudge-step control); Alt+arrow compensates the next step. A burst of nudges/rotates moves the selection on the canvas only and applies as one command and one undo step when it ends; the burst ends after 600 ms idle, on any non-nudge key, or on any pointer action `[ASSUMPTION]`.
 
-**Rotate.** `[` / `]` rotate about the pivot by 1° (Shift 5°), or drag the rotation handle; same write-back.
+**Rotate.** R rotates about the pivot clockwise and Shift+R counter-clockwise, by the rotate step of the Nudge-step control (default 1°) (decided 2026-10-30: no unmodified or Shift-only shortcut is a symbol key, architecture AD-26), or drag the rotation handle; same write-back.
 
 **Re-anchor.** Through the anchor picker only. The node stays put: its offsets are flattened to plain numbers relative to the new anchor; toast `Offsets recomputed for new anchor; expressions replaced`; one undo restores all.
 
@@ -234,7 +234,7 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 
 **Focus and regions.** F6 / Shift+F6 cycle regions: top bar, slide-out (when open), canvas, inspector, status strip `[ASSUMPTION]`. The canvas is one focusable region with an edge focus ring; nudge, rotate and Delete act on the selection only while the canvas has focus. Opening an overlay focuses its first meaningful item; modal overlays (palette, cheat sheet, Part picker) trap focus, non-modal ones (slide-out, violations panel, menus) do not; closing returns focus to the invoker, else the canvas.
 
-**Shortcuts.** Bound to physical keys (`KeyboardEvent.code`), so they work on Ukrainian and other layouts; labels come from the layout map where available. Workspace keys are plain 1..5. With any field focused, every canvas and single-key command is off; only Ctrl+K, Ctrl+S, Ctrl+Shift+S, Ctrl+O and Ctrl+Z / Ctrl+Shift+Z stay global. Ctrl chords call `preventDefault`; each Ctrl chord (Ctrl+Shift+S and Ctrl+1..5 included) and Alt-drag is verified in Chromium and Firefox at build time (manual check) `[ASSUMPTION: manual]`, with File menu / palette and Ctrl-drag fallbacks.
+**Shortcuts.** Matched by the typed character or the physical key (`KeyboardEvent.code`), so they work on Ukrainian and other layouts; on AZERTY and QWERTZ a letter shortcut answers to both its labelled key and its US position. Labels come from the hotkey formatter (architecture AD-26). Workspace keys are plain 1..5. With any field focused, every canvas and single-key command is off; only Ctrl+K, Ctrl+S, Ctrl+Shift+S, Ctrl+O and Ctrl+Z / Ctrl+Shift+Z stay global. Ctrl chords call `preventDefault`; each Ctrl chord (Ctrl+Shift+S and Ctrl+1..5 included) and Alt-drag is verified in Chromium and Firefox at build time (manual check) `[ASSUMPTION: manual]`, with File menu / palette and Ctrl-drag fallbacks.
 
 | Key | Action |
 |---|---|
@@ -249,12 +249,12 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 | F | Fit selection or board |
 | F6 / Shift+F6 | Next / previous region |
 | Shift+F10, Menu | Context menu |
-| ? | Cheat sheet |
+| F1, ? | Cheat sheet (`?` matches the character, wherever the layout puts it) |
 | Delete | Delete what has keyboard focus (layer tab, row, or canvas selection) |
 | Ctrl+D | Duplicate |
 | Esc | Innermost step (see Esc precedence) |
 | Arrows (+Shift/Ctrl/Alt) | Nudge (Alt compensates); orbit/pan in a focused 3D viewer |
-| [ / ] (+Shift) | Rotate |
+| R / Shift+R | Rotate clockwise / counter-clockwise by the rotate step |
 | Alt (during drag) | Compensate next step |
 | Space+drag, middle-drag | Pan |
 | O | Layout: Outline chip |
@@ -282,7 +282,7 @@ Protagonist: Sergii, builder and sole user, on a laptop.
 1. Sergii launches keeb-cad; no autosave exists, so the Start screen offers New design (→ `mockups/key-start.html`). The empty Layout shows `Add a group (G) or open the command palette (Ctrl+K).`
 2. With nothing selected, Design settings show form `split-reversible`; Sergii sets `pitch-x` / `pitch-y`. G adds group `matrix`; Sergii then adds column groups in a chain, with slots in each. The derived right half appears mirrored as they go.
 3. Sergii types stagger offsets as expressions (`0.25u`), drags keys roughly and corrects the number; later siblings follow the chain rule.
-4. Sergii builds the thumb group as a chain, anchors it with the anchor picker to a key's attach point, and rotates it with the rotation handle or `[` / `]`.
+4. Sergii builds the thumb group as a chain, anchors it with the anchor picker to a key's attach point, and rotates it with the rotation handle or R.
 5. P places the MCU module, display and TRRS; the Part field picks each from the catalogue, and Sergii anchors each with the anchor picker. Population: all fitted on both sides.
 6. Outline (2) (→ `mockups/key-shapes.html`) `[CONTRADICTED: spine AD-16 / PRD FR-7 — derived pieces are the default; see Open Items › Needs new design]`: the viewport stays put. Sergii adds `+ Key outline`, then a polygon; in `Pick vertices` they click key corners and construction points in order and type offsets in the vertex table; then they add an offset operation with a fillet and choose `Use as outline`.
 7. Sergii adds a construction point (line intersection) in the Construction section and picks it as a vertex anchor.
@@ -302,7 +302,7 @@ Failure: an expression with `u` on rotation shows `unit-mismatch: u on rotation`
 This journey runs the PRD SM-5 edit script on the finished design; after each step, the outline, plates, PCB, case and firmware are current or visibly updating.
 
 1. **Move one thumb-fan key.** Sergii drags thumb-home; its step changes and thumb-reachy follows (Alt-drag would compensate, keeping it still). Write-back appends `+ 0.37mm`.
-2. **Rotate the thumb fan.** Sergii selects the thumb group and drags its rotation handle 5° about the group origin (→ `mockups/key-layout.html`). **Climax:** the Outline context line follows under the mouse in Layout; the status strip shows PCB and Case `waiting for edit to finish`, then `routing N/M` and `rebuilding N%` after release. Switching to PCB (3) and Case (4) confirms it: PCB reroutes only the broken connections, dashed ratsnest turning into routes; the case rebuilds; the keymap stays attached to its keys. Zero manual fix-ups.
+2. **Rotate the thumb fan.** Sergii selects the thumb group and drags its rotation handle 5° about the group origin (→ `mockups/key-layout.html`). **Climax:** on release the Outline context line follows in Layout; the status strip shows PCB and Case `routing N/M` and `rebuilding N%` after release. Switching to PCB (3) and Case (4) confirms it: PCB reroutes only the broken connections, dashed ratsnest turning into routes; the case rebuilds; the keymap stays attached to its keys. Zero manual fix-ups.
 3. **Shift one column's stagger.** Sergii edits the column's offset expression; the field previews live, and Enter commits one undo step.
 4. **Change pitch.** In Design settings, Sergii changes `pitch-x`, then `pitch-y` (each at or above the switch's minimum); every chain re-spaces live and `u` re-evaluates.
 5. **Change a case parameter.** Sergii changes the case wall in the Parameters slide-out; the 3D solid grays under the progress bar and is replaced when the new one lands.
@@ -400,7 +400,7 @@ The register of every inline `[ASSUMPTION]` in this spine, plus gaps and naming 
 - State Patterns › File — cold load.
 - State Patterns › Empty states — `No nodes. Add a group (G).`
 - State Patterns › Interaction states — pick-mode hint text.
-- Interaction Primitives › Gestures per workspace — Outline primitives other than vertices are edited in fields.
+- Interaction Primitives › Direct edits per workspace — Outline primitives other than vertices are edited in fields.
 - Interaction Primitives › Nudge — burst ends after 600 ms idle, on any non-nudge key, or on any pointer action.
 - Interaction Primitives › Pick modes — one pick session = one undo step.
 - Interaction Primitives › Esc precedence — the order.
