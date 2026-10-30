@@ -25,6 +25,8 @@ sources:
 
 # Architecture Spine: keeb-cad, layout model and generation core
 
+> ⚠️ **Proposed directions pending (2026-10-30).** `directions-2026-10-30.md` records approach directions that change the paradigm and AD-3, AD-5, AD-10, AD-16 and AD-18. Until `bmad-architecture` folds them in, read the affected ADs together with that record and don't build the physical body (shapes, plates, case) from AD-16/AD-18 as written.
+
 **Principles (they bind every AD):** explicit over terse · one way to do each thing · a small, coherent set of concepts.
 
 ## Glossary
@@ -152,6 +154,7 @@ graph LR
   - The command log is not persisted. The design file holds state, not history.
 
 ### AD-3: Placement = one anchor + offset, over one acyclic dependency graph [ADOPTED]
+> ⚠️ Extended by `directions-2026-10-30.md` D10: anchors may also name spots that case recipes declare.
 - **Binds:** model, every stage
 - **Prevents:** two placement semantics; two cycle checks; geometry that doesn't follow the layout.
 - **Rule:**
@@ -175,6 +178,7 @@ graph LR
   - Empty slots keep their index and still advance the chain.
 
 ### AD-5: Slots hold parts; the catalogue is versioned; pitch is independent of switch type [ADOPTED]
+> ⚠️ Extended by `directions-2026-10-30.md` D8: recipes are versioned and pinned like catalogue parts.
 - **Binds:** model, library, pcb, plates, case, firmware, drc
 - **Prevents:** spacing hard-wired to switch type; two owners of part data; cutouts defined per stage; an app update silently changing a saved design.
 - **Rule:**
@@ -227,6 +231,7 @@ graph LR
   - **Milestone 2:** the design embeds an untouched base copy of the source; pulling is a three-way merge (base, new source, local) keyed by id; conflicting changes are surfaced, never auto-resolved; a pull carries layout and electronics changes alike.
 
 ### AD-10: Package dependency direction, shared derivations, stage contracts [ADOPTED]
+> ⚠️ Contradicted by `directions-2026-10-30.md` D1: one reactive world on Vue's reactivity engine, including the core. The wording is to be amended openly.
 - **Binds:** all packages
 - **Prevents:** stages coupling to each other; UI framework or rendering libraries leaking into the core; stages each evaluating geometry, expressions or nets their own way; two shapes for one output.
 - **Rule:**
@@ -336,6 +341,7 @@ graph TD
   - Every export except the KiCad board is **blocked while the resolved slice it reads carries a `model` violation of severity `error`**, reported as `blocked: <kind>`. Warnings never block. The KiCad board exports whatever resolved; when the board edge failed it is written with no Edge.Cuts, never a stale outline.
 
 ### AD-16: Shapes are authored and evaluated once, in `model` [ADOPTED]
+> ⚠️ Contradicted by `directions-2026-10-30.md` D4: the body is a composition of derived and drawn pieces; anchored vertices become the fallback, not the main path.
 - **Binds:** model, plates, pcb, case, drc, exports
 - **Prevents:** plate, PCB edge, case and gerbers disagreeing on one offset or fillet; a mismatch with Ergogen's geometry; a wrong boolean or offset result passed on silently; overlapping hole loops; stages flattening or composing plates their own way.
 - **Rule:**
@@ -373,6 +379,7 @@ graph TD
   - Expressions are evaluated only in `model.resolve`. Stages see numbers only.
 
 ### AD-18: Case = an authored 3D operation graph [ADOPTED]
+> ⚠️ Contradicted by `directions-2026-10-30.md` D5–D9, D11: the style is a live setting, recipes are live data run by one interpreter, and your operations sit on top of derived layers. No template is inserted once.
 - **Binds:** model, case, editor, library
 - **Prevents:** two storage shapes for templates; case logic hard-coded in the stage; a case limited to straight extrusion.
 - **Rule:**
