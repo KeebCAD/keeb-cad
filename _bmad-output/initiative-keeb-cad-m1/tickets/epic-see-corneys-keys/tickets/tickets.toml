@@ -4,7 +4,7 @@
 id = 9
 type = "story"
 title = "The workspace matches the 2026-10-30 spine"
-description = "Scaffolds @keeb-cad/reactive and @keeb-cad/geometry with their AD-10 dependency-cruiser fences and violation fixtures (only reactive imports @vue/reactivity, only geometry imports makerjs, worker code never imports reactive, both import no workspace package), adds @snap/ts-inject, pins @vue/reactivity exactly through one pnpm catalog entry with a test that one copy is installed, and removes create-vue's Pinia from app/."
+description = "Scaffolds @keeb-cad/reactive and @keeb-cad/geometry with their AD-10 dependency-cruiser fences and violation fixtures (only reactive imports @vue/reactivity, only geometry imports makerjs, worker code never imports reactive, both import no workspace package), adds @snap/ts-inject, pins @vue/reactivity exactly through one pnpm catalog entry with a test that one copy is installed. (Pinia was already removed from app/ on 2026-10-30, together with jsdom, when Vitest 5 browser mode came in.)"
 verify = "pnpm check passes, and each new fence rejects its violation fixture."
 covers = []
 after = ["1.3"]

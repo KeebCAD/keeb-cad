@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
-import { createPinia } from 'pinia'
+import { render } from 'vitest-browser-vue'
 
 import App from './App.vue'
 import router from './router'
@@ -10,11 +9,10 @@ describe('App', () => {
     router.push('/')
     await router.isReady()
 
-    const wrapper = mount(App, { global: { plugins: [createPinia(), router] } })
-    await flushPromises()
+    const screen = await render(App, { global: { plugins: [router] } })
 
-    expect(wrapper.find('[data-testid="editor-shell"]').exists()).toBe(true)
-    expect(wrapper.find('h1').text()).toBe('keeb-cad')
-    expect(wrapper.find('[data-testid="empty-editor"]').text()).toBe('No design open.')
+    await expect.element(screen.getByTestId('editor-shell')).toBeVisible()
+    await expect.element(screen.getByRole('heading', { level: 1 })).toHaveTextContent('keeb-cad')
+    await expect.element(screen.getByTestId('empty-editor')).toHaveTextContent('No design open.')
   })
 })
