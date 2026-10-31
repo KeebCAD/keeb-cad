@@ -15,7 +15,7 @@ status: done
 
 ## Description
 
-The pnpm monorepo, with all 12 packages from the architecture seed and `fixtures/`, builds from a clean clone. The create-vue editor shell is served locally from its static build. One `pnpm check` command enforces the AD-10 dependency rules and runs every check, locally, in a pre-commit hook and in GitHub Actions. The repo is MIT-licensed on GitHub. The UX session (editor views, drag semantics, key-cell and expression UI) has run and its result is adopted.
+The pnpm monorepo, with all 12 packages from the architecture seed and `fixtures/`, builds from a clean clone. The create-vue editor shell is served locally from its static build. One `pnpm check` command enforces the AD-10 dependency rules and runs every check, locally, in a pre-commit hook and in GitHub Actions. The repo is MIT-licensed on GitHub. The UX session (editor views, drag semantics, part and expression UI) has run and its result is adopted.
 
 ## Outcome
 
@@ -29,7 +29,7 @@ Every later epic builds on a boundary-checked app shell that runs locally, and o
 - R4 (Decision 2026-10-26): One `pnpm check` runs typecheck, lint, a Prettier format check, unit tests, the smoke test, dependency-cruiser and the build, and exits non-zero on any failure. A pre-commit hook runs the fast part.
 - R5 (Decision 2026-10-26): A GitHub remote exists, and GitHub Actions runs `pnpm check` on every push and fails visibly when a check fails. There is no hosting.
 - R6 (Decision 2026-10-26): An MIT LICENSE sits at the repo root before the first push.
-- R7 (initiative Boundaries; architecture Deferred): A UX session (`bmad-ux`) decides editor views, panels, drag semantics, key-cell and expression UI. Its DESIGN.md and EXPERIENCE.md are adopted as companions before any editor story starts.
+- R7 (initiative Boundaries; architecture Deferred): A UX session (`bmad-ux`) decides editor views, panels, drag semantics, part and expression UI. Its DESIGN.md and EXPERIENCE.md are adopted as companions before any editor story starts.
 
 ## Constraints
 
@@ -41,7 +41,7 @@ Every later epic builds on a boundary-checked app shell that runs locally, and o
 - `pnpm check` passes locally and in GitHub Actions, and dependency-cruiser rejects an import that breaks AD-10.
 - The empty editor's static build is served locally by `vite preview`.
 - The `fixtures/` package exists for epic-risk-spikes story 1.
-- The UX session's output (editor views, drag semantics, key-cell and expression UI) is adopted as a companion.
+- The UX session's output (editor views, drag semantics, part and expression UI) is adopted as a companion.
 
 ## Boundaries
 

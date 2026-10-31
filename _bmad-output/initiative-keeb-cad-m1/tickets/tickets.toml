@@ -4,7 +4,7 @@
 id = 1
 slug = "epic-platform-baseline"
 title = "Monorepo builds and checks boundaries"
-description = "The pnpm monorepo with the create-vue editor builds, one pnpm check (locally and in GitHub Actions) enforces the AD-10 dependency rules, and the empty app runs locally. The UX session (editor views, drag semantics, key-cell and expression UI) has run and its result is adopted."
+description = "The pnpm monorepo with the create-vue editor builds, one pnpm check (locally and in GitHub Actions) enforces the AD-10 dependency rules, and the empty app runs locally. The UX session (editor views, drag semantics, part and expression UI) has run and its result is adopted."
 covers = []
 
 [[epic]]
@@ -27,7 +27,7 @@ after = [{ epic = 1, needs = "the monorepo scaffold, CI and the UX session resul
 id = 14
 slug = "epic-change-a-parameter"
 title = "Change a parameter"
-description = "The user edits pitch, slot size, key-cell references or a parameter in the expression field (inspector, Design settings, Parameters), sees Corney's keys move live, gets overlap and pitch-below-min in the violations panel, and undoes the edit as one registered command."
+description = "The user edits pitch, slot size, default parts or a parameter in the expression field (inspector, Design settings, Parameters), sees Corney's keys move live, gets overlap and pitch-below-min in the violations panel, and undoes the edit as one registered command."
 covers = ["R3", "R17", "R18"]
 after = [{ epic = 13, needs = "the editor frame, the reactive graph and Corney's script" }]
 
@@ -75,7 +75,7 @@ after = [{ epic = 18, needs = "drawn pieces for the MCU cover and any exact outl
 id = 6
 slug = "epic-parts-and-pcb"
 title = "Footprints on the PCB"
-description = "The rest of Corney Island's catalogue and footprints and the key cell's components place every footprint and keep-out on the PCB, whose edge is composed from the outline; the key-cell editor edits the key cell's components and local tracks, and changing it updates every key's footprints; part cutouts move with their part in plate, PCB and case; the PCB follows key moves live and exports a KiCad 10 project as the escape hatch."
+description = "The rest of Corney Island's catalogue and footprints and Corney's design-local key part place every footprint and keep-out on the PCB, whose edge is composed from the outline; isolated part mode edits a design-local part's components and fixed tracks, and changing the key's part updates every key's footprints; part cutouts move with their part in plate, PCB and case; the PCB follows key moves live and exports a KiCad 10 project as the escape hatch."
 covers = ["R3", "R8", "R9", "R11", "R13"]
 after = [{ epic = 19, needs = "the catalogue schema and part cutouts" }]
 
@@ -83,7 +83,7 @@ after = [{ epic = 19, needs = "the catalogue schema and part cutouts" }]
 id = 20
 slug = "epic-nets-and-matrix"
 title = "Nets and matrix"
-description = "The netlist, matrix and connections are derived from layout, key cell and parts, with matrix row/column, MCU pin and LED-order overrides, and the cross-stage test shows the firmware matrix equals the PCB nets."
+description = "The netlist, matrix and connections are derived from layout and parts, with matrix row/column, MCU pin and LED-order overrides, and the cross-stage test shows the firmware matrix equals the PCB nets."
 covers = ["R11"]
 after = [{ epic = 6, needs = "placed footprints and pin roles" }]
 

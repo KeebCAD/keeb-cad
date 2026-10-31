@@ -14,7 +14,7 @@ risk: medium
 
 ## Description
 
-The netlist, matrix and connections are derived from layout, key cell and parts, with matrix row/column, MCU pin and LED-order overrides, and the cross-stage test shows the firmware matrix equals the PCB nets.
+The netlist, matrix and connections are derived from layout and parts, with matrix row/column, MCU pin and LED-order overrides, and the cross-stage test shows the firmware matrix equals the PCB nets.
 
 ## Outcome
 

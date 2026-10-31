@@ -431,8 +431,8 @@ General states: hover fills `{colors.hover}` (no Mauve bar); pressed/on fills `{
 
 ### Inspector and fields
 
-- **Inspector** — node heading (mono id and muted kind, for example `slot · group thumb`), then collapsible sections (Anchor, Offset, Chain, Population, Part, Key cell, …) with `{typography.section-label}` headers and chevrons at least `{spacing.target-min}`.
-- **Design settings** — the inspector with nothing selected in Layout: form (read-only text), `pitch-x`, `pitch-y`, default key cell. Group overrides show `inherits <value>` as placeholder text in `{colors.text-muted}`. → `mockups/pitch-settings-1.html`.
+- **Inspector** — node heading (mono id and muted kind, for example `slot · group thumb`), then collapsible sections (Anchor, Offset, Chain, Population, Part, …) with `{typography.section-label}` headers and chevrons at least `{spacing.target-min}`.
+- **Design settings** — the inspector with nothing selected in Layout: form (read-only text), `pitch-x`, `pitch-y`, default part. Group overrides show `inherits <value>` as placeholder text in `{colors.text-muted}`. → `mockups/pitch-settings-1.html`.
 - **Population toggle** — `Fitted: [x] left [x] right` checkboxes in the inspector (`{components.population-toggle.box-size}` box; ticked = `{colors.fill-on}`, Mauve edge and ✓). Derived geometry fields on the right half render read-only (Text on `{colors.chrome}`, no border) with `derived from left/<id>` and a lock glyph.
 - **Expression field** — mono text, evaluated result as a `{colors.text-muted}` suffix (`= 5.12 mm`). Focus: `{colors.focus}` border. Invalid: `{colors.error}` underline and a message below. Pick mode: dashed Teal border, Text value, `picking…` label.
 - **Anchor picker** — anchor field and a 3×3 attach-point grid (cells at least `{spacing.target-min}`); the chosen point fills `{colors.selection}` `[ASSUMPTION]`.
@@ -459,7 +459,7 @@ File menu, Export menu, Design info, Autocomplete dropdown and Context menu use 
 ### Canvas views
 
 - **3D viewer** — Case canvas area; case bodies in `{colors.body-case}`; the selected operation's result outlined in `{colors.selection}`; stale solid grayed under a `{colors.progress}` bar. → `mockups/key-case.html`.
-- **Isolated cell mode** — canvas header `‹ Board (Esc) · key cell <id>` in `{typography.mono}` at the top-left; the cell fills the canvas; same chips as PCB. → `mockups/key-cell.html`.
+- **Isolated part mode** — canvas header `‹ Board (Esc) · part <id>` in `{typography.mono}` at the top-left; the part fills the canvas; same chips as PCB. → `mockups/key-cell.html`.
 - **Keymap layer tabs** (Firmware) — overlay at the canvas top-left (chip position), workspace-tab treatment, `{components.keymap-layer-tabs.height}` tall, `+` tab last. → `mockups/key-firmware.html`.
 
 ### Canvas marks
@@ -478,8 +478,8 @@ File menu, Export menu, Design info, Autocomplete dropdown and Context menu use 
 - **Outline marks** — the outline piece `{colors.outline-piece}`; vertex markers `{colors.vertex}` dots with mono `v-NN` labels; construction point `{colors.construction-point}` crosshair with faint guide lines in `{colors.text-faint}`; plate preview `{colors.plate-fill}` with cutouts as holes; polygon being picked drawn as a 2px `{colors.selection}` polyline. → `mockups/key-shapes.html`.
 - **Pick marks** — in a pick mode, candidate attach points light as small `{colors.pick-point}` dots; the hovered one gets a ring; a 1px `{colors.pick-point}` rubber band runs from the last picked point to the cursor `[ASSUMPTION: width]`.
 - **PCB marks** — board edge `{colors.edge}`; component outlines `{colors.component-outline}`; pads and routes in their layer's copper (right board swapped, see Colors); ratsnest dashed `{colors.ratsnest}`. Overlays: R·C labels, zero-based (`R0·C0`; overridden labels use the Override style: `*` + Yellow); LED chain numbered `{colors.led-chain}` path with numbers in Text inside Teal-outlined badges. → `mockups/pcb-overrides-1.html` (option a), `mockups/key-pcb.html` (both boards, Matrix and LED chain on, Export menu open).
-- **Track tool** (key-cell tracks) — in isolated cell mode: tracks in layer copper at net-class width, vias as `{colors.via}` discs with a `{colors.via-hole}` hole, pads in layer copper with Crust drill holes, the track being drawn at full opacity with its next segment dashed.
-- **Cell DRC marker** — in isolated cell mode only: fault area drawn as an error overlap area, ● badge, and a callout (`{colors.chrome}`, 1px `{colors.error}` edge, mono message) on a Red leader line.
+- **Track tool** (a part's fixed tracks) — in isolated part mode: tracks in layer copper at net-class width, vias as `{colors.via}` discs with a `{colors.via-hole}` hole, pads in layer copper with Crust drill holes, the track being drawn at full opacity with its next segment dashed.
+- **Part DRC marker** — in isolated part mode only: fault area drawn as an error overlap area, ● badge, and a callout (`{colors.chrome}`, 1px `{colors.error}` edge, mono message) on a Red leader line.
 - **Combo** (Firmware) — dotted `{colors.combo-link}` line joining the combo's keys, combo binding label at its midpoint `[ASSUMPTION]`.
 
 → `mockups/oplist-placement-1.html` (option c), `mockups/canvas-model-storyboard.html` (model b) for composition. Key screens (Frappé; Layout also Latte): `mockups/key-layout.html`, `key-shapes.html`, `key-pcb.html`, `key-firmware.html`, `key-case.html`, `key-cell.html`, `key-panels.html`, `key-start.html`. Their op names, heights, part versions, DRC text, legends and layer names are illustrative.

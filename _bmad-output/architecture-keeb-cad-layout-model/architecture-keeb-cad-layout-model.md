@@ -45,7 +45,7 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | **node** | An element of the layout: a group or a slot |
 | **group** | A node with children and an arrangement; has an origin frame and no size |
 | **slot** | A leaf with a size (`w`×`h`, default `1u`×`1u`) and a frame at its centre; holds one part |
-| **key** | A slot whose part is the key cell |
+| **key** | A slot whose part has a `switch` component |
 | **arrangement** | How a group places its children: `chain` or `free` |
 | **frame** | A position + rotation in the plane |
 | **id** | A stable identifier of a design, node, piece, vertex, construction point, recipe application or item in a list section; never changes, never reused |
@@ -66,15 +66,16 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | **free** | An arrangement in which each child's default anchor is the parent |
 | **gap** | Extra distance along the chain direction before a child |
 | **index** | A child's position within a chain |
-| **part** | What a slot holds: a catalogue entry, the key cell, or `empty` |
+| **part** | What a slot holds: a library part pinned in `catalogue-refs`, a design-local part, or `empty`; both kinds use the one catalogue schema (AD-5) |
 | **module** | A ready-made board used as a part (nice!nano, nice!view) |
-| **catalogue** | The available part definitions, each with an id and an immutable version |
-| **component** | A named footprint inside a part or key cell (`switch`, `diode`, `led`); has pins |
+| **catalogue** | The library's part definitions, each with an id and an immutable version; design-local parts share its schema but are not in it |
+| **component** | A named footprint inside a part (`switch`, `diode`, `led`); has pins |
 | **pad** | One copper pad of a pin on a board: `<side>/<slot-id>.<component>.<pin>.<copper>[.<copy>]` (Ids convention) |
 | **cutout** | Geometry removed from a plate, PCB or case: part-owned (catalogue, with a role and target) or a user piece |
 | **cutout role** | A cutout's purpose (`switch`, `screw`, `mcu-window`, `display-window`, …); plates select roles |
 | **keep-out** | An area routing must avoid; part-owned (catalogue) or authored |
-| **key cell** | A key definition stored in the design: components + their local tracks; groups reference one |
+| **design-local part** | A part defined in the design's `parts` section, in the catalogue schema; how a user makes their own key (switch, diodes, LED and their fixed tracks) |
+| **default part** | The part a group sets for its slots; a slot with no part of its own uses its nearest ancestor's |
 | **pitch** | Centre-to-centre key distance, `pitch-x` / `pitch-y`; independent of switch type |
 | **population** | Which slots are fitted, per side |
 | **override** | A named change to population, to the derived right side (`split-mirrored`), to the derived netlist (matrix row/column, MCU pin, LED order), or to a part parameter per target |
@@ -85,7 +86,7 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | **derived piece** | A piece computed from the layout: the fit of a group of keys, or of parts, plus a margin; follows the layout |
 | **drawn piece** | A piece built from anchored primitives and vertices (key outline, rectangle, circle, polygon, add, subtract, intersect, offset, piece reference); stays put and is checked against fit |
 | **accent** | A finishing operation on a piece: rounded corners, cut arcs |
-| **fit** | A constraint region (key cells, part envelopes, margin) that a piece must contain; a key or part outside it is `fit-violated` |
+| **fit** | A constraint region (part envelopes, margin) that a piece must contain; a key or part outside it is `fit-violated` |
 | **vertex** | A polygon corner; has an id, an anchor and an offset; reusable across pieces |
 | **construction point** | A helper point computed from other geometry (e.g. intersection of two lines); a possible anchor; not a part |
 | **outline** | The piece designated as the board edge |
@@ -99,7 +100,7 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | **operation** | One step of a recipe, from the closed set the app defines |
 | **net** | A set of pads that must be connected; has a stable net id |
 | **netlist** | Every net: matrix rows and columns, power, ground, LED chain, TRRS/UART, display bus, battery |
-| **connection** | One pad pair that a net is split into; realised by a key cell, a part, or routing |
+| **connection** | One pad pair that a net is split into; realised by a part's fixed tracks or by routing |
 | **route** | The copper path for one routed connection |
 | **design rules** | Net classes (width, clearance, via size), edge, hole and drill clearances, and keep-out switches (AD-20) |
 | **DRC** | The design-rule check, implemented once in `drc` |
@@ -218,7 +219,9 @@ graph LR
   - `model` owns the **catalogue schema**: components, pins and pin roles, minimum pitch, 3D envelope, cutouts (role + target `plate` / `pcb` / `case`), keep-outs, optional fixed tracks (a pre-routed module zone), named part parameters with defaults. `library` owns the **catalogue data**.
   - Catalogue entries are immutable per version. `catalogue-refs` pins each used part as id + version. `library` keeps every released version; an update adds a version, and moving a design to it is a command.
   - **Recipes** (AD-18), styles included, are versioned and pinned the same way: immutable per version, pinned in `catalogue-refs` as id + version, every released version kept, and upgrading is a deliberate command.
-  - Groups reference a key cell; a slot uses its nearest ancestor's. A slot whose key-cell reference doesn't resolve has no components, so no pads, nets or matrix position. Part parameters (e.g. screw-hole radius) can be overridden per slot or group, per target.
+  - **A key is a part.** There is no separate key definition: the switch, diodes, LED and their local tracks are one part's components and fixed tracks.
+  - **Two places a part is defined, one schema.** Library parts are pinned in `catalogue-refs`; design-local parts live in the design's `parts` section, editable, with no version of their own (the design's revision covers them). This is the split recipes use (AD-18): named library items plus the design's own. Saving a design-local part to the library is deferred, like saving a recipe.
+  - A group sets a **default part**; a slot with no part of its own uses its nearest ancestor's. A slot whose part reference doesn't resolve has no components, so no pads, nets or matrix position. Part parameters (e.g. screw-hole radius) can be overridden per slot or group, per target.
   - Every stage takes cutouts, keep-outs and fixed tracks from the resolved design only.
   - Pitch below a switch's minimum is `pitch-below-min`, never silently adjusted.
   - Lengths carry an explicit unit: `u` or `mm`. Angles are in `deg`.
@@ -246,7 +249,7 @@ graph LR
 - **Prevents:** noisy diffs, unreadable old files, sections stored in incompatible shapes, format lock-in.
 - **Rule:**
   - Designs are KDL v2 files carrying a `format-version`. `model` validates them and migrates older versions forward on load. A newer version than the app knows opens read-only with `format-too-new`. A failed migration reports `migration-failed` and never overwrites the file.
-  - Sections, in this order: `meta` (design id, name, form, pitch, provenance), `parameters`, `catalogue-refs`, `key-cells`, `layout`, `construction`, `pieces`, `plates`, `case`, `population`, `overrides`, `design-rules`, `keymap`, `routing`. The schema for each lives in `model`, in one of the two storage shapes (AD-23).
+  - Sections, in this order: `meta` (design id, name, form, pitch, provenance), `parameters`, `catalogue-refs`, `parts`, `layout`, `construction`, `pieces`, `plates`, `case`, `population`, `overrides`, `design-rules`, `keymap`, `routing`. The schema for each lives in `model`, in one of the two storage shapes (AD-23).
   - **The canonical writer lives in `model`.** It sets node and property order itself, writes lengths, angles and expressions as quoted strings (`"19mm"`, `"-15deg"`, `"wall + gap"`), and canonicalises numbers.
   - Loading and then saving an unchanged design reproduces the file byte for byte.
   - Free-text comments are not preserved. Annotations use a `note` property.
@@ -318,7 +321,7 @@ graph TD
 - **Binds:** model, pipeline, storage, editor, stages
 - **Prevents:** a UI that blocks on slow geometry; stale outputs shown as current; cache false hits after an app update or a non-geometric edit; proxies reaching `postMessage` or files; two exits from the graph.
 - **Rule:**
-  - **Live:** `model`'s derivations, plates, pcb placement with key-cell and part tracks, firmware, and DRC of saved routes against the current placement, all computeds in the reactive graph. The preview is `editor` rendering of these, read directly, not a stage.
+  - **Live:** `model`'s derivations, plates, pcb placement with part fixed tracks, firmware, and DRC of saved routes against the current placement, all computeds in the reactive graph. The preview is `editor` rendering of these, read directly, not a stage.
   - **The crossing.** Anything that leaves or enters the reactive graph (workers, storage, file save and load) goes through **one crossing in `reactive`**, next to the re-export, and carries plain values only. `pipeline`, `storage` and `editor` all call it.
   - **Background** (Web Workers, past the crossing): case (replicad) and routing. They report progress and partial or failed results; a newer committed revision cancels them. Background stages start at committed revisions (every revision, since nothing in progress reaches the design, AD-2); routing starts only at committed revisions (AD-12). A cancelled routing request stops like a deadline (AD-12): it returns what it placed, which is re-validated before it is kept.
   - **Cache key** = stage id + stage version + catalogue and recipe versions used + hash of the stage's input slice (live stages: of the resolved values they read) (+ routing hash for drc and exports; routing hash + requested connection ids for routing). A routing result cut short by a deadline or a cancel is never cached.
@@ -332,7 +335,7 @@ graph TD
 - **Binds:** pcb, routing, drc, pipeline, storage
 - **Prevents:** routing on the undo stack; drags destroying routes; stale routes applied blindly; two writers of the routing section.
 - **Rule:**
-  - Connections realised by a key cell or a part's fixed tracks are pcb placement and move live. Routing handles only the rest.
+  - Connections realised by a part's fixed tracks are pcb placement and move live. Routing handles only the rest.
   - Connections are per board and never join pads on two boards; a link between the halves is realised by the cable part. In `split-reversible` the one board's pads are the `left/` placements' pads (with their F, B and TH copies).
   - The routing section holds, per board, routes keyed by connection id. A route is never hand-edited.
   - **A saved route is valid when** its connection still exists, both pads are at the same world positions, and `drc` passes it against the current board.
@@ -365,7 +368,7 @@ graph TD
 - **Binds:** model, pcb, routing, drc, firmware
 - **Prevents:** a PCB wired one way and firmware scanning another; stages inventing nets; routes dropped because a key moved or was inserted.
 - **Rule:**
-  - `model` derives the one netlist from component pin roles, the key cell and parts, and splits each net into connections. pcb, routing, drc and firmware consume them and derive none of their own.
+  - `model` derives the one netlist from component pin roles and parts, and splits each net into connections. pcb, routing, drc and firmware consume them and derive none of their own.
   - **Net ids are stable:** derived from ids, never from indices or positions (e.g. column net `col:<chain-id>`, LED link `led:<slot-id>`).
   - **The split of a net into connections depends only on ids and the netlist, never on positions.** Fixed by the routing spike (`spikes/SPLIT-RULE.md`):
     - Order the net's pads (on one board, AD-12) and connect each pad to the next: n − 1 connections for n pads, none for fewer than two. No star.
@@ -373,7 +376,7 @@ graph TD
     - Natural order compares digit runs as numbers (`d2` < `d10`) and other runs by code unit, locale-free. Digit runs equal in value but spelled differently are decided there, by code unit (`"01"` < `"1"`, so `a01b` < `a1a`).
     - **Connection id** = `<net-id>:<padA>~<padB>`, padA first in natural order. Pad ids follow the Ids convention.
     - Reversible copies are distinct pads, joined by visible connections and never assumed connected. Pins with no number or no net are obstacles, not pads. No id contains a position.
-  - Each connection carries how it is realised: `fixed-tracks` (a part's fixed tracks), `key-cell` or `routing` (AD-12's first bullet). `model` tags it from the pin pairs that the key cell and catalogue parts declare their tracks join, never from positions; `drc` checks that the placed tracks do join them. Only `routing` connections go to the engine.
+  - Each connection carries how it is realised: `fixed-tracks` (a part's fixed tracks) or `routing` (AD-12's first bullet). `model` tags it from the pin pairs that parts, library or design-local, declare their fixed tracks join, never from positions; `drc` checks that the placed tracks do join them. Only `routing` connections go to the engine.
   - **Matrix assignment rule:** for each key, the nearest enclosing chain running along *x* gives the column, the nearest running along *y* gives the row. Keys outside an x+y pair go into an additional row in chain order.
   - Matrix row/column, MCU pin assignment and LED chain order can be overridden; overrides are stored in the design. A future optimiser must be a command that writes overrides.
   - A cross-stage invariant test asserts that the firmware matrix equals the PCB nets.
@@ -394,7 +397,7 @@ graph TD
 - **Rule:**
   - **Piece** is the one term for 2D geometry: the outline, plates and the 2D profiles inside recipes. 3D results are **solids** (AD-18), never pieces. Pieces, vertices and construction points are authored sections, in list shape (AD-23).
   - A piece is **derived** (the fit of a group of keys, or of parts, plus a margin; it follows the layout) or **drawn** (anchored primitives and vertices, AD-3; it stays put). Derived pieces are the main authoring path; drawn pieces are the fallback. A piece may be built on other named pieces through declared references (AD-24). **Accents** (rounded corners, cut arcs) go on top. Exactly one piece is the outline.
-  - **Fit** is a constraint region: key cells, part envelopes and margin. Derived pieces are computed from it; drawn pieces are checked against it. A key or part whose fit sticks out of the outline is `fit-violated`. The default for a new design is one fitted piece per group, joined automatically.
+  - **Fit** is a constraint region: part envelopes and margin. Derived pieces are computed from it; drawn pieces are checked against it. A key or part whose fit sticks out of the outline is `fit-violated`. The default for a new design is one fitted piece per group, joined automatically.
   - Milestone-1 construction point kind: intersection of two lines. New kinds are added to the schema in `model`.
   - `model` evaluates the outline's pieces (as computeds, AD-10). No stage re-evaluates them. `case` evaluates the 2D profiles inside recipes with the kernel.
   - **Geometry kernel.** `geometry` holds the one implementation of boolean, offset, normalise-and-check and flatten, and the region type, as pure functions; it is the only package that imports `makerjs` and knows nothing of designs or reactivity. No other package implements its own; `model`, `plates`, `pcb` and `case` compose with it.
@@ -548,7 +551,7 @@ graph TD
 | Naming | Glossary terms only. Packages: `@keeb-cad/<name>`. KDL node names are lowercase glossary terms. Commands are verb+noun camelCase (`setGap`). |
 | Ids | Kebab-case, minted by `model`. Resolved: `<side>/<id>`. Block nodes: `<instance-id>/<block-node-id>`. Pads: `<side>/<slot-id>.<component>.<pin>.<copper>[.<copy>]`, where copper is `F`, `B` or `TH` (through-hole) and `.<copy>` (2, 3, …) numbers repeats of one pin and copper in the catalogue footprint's pad order. Reversible copies are distinct pads. Nets: derived from ids (AD-14). |
 | Units in files | Quoted with an explicit unit or as an expression: `"19mm"`, `"1u"`, `"-15deg"`, `"wall + gap"`. |
-| Violations | `{ kind, severity: error \| warning, ids, message, fixes }`; `fixes` lists registered entry names plus inputs (AD-2), possibly empty. Design problems never throw. Commands that can't apply return a typed rejection. Each kind has one owner. `model`: `anchor-cycle`, `construction-undefined` (error: a construction point from parallel or coincident lines; ids name the point and its two lines; it and its dependents are not evaluated), `unresolvable-reference` (warning when a key-cell reference names a cell not defined yet, the slot placing with no footprint; error otherwise), `piece-failed` (error: a resolved piece fails AD-16's checks; ids name the piece and its operands; it and its dependents are not output), `fit-violated` (a key or part sticks out of the outline; ids name it and the piece; severity open), `unit-mismatch`, `unsupported-form`, `pitch-below-min`, `overlap`, `binding-unsupported`, `format-too-new`, `migration-failed`. `routing`: `unrouted`. `drc`: `drc`. A stage reports only its own kinds. |
+| Violations | `{ kind, severity: error \| warning, ids, message, fixes }`; `fixes` lists registered entry names plus inputs (AD-2), possibly empty. Design problems never throw. Commands that can't apply return a typed rejection. Each kind has one owner. `model`: `anchor-cycle`, `construction-undefined` (error: a construction point from parallel or coincident lines; ids name the point and its two lines; it and its dependents are not evaluated), `unresolvable-reference` (warning when a part reference names a design-local part not defined yet, the slot placing with no footprint; error otherwise), `piece-failed` (error: a resolved piece fails AD-16's checks; ids name the piece and its operands; it and its dependents are not output), `fit-violated` (a key or part sticks out of the outline; ids name it and the piece; severity open), `unit-mismatch`, `unsupported-form`, `pitch-below-min`, `overlap`, `binding-unsupported`, `format-too-new`, `migration-failed`. `routing`: `unrouted`. `drc`: `drc`. A stage reports only its own kinds. |
 | Stable outputs | Same file + same app version → same bytes for every export. No clocks, randomness, locale or random UUIDs in outputs; tool-generated ids (KiCad UUIDs) are derived from design ids. Only routes are history-dependent, and they are saved. |
 | Verification | Layered: (1) compile time: types, ts-inject, package `exports`, dependency-cruiser; (2) unit tests, written test-first, for functions and services (every test that touches the DOM, in `ui` and `editor` and the SVG canvas included, runs in Vitest browser mode in Chromium and Firefox; everything else on Node; no jsdom); (3) generic checks over every registered command (do → undo → identical; redo; after a run, an undo, a redo and a `replaceDesign`, the design is deeply frozen and holds no proxy, and the caller's input is not frozen), file save → load round-trip, and only plain data at the crossing; (4) invariants on generated designs, the same rules the app reports as violations (the AD-14 netlist test among them); (5) headless slice scenarios, the ongoing marker; (6) end to end in a real browser, one small journey per slice, screenshot baselines approved by a person; (7) reactive and resource checks: must-not-recompute, frame budget, worker memory; (8) golden end results at milestone acceptance only. |
 | Fixtures | Corney Island v0.3 wired and wireless enter as **scripts of layout commands** in tests (`fixtures/`), plus Ergogen's reference output (from `layout-model/sources/`). There is no importer and no hand-written Corney design file. Acceptance (layer 8): key centres, the outline and plates as the same shape, plate cutouts and case dimensions within ±0.05 mm of Ergogen; KiCad output opens in KiCad 10; the fab checker accepts it; ZMK output builds. LambBT and Corax56 are paper checks. |
@@ -607,7 +610,7 @@ keeb-cad/
                 # netlist, connections), declared references + who-points-at search, commands,
                 # catalogue and recipe schemas, keymap vocabulary
     plates/     # stage: plate composition (piece minus role cutouts) on geometry's kernel
-    pcb/        # stage: placement + board edge + key-cell and part tracks + KiCad writer
+    pcb/        # stage: placement + board edge + part fixed tracks + KiCad writer
     routing/    # stage: incremental routing (worker)
     drc/        # checker library + stage: design-rule check
     case/       # stage: recipe interpreter on replicad (worker), cache per named solid
@@ -639,7 +642,7 @@ graph TD
 | Capability (PRD) | Lives in | Governed by |
 | --- | --- | --- |
 | FR-1–2 layout, anchors, chain | model | AD-3, AD-4 |
-| FR-3 pitch, slot size, key cell, group and per-target overrides | model, pcb | AD-4, AD-5 |
+| FR-3 pitch, slot size, default and design-local parts, group and per-target overrides | model, pcb | AD-4, AD-5 |
 | FR-4 form readiness | model | AD-6 |
 | FR-5 second design from a copy | separate designs | AD-21, AD-9 |
 | FR-6–7 outline pieces, anchored geometry | model | AD-16, AD-3, AD-24 |
@@ -671,7 +674,7 @@ Raised in `directions-2026-10-30.md` (Open) or `code-decisions-list-2026-10-30.m
 | Left over from the 2026-10-30 sweep (the rest is decided in AD-26; radii decided as 2/4/8 px in DESIGN.md): the toast mechanism, timing and position (`[ASSUMPTION]`) | AD-26, DESIGN.md, EXPERIENCE.md | The first slice with a toast |
 | Registers for everything picked from a list (recipes, parts, exports) | AD-2, AD-25 | Second list-picker |
 | Joining fitted pieces (the thumb gap: filled or not) | AD-16 | First outline story |
-| Outline-from-keys primitive (not a convex hull, which loses stagger steps; probably padded key cells joined) | AD-16 | First outline story |
+| Outline-from-keys primitive (not a convex hull, which loses stagger steps; probably padded part envelopes joined) | AD-16 | First outline story |
 | 2D piece `offset` latency: makerjs `model.outline` takes about 70 ms on Corney's outline, more than a live frame; derived pieces (margin, automatic joining) may need offsets live. Options: own exact offset, padded cells without offset, or a worker | AD-16, AD-11 | With the outline-from-keys primitive |
 | Reproducing Corney's outline from derived pieces (spike; fallback: a drawn piece) | AD-16, Fixtures | Before relying on derived pieces for acceptance |
 | `fit-violated` severity | AD-16, Violations | First outline story |
@@ -719,6 +722,6 @@ Raised in `directions-2026-10-30.md` (Open) or `code-decisions-list-2026-10-30.m
 | Publishing, accounts, git/cloud backends | Milestone 1 is personal (AD-13) | Milestone 2 |
 | Static hosting, CI/deploy pipeline, environments | No backend; any static host works | Before the first public preview |
 | Offline use (caching the WASM), supported-browser matrix | Personal use; current Chromium and Firefox | Before the first public preview |
-| Editor behaviour and visuals not fixed by an AD (views, drag semantics, expression field, key-cell editor) | Owned by the ux-editor spines: `epic-platform-baseline/ux-editor/EXPERIENCE.md` and `DESIGN.md` | When a UX change touches an AD's contract |
+| Editor behaviour and visuals not fixed by an AD (views, drag semantics, expression field, design-local part editor) | Owned by the ux-editor spines: `epic-platform-baseline/ux-editor/EXPERIENCE.md` and `DESIGN.md` | When a UX change touches an AD's contract |
 | Ergogen config import | Non-goal | After milestone 1 |
 | Turborepo, TS 7 (7.0.2 stable on 2026-10-30) | Not needed yet | When speed hurts / create-vue supports them |

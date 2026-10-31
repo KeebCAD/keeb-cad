@@ -14,7 +14,7 @@ risk: medium
 
 ## Description
 
-The user edits pitch, slot size, key-cell references or a parameter in the expression field (inspector, Design settings, Parameters), sees Corney's keys move live, gets overlap and pitch-below-min in the violations panel, and undoes the edit as one registered command.
+The user edits pitch, slot size, default parts or a parameter in the expression field (inspector, Design settings, Parameters), sees Corney's keys move live, gets overlap and pitch-below-min in the violations panel, and undoes the edit as one registered command.
 
 ## Outcome
 

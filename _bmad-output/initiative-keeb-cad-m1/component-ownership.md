@@ -23,7 +23,7 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | Operation list, Vertex table | draw custom pieces (18) | to plan |
 | Part field, Part picker | plates to DXF (19) | 19.2 |
 | Plate fields, Export menu | plates to DXF (19) | 19.3, to plan |
-| Isolated cell mode, Track tool, Cell DRC marker | footprints on the PCB (6) | to plan |
+| Isolated part mode, Track tool, Part DRC marker | footprints on the PCB (6) | to plan |
 | PCB marks | footprints on the PCB (6), extended by nets and matrix (20) and route and fab (7) | to plan |
 | Keymap layer tabs, Binding field, Firmware legends, Combo | firmware and keymap (9) | to plan |
 | 3D viewer | tray in 3D (8) | to plan |

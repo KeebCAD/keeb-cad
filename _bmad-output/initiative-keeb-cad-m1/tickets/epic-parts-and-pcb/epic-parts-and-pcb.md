@@ -14,16 +14,16 @@ risk: medium
 
 ## Description
 
-The rest of Corney Island's catalogue and footprints and the key cell's components place every footprint and keep-out on the PCB, whose edge is composed from the outline; the key-cell editor edits the key cell's components and local tracks, and changing it updates every key's footprints; part cutouts move with their part in plate, PCB and case; the PCB follows key moves live and exports a KiCad 10 project as the escape hatch.
+The rest of Corney Island's catalogue and footprints and Corney's design-local key part place every footprint and keep-out on the PCB, whose edge is composed from the outline; isolated part mode edits a design-local part's components and fixed tracks, and changing the key's part updates every key's footprints; part cutouts move with their part in plate, PCB and case; the PCB follows key moves live and exports a KiCad 10 project as the escape hatch.
 
 ## Outcome
 
-For Sergii: Corney's PCB shows every footprint placed from the key cell and parts, follows key moves live, and opens in KiCad 10 (R11, R13 escape hatch).
+For Sergii: Corney's PCB shows every footprint placed from its parts, follows key moves live, and opens in KiCad 10 (R11, R13 escape hatch).
 
 ## Done when
 
-- Every footprint and keep-out is placed from the key cell and parts; the PCB edge comes from the outline.
-- Editing the key cell updates every key's footprints.
+- Every footprint and keep-out is placed from the slots' parts; the PCB edge comes from the outline.
+- Editing the keys' design-local part updates every key's footprints.
 - The KiCad 10 project export opens in KiCad.
 - The slice scenario and one e2e journey pass.
 
@@ -50,3 +50,4 @@ For Sergii: Corney's PCB shows every footprint placed from the key cell and part
 - Decision (2026-10-30, replan): `_bmad-output/architecture-keeb-cad-layout-model/directions-2026-10-30.md` extends this epic. The board edge comes from a composed outline (D4), not one outline shape. The case cutouts this epic provides feed the tray recipe (D6), and every Corney part needs a 3D envelope for the fit check. Write these into Requirements when this epic is refined, after bmad-architecture folds the directions in.
 - Waits on epic 19 because: the catalogue schema and part cutouts
 - Decision (2026-10-30, replan): re-sliced as the vertical slice 'Footprints on the PCB'; title, description, outcome and Done when rewritten; earlier Notes stay as history and are re-read against the spine (AD-1 to AD-25) when this epic is refined.
+- Decision (2026-10-31): key cells are folded into parts (initiative Notes, Decision 2026-10-31; spine AD-5). The 2026-10-26 and 2026-10-28 notes above predate it: read `Edit key cell` as `Edit part`, isolated cell mode as isolated part mode, the key-cell track tool as the part's fixed-track tool, a key-cell reference as a part reference, and the `key-cell` connection tag as `fixed-tracks`.

@@ -37,13 +37,12 @@ Positioning: *"Ergogen's power with a visual editor, all the way to gerbers, cas
 
 - **Design** — the single file that holds everything about one keyboard with one electronics setup. Every output is computed from it. A different electronics setup on the same layout is a separate design, made by copying.
 - **Layout** — the tree of nodes in a design that places keys and parts. The tree sets which node owns which; the anchor sets where each node is placed.
-- **Node** — an element of the layout: a group or a slot; a key is a slot holding the key cell. Placed by **anchor + offset** (offset, then rotate about a pivot); a node has one rotation.
+- **Node** — an element of the layout: a group or a slot; a key is a slot whose part has a switch component. Placed by **anchor + offset** (offset, then rotate about a pivot); a node has one rotation.
 - **Anchor** — the node (default: parent) a node or geometry point is positioned from.
 - **Arrangement** — how a group places its children: a chain (each child relative to the previous sibling) or free.
-- **Slot** — a place in the layout that holds a part. Has a size (for example 1.5u).
+- **Slot** — a place in the layout that holds a part, or is empty. A slot with no part of its own takes its nearest ancestor's default part. Has a size (for example 1.5u).
 - **Construction point** — a helper point derived from other geometry (for example the intersection of two lines), used as an anchor for piece vertices. Not a physical part.
-- **Part** — a component from the curated catalogue, placed in a slot (switch, MCU, display, TRRS jack, battery connector, power switch, reset button, screw). Parts may carry footprints, cutouts and keep-outs.
-- **Key cell** — the template for what every key carries (switch footprint, diodes, LED placement and their local tracks). Can be overridden for a group of keys.
+- **Part** — what a slot holds: a library part from the curated catalogue (switch, MCU, display, TRRS jack, battery connector, power switch, reset button, screw) or a design-local part the user defines in the design. Parts may carry footprints, cutouts, keep-outs and fixed tracks (tracks drawn into the part, which move with it). What a key carries (switch, diodes, LED placement and their local tracks) is a part like any other. A group sets a default part for its slots.
 - **Module** — a ready-made board used as a part (nice!nano, nice!view).
 - **Pitch** — key spacing, a layout setting separate from the switch type (which sets only the footprint and minimum pitch).
 - **Form** — `split-reversible` (one geometry; one PCB, flipped for the other half), `split-mirrored` (right half derived from the left, with overrides) or `unibody`.
@@ -56,7 +55,7 @@ Positioning: *"Ergogen's power with a visual editor, all the way to gerbers, cas
 - **Build style** — the case's live setting (tray in milestone 1), switchable at any time. The user sees and edits only its settings.
 - **Recipe** — a reusable, versioned case feature with settings (for example magnet pockets). The user's own case operations form their own recipe, applied after the build style.
 - **Case** — 3D solids derived from the build style plus recipes.
-- **Routing** — creating PCB traces for the connections between key cells, modules and peripherals.
+- **Routing** — creating PCB traces for the connections between keys, modules and peripherals.
 - **Design rules** — trace widths per net class, clearances and keep-outs that routing and the design-rule check (DRC) enforce.
 - **Keymap** — what each key does, by layer. Firmware-neutral.
 - **Live** — an output that updates during or right after an edit, without a separate step.
@@ -70,10 +69,10 @@ What the user shapes in each output, and what happens when the layout changes.
 
 | Output | User controls | Follows a layout change by | Update | FRs |
 |---|---|---|---|---|
-| Layout | Nodes, anchors, offsets, rotations and pivots; arrangements; pitch; switch type; form; key cell; slots and parts; parameters | — (source of truth) | live | FR-1–4 |
+| Layout | Nodes, anchors, offsets, rotations and pivots; arrangements; pitch; switch type; form; default parts; slots and parts; parameters | — (source of truth) | live | FR-1–4 |
 | Outline | Pieces: by default one derived piece per group of keys, joined automatically; drawn pieces with anchored vertices where the silhouette isn't a fit; accents | Derived pieces refit to the keys; drawn pieces move only where anchored to the changed nodes; a key or part sticking out is reported | live | FR-6–7 |
 | Plate | Which pieces form each plate; extra user cutouts | Recomputed from its pieces plus part-owned cutouts (switch holes, screws) | live | FR-9–10 |
-| PCB | Parts in slots; key cell and group overrides; per-side population; matrix, pin and LED-order overrides | Footprints and key-cell tracks move with their nodes live; nets and matrix re-derived; saved routes kept where still valid, broken connections rerouted in the background | placement + key-cell tracks live; routing background | FR-8, FR-11–13 |
+| PCB | Parts in slots; default parts per group; per-side population; matrix, pin and LED-order overrides | Footprints and fixed tracks move with their nodes live; nets and matrix re-derived; saved routes kept where still valid, broken connections rerouted in the background | placement + fixed tracks live; routing background | FR-8, FR-11–13 |
 | Case | Build style (tray) and its settings; the user's own case operations, applied after the style | Re-derived from the outline, part-owned cutouts (USB/MCU wall window, screws) and settings | background | FR-14 |
 | Firmware | Keymap (keys, layers) | Matrix, pins and ZMK physical layout re-derived; keymap entries stay attached to their keys | live | FR-15–16 |
 | Editor | Views and gestures (decided in the UX session) | Shows every output updating; background stages show progress | — | FR-17–18 |
@@ -92,9 +91,9 @@ The user can arrange a group's children freely, or as a chain: each child is pla
 - Corney Island's cumulative column stagger and 3-key thumb fan are expressible without per-key absolute coordinates.
 - Placement follows one documented frame rule: a child's offset is applied in the frame of the previous sibling, then rotated about its pivot. A node has one rotation, and it carries to later siblings; a turn in the middle of a chain that must not carry is expressed by anchoring the next sibling explicitly (Corney Island's 90° far thumb key is last in its fan, so it is unaffected). The rule must reproduce Ergogen's placement within ±0.05 mm.
 
-#### FR-3: Pitch, switch type, key size and key cell
-The user can set pitch independently of switch type, set key/slot size (1u, 1.5u, …), define a key cell (switch, diodes, LED placement) that applies to every key, and override settings for a group of keys or parts (for example the outer column's switch pads, screw-hole sizes per output).
-- Changing the key cell updates every key's footprints on the PCB.
+#### FR-3: Pitch, switch type, key size and default part
+The user can set pitch independently of switch type, set key/slot size (1u, 1.5u, …), define the part every key holds (switch, diodes, LED placement) as a design-local part or pick a library part, set it as the default part for every key, and override settings for a group of keys or parts (for example the outer column's switch pads, screw-hole sizes per output).
+- Changing that part updates every key's footprints on the PCB.
 - Choc v2 at 19 mm pitch (Corney Island) is expressible.
 
 #### FR-4: Form: split-reversible now, ready for mirrored and unibody
@@ -143,17 +142,17 @@ The user can define one or more plates (Corney Island: front/switch plate, backp
 ### 4.5 PCB and routing
 
 #### FR-11: PCB from the design
-The PCB edge comes from the outline; footprints come from key cells and slot parts; nets and the matrix are derived from the layout and population.
+The PCB edge comes from the outline; footprints come from slot parts; nets and the matrix are derived from the layout and population.
 - Moving a key moves its footprints and updates nets without user action.
 - The user can override derived matrix rows/columns, MCU pin assignment and LED chain order (Corney Island sets all three by hand).
 
 #### FR-12: Incremental browser routing
-Key-cell tracks move with their key live. Connections between key cells, modules and peripherals are routed in the browser, in the background, with visible progress. Routes are saved in the design; after a layout change, saved routes that are still valid are kept and only broken connections are rerouted.
+A part's fixed tracks move with their key live. Connections between keys, modules and peripherals are routed in the browser, in the background, with visible progress. Routes are saved in the design; after a layout change, saved routes that are still valid are kept and only broken connections are rerouted.
 - A route is still valid when both its endpoints are unchanged and it still passes DRC against the changed board.
 - The router connects to modules only (nice!nano), not bare chips; a pre-routed zone around a module is allowed.
 - Connections the router cannot complete are reported as unrouted, never hidden.
 - Routing obeys design rules: power/battery net widths, module keep-outs (nice!nano antenna on the wireless design), edge clearance.
-- No manual editing of board routes in milestone 1; connections between key cells, modules and peripherals are always routed automatically. A key cell's local tracks are drawn by hand in the key-cell editor. [NON-GOAL: board route editing]
+- No manual editing of board routes in milestone 1; connections between keys, modules and peripherals are always routed automatically. A design-local part's fixed tracks are drawn by hand in isolated part mode. [NON-GOAL: board route editing]
 - Fallback if the routing spike fails: see SM-3.
 
 #### FR-13: Production and escape-hatch export
@@ -202,7 +201,7 @@ The user can save and open a design as one file, and undo/redo every edit (every
 - Choc v1, MX and Sofle thumb cluster as built references (milestone 2).
 - Unibody and split-mirrored editing (model must be ready, editing deferred).
 - Several electronics setups (variants) in one design; propagating layout changes between designs (milestone 2 remix).
-- Manual editing or locking of board routes (key-cell local tracks are authored, see FR-12).
+- Manual editing or locking of board routes (a design-local part's fixed tracks are authored, see FR-12).
 - QMK output.
 - Ergogen config import.
 - Case styles other than tray; tenting.
