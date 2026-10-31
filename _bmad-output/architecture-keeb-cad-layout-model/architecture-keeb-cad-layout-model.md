@@ -565,7 +565,7 @@ Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-2
 | Name | Version |
 | --- | --- |
 | TypeScript | ~6.0 |
-| Vue (`editor`) / `@vue/reactivity` (`reactive` only, AD-10). Pinned exactly through one pnpm catalog entry: `@vue/runtime-core` pins `@vue/reactivity` exactly, so a second copy would split the graph; a test asserts one installed copy | 3.5.44 / 3.5.44 (exact) |
+| Vue (`editor`) / `@vue/reactivity` (`reactive` only, AD-10). Both pinned exactly in the pnpm catalog, `@vue/reactivity`'s entry a YAML alias of `vue`'s, so one number moves both: `@vue/runtime-core` pins `@vue/reactivity` exactly, so a second copy would split the graph; a test asserts one installed copy and that the alias survives pnpm's rewrites | 3.5.44 / 3.5.44 (exact) |
 | @snap/ts-inject (MIT; wiring, AD-25; small project: ~19.6k weekly downloads, two main Snap committers) | ^1.2 (1.2.1 current) |
 | immer (MIT; command writes, `model`'s register only, AD-2; auto-freeze on, patches off). A caret range: the lockfile stops silent upgrades, and an exact pin would also block fix releases | ^11.2.9 |
 | valibot (MIT; the one schema format, AD-24) / @valibot/to-json-schema (command inputs for agents and UI). Caret ranges: the reference walk reads typed public schema properties, so a breaking change fails to compile and fails AD-24's walk test, pinned or not | ^1.5.0 / ^1.8.0 |
