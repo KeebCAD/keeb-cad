@@ -167,6 +167,9 @@ catalogs:
     '@snap/ts-inject':
       specifier: ^1.2
       version: 1.2.1
+    '@types/node':
+      specifier: ^26.6.6
+      version: 26.6.6
     '@vue/reactivity':
       specifier: 3.5.44
       version: 3.5.44
@@ -194,7 +197,7 @@ importers:
         specifier: 10.0.1
         version: 10.0.1(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))
       '@types/node':
-        specifier: ^26.6.6
+        specifier: 'catalog:'
         version: 26.6.6
       '@vitest/eslint-plugin':
         specifier: ^1.6.27
@@ -264,7 +267,7 @@ importers:
         specifier: ^26.0.1
         version: 26.0.1
       '@types/node':
-        specifier: ^26.6.6
+        specifier: 'catalog:'
         version: 26.6.6
       '@vitejs/plugin-vue':
         specifier: ^6.0.8
@@ -301,7 +304,7 @@ importers:
         version: 2.9.1
     devDependencies:
       '@types/node':
-        specifier: ^26.6.6
+        specifier: 'catalog:'
         version: 26.6.6
 
   packages/case: {}
