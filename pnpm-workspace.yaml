@@ -8,7 +8,9 @@ catalog:
   # copy would split the reactive graph (tooling/vue-reactivity.spec.ts checks both).
   vue: &vue 3.5.44
   '@vue/reactivity': *vue
+  '@snap/ts-inject': ^1.2
   typescript: ~6.0.0
+  valibot: ^1.5.0
   vitest: ^5.0.5
   vue-tsc: ^3.3.11
 

@@ -7,8 +7,8 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@snap/ts-inject": "^1.2",
+    "@snap/ts-inject": "catalog:",
     "immer": "^11.2.9",
-    "valibot": "^1.5.0"
+    "valibot": "catalog:"
   }
 }

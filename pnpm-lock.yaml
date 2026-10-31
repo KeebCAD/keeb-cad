@@ -164,12 +164,18 @@ settings:
 
 catalogs:
   default:
+    '@snap/ts-inject':
+      specifier: ^1.2
+      version: 1.2.1
     '@vue/reactivity':
       specifier: 3.5.44
       version: 3.5.44
     typescript:
       specifier: ~6.0.0
       version: 6.0.3
+    valibot:
+      specifier: ^1.5.0
+      version: 1.5.0
     vitest:
       specifier: ^5.0.5
       version: 5.0.5
@@ -242,7 +248,7 @@ importers:
   app:
     dependencies:
       '@snap/ts-inject':
-        specifier: ^1.2
+        specifier: 'catalog:'
         version: 1.2.1
       vue:
         specifier: 'catalog:'
@@ -313,13 +319,13 @@ importers:
   packages/model:
     dependencies:
       '@snap/ts-inject':
-        specifier: ^1.2
+        specifier: 'catalog:'
         version: 1.2.1
       immer:
         specifier: ^11.2.9
         version: 11.2.9
       valibot:
-        specifier: ^1.5.0
+        specifier: 'catalog:'
         version: 1.5.0(typescript@6.0.3)
 
   packages/pcb: {}
