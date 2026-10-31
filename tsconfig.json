@@ -1,6 +1,8 @@
 {
   "files": [],
   "references": [
+    { "path": "./packages/reactive" },
+    { "path": "./packages/geometry" },
     { "path": "./packages/model" },
     { "path": "./packages/plates" },
     { "path": "./packages/pcb" },
@@ -12,6 +14,7 @@
     { "path": "./packages/pipeline" },
     { "path": "./packages/storage" },
     { "path": "./packages/library" },
+    { "path": "./packages/ui" },
     { "path": "./fixtures" },
     { "path": "./app" },
     { "path": "./tsconfig.node.json" }

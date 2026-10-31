@@ -4,6 +4,10 @@ packages:
   - fixtures
 
 catalog:
+  # One number moves both: @vue/runtime-core pins @vue/reactivity exactly, so a second
+  # copy would split the reactive graph (tooling/vue-reactivity.spec.ts checks both).
+  vue: &vue 3.5.44
+  '@vue/reactivity': *vue
   typescript: ~6.0.0
   vitest: ^5.0.5
   vue-tsc: ^3.3.11

@@ -117,7 +117,7 @@ revert
 echo "== AD-10 break"
 put packages/plates/src/index.ts "import '@keeb-cad/pcb'"
 expect_check 'AD-10 break' fail
-expect_commit 'AD-10 break' refused 'stage-imports-only-model'
+expect_commit 'AD-10 break' refused 'plates-and-pcb-import-only-model-geometry-reactive'
 revert
 
 echo "== type error"

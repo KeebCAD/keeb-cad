@@ -2,3 +2,5 @@
 import '../../storage/src/index'
 // nothing-imports-editor, by relative path.
 import '../../../app/src/main'
+// only-editor-imports-ui.
+import '../../ui/src/index'

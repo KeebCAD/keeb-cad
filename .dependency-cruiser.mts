@@ -14,13 +14,34 @@ const alt = (names: readonly string[]) => names.join('|')
 export const ws = (names: string) => `^(packages/(${names})/|@keeb-cad/(${names})(/|$))`
 export const EDITOR = '^(app/|@keeb-cad/editor(/|$))'
 export const FIXTURES = '^(fixtures/|@keeb-cad/fixtures(/|$))'
-const VUE_NAMES = 'vue|vue-router|pinia|@vue/[^/]+'
-export const VUE = String.raw`(^|/)node_modules/(${VUE_NAMES})/|^(${VUE_NAMES})(/|$)|\.vue$`
+export const UI = ws('ui')
+
+/** An npm package target, by resolved node_modules path or by bare specifier. */
+export const npm = (names: string) => `(^|/)node_modules/(${names})/|^(${names})(/|$)`
+
+// @vue/reactivity is not Vue for this rule: it belongs to `reactive` alone (AD-10).
+const VUE_NAMES = 'vue|vue-router|pinia|@vueuse/core|@vue/(?!reactivity(?:/|$))[^/]+'
+export const VUE = String.raw`${npm(VUE_NAMES)}|\.vue$`
+export const VUE_REACTIVITY = npm('@vue/reactivity')
 
 const ANY_PACKAGE = ws('[^/]+')
-// Editor and fixtures targets belong to their own rules, so nothing double-reports.
-const OWNED_ELSEWHERE = [EDITOR, FIXTURES]
+// Editor, fixtures and ui targets belong to their own rules, so nothing double-reports.
+const OWNED_ELSEWHERE = [EDITOR, FIXTURES, UI]
 const TEST_FILE = String.raw`\.(spec|test)\.ts$`
+
+/** Only files under `owner` may import `target`. */
+const onlyImports = (
+  name: string,
+  owner: string | string[],
+  target: string,
+  comment: string,
+): IForbiddenRuleType => ({
+  name,
+  comment,
+  severity: 'error',
+  from: { pathNot: owner },
+  to: { path: target },
+})
 
 /** `from` packages may import only their own files plus `allowed` packages. */
 const importsOnly = (
@@ -40,28 +61,46 @@ const importsOnly = (
 const config: IConfiguration = {
   forbidden: [
     importsOnly(
-      'stage-imports-only-model',
-      STAGES.filter((s) => s !== 'routing'),
-      ['model'],
-      'A pipeline stage imports only model.',
+      'plates-and-pcb-import-only-model-geometry-reactive',
+      ['plates', 'pcb'],
+      ['model', 'geometry', 'reactive'],
+      'plates and pcb import only model, geometry and reactive.',
+    ),
+    importsOnly(
+      'case-imports-only-model-and-geometry',
+      ['case'],
+      ['model', 'geometry'],
+      'case imports only model and geometry.',
+    ),
+    importsOnly(
+      'firmware-drc-and-storage-import-only-model-and-reactive',
+      ['firmware', 'drc', 'storage'],
+      ['model', 'reactive'],
+      'firmware, drc and storage import only model and reactive.',
     ),
     importsOnly(
       'routing-imports-only-model-and-drc',
       ['routing'],
       ['model', 'drc'],
-      'routing imports only model and drc.',
+      'routing imports only model and drc, the one stage-to-stage import.',
     ),
     importsOnly(
-      'model-imports-no-workspace-package',
+      'exports-and-library-import-only-model',
+      ['exports', 'library'],
       ['model'],
+      'exports and library import only model.',
+    ),
+    importsOnly(
+      'model-imports-only-reactive-and-geometry',
+      ['model'],
+      ['reactive', 'geometry'],
+      'Among workspace packages, model imports only reactive and geometry.',
+    ),
+    importsOnly(
+      'reactive-geometry-and-ui-import-no-workspace-package',
+      ['reactive', 'geometry', 'ui'],
       [],
-      'model is the root of the graph and imports no workspace package.',
-    ),
-    importsOnly(
-      'library-and-storage-import-only-model',
-      ['library', 'storage'],
-      ['model'],
-      'library and storage import only model.',
+      'reactive, geometry and ui sit below everything and import no workspace package.',
     ),
     {
       name: 'pipeline-imports-no-storage',
@@ -72,10 +111,47 @@ const config: IConfiguration = {
     },
     {
       name: 'only-editor-imports-vue',
-      comment: 'Only the editor (app/) imports Vue.',
+      comment: 'Only the editor (app/) and ui import Vue and VueUse.',
       severity: 'error',
-      from: { pathNot: '^app/' },
-      to: { path: VUE, pathNot: EDITOR },
+      from: { pathNot: ['^app/', '^packages/ui/'] },
+      to: { path: VUE, pathNot: [EDITOR, UI] },
+    },
+    onlyImports(
+      'only-reactive-imports-vue-reactivity',
+      '^packages/reactive/',
+      VUE_REACTIVITY,
+      'Only reactive imports @vue/reactivity; everything else derives through reactive.',
+    ),
+    onlyImports(
+      'only-geometry-imports-makerjs',
+      '^packages/geometry/',
+      npm('makerjs'),
+      'Only geometry imports makerjs.',
+    ),
+    onlyImports(
+      'only-register-imports-immer',
+      '^packages/model/src/register/',
+      npm('immer'),
+      "Only model's register concept imports immer.",
+    ),
+    onlyImports(
+      'only-ui-imports-reka-and-zag',
+      '^packages/ui/',
+      npm('reka-ui|@zag-js/hotkeys'),
+      'Only ui imports reka-ui and @zag-js/hotkeys.',
+    ),
+    onlyImports(
+      'only-editor-imports-ui',
+      ['^app/', '^packages/ui/'],
+      UI,
+      'Only the editor imports ui.',
+    ),
+    {
+      name: 'worker-imports-no-reactive',
+      comment: 'Worker code (*.worker.ts) never reaches reactive, directly or through a helper.',
+      severity: 'error',
+      from: { path: String.raw`\.worker\.ts$` },
+      to: { path: ws('reactive'), reachable: true },
     },
     {
       name: 'nothing-imports-editor',
