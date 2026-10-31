@@ -280,6 +280,7 @@ graph LR
   - Only `geometry` imports `makerjs`. Only `case` and `routing` import `clipper2-ts`. Only `routing` and `drc` import `flatbush`.
   - Only `viewer3d` imports three.js; only `editor` imports `viewer3d`. Nothing imports `editor`.
   - **Enforcement:** pnpm strict dependencies, plus dependency-cruiser rules in CI.
+  - **Shared dependencies go through the pnpm catalog.** A third-party package declared by more than one workspace package is declared there once, and each package uses `catalog:`, so no two packages drift onto different copies (two ts-inject copies would break merging the package partials, AD-25).
 
 ```mermaid
 graph TD
