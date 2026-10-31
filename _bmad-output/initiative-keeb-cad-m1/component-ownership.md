@@ -13,7 +13,7 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | Canvas, viewport, selection; Canvas keys, Right half, Mirror axis, Group frame, Unfitted slot | see Corney's keys (13) | 13.7, 13.8 |
 | Banner, Toast | keep my work (16) | 16.1, 16.3 |
 | Start screen, File menu, Design info | keep my work (16) | to plan |
-| Inspector, Design settings, Population toggle (moved from 13.8 on 2026-10-30) | change a parameter (14) | 14.5 |
+| Inspector, Design settings, Fitted toggle (moved from 13.8 on 2026-10-30) | change a parameter (14) | 14.5 |
 | Expression field, Autocomplete dropdown | change a parameter (14) | to plan |
 | Violations panel, Violation marker, Overlap area | change a parameter (14) | 14.4, 14.6 |
 | Rotation handle, Anchor link, Pick marks, Nudge-step control | drag keys (15) | 15.5, 15.6 |

@@ -14,7 +14,7 @@ risk: high
 
 ## Description
 
-On the locally served app, Corney Island's left half resolves from its layout-command script (chains, explicit anchors, rotation carry, split-reversible right side derived), the user adds and deletes groups, slots and keys from a blank canvas, both halves are drawn on the Layout canvas inside the editor frame (global chrome, workspace tabs, docked right panel, status strip, canvas with viewport and selection), and the design reopens from browser autosave unchanged.
+On the locally served app, Corney Island's left half resolves from its layout-command script (chains, explicit anchors, rotation carry, the right side of the reversible split board derived), the user adds and deletes groups, slots and keys from a blank canvas, both halves are drawn on the Layout canvas inside the editor frame (global chrome, workspace tabs, docked right panel, status strip, canvas with viewport and selection), and the design reopens from browser autosave unchanged.
 
 ## Outcome
 
@@ -24,7 +24,7 @@ For Sergii: Corney Island's keys appear in the editor from its layout-command sc
 
 - R1 (parent R1): A layout is built from a blank canvas with groups and slots, each placed by anchor + offset (offset, then rotate about the pivot). Any node anchors to a slot attach point or a group origin, and moving a node moves everything anchored to it, transitively.
 - R2 (parent R2): Children are arranged freely or as a chain. Corney's cumulative column stagger and 3-key thumb fan are expressed without absolute coordinates; each node has one rotation, carried along its chain, and an explicit anchor stops the carry. Shown by Corney's layout-command script resolving the left half, and 13.4's spike check of its key centres within ±0.05 mm of Ergogen.
-- R3 (parent R4): A split-reversible design derives its right half (one geometry, side-qualified ids), with population per side per slot set by command. Split-mirrored and unibody files load and report `unsupported-form`.
+- R3 (parent R4): A split design with a reversible board derives its right half (one geometry, side-qualified ids); a per-side override set by command removes a slot's part on one side, and the removed slot keeps its space. Split files with a mirrored board and unibody files load and report `unsupported-form`.
 - R4 (parent R17): A command that would create an anchor cycle is rejected, naming the cycle's ids. A loaded file with a cycle reports `anchor-cycle`, and an unknown anchor reports `unresolvable-reference`. The status strip shows the error and warning counts.
 - R5 (parent R18): A new design autosaves in the browser after every applied command and reopens from autosave byte-identical, as one versioned canonical file.
 - R6 (parent R1, R17): The layout is built and seen in the editor frame, in both themes: top bar, workspace tabs, status strip (violation counts, cursor, zoom), left rail with the Tree slide-out, the docked right-panel region, and the Layout canvas drawing both halves with viewport (zoom, pan, fit) and selection synced with the tree. G, S, Ctrl+D and Delete add, duplicate and delete. The open design and workspace are in the URL. Shown by one e2e journey in Chromium and Firefox.
@@ -45,12 +45,12 @@ For Sergii: Corney Island's keys appear in the editor from its layout-command sc
 ## Boundaries
 
 - Out: what the other slices of the initiative own (initiative breakdown, component-ownership map).
-- Out, owned by epic-change-a-parameter: undo and redo, the Inspector, the Population toggle, the Violations panel.
+- Out, owned by epic-change-a-parameter: undo and redo, the Inspector, the Fitted toggle, the Violations panel.
 - Out, owned by epic-drag-keys: drag, the anchor picker, the command palette.
 - Out, owned by epic-keep-my-work: Save to file, Open, the start screen, banners and toasts.
 - Out, owned by epic-outline-follows-the-keys: the outline.
 - Out, owned by epic-routing-and-fab: Tab badges and the status strip's output-state entries.
-- Out: anchors to parts, vertices and construction points (the slices that add them).
+- Out: anchors to vertices and construction points (the slices that add them).
 
 ## References
 

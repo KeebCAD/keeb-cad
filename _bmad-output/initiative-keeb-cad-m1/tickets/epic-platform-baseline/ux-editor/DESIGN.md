@@ -2,7 +2,7 @@
 name: keeb-cad editor
 description: Browser-only visual keyboard CAD for one expert builder. Catppuccin Frappé dark by default, Latte light; calm density; canvas first, chrome quiet.
 status: final
-updated: 2026-10-30
+updated: 2026-10-31
 colors:
   # Unsuffixed = dark (Catppuccin Frappé, primary). `-light` = Catppuccin Latte.
   # Comment = Catppuccin color name. Latte uses the same name unless a decided fix says otherwise.
@@ -307,7 +307,7 @@ components:
   group-frame-tab:
     height: 17px
     radius: '{rounded.sm}'
-  population-toggle:
+  fitted-toggle:
     box-size: 16px
   button:
     background: '{colors.panel}'
@@ -387,7 +387,7 @@ Overlay0 (2.87:1) never carries text. Muted text never sits on a selected or act
 Two families. → `mockups/typography-1.html` (option b).
 
 - **Sans — `{typography.ui}`** (system-ui; no web font, decided 2026-10-30): chrome, labels, menus, messages. `{typography.ui-strong}` for the active tab and inspector headings. `{typography.section-label}` uppercase for inspector and panel section headers.
-- **Mono — `{typography.mono}`** (JetBrains Mono, self-hosted with the app, decided 2026-10-30: canvas legends must fit by its glyph widths, and `ui-monospace` works only in Safari) at 13px: expression and value fields, ids, coordinates, status-strip counts, revision hashes, and code inside messages (`unit-mismatch: u on rotation`). `{typography.mono-small}` (12px) for `kbd` shortcut hints.
+- **Mono — `{typography.mono}`** (JetBrains Mono, self-hosted with the app, decided 2026-10-30: canvas legends must fit by its glyph widths, and `ui-monospace` works only in Safari) at 13px: expression and value fields, ids, coordinates, status-strip counts, revision hashes, and code inside messages (`unit-mismatch: deg on a length`). `{typography.mono-small}` (12px) for `kbd` shortcut hints.
 - **Canvas labels — `{typography.canvas-label}`**: slot ids, R·C matrix labels (zero-based, `R0·C0`), LED numbers, legends, rotation readout (signed delta, `−3.4°`).
 - **Tabular digits everywhere** (`font-variant-numeric: tabular-nums`), so changing numbers never jitter.
 
@@ -431,9 +431,9 @@ General states: hover fills `{colors.hover}` (no Mauve bar); pressed/on fills `{
 
 ### Inspector and fields
 
-- **Inspector** — node heading (mono id and muted kind, for example `slot · group thumb`), then collapsible sections (Anchor, Offset, Chain, Population, Part, …) with `{typography.section-label}` headers and chevrons at least `{spacing.target-min}`.
-- **Design settings** — the inspector with nothing selected in Layout: form (read-only text), `pitch-x`, `pitch-y`, default part. Group overrides show `inherits <value>` as placeholder text in `{colors.text-muted}`. → `mockups/pitch-settings-1.html`.
-- **Population toggle** — `Fitted: [x] left [x] right` checkboxes in the inspector (`{components.population-toggle.box-size}` box; ticked = `{colors.fill-on}`, Mauve edge and ✓). Derived geometry fields on the right half render read-only (Text on `{colors.chrome}`, no border) with `derived from left/<id>` and a lock glyph.
+- **Inspector** — node heading (mono id and muted kind, for example `slot · group thumb`), then collapsible sections (Anchor, Offset, Chain, Fitted, Part, …) with `{typography.section-label}` headers and chevrons at least `{spacing.target-min}`.
+- **Design settings** — the inspector with nothing selected in Layout: form (read-only text), `gap x`, `gap y`, default part. Group overrides (default part only) show `inherits <value>` as placeholder text in `{colors.text-muted}`. → `mockups/pitch-settings-1.html`.
+- **Fitted toggle** — `Fitted: [x] left [x] right` checkboxes in the inspector (`{components.fitted-toggle.box-size}` box; ticked = `{colors.fill-on}`, Mauve edge and ✓). Derived geometry fields on the right half render read-only (Text on `{colors.chrome}`, no border) with `derived from left/<id>` and a lock glyph.
 - **Expression field** — mono text, evaluated result as a `{colors.text-muted}` suffix (`= 5.12 mm`). Focus: `{colors.focus}` border. Invalid: `{colors.error}` underline and a message below. Pick mode: dashed Teal border, Text value, `picking…` label.
 - **Anchor picker** — anchor field and a 3×3 attach-point grid (cells at least `{spacing.target-min}`); the chosen point fills `{colors.selection}` `[ASSUMPTION]`.
 - **Part field** — field-styled trigger with ▾; opens the Part picker (see Overlays).

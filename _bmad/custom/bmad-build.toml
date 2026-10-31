@@ -1,0 +1,5 @@
+[workflow]
+
+activation_steps_append = [
+  "Before planning, check the story against the spine's Data Schema section (`_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md`). If the work adds or changes any design-file field, schema or shared kind that the Data Schema does not define, stop and tell the user: the field schema is decided in the spine first. Do not invent the field.",
+]

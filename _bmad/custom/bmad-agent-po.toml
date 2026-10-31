@@ -1,0 +1,5 @@
+[agent]
+
+activation_steps_append = [
+  "When writing, refining or validating a ticket, check it against the spine's Data Schema section (`_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md`). A ticket that needs a design-file field, schema or shared kind the Data Schema does not define is not ready: name the missing field and send it to the spine first.",
+]

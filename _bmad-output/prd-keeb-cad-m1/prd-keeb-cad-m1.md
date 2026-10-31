@@ -2,7 +2,7 @@
 title: keeb-cad milestone 1
 status: final
 created: 2026-10-25
-updated: 2026-10-30
+updated: 2026-10-31
 ---
 
 # PRD: keeb-cad — Milestone 1
@@ -40,12 +40,12 @@ Positioning: *"Ergogen's power with a visual editor, all the way to gerbers, cas
 - **Node** — an element of the layout: a group or a slot; a key is a slot whose part has a switch component. Placed by **anchor + offset** (offset, then rotate about a pivot); a node has one rotation.
 - **Anchor** — the node (default: parent) a node or geometry point is positioned from.
 - **Arrangement** — how a group places its children: a chain (each child relative to the previous sibling) or free.
-- **Slot** — a place in the layout that holds a part, or is empty. A slot with no part of its own takes its nearest ancestor's default part. Has a size (for example 1.5u).
+- **Slot** — a place in the layout that holds a part. A slot with no part of its own takes its nearest ancestor's default part, else the design's. A slot may adjust its part's recipe inputs, for example a key size of 1.5u.
 - **Construction point** — a helper point derived from other geometry (for example the intersection of two lines), used as an anchor for piece vertices. Not a physical part.
-- **Part** — what a slot holds: a library part from the curated catalogue (switch, MCU, display, TRRS jack, battery connector, power switch, reset button, screw) or a design-local part the user defines in the design. Parts may carry footprints, cutouts, keep-outs and fixed tracks (tracks drawn into the part, which move with it). What a key carries (switch, diodes, LED placement and their local tracks) is a part like any other. A group sets a default part for its slots.
+- **Part** — what a slot holds: a library part from the curated library (switch, MCU, display, TRRS jack, battery connector, power switch, reset button, screw) or a design-local part the user defines in the design. Parts may carry footprints, cutouts, keep-outs and tracks (tracks drawn into the part, which move with it and are never rerouted). Every part carries one `reversible` flag. What a key carries (switch, diodes, LED placement and their local tracks) is a part like any other, usually made by a part recipe applied with inputs; a hand-built design-local part covers what no recipe does. The design sets a default part, and a group may override it for its slots.
 - **Module** — a ready-made board used as a part (nice!nano, nice!view).
-- **Pitch** — key spacing, a layout setting separate from the switch type (which sets only the footprint and minimum pitch).
-- **Form** — `split-reversible` (one geometry; one PCB, flipped for the other half), `split-mirrored` (right half derived from the left, with overrides) or `unibody`.
+- **Gap** — the space between keycaps, edge to edge, on x and y: one uniform design-wide setting, so rows align. Positions, gaps and offsets are in mm; `1u`, `1.5u`, … are key-size labels (values of a part recipe's `size` input), not lengths.
+- **Form** — split with a reversible board (one geometry; one PCB, flipped for the other half), split with a mirrored board (right half derived from the left, with overrides) or unibody.
 - **Parameter** — a named value with a unit (for example `wall = 1.2mm`), usable in any length or angle.
 - **Expression** — a length or angle written with numbers, units, parameters and `+ - * / ( )` (for example `wall + gap`).
 - **Piece** — a named 2D geometry of the board outline. A **derived** piece fits a group of keys (and their parts) with a margin and follows the layout. A **drawn** piece is built from **geometry operations** (key outline, primitive: rectangle, circle, polygon; boolean: add, subtract, intersect; offset: expand/shrink with corner style), stays put, and is checked against the keys' fit. **Accents** (rounded corners, cut arcs) go on top. Pieces can reference other pieces.
@@ -53,7 +53,7 @@ Positioning: *"Ergogen's power with a visual editor, all the way to gerbers, cas
 - **Cutout** — geometry removed from a plate, PCB or case. Either part-owned (comes with a part) or user-drawn.
 - **Plate** — a 2D piece exported for cutting. A design can have several.
 - **Build style** — the case's live setting (tray in milestone 1), switchable at any time. The user sees and edits only its settings.
-- **Recipe** — a reusable, versioned case feature with settings (for example magnet pockets). The user's own case operations form their own recipe, applied after the build style.
+- **Recipe** — a reusable, versioned feature with settings. A **part recipe** makes a part from inputs (for example a key from its size); a case recipe is a case feature (for example magnet pockets). Each kind of recipe has its own interpreter. The user's own case operations form their own recipe, applied after the build style.
 - **Case** — 3D solids derived from the build style plus recipes.
 - **Routing** — creating PCB traces for the connections between keys, modules and peripherals.
 - **Design rules** — trace widths per net class, clearances and keep-outs that routing and the design-rule check (DRC) enforce.
@@ -69,10 +69,10 @@ What the user shapes in each output, and what happens when the layout changes.
 
 | Output | User controls | Follows a layout change by | Update | FRs |
 |---|---|---|---|---|
-| Layout | Nodes, anchors, offsets, rotations and pivots; arrangements; pitch; switch type; form; default parts; slots and parts; parameters | — (source of truth) | live | FR-1–4 |
+| Layout | Nodes, anchors, offsets, rotations and pivots; arrangements; gap; switch type; form; default parts; slots and parts; parameters | — (source of truth) | live | FR-1–4 |
 | Outline | Pieces: by default one derived piece per group of keys, joined automatically; drawn pieces with anchored vertices where the silhouette isn't a fit; accents | Derived pieces refit to the keys; drawn pieces move only where anchored to the changed nodes; a key or part sticking out is reported | live | FR-6–7 |
 | Plate | Which pieces form each plate; extra user cutouts | Recomputed from its pieces plus part-owned cutouts (switch holes, screws) | live | FR-9–10 |
-| PCB | Parts in slots; default parts per group; per-side population; matrix, pin and LED-order overrides | Footprints and fixed tracks move with their nodes live; nets and matrix re-derived; saved routes kept where still valid, broken connections rerouted in the background | placement + fixed tracks live; routing background | FR-8, FR-11–13 |
+| PCB | Parts in slots; default parts per group; per-side overrides (removing a part on one side); matrix, pin and LED-order overrides | Footprints and fixed tracks move with their nodes live; nets and matrix re-derived; saved routes kept where still valid, broken connections rerouted in the background | placement + fixed tracks live; routing background | FR-8, FR-11–13 |
 | Case | Build style (tray) and its settings; the user's own case operations, applied after the style | Re-derived from the outline, part-owned cutouts (USB/MCU wall window, screws) and settings | background | FR-14 |
 | Firmware | Keymap (keys, layers) | Matrix, pins and ZMK physical layout re-derived; keymap entries stay attached to their keys | live | FR-15–16 |
 | Editor | Views and gestures (decided in the UX session) | Shows every output updating; background stages show progress | — | FR-17–18 |
@@ -91,17 +91,17 @@ The user can arrange a group's children freely, or as a chain: each child is pla
 - Corney Island's cumulative column stagger and 3-key thumb fan are expressible without per-key absolute coordinates.
 - Placement follows one documented frame rule: a child's offset is applied in the frame of the previous sibling, then rotated about its pivot. A node has one rotation, and it carries to later siblings; a turn in the middle of a chain that must not carry is expressed by anchoring the next sibling explicitly (Corney Island's 90° far thumb key is last in its fan, so it is unaffected). The rule must reproduce Ergogen's placement within ±0.05 mm.
 
-#### FR-3: Pitch, switch type, key size and default part
-The user can set pitch independently of switch type, set key/slot size (1u, 1.5u, …), define the part every key holds (switch, diodes, LED placement) as a design-local part or pick a library part, set it as the default part for every key, and override settings for a group of keys or parts (for example the outer column's switch pads, screw-hole sizes per output).
+#### FR-3: Gap, switch type, key size and default part
+The user can set the design's gap between keycaps (x and y), set a key's size (1u, 1.5u, …: a part recipe's `size` input, adjustable per slot), define the part every key holds (switch, diodes, LED placement) as a design-local part (usually a part recipe applied with inputs, or hand-built) or pick a library part, set it as the default part for every key, and override settings for a group of keys or parts (for example the outer column's switch pads, screw-hole sizes per output).
 - Changing that part updates every key's footprints on the PCB.
-- Choc v2 at 19 mm pitch (Corney Island) is expressible.
+- Choc v2 at 19 mm centres (Corney Island) is expressible via the gap.
 
-#### FR-4: Form: split-reversible now, ready for mirrored and unibody
-The user can design a reversible split board: one geometry and one PCB for both halves, with per-side population differences only.
-- The design model must not assume a reversible split board: the `split-mirrored` and `unibody` forms are deferred but must not require a model change. [NON-GOAL for milestone 1: mirrored and unibody editing]
+#### FR-4: Form: split with a reversible board now, ready for mirrored and unibody
+The user can design a split keyboard with a reversible board: one geometry and one PCB for both halves, differing per side only through overrides (in milestone 1, removing a part on one side; the removed slot keeps its space).
+- The design model must not assume a reversible split board: the split form with a mirrored board and the unibody form are deferred but must not require a model change. [NON-GOAL for milestone 1: mirrored and unibody editing]
 
 #### FR-5: Second design from a copy [REVISED 2026-10-25]
-The user can copy a design as a new design (`Copy design…`: new name and id, recording its source design and revision) and change its electronics: Corney Island wireless is a copy of Corney Island wired with different parts, positions and population (reset button, display, battery, power switch).
+The user can copy a design as a new design (`Copy design…`: new name and id, recording its source design and revision) and change its electronics: Corney Island wireless is a copy of Corney Island wired with different parts and positions (reset button, display, battery, power switch).
 - The copy records which design and revision it came from, so milestone 2 can pull later layout changes into it (remix).
 - Saving to another file (`Save to file…`) keeps the same design and id; only `Copy design…` makes a new design.
 - In milestone 1, a layout change made after the copy is made in each design separately. [NON-GOAL for milestone 1: several electronics setups in one design; layout changes propagating between designs]
@@ -125,7 +125,7 @@ The user builds the board outline from pieces. By default each group of keys get
 ### 4.3 Parts and cutouts
 
 #### FR-8: Parts in slots
-The user can place catalogue parts in slots anchored to any node. Milestone 1's catalogue covers everything Corney Island needs: Choc v2 hotswap switch footprint, diode, per-key and underglow LEDs (wired design), nice!nano, OLED, nice!view, TRRS jack, battery connector, power switch, reset button, solder jumpers for the reversible PCB, M2 screws/standoffs. The catalogue is curated.
+The user can place library parts in slots anchored to any node. Milestone 1's library covers everything Corney Island needs: Choc v2 hotswap switch footprint, diode, per-key and underglow LEDs (wired design), nice!nano, OLED, nice!view, TRRS jack, battery connector, power switch, reset button, solder jumpers for the reversible PCB, M2 screws/standoffs. The library is curated.
 - A part moves with its anchor.
 - Footprints come from keeb-cad's own library, likely derived from ceoloide's footprints with attribution (licence: §8 Q6).
 
@@ -142,7 +142,7 @@ The user can define one or more plates (Corney Island: front/switch plate, backp
 ### 4.5 PCB and routing
 
 #### FR-11: PCB from the design
-The PCB edge comes from the outline; footprints come from slot parts; nets and the matrix are derived from the layout and population.
+The PCB edge comes from the outline; footprints come from slot parts; nets and the matrix are derived from the layout, its parts and the per-side overrides.
 - Moving a key moves its footprints and updates nets without user action.
 - The user can override derived matrix rows/columns, MCU pin assignment and LED chain order (Corney Island sets all three by hand).
 
@@ -185,7 +185,7 @@ The user can author the keymap (keys and layers) in keeb-cad.
 #### FR-17: Live propagation
 Every edit propagates to all affected outputs: live stages update immediately, background stages show progress.
 - No output ever shows stale results without marking them stale.
-- The editor warns about design problems: overlapping keys or parts, pitch below the switch minimum, anchor cycles, unrouted connections, DRC violations.
+- The editor warns about design problems: overlapping keys or parts, a part that isn't reversible on a reversible board, anchor cycles, unrouted connections, DRC violations.
 
 #### FR-18: Design file and undo
 The user can save and open a design as one file, and undo/redo every edit (every edit is a named command; one gesture = one undo step). The design autosaves in the browser.
@@ -199,7 +199,7 @@ The user can save and open a design as one file, and undo/redo every edit (every
 ## 5. Non-Goals (Explicit)
 - Remixing and the block library of known boards (milestone 2).
 - Choc v1, MX and Sofle thumb cluster as built references (milestone 2).
-- Unibody and split-mirrored editing (model must be ready, editing deferred).
+- Unibody and mirrored split editing (model must be ready, editing deferred).
 - Several electronics setups (variants) in one design; propagating layout changes between designs (milestone 2 remix).
 - Manual editing or locking of board routes (a design-local part's fixed tracks are authored, see FR-12).
 - QMK output.
@@ -224,7 +224,7 @@ The user can save and open a design as one file, and undo/redo every edit (every
 - **SM-2:** The tray case matches Corney Island's case within ±0.05 mm on: wall thickness, PCB-to-wall gap, floor thickness, wall height, screw-hole positions and radii, and the MCU/USB wall cutout position and size (see the addendum, Tray case reference numbers). Validates FR-14.
 - **SM-3:** Both designs (wired and wireless) route fully in the browser, pass DRC, and export gerbers + drill directly from keeb-cad that pass the fab's checks. If the routing spike shows that browser routing is not achievable, milestone 1 is re-scoped: it counts as done when the KiCad export, routed outside keeb-cad, produces fab-ready files. The PCB is compared with Corney Island's by parts and nets, not by copper, because keeb-cad uses its own footprint library. Validates FR-11–FR-13.
 - **SM-4:** ZMK firmware for both designs builds from the export (wired design: see §8 Q2). Validates FR-15–FR-16.
-- **SM-5:** A short edit script runs with zero manual fix-ups in any output: move one thumb-fan key; rotate the thumb fan; shift one column's stagger; change pitch-x, then pitch-y (each to a value at or above the switch's minimum); change a case setting. After each step, the outline, plate, PCB, case and firmware of the edited design are current (or visibly updating). One layout change updating both boards is a milestone-2 metric. Validates FR-17.
+- **SM-5:** A short edit script runs with zero manual fix-ups in any output: move one thumb-fan key; rotate the thumb fan; shift one column's stagger; change the gap on x, then on y; change a case setting. After each step, the outline, plate, PCB, case and firmware of the edited design are current (or visibly updating). One layout change updating both boards is a milestone-2 metric. Validates FR-17.
 
 **Counter-metrics (do not optimise)**
 - **SM-C1:** Corney Island-specific shortcuts. Passing SM-1 by hard-coding Corney Island shapes defeats the point; LambBT and Corax56 stay as paper checks for generality.
@@ -237,6 +237,6 @@ The user can save and open a design as one file, and undo/redo every edit (every
 4. **Construction points:** which kinds are needed beyond line intersection (Corney Island uses intersect; averaged anchors are a candidate)?
 5. **Demand from others** is unproven (research confidence medium-low; no interviews). Milestone 2 tests it.
 6. **Footprint licence:** confirm the licence of ceoloide's footprints allows deriving keeb-cad's library with attribution.
-7. **Split-mirrored form:** which reference board to use when it is built (Heatwave is a candidate)?
+7. **Split form with a mirrored board:** which reference board to use when it is built (Heatwave is a candidate)?
 8. **Joining fitted pieces (FR-7):** how the default derived pieces join, for example whether the gap between the main keys and the thumbs is filled.
 9. **Build styles and tenting in milestone 1 (FR-14, §5):** which build styles milestone 1 ships beyond tray, and whether tenting (a wedge recipe, or a stand part plus a mount recipe) is in. §5 stays as written until this is decided.

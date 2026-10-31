@@ -14,7 +14,7 @@ risk: medium
 
 ## Description
 
-Corney's switch plate, backplate and MCU cover are pieces minus part cutouts (Choc v2 switch, M2 screws from the catalogue schema, placed with the Part picker), update live as parts move, and export as DXF and SVG through the export registry, which reports each export available or blocked.
+Corney's switch plate, backplate and MCU cover are pieces minus part cutouts (Choc v2 switch, M2 screws from the part schema, placed with the Part picker), update live as parts move, and export as DXF and SVG through the export registry, which reports each export available or blocked.
 
 ## Outcome
 
@@ -41,4 +41,4 @@ For Sergii: Corney's three plates come out as DXF/SVG and follow the layout (R10
 - Decision (2026-10-30, replan): created as a vertical slice; every slice runs on Corney's layout-command script with its own invariant checks, golden comparisons only in milestone accepted.
 - Waits on epic 18 because: drawn pieces for the MCU cover and any exact outline
 - Waits on epic 13 because: live stage outputs
-- Waits on epic 14 because: the catalogue schema and the inspector
+- Waits on epic 14 because: the part schema and the inspector

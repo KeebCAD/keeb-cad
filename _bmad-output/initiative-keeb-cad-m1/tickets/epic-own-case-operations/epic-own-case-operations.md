@@ -38,5 +38,5 @@ For Sergii: a custom pocket or cut stays on the case through layout edits and ap
 
 ## Notes
 
-- Waits on epic 8 because: the tray style and the recipe interpreter
+- Waits on epic 8 because: the tray style and the outline and case recipe interpreter
 - Decision (2026-10-30, replan): created as a vertical slice; every slice runs on Corney's layout-command script with its own invariant checks, golden comparisons only in milestone accepted.

@@ -14,16 +14,16 @@ risk: medium
 
 ## Description
 
-The user edits pitch, slot size, default parts or a parameter in the expression field (inspector, Design settings, Parameters), sees Corney's keys move live, gets overlap and pitch-below-min in the violations panel, and undoes the edit as one registered command.
+The user edits the gap, a slot's key size, default parts or a parameter in the expression field (inspector, Design settings, Parameters), sees Corney's keys move live, gets overlap in the violations panel, and undoes the edit as one registered command.
 
 ## Outcome
 
-For Sergii: one parameter edit moves Corney's keys live and undoes cleanly, with violations shown (SM-5's pitch steps).
+For Sergii: one parameter edit moves Corney's keys live and undoes cleanly, with violations shown (SM-5's gap steps).
 
 ## Done when
 
-- Changing pitch-x, pitch-y or a parameter moves Corney's keys live, and one undo restores them.
-- Overlap and pitch-below-min appear on the canvas and in the violations panel.
+- Changing the gap's x, its y or a parameter moves Corney's keys live, and one undo restores them.
+- Overlap appears on the canvas and in the violations panel.
 - The slice scenario runs headlessly on Corney's script, and one e2e journey runs in a real browser.
 
 ## Boundaries

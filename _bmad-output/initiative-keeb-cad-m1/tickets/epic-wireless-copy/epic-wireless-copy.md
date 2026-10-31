@@ -14,7 +14,7 @@ risk: medium
 
 ## Description
 
-Copy design makes Corney Island wireless from wired with provenance; its different parts, positions and population follow through PCB, routing, case and a building ZMK config.
+Copy design makes Corney Island wireless from wired with provenance; its different parts and positions follow through PCB, routing, case and a building ZMK config.
 
 ## Outcome
 
@@ -23,7 +23,7 @@ For Sergii: Corney Island wireless exists as a copy of wired with its own electr
 ## Done when
 
 - Copy design makes the wireless design with provenance.
-- Its parts, positions and population follow through PCB, routing, case and a building ZMK config.
+- Its parts and positions follow through PCB, routing, case and a building ZMK config.
 - The slice scenario and one e2e journey pass.
 
 ## Boundaries

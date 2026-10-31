@@ -8,6 +8,7 @@ Browser CAD for split keyboards: layout to plates, PCB, case and firmware, all c
 ## Policy
 
 - Commit docs-only changes straight to main; put any code change on a branch and open a PR.
+- Add or change a design-file field, schema or shared kind only after the spine's Data Schema section defines it; if it doesn't, stop and ask.
 
 ## Where things are
 

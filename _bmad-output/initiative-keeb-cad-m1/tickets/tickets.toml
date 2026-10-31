@@ -19,7 +19,7 @@ after = [{ epic = 1, needs = "the monorepo scaffold the fixtures harness lives i
 id = 13
 slug = "epic-see-corneys-keys"
 title = "See Corney's keys"
-description = "On the locally served app, Corney Island's left half resolves from its layout-command script (chains, explicit anchors, rotation carry, split-reversible right side derived), the user adds and deletes groups, slots and keys from a blank canvas, both halves are drawn on the Layout canvas inside the editor frame (global chrome, workspace tabs, docked right panel, status strip, canvas with viewport and selection), and the design reopens from browser autosave unchanged."
+description = "On the locally served app, Corney Island's left half resolves from its layout-command script (chains, explicit anchors, rotation carry, the right side of the reversible split board derived), the user adds and deletes groups, slots and keys from a blank canvas, both halves are drawn on the Layout canvas inside the editor frame (global chrome, workspace tabs, docked right panel, status strip, canvas with viewport and selection), and the design reopens from browser autosave unchanged."
 covers = ["R1", "R2", "R4", "R17", "R18"]
 after = [{ epic = 1, needs = "the monorepo scaffold, CI and the UX session result" }]
 
@@ -27,7 +27,7 @@ after = [{ epic = 1, needs = "the monorepo scaffold, CI and the UX session resul
 id = 14
 slug = "epic-change-a-parameter"
 title = "Change a parameter"
-description = "The user edits pitch, slot size, default parts or a parameter in the expression field (inspector, Design settings, Parameters), sees Corney's keys move live, gets overlap and pitch-below-min in the violations panel, and undoes the edit as one registered command."
+description = "The user edits the gap, a slot's key size, default parts or a parameter in the expression field (inspector, Design settings, Parameters), sees Corney's keys move live, gets overlap in the violations panel, and undoes the edit as one registered command."
 covers = ["R3", "R17", "R18"]
 after = [{ epic = 13, needs = "the editor frame, the reactive graph and Corney's script" }]
 
@@ -67,17 +67,17 @@ after = [{ epic = 17, needs = "the outline and the Pieces canvas" }]
 id = 19
 slug = "epic-plates-to-dxf"
 title = "Plates to DXF"
-description = "Corney's switch plate, backplate and MCU cover are pieces minus part cutouts (Choc v2 switch, M2 screws from the catalogue schema, placed with the Part picker), update live as parts move, and export as DXF and SVG through the export registry, which reports each export available or blocked."
+description = "Corney's switch plate, backplate and MCU cover are pieces minus part cutouts (Choc v2 switch, M2 screws from the part schema, placed with the Part picker), update live as parts move, and export as DXF and SVG through the export registry, which reports each export available or blocked."
 covers = ["R8", "R9", "R10"]
-after = [{ epic = 18, needs = "drawn pieces for the MCU cover and any exact outline" }, { epic = 13, needs = "live stage outputs" }, { epic = 14, needs = "the catalogue schema and the inspector" }]
+after = [{ epic = 18, needs = "drawn pieces for the MCU cover and any exact outline" }, { epic = 13, needs = "live stage outputs" }, { epic = 14, needs = "the part schema and the inspector" }]
 
 [[epic]]
 id = 6
 slug = "epic-parts-and-pcb"
 title = "Footprints on the PCB"
-description = "The rest of Corney Island's catalogue and footprints and Corney's design-local key part place every footprint and keep-out on the PCB, whose edge is composed from the outline; isolated part mode edits a design-local part's components and fixed tracks, and changing the key's part updates every key's footprints; part cutouts move with their part in plate, PCB and case; the PCB follows key moves live and exports a KiCad 10 project as the escape hatch."
+description = "The rest of Corney Island's library parts and footprints and Corney's design-local key part place every footprint and keep-out on the PCB, whose edge is composed from the outline; isolated part mode edits a design-local part's components and tracks, and changing the key's part updates every key's footprints; part cutouts move with their part in plate, PCB and case; the PCB follows key moves live and exports a KiCad 10 project as the escape hatch."
 covers = ["R3", "R8", "R9", "R11", "R13"]
-after = [{ epic = 19, needs = "the catalogue schema and part cutouts" }]
+after = [{ epic = 19, needs = "the part schema and part cutouts" }]
 
 [[epic]]
 id = 20
@@ -117,13 +117,13 @@ slug = "epic-own-case-operations"
 title = "My own case operations"
 description = "The user adds pockets and cuts on top of the tray as the design's own recipe, applied after the style; they follow the layout, and the style and recipe versions are pinned so an app update never changes the saved case."
 covers = ["R14"]
-after = [{ epic = 8, needs = "the tray style and the recipe interpreter" }]
+after = [{ epic = 8, needs = "the tray style and the outline and case recipe interpreter" }]
 
 [[epic]]
 id = 22
 slug = "epic-wireless-copy"
 title = "Wireless copy"
-description = "Copy design makes Corney Island wireless from wired with provenance; its different parts, positions and population follow through PCB, routing, case and a building ZMK config."
+description = "Copy design makes Corney Island wireless from wired with provenance; its different parts and positions follow through PCB, routing, case and a building ZMK config."
 covers = ["R5", "R8"]
 after = [{ epic = 21, needs = "the wired case" }, { epic = 9, needs = "the wired ZMK config" }, { epic = 7, needs = "the wired routing and fab path" }, { epic = 16, needs = "Save to file and the File menu" }]
 

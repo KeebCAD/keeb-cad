@@ -1,7 +1,7 @@
 ---
 name: keeb-cad editor
 status: final
-updated: 2026-10-30
+updated: 2026-10-31
 sources:
   - ../epic-platform-baseline.md
   - ../../../initiative-keeb-cad-m1.md
@@ -32,13 +32,13 @@ Widgets are Reka UI primitives wrapped in `packages/ui` and styled with Tailwind
 
 | Workspace | Key | Canvas shows | Right panel |
 |---|---|---|---|
-| Layout | 1 | both halves as filled keycaps, group frames, anchor links; Outline context line (chip O) | Inspector (anchor, offset, chain, population, part with `Edit part` → PCB); Design settings when nothing is selected. → `mockups/key-layout.html` (J2.2 mid-rotation, Frappé and Latte) |
+| Layout | 1 | both halves as filled keycaps, group frames, anchor links; Outline context line (chip O) | Inspector (anchor, offset, chain, fitted, part with `Edit part` → PCB); Design settings when nothing is selected. → `mockups/key-layout.html` (J2.2 mid-rotation, Frappé and Latte) |
 | Outline | 2 | both halves as faint key outlines; pieces, vertices, construction points; selected plate with cutouts | Operation list: Pieces · Construction · Plates; selected entry's fields below. → `mockups/key-shapes.html` (polygon in `Pick vertices`, list collapsed) |
 | PCB | 3 | the board: components, pads, F.Cu/B.Cu routes, ratsnest; overlay and PCB layer chips | Inspector; design rules when nothing is selected. `Edit part` opens isolated part mode. → `mockups/key-pcb.html` (rerouting, Matrix and LED chain, Export menu), `mockups/key-cell.html` (isolated part mode, track drawing) |
 | Case | 4 | 3D viewer (case bodies; Assembly: see Deferred past M1) | Operation list of case operations; selected operation's fields; tray template parameters live in the Parameters slide-out `[CONTRADICTED: spine AD-18 / PRD FR-14 — the user edits only the build style's settings plus their own recipe; see Open Items › Needs new design]`. → `mockups/key-case.html` (at rest, stale, empty; its Assembly frame is deferred) |
 | Firmware | 5 | both halves side by side as keycaps with legends; keymap layer tabs overlaid top-left | Binding field and picker; `Matrix & pins → PCB` link. → `mockups/key-firmware.html` (binding field capturing) |
 
-**Both halves.** The left half is authored; the right half is derived (split-reversible, AD-6) but drawn and selectable in Layout, Outline, PCB and Firmware. In M1 the right half takes population, keymap and netlist overrides only; its geometry fields are read-only (see Population toggle). The right half reads as derived: a thin dashed mirror axis between the halves, and right-half keys at lower opacity until selected. On PCB the right board is the flipped reversible board; its copper colors swap (see DESIGN.md › Colors), and labels still name the layer.
+**Both halves.** The left half is authored; the right half is derived (split with a reversible board, AD-6) but drawn and selectable in Layout, Outline, PCB and Firmware. In M1 the right half takes per-side part removal (overrides), keymap and netlist overrides only; its geometry fields are read-only (see Fitted toggle). The right half reads as derived: a thin dashed mirror axis between the halves, and right-half keys at lower opacity until selected. On PCB the right board is the flipped reversible board; its copper colors swap (see DESIGN.md › Colors), and labels still name the layer.
 
 **Panels (hybrid).** Inspector / operation list docked right in every workspace. One slide-out with Tree and Parameters tabs from the thin left rail. Ctrl+K palette everywhere. → `mockups/panel-models.html` (option c), `mockups/oplist-placement-1.html` (option c), `mockups/key-panels.html` (violations panel, palette, context menu, slide-out, Part picker).
 
@@ -50,7 +50,7 @@ Widgets are Reka UI primitives wrapped in `packages/ui` and styled with Tailwind
 
 | Stated need | Surface | Journey |
 |---|---|---|
-| Place keys by anchor + offset, chains, pitch | Layout, inspector, Design settings, anchor picker, rotation handle | J1.2–4, J2.1–4 |
+| Place keys by anchor + offset, chains, gap | Layout, inspector, Design settings, anchor picker, rotation handle | J1.2–4, J2.1–4 |
 | Place parts | P, Part field (Part picker) | J1.5, J3.2–3 |
 | Typed values and expressions; parameters | Expression field, Parameters slide-out | J1.3, J2.3 |
 | Outline from pieces; drawn pieces from operations, polygon vertices | Outline operation list, vertex table `[CONTRADICTED: spine AD-16 / PRD FR-7 — derived pieces are the default; see Open Items › Needs new design]` | J1.6–7 |
@@ -62,7 +62,7 @@ Widgets are Reka UI primitives wrapped in `packages/ui` and styled with Tailwind
 | Keymap for both halves | Firmware, keymap layer tabs, binding field | J1.13, J3.6 |
 | Production files | Export menu, plate export buttons | J1.14, J3.7 |
 | See every output follow an edit | Status strip, tab badges, staleness, Outline context line | J2 |
-| Per-side population | Population toggle | J1.5, J3.4 |
+| Per-side part removal (overrides) | Fitted toggle | J1.5, J3.4 |
 | Second design from a copy | File → `Copy design…`, Design info | J3.1 |
 | Save / reopen | File menu, top bar, Start screen | J1.1, J1.15 |
 | Second tab / format-too-new / corrupt file | Banner, Start screen | State Patterns |
@@ -118,19 +118,19 @@ Behavioral. Visual specs live in DESIGN.md › Components. Every interactive ite
 
 | Component | Use | Behavioral rules |
 |---|---|---|
-| Expression field | Every length/angle | Authored text and evaluated suffix (`0.25u + 0.37mm = 5.12 mm`); plain literals show value and unit. A value that parses and unit-checks is applied as a command after a typing pause (~300 ms `[ASSUMPTION]`), and at once on Enter or blur; every command from one focus session coalesces into one undo step (decided 2026-10-30). Esc undoes that step and restores the text; on blur, an invalid value restores. Ctrl+Z inside a field = native text undo. A command dispatched while a field holds an unapplied valid value (palette, Ctrl+click, workspace switch) applies it first. Invalid (parse, unit-mismatch, unresolvable reference, cycle): error underline and message, `aria-invalid` + `aria-describedby`; the canvas keeps the last valid value; Enter does not commit. Ctrl+click a parameter name to open it in the Parameters slide-out. |
+| Expression field | Every length/angle | Authored text and evaluated suffix (`stagger + 0.37mm = 5.37 mm`); plain literals show value and unit. A value that parses and unit-checks is applied as a command after a typing pause (~300 ms `[ASSUMPTION]`), and at once on Enter or blur; every command from one focus session coalesces into one undo step (decided 2026-10-30). Esc undoes that step and restores the text; on blur, an invalid value restores. Ctrl+Z inside a field = native text undo. A command dispatched while a field holds an unapplied valid value (palette, Ctrl+click, workspace switch) applies it first. Invalid (parse, unit-mismatch, unresolvable reference, cycle): error underline and message, `aria-invalid` + `aria-describedby`; the canvas keeps the last valid value; Enter does not commit. Ctrl+click a parameter name to open it in the Parameters slide-out. |
 | Autocomplete dropdown | Expression field | Parameter names with values (`ks = 19 mm`). Open: ↑↓ move, Tab or Enter accept only (no commit). Closed: Enter commits, Tab commits and moves focus. An unknown name offers `Create parameter <name>…`: it opens the new parameter's value field and leaves the original field's typed value unapplied. |
 | Anchor picker | Anchor fields, vertex rows, construction-point lines | Click the field → click a target node on the canvas → pick an attach point from the 3×3 grid or on the canvas (lit attach points; see Pick modes). Keyboard: type an id (autocomplete) or Tab/Shift+Tab through candidate targets, arrows in the 3×3 grid, Enter confirms. Targets that would create an anchor cycle are dimmed with `would create anchor cycle` `[ASSUMPTION]`. No canvas drag-to-anchor. Re-anchor: see Interaction Primitives. |
 | Part field | Inspector, slot | Opens the Part picker anchored beside the field: searchable by name; rows show name, version, footprint preview; Enter picks. Changing part = one undo step; connections re-derive. P on the canvas places a new slot with the Part picker open. |
 | Binding field | Firmware inspector | Selecting a key focuses it. While focused, plain keys, Shift and Alt combinations are captured as bindings; Ctrl combinations always reach the app and are never captured. Tab captures nothing: it advances to the next key — left half then right half, row-major by matrix row/column `[ASSUMPTION]`. Esc always leaves the field (no focus trap). To bind Tab, Esc or a Ctrl combination, use the picker: the field hint reads `Tab, Esc, Ctrl+… → pick from list (↓)`, and ↓ opens the picker. Picker: binding-type dropdown and searchable key list; mod-tap / layer-tap get two fields. Select 2+ keys → `Add combo`. |
-| Population toggle | Inspector, any slot on either half | `Fitted: [x] left [x] right`; unticking unfits that side only. Multi-select + toggle = one undo step. On the right half, anchor / offset / chain fields are read-only with `derived from left/<id>` (click selects the source) and lock `geometry overrides need split-mirrored`. |
-| Design settings | Layout inspector, nothing selected | Form (read-only, `split-reversible`), `pitch-x`, `pitch-y` (expression fields; may reference parameters), default part. The group inspector shows optional `pitch-x` / `pitch-y` / default part overrides with `inherits <value>`; type to override, clear to inherit. Changing pitch = one undo step; chains re-space live, `u` re-evaluates. → `mockups/pitch-settings-1.html`. |
+| Fitted toggle | Inspector, any slot on either half | `Fitted: [x] left [x] right`; unticking unfits that side only (an override removing that side's part; the slot keeps its space). Multi-select + toggle = one undo step. On the right half, anchor / offset / chain fields are read-only with `derived from left/<id>` (click selects the source) and lock `geometry overrides need a mirrored board`. |
+| Design settings | Layout inspector, nothing selected | Form (read-only, `split, reversible board`), `gap x`, `gap y` (expression fields; may reference parameters; edge to edge between keycaps), default part. The group inspector shows an optional default part override with `inherits <value>` (there is no group gap); type to override, clear to inherit. Changing the gap = one undo step; chains re-space live. → `mockups/pitch-settings-1.html`. |
 
 ### Canvas
 
 | Component | Use | Behavioral rules |
 |---|---|---|
-| Canvas keys, Group frame, Anchor link | 2D canvas | Selection and drag: see Interaction Primitives. Anchor links show each node's anchor; not draggable. Unfitted slots keep their place and index. |
+| Canvas keys, Group frame, Anchor link | 2D canvas | Selection and drag: see Interaction Primitives. Anchor links show each node's anchor; not draggable. A slot whose part an override removes on one side keeps its place and index. |
 | Rotation handle | Selected key or group (Layout, isolated part mode) | Drag rotates about the pivot (⊕ shown); a group's pivot defaults to its group origin and is editable in the group inspector (Offset → pivot). The readout during the drag is the delta (`−3.4°`); the inspector shows the absolute rotation. Shift snaps 5°. Only the dragged keys move until release; the drop is one command, one undo step, and writes the deg term. Multi-selection: each node about its own pivot `[ASSUMPTION]`. → `mockups/key-layout.html`. |
 | Outline context line | Layout | The piece holding the outline marker ★, thin and non-editable, behind keys; updates after each applied command (a drop, the end of a nudge burst, a field's typing pause). Plates are not shown in Layout. |
 | Canvas marks | All 2D canvases | Vertices, construction points, overlap areas, violation markers, anchor-cycle paths, ratsnest, LED chain, combos: display only, except vertex drag in Outline. Clicking a violation marker selects its ids. |
@@ -216,11 +216,11 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 
 **Direct edits per workspace.** Layout: key, group and rotation-handle drags, nudge, rotate. Outline: vertex drag only; other primitives are edited in fields `[ASSUMPTION]`. PCB board: select only. Isolated part mode: component drag, rotation handle, track tool. Firmware and Case: select only. Right half, any workspace: select only.
 
-**Chain drag rule.** Dragging a key in a chain changes its own step; later siblings follow. The movement along the chain direction goes to `gap`, the perpendicular part to `offset.y`; rotation is untouched. Deltas are converted into the node's anchor frame. Alt-drag compensates: it takes the same change off the next step, so only the dragged key moves (Ctrl-drag if Alt collides). Groups drag by the same rule.
+**Chain drag rule.** Dragging a key in a chain changes its own offset; later siblings follow, because an offset carries along the chain. The whole movement goes to `offset.position`, converted into the node's anchor frame; rotation is untouched. Alt-drag compensates: it takes the same change off the next sibling's offset, so only the dragged key moves (Ctrl-drag if Alt collides). Groups drag by the same rule.
 
 **Multi-selection.** A drag, nudge or rotate moves only selected nodes with no selected ancestor in the dependency graph; the world delta is converted per node into its own anchor frame.
 
-**Write-back.** On a plain literal, a drag/nudge/rotate changes the value. On an expression, the last literal mm (or deg) term is the drag term, whoever wrote it; if there is none, one is appended (`0.25u` → `0.25u + 0.37mm`). To protect a typed constant, put it earlier or use a parameter. Values round to 0.01 mm and 0.1°.
+**Write-back.** On a plain literal, a drag/nudge/rotate changes the value. On an expression, the last literal mm (or deg) term is the drag term, whoever wrote it; if there is none, one is appended (`5mm` → `5.37mm`). To protect a typed constant, put it earlier or use a parameter. Values round to 0.01 mm and 0.1°.
 
 **Nudge.** Arrows move the selection 0.25 mm, Shift 1 mm, Ctrl 0.05 mm (see Nudge-step control); Alt+arrow compensates the next step. A burst of nudges/rotates moves the selection on the canvas only and applies as one command and one undo step when it ends; the burst ends after 600 ms idle, on any non-nudge key, or on any pointer action `[ASSUMPTION]`.
 
@@ -280,10 +280,10 @@ Protagonist: Sergii, builder and sole user, on a laptop.
 ### J1 — First build of Corney Island
 
 1. Sergii launches keeb-cad; no autosave exists, so the Start screen offers New design (→ `mockups/key-start.html`). The empty Layout shows `Add a group (G) or open the command palette (Ctrl+K).`
-2. With nothing selected, Design settings show form `split-reversible`; Sergii sets `pitch-x` / `pitch-y`. G adds group `matrix`; Sergii then adds column groups in a chain, with slots in each. The derived right half appears mirrored as they go.
-3. Sergii types stagger offsets as expressions (`0.25u`), drags keys roughly and corrects the number; later siblings follow the chain rule.
+2. With nothing selected, Design settings show form `split, reversible board`; Sergii sets `gap x` / `gap y`. G adds group `matrix`; Sergii then adds column groups in a chain, with slots in each. The derived right half appears mirrored as they go.
+3. Sergii types stagger offsets as expressions (`5mm`), drags keys roughly and corrects the number; later siblings follow the chain rule.
 4. Sergii builds the thumb group as a chain, anchors it with the anchor picker to a key's attach point, and rotates it with the rotation handle or R.
-5. P places the MCU module, display and TRRS; the Part field picks each from the catalogue, and Sergii anchors each with the anchor picker. Population: all fitted on both sides.
+5. P places the MCU module, display and TRRS; the Part field picks each from the library, and Sergii anchors each with the anchor picker. No per-side overrides: all fitted on both sides.
 6. Outline (2) (→ `mockups/key-shapes.html`) `[CONTRADICTED: spine AD-16 / PRD FR-7 — derived pieces are the default; see Open Items › Needs new design]`: the viewport stays put. Sergii adds `+ Key outline`, then a polygon; in `Pick vertices` they click key corners and construction points in order and type offsets in the vertex table; then they add an offset operation with a fillet and choose `Use as outline`.
 7. Sergii adds a construction point (line intersection) in the Construction section and picks it as a vertex anchor.
 8. Sergii adds plates — front plate, backplate, MCU cover — each with a piece and cutout roles; DXF export per plate.
@@ -295,7 +295,7 @@ Protagonist: Sergii, builder and sole user, on a laptop.
 14. From the Export menu, Sergii exports gerber + drill, STL and ZMK config. When gerber is disabled, its reason links to the violations panel.
 15. **Climax:** the status strip reads ✓ across Outline, Plates, PCB `0 unrouted`, Case, Firmware — a full pass from a blank canvas. Ctrl+S asks for a location once and writes the file.
 
-Failure: an expression with `u` on rotation shows `unit-mismatch: u on rotation` and does not commit; the canvas keeps the last valid value. Export blocked by DRC errors names them and links to each.
+Failure: an expression with `deg` on a length shows `unit-mismatch: deg on a length` and does not commit; the canvas keeps the last valid value. Export blocked by DRC errors names them and links to each.
 
 ### J2 — The thumb-fan edit
 
@@ -304,7 +304,7 @@ This journey runs the PRD SM-5 edit script on the finished design; after each st
 1. **Move one thumb-fan key.** Sergii drags thumb-home; its step changes and thumb-reachy follows (Alt-drag would compensate, keeping it still). Write-back appends `+ 0.37mm`.
 2. **Rotate the thumb fan.** Sergii selects the thumb group and drags its rotation handle 5° about the group origin (→ `mockups/key-layout.html`). **Climax:** on release the Outline context line follows in Layout; the status strip shows PCB and Case `routing N/M` and `rebuilding N%` after release. Switching to PCB (3) and Case (4) confirms it: PCB reroutes only the broken connections, dashed ratsnest turning into routes; the case rebuilds; the keymap stays attached to its keys. Zero manual fix-ups.
 3. **Shift one column's stagger.** Sergii edits the column's offset expression; the field previews live, and Enter commits one undo step.
-4. **Change pitch.** In Design settings, Sergii changes `pitch-x`, then `pitch-y` (each at or above the switch's minimum); every chain re-spaces live and `u` re-evaluates.
+4. **Change the gap.** In Design settings, Sergii changes `gap x`, then `gap y`; every chain re-spaces live.
 5. **Change a case parameter.** Sergii changes the case wall in the Parameters slide-out; the 3D solid grays under the progress bar and is replaced when the new one lands.
 6. The status strip returns to ✓ everywhere, `0 unrouted`.
 
@@ -315,7 +315,7 @@ Failure: the rotation causes an overlap — the area outlines solid Red, and `ov
 1. File → `Copy design…` → `corney-island-wireless` (File menu → `mockups/key-start.html`); the copy opens, and Design info shows `copied from corney-island · rev <hash>`.
 2. In Layout, Sergii selects the OLED slot; Part field → Part picker → nice!view (→ `mockups/key-panels.html` (e)).
 3. Sergii deletes the TRRS slot (its connections and keymap entries go in the same undo step), then P places a JST PH battery connector and a power switch, each anchored with the anchor picker.
-4. Population: battery connector and switch fitted on both sides.
+4. No per-side overrides: battery connector and switch fitted on both sides.
 5. PCB reroutes only the broken connections; progress shows in the status strip.
 6. In Firmware, Sergii adds Bluetooth bindings on a layer.
 7. Sergii exports gerber + drill and ZMK config.
