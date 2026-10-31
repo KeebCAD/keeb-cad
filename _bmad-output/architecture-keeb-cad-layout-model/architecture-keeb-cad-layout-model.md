@@ -7,7 +7,7 @@ paradigm: 'one reactive graph from authored sections to pixels (single source of
 scope: 'keeb-cad milestone 1: layout model, outline pieces, parameters, electrical model, keymap, case styles and recipes, routing state, design file format, reactive graph and commands, generation pipeline, package boundaries and wiring, editor UI layer, verification, stack'
 status: final
 created: '2026-10-24'
-updated: '2026-10-30'
+updated: '2026-10-31'
 binds: [FR-1, FR-2, FR-3, FR-4, FR-6, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13, FR-14, FR-15, FR-16, FR-17, FR-18]
 sources:
   - _bmad-output/prd-keeb-cad-m1/prd-keeb-cad-m1.md
@@ -502,7 +502,7 @@ graph TD
 - **Binds:** model, every authored section
 - **Prevents:** a section forgetting its references; "who points at X", cascade delete, dangling checks and undo each written per section.
 - **Rule:**
-  - **One schema format: Valibot**, pinned exactly. It declares both the design schema (every authored AD-8 section) and command inputs (AD-2). `Id`, `Length`, `Expression` and `ref(kind)` are defined once, in `model`. Schemas use **no transforms**: a parsed value has the shape it was given, and only object, array, record, tuple and primitive schemas are used (`unknown`, `any`, `custom`, `instance` and `looseObject` pass the caller's objects through, so a test over every schema rejects them). One `toJsonSchema` `overrideAction` maps `ref`, brands and checks; a test converts every command's input schema.
+  - **One schema format: Valibot.** It declares both the design schema (every authored AD-8 section) and command inputs (AD-2). `Id`, `Length`, `Expression` and `ref(kind)` are defined once, in `model`. Schemas use **no transforms**: a parsed value has the shape it was given, and only object, array, record, tuple and primitive schemas are used (`unknown`, `any`, `custom`, `instance` and `looseObject` pass the caller's objects through, so a test over every schema rejects them). One `toJsonSchema` `overrideAction` maps `ref`, brands and checks; a test converts every command's input schema.
   - A reference is its **own declared kind** in the schema, `ref(kind)`, whose metadata carries the kind; never a string that happens to contain an id.
   - "Who points at X" is **one function in `model` that searches on demand** over the declared references. It walks the schema and the value together, with no per-section code, in one file. A test walks a design built from every section, so a Valibot upgrade that changes schema internals fails loudly. `Expression` is a reference-carrying kind: the walk parses it with AD-17's parser and yields `parameter` references. Cascade delete (AD-2), dangling-reference checks and the dependency graph (AD-3) use the same walk.
   - File load migrates first, then validates every authored section with the same schemas inside `replaceDesign` (AD-2).
@@ -567,8 +567,8 @@ Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-2
 | TypeScript | ~6.0 |
 | Vue (`editor`) / `@vue/reactivity` (`reactive` only, AD-10). Pinned exactly through one pnpm catalog entry: `@vue/runtime-core` pins `@vue/reactivity` exactly, so a second copy would split the graph; a test asserts one installed copy | 3.5.44 / 3.5.44 (exact) |
 | @snap/ts-inject (MIT; wiring, AD-25; small project: ~19.6k weekly downloads, two main Snap committers) | ^1.2 (1.2.1 current) |
-| immer (MIT; command writes, `model`'s register only, AD-2; auto-freeze on, patches off). Pinned exactly: 12 releases in three days around 2026-10-21 | 11.2.9 (exact) |
-| valibot (MIT; the one schema format, AD-24) / @valibot/to-json-schema (command inputs for agents and UI). Pinned exactly: the reference walk reads schema internals | 1.5.0 / 1.8.0 (exact) |
+| immer (MIT; command writes, `model`'s register only, AD-2; auto-freeze on, patches off). A caret range: the lockfile stops silent upgrades, and an exact pin would also block fix releases | ^11.2.9 |
+| valibot (MIT; the one schema format, AD-24) / @valibot/to-json-schema (command inputs for agents and UI). Caret ranges: the reference walk reads typed public schema properties, so a breaking change fails to compile and fails AD-24's walk test, pinned or not | ^1.5.0 / ^1.8.0 |
 | Vite | ^8.2 (8.3.5 current) |
 | create-vue (TS, Router, Vitest, Playwright, ESLint; its Pinia removed) | 3.24.0 |
 | vue-router | 5.4.0 |
