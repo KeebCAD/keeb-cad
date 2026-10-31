@@ -22,6 +22,7 @@ type PartId   = Brand<`lib:part/${string}`, 'PartId'>       // 'lib:part/choc-v2
 type RecipeId = Brand<`lib:recipe/${string}`, 'RecipeId'>   // 'lib:recipe/choc-key'
 type LibraryId = PartId | RecipeId                          // one id brand per kind of library item (decision 41)
 type Version = Brand<number, 'Version'>          // whole number ≥ 1, counts up, each version immutable
+type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }   // every expected-failure boundary; plain union, no library
 
 type Anchor =
   | { type: 'slot'; ref: Ref<'slot'>; attach?: AttachPoint }
@@ -166,6 +167,8 @@ type Override =
 56. A slot removed on one side by an override **keeps its space**: that side's chain still steps by the keycap of the slot's authored part, which the other half fits, so the halves stay geometrically identical and only what's fitted differs.
 57. Whether `slot.inputs` may change any input or only those a recipe declares per-slot is parked for the recipes party. Until then a slot may change any input, and a nonsense combination is a violation when the part resolves.
 58. `overrides` is one discriminated union: the per-side part change is `{ type: 'side-part'; target; part }`, typed now, and AD-14's netlist overrides (matrix row/column, MCU pin, LED order) arrive as further variants with the nets-and-matrix epic. Added after the whole-draft approval, while reviewing the spine transcription.
+59. A plain `Result<T, E> = { ok: true; value: T } | { ok: false; error: E }` joins the shared kinds; `run` and every expected-failure boundary return it, the apply step stays `void | Rejection`, no library. Added during the 2026-10-31 autofix audit (item 5).
+60. The JSON Schema export of command inputs is deferred (no M1 agent reader; the UI reads Valibot schemas directly), so decision 32's "`toJsonSchema` overrideAction maps it" no longer applies. Added during the 2026-10-31 autofix audit (item 12).
 
 ## Recorded, not typed (each waits for the story that needs it)
 
@@ -192,7 +195,7 @@ type Override =
 - **AD-12, AD-14:** `fixed-tracks` becomes `part-tracks`.
 - **AD-15, AD-19, AD-21:** population mentions go.
 - **AD-18:** "one interpreter" becomes one interpreter per recipe kind; part recipes join outline/case recipes; the part recipe interpreter starts with `size` only.
-- **AD-24 (and AD-2 Inputs):** Valibot schemas are the source of truth; types are inferred, never declared by hand, except the recursive layout tree's unions and `children` fields, annotated with `v.GenericSchema`. A ref's value is its target kind's id type; metadata carries the kind; a `side-placement` ref holds a `SideId` and the walk resolves it to the authored slot. The pass-through ban covers object-valued kinds only; `v.custom` is allowed after a primitive in a pipe; the "test over every schema rejects them" goes, layer 3 covers it. `Delta`, `Length`, `Angle`, `Vec2`, `Offset`, `Gap`, `Anchor`, `Revision`, `Licence`, `PartId`, `RecipeId`, `LibraryId`, `Version`, `FormatVersion`, `PartRef` and `SideId` join the shared kinds.
+- **AD-24 (and AD-2 Inputs):** Valibot schemas are the source of truth; types are inferred, never declared by hand, except the recursive layout tree's unions and `children` fields, annotated with `v.GenericSchema`. A ref's value is its target kind's id type; metadata carries the kind; a `side-placement` ref holds a `SideId` and the walk resolves it to the authored slot. The pass-through ban covers object-valued kinds only; `v.custom` is allowed after a primitive in a pipe; the "test over every schema rejects them" goes, layer 3 covers it. `Delta`, `Length`, `Angle`, `Vec2`, `Offset`, `Gap`, `Anchor`, `Revision`, `Licence`, `PartId`, `RecipeId`, `LibraryId`, `Version`, `FormatVersion`, `PartRef`, `SideId` and `Result` join the shared kinds.
 - **Everywhere (living docs):** "catalogue schema" becomes "part schema"; every other "catalogue" becomes "library" (decision 40). "Pitch" goes; its job is `meta.gap` (decisions 46, 49).
 - **Violations:** `part-not-reversible` is added; `pitch-below-min` goes; an unknown recipe input or bad input value is a violation.
 - **New:** a Data Schema section holding these types, and a rule that a story can't add or change a section's fields until the spine defines them. That rule is enforced by checks in `bmad-build` and the PO's refinement, plus an `AGENTS.md` line.

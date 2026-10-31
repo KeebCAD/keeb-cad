@@ -178,7 +178,7 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 | save failed `[ASSUMPTION]` | Toast | `save failed: <reason>`; state stays `unsaved changes` |
 | autosave failed `[ASSUMPTION]` | Banner | `Autosave failed: browser storage full. Save to file (Ctrl+S).` Shown only once no autosave versions are left to prune (AD-13) |
 | read-only (second tab) | Banner | `Read-only — this design is open for editing in another tab.` + `Take over editing`. Read-only disables every command that changes the authored sections; selection, navigation, export and `Copy design…` stay enabled `[ASSUMPTION]`. Take over: this tab edits; the other tab cancels its drag or nudge burst, stops autosave, drops in-flight background results and shows the banner |
-| format-too-new | Banner | `Made with a newer keeb-cad (format N). Read-only here.` Older formats migrate silently with toast `Upgraded from format N`; the next save writes the new format |
+| format-too-new | Banner | `Saved by a newer keeb-cad (format N). Reload to update.` with a Reload button; the design is not opened. Older formats migrate silently with toast `Upgraded from format N`; the next save writes the new format |
 | open over a newer stored copy | Toast | Opening a file whose design is stored at a newer revision opens the file's revision and keeps the stored one in Design info › Versions (AD-13): `Opened rev <hash> from file · newer rev <hash> kept in versions`. Nothing is overwritten |
 | cannot open `[ASSUMPTION]` | Start screen + toast | `cannot open corney.kdl: <parse or schema error> at line N`; nothing replaced |
 | cold load `[ASSUMPTION]` | Whole app | The frame renders at once; status strip entries show `rebuilding N%` while WASM/replicad initialize; Layout is editable immediately |
@@ -222,7 +222,7 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 
 **Write-back.** On a plain literal, a drag/nudge/rotate changes the value. On an expression, the last literal mm (or deg) term is the drag term, whoever wrote it; if there is none, one is appended (`5mm` → `5.37mm`). To protect a typed constant, put it earlier or use a parameter. Values round to 0.01 mm and 0.1°.
 
-**Nudge.** Arrows move the selection 0.25 mm, Shift 1 mm, Ctrl 0.05 mm (see Nudge-step control); Alt+arrow compensates the next step. A burst of nudges/rotates moves the selection on the canvas only and applies as one command and one undo step when it ends; the burst ends after 600 ms idle, on any non-nudge key, or on any pointer action `[ASSUMPTION]`.
+**Nudge.** Arrows move the selection 0.25 mm, Shift 1 mm, Ctrl 0.05 mm (see Nudge-step control); Alt+arrow compensates on the next sibling's offset. A burst of nudges/rotates moves the selection on the canvas only and applies as one command and one undo step when it ends; the burst ends after 600 ms idle, on any non-nudge key, or on any pointer action `[ASSUMPTION]`.
 
 **Rotate.** R rotates about the pivot clockwise and Shift+R counter-clockwise, by the rotate step of the Nudge-step control (default 1°) (decided 2026-10-30: no unmodified or Shift-only shortcut is a symbol key, architecture AD-26), or drag the rotation handle; same write-back.
 
