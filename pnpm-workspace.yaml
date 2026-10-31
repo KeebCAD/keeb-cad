@@ -3,8 +3,19 @@ packages:
   - app
   - fixtures
 
+# A package already in the catalog is added as `catalog:`, never a second literal version
+# (tooling/catalog.spec.ts checks every shared dependency).
+catalogMode: strict
+
 catalog:
+  # One number moves both: @vue/runtime-core pins @vue/reactivity exactly, so a second
+  # copy would split the reactive graph (tooling/vue-reactivity.spec.ts checks both).
+  vue: &vue 3.5.44
+  '@vue/reactivity': *vue
+  '@snap/ts-inject': ^1.2
+  '@types/node': ^26.6.6
   typescript: ~6.0.0
+  valibot: ^1.5.0
   vitest: ^5.0.5
   vue-tsc: ^3.3.11
 

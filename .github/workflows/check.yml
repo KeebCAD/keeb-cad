@@ -26,5 +26,6 @@ jobs:
           node-version-file: mise.toml
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @keeb-cad/editor exec playwright install --with-deps chromium
+      # Vitest browser mode runs the app's tests in both (app/vitest.config.ts); the smoke test needs Chromium.
+      - run: pnpm --filter @keeb-cad/editor exec playwright install --with-deps chromium firefox
       - run: pnpm check
