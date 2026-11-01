@@ -394,7 +394,7 @@ graph TD
   - **Derived files.** `pipeline` posts the routing and fingerprints files to main, each tagged with its seq. Main drops a derived file whose seq is not main's latest; `pipeline` re-validates at the newest seq and posts that file instead. Main's `storage` saves the design and its derived files for the same revision in one atomic write (AD-13).
   - **Cache key** = stage id + stage version + library part and blueprint versions used, nested ones included, + hash of the stage's input slice (live stages: of the resolved values they read) (+ routing hash for drc and exports; routing hash + requested connection ids for routing). A routing result cut short by a deadline or a cancel is never cached.
   - **Input slice.** Each background stage defines its own input slice in its own package: a plain type plus a selector over `model`'s computeds. `pipeline` calls the selector, sends the slice to the stage's worker and hashes it. **The slice hash is both the cache key's input part and the freshness tag**: a background output whose slice hash differs from the current one is shown marked stale, never as current, including on cache hits. An edit outside a stage's slice never marks it stale.
-  - **Declared reads.** A lane declares what it reads: slices of the design, upstream outputs, queries. Code lists its reads in its version's declaration; data infers them from its references. The register checks their loops on main (AD-3). An undeclared read is an error (the lane fails in the worker). A lane's declared reads are its input slice: its cache key covers exactly them, and only they cross into the sandbox.
+  - **Declared reads.** A library blueprint's lane reads only its inputs, its pulls (upstream outputs by role) and its queries, all listed in its version's declaration; it never reads design sections directly, so whatever the design gives it arrives as an input. The design's own lanes (data) infer their reads from their references. The register checks their loops on main (AD-3). An undeclared read is an error (the lane fails in the worker). A lane's declared reads are its input slice: its cache key covers exactly them, and only they cross into the sandbox.
   - **Queries** ("the tallest part", "parts with role `mount`") are defined in `blueprint` and computed once by the stage that owns the data; every lane that declares one shares the result. The list grows with the stories that need them.
   - **Failed lanes.** A lane that throws or exceeds its step budget shows its last good output marked stale, with `lane-failed`, and pullers keep using that output until the lane runs cleanly. This holds for live lanes as for background stages.
   - **Fingerprints.** The fingerprints file holds one fingerprint per build entry and per design part that applies a blueprint: the hash of its declared input slice plus the hash of its outputs. A design part's slice covers its inputs plus every per-slot override that uses it, and its output hash covers all those runs. Only `pipeline` computes the file, at committed revisions, and posts it to main (Derived files, above); it is outside commands and outside the revision hash. A different input slice is an edit: `pipeline` writes the new pair. The same slice with different outputs is a change in behaviour (a fix in place, a raised nested pin, a kernel update): the user sees the difference and accepts it with the **Accept output change** action. Nothing changes silently.
@@ -727,6 +727,53 @@ type InputValue =
 // reference-carrying values are tagged, so the walk finds them from the union variant (AD-24)
 type BlueprintInputs = Record<string, InputValue> // checked against the blueprint's declared inputs when it resolves; an unknown input, a bad value or a slot override of an input not marked per-slot → `blueprint-input-invalid`
 
+// ── blueprint declarations: library data (owned by `library`, immutable per version) ──
+// Written once in TS beside the blueprint's code as an exported defineBlueprint({...});
+// the library build evaluates it, checks it with this schema and ships it as data next to the
+// compiled JS. Main reads only the data; the sandbox runs only the code.
+type BlueprintDeclaration = {
+  id: BlueprintId
+  version: Version
+  apiVersion: number                              // whole number; newer than the app's → blueprint-api-too-new (AD-18)
+  licence: { spdx: string; author: string; source?: string }   // as AD-9 records for library items
+  inputs: Record<string, DeclaredInput>
+  lanes: Partial<Record<LaneStage, LaneDeclaration>>
+  upgrade?: UpgradeMapping                        // from the previous version only
+  nets?: unknown                                  // nets and pin-role joins: typed with PinRole (AD-14)
+}
+type LaneStage = 'parts' | 'shapes' | 'extras' | 'plates' | 'pcb' | 'firmware' | 'case'
+type DeclaredInput = {
+  kind: 'quantity' | 'boolean' | 'option' | 'text' | 'part' | 'anchor' | 'asset'
+  default: InputValue
+  label: string
+  help?: string
+  perSlot?: true                                  // a slot may override it (AD-5)
+  unit?: Unit                                     // quantity
+  options?: string[]                              // option
+  range?: { min?: Expression; max?: Expression }  // AD-17 expressions over this blueprint's own inputs, evaluated by model's evaluator
+}
+type LaneDeclaration = {
+  pulls: { role: Role; target?: Target; count: 'exactly-one' | 'at-least-one' | 'any' }[]
+  queries: QueryName[]                            // defined in `blueprint` (AD-11)
+  outputs: { role: Role; target?: Target; kind: OutputKind; purpose?: CutoutPurpose }[]
+}
+type UpgradeMapping = {
+  from: Version                                   // the previous version; an upgrade across versions chains the mappings in one command
+  renames?: Record<string, string>
+  defaults?: Record<string, InputValue>           // new inputs
+  convert?: Record<string, Expression>            // AD-17 expressions over the old inputs; applied by the register on main
+}
+type Role = string                                // open string (AD-18): 'rectangle', 'cutout', 'mount', 'outline', 'case-body', …
+type Target = 'plate' | 'pcb' | 'case'
+type Unit = 'mm' | 'deg'                          // AD-17's units
+type OutputKind = 'shape' | 'solid' | 'footprint' | 'part-placement' | 'config'   // closed list; grows with the stories
+type QueryName = string                           // one of the queries defined in `blueprint`; closed list, grows with the stories
+// Checks: on main, without running code: input values (blueprint-input-invalid), read loops across
+// blueprints from producer roles, pulls and queries (AD-3), role-unconsumed. At library build: a part
+// blueprint declares exactly one 'rectangle' output (AD-5). In the worker: a run's returned roles must
+// match its lane's outputs, else lane-failed naming the role. Each chained upgrade step is checked
+// against that version's declared inputs; an input it cannot produce is blueprint-input-invalid.
+
 // ── parts: a key is a part, usually made by a part blueprint ─
 type PartRef = Ref<'library-part'> | Ref<'design-part'>     // holds PartId | Id
 
@@ -794,7 +841,7 @@ Decisions 53, 55 and 57 and the other items parked for the recipes party (attach
 **Recorded, not typed** (each waits for the story that needs it):
 - **Library part:** pins, pads, envelope, role-tagged outputs (cutouts with a target and a cutout purpose, mounts, display models, the `rectangle`), 3D keep-outs, parameters, `reversible`, `tracks`. First PCB story (`epic-parts-and-pcb`); envelope and `rectangle` with the story that starts parts; cutouts with the plates story.
 - **Authored part blueprints (`type: 'authored'`):** footprint, pins and roles, envelope, 3D keep-outs, role-tagged cutouts, display models, `reversible`. Milestone 2.
-- **Blueprint declarations:** declared inputs with metadata (label, unit, default, a range that may name other inputs, options, help) and the **per-slot** mark; lanes, declared reads (data, so the register checks read loops on main without running code, AD-3) and pulls `{ role, target?, count: 'exactly-one' | 'at-least-one' | 'any' }`; role-tagged outputs; declared nets and pin-role joins (AD-14); the blueprint API version; the upgrade mapping (renames, defaults, converted values); licence and provenance. With the story that starts parts (Open Questions).
+- **Blueprint declarations:** typed above (`BlueprintDeclaration`), except their nets and pin-role joins, typed with `PinRole` (AD-14).
 
 **Not yet defined:**
 - `PinRole` (the netlist derives rows, columns and LED chains from it, AD-14) and `CutoutPurpose`.
