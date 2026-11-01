@@ -5,9 +5,9 @@ purpose: build-substrate
 altitude: feature
 paradigm: 'sandboxed plain functions over host calls: a blueprint lane is a pure function of its declared arguments that calls its stage operations synchronously and returns declared, role-tagged outputs'
 scope: 'how blueprints are authored, declared, sandboxed and run in their stages: lane contract, evaluation model, engine and VM lifecycle, determinism, budgets, failures and caching, nesting, TS authoring, the data form'
-status: draft
+status: final
 created: '2026-11-01'
-updated: '2026-11-01'
+updated: '2026-11-02'
 binds: [AD-2, AD-3, AD-5, AD-10, AD-11, AD-17, AD-18, AD-24, AD-25]
 sources:
   - _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md
