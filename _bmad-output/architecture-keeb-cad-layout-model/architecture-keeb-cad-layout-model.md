@@ -3,7 +3,7 @@ name: 'keeb-cad: layout model and generation core'
 type: architecture-spine
 purpose: build-substrate
 altitude: initiative
-paradigm: 'one reactive graph from authored sections to pixels (single source of truth; commands the only writers; background stages behind one crossing)'
+paradigm: 'one design on the main thread, one reactive graph in a model worker (single source of truth; commands the only writers; the worker mirrors the design from patches and posts whole stage outputs, the visible set first; main draws from posted snapshots and saves the design bundle)'
 scope: 'keeb-cad milestone 1: layout model, outline shapes, parameters, electrical model, keymap, blueprints (build styles, additions, parts), routing state, design file format, reactive graph and commands, generation pipeline, package boundaries and wiring, editor UI layer, verification, stack'
 status: final
 created: '2026-10-24'
@@ -26,6 +26,8 @@ sources:
   - _bmad-output/architecture-keeb-cad-layout-model/ui-layer-decisions-2026-10-30.md
   - _bmad-output/architecture-keeb-cad-layout-model/data-schema-draft-2026-10-31.md
   - _bmad-output/architecture-keeb-cad-layout-model/blueprints-directions-2026-11-01.md
+  - _bmad-output/architecture-keeb-cad-layout-model/ad11-model-worker-2026-11-01.html
+  - _bmad-output/architecture-keeb-cad-layout-model/stage-transport-verdict-2026-11-01.md
 ---
 
 # Architecture Spine: keeb-cad, layout model and generation core
@@ -39,11 +41,12 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | Term | Meaning |
 | --- | --- |
 | **design** | One keyboard document with exactly one electronics configuration; the only source of truth |
-| **authored sections** | Every section of the design file except `routing` and `fingerprints` (AD-8); changed only by commands |
-| **routing section** | One of the two saved sections of derived data: routes per board, keyed by connection. Written only by `pipeline` |
-| **fingerprints section** | The other saved section of derived data: one fingerprint (input-slice hash + output hash) per build entry and per design part that applies a blueprint (AD-11). Written only by `pipeline` |
-| **revision** | The content hash of the canonical serialisation of the authored sections |
-| **routing hash** | The content hash of the routing section |
+| **authored sections** | The sections of the design file (AD-8); changed only by commands |
+| **design bundle** | The saved unit: the design file, the routing file and the fingerprints file (each derived file tagged with the design revision it belongs to), plus the content-addressed assets; saved, versioned and shared as one (AD-1, AD-13) |
+| **routing file** | One of the two saved files of derived data in the design bundle: routes per board, keyed by connection. Computed only by `pipeline`; saved only by main's `storage` |
+| **fingerprints file** | The other saved file of derived data: one fingerprint (input-slice hash + output hash) per build entry and per design part that applies a blueprint (AD-11). Computed only by `pipeline`; saved only by main's `storage` |
+| **revision** | The content hash of the canonical serialisation of the authored sections; a content identity only, never an order |
+| **routing hash** | The content hash of the routing file |
 | **layout** | The tree of nodes that places keys and parts |
 | **node** | An element of the layout: a group or a slot |
 | **group** | A node with children and an arrangement; has an origin frame and no size |
@@ -123,13 +126,17 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | **record** | The unit undo restores: one item with an id (a list item or tree node), or one container's ordered id list (a list section's order, a group's children) (AD-2, AD-23) |
 | **committed revision** | A revision reached by a command, undo, redo, or load. Since 2026-10-30 nothing in progress reaches the design, so every revision is committed (AD-2) |
 | **dependency graph** | The one graph of everything that reads something else: anchors, default anchors, shape references, construction-point inputs, parameter references, declared reads (AD-3) |
-| **reactive graph** | The one graph of refs and computeds from the authored sections to the pixels (AD-10) |
-| **crossing** | The one place in `reactive` through which plain values leave or enter the reactive graph (AD-11) |
-| **resolved design** | `model`'s computeds over the authored sections: evaluated expressions, per-side placements, parts, shapes, netlist and connections |
+| **reactive graph** | The one graph of refs and computeds from the design mirror to the stage outputs, in the model worker (AD-10) |
+| **crossing** | The one way values leave or enter a thread or a file: `reactive`'s generic protocol machine (epoch and seq, one dispatcher per side, transfer lists) carrying `protocol`'s one message union; plain values and transferred buffers only (AD-11) |
+| **seq** | The number main mints for each design message (whole design or patches) it sends to the model worker, counting up; other messages carry the current seq without advancing it; every post, response and derived file echoes the seq it was computed for. Older = smaller seq in the same epoch (AD-11) |
+| **epoch** | The number of one model-worker start; it changes on every start and restart. A message from another epoch is dropped (AD-11) |
+| **resolved design** | `model`'s computeds over the authored sections, in the model worker: evaluated expressions, per-side placements, parts, shapes, netlist and connections |
 | **stage** | A computation from the resolved design (and, where stated, other stage outputs) to one output. Its output depends only on its inputs, the same as a full recompute, whatever it caches or keeps incrementally inside (AD-11's cache keys rely on this). `parts`, `shapes` and `extras` are also stage names for lanes (glossary `lane`); they run inside `model`'s derivations, while `plates`, `pcb`, `firmware` and `case` are stage packages |
-| **live** | A computed in the reactive graph, current at every revision |
-| **background** | Computed in a Web Worker past the crossing, with progress; cancelled by a newer committed revision |
-| **preview** | The editor's 2D rendering of resolved placements, shapes and stage outputs, in SVG |
+| **model worker** | The one Web Worker that holds the design mirror, the reactive graph, the live stages and `pipeline` (AD-11) |
+| **live** | Computed in the model worker after each applied command, the visible set first; posted to main whole, tagged with its seq (AD-11) |
+| **visible set** | The stages of the workspace the editor shows (AD-11's workspace table); the model worker computes them first after each applied command and posts them as one message at one seq |
+| **background** | Computed in the case or routing worker from an input slice `pipeline` sends, with progress; cancelled by a newer seq |
+| **preview** | The editor's 2D rendering of posted stage outputs (resolved placements and shapes included), in SVG |
 | **viewport** | The one 2D view position shared by the 2D workspaces (not isolated part mode): centre (mm, y up) and zoom |
 | **3D viewer** | The Case workspace's interactive rendering of bodies, in `viewer3d` |
 | **body** | One named triangulated solid shown in the 3D viewer: id, kind, faces, edges. Milestone 1 has case bodies only. The 2D "key body" colour is a keycap face, not a body. The 2D board shape is the **outline**, never a body |
@@ -137,43 +144,45 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 
 ## Design Paradigm
 
-**One reactive graph, from the authored sections to the pixels.** The design (the authored sections plus the routing and fingerprints sections) is held as one plain, deep-frozen value in a `shallowRef`, replaced only by commands, `replaceDesign` and `pipeline`'s derived-section writer (AD-2). `model` derives the **resolved design** as small computeds, and the live stages and the preview are computeds over it. Slow outputs (case, routing) are background stages past **one crossing**, through which plain values leave and enter the graph. Two kinds of saved derived data depend on history, so they are kept: the routing section, re-validated against the current design rather than trusted, and the fingerprints section, which records each blueprint use's last outputs so a change in behaviour is shown, never applied silently (AD-11).
+**One design on the main thread, one reactive graph in a model worker.** The design (the authored sections only) is held on the main thread as one plain, deep-frozen value in a `shallowRef`, replaced only by commands and `replaceDesign` (AD-2). The main thread keeps the design, the command register, undo (with the derived files current at each record), autosave, `storage` (the design bundle's one writer), input and drawing, and spawns all three workers. The **model worker** keeps a deep-frozen mirror of the design, updated from Immer patches tagged with (epoch, seq), and the one reactive graph: `model` derives the **resolved design** as small computeds, and the live stages, wired by `pipeline`, are computeds over it. After each applied command the worker computes the **visible set** (the stages of the shown workspace) first and posts it as one message at one seq, then the hidden stages; the editor draws from posted snapshots. Blueprint sandboxes for live lanes and `geometry` run in the model worker, never on the UI thread. Slow outputs (case, routing) are background stages in their own workers, fed by `pipeline` over MessageChannel ports main hands it. Everything that crosses goes through **one crossing**: `reactive`'s generic protocol machine carrying `protocol`'s one message union, plain values and transferred buffers only. Two kinds of saved derived data depend on history, so they are kept as files in the design bundle beside the design file: the routing file, re-validated against the current design rather than trusted, and the fingerprints file, which records each blueprint use's last outputs so a change in behaviour is shown, never applied silently (AD-11).
 
 ```mermaid
 graph LR
-  U[User input] --> C[Register: commands, actions]
-  C -->|replace plain values| A[(Authored sections)]
-  CAT[(Library: parts, blueprints)] --> R
-  A --> R["model computeds: expressions, sides, frames, parts, shapes, extras, netlist, connections"]
-  R --> PL[plates] & PC[pcb placement + board edge] & FW[firmware] & DL[drc of saved routes]
-  RS[(Routing section, shallow ref)] --> DL
-  R --> PV["preview (editor)"]
-  subgraph Graph [reactive graph: live stages wired by pipeline]
-    A
-    R
-    PL
-    PC
-    FW
-    DL
-    RS
-    PV
+  subgraph Main [main thread]
+    U[User input] --> C[Register: commands, actions]
+    C -->|replace plain values| D[("Design (authored only), shallowRef")]
+    D --> UN["undo (records keep the derived files), autosave"]
+    UN --> ST["storage: the design bundle's one writer"]
+    SN[(Stage snapshots, shallowRefs)] --> PV["preview, editor (drawing)"]
+    EN[main entry]
   end
-  Graph <-->|crossing: plain values only| X{{crossing in reactive}}
-  X --> CS[[case worker]] & RT[[routing worker]]
-  X <--> ST[storage, file]
-  PL & PC -->|plates, pcb → case| X
-  CS & RT -->|results, replaced whole| X
-  X -->|valid routes, committed revisions only| RS
-  Graph --> EX[exports]
+  subgraph MW [model worker]
+    DM[(Design mirror, frozen)] --> R["model computeds: expressions, sides, frames, parts, shapes, extras, netlist, connections"]
+    CAT[(Library: parts, blueprints)] --> R
+    R --> LS["live stages: parts, layout, shapes, extras, plates, pcb placement, firmware, drc of saved routes"]
+    BS[blueprint sandboxes, geometry] --- LS
+    PL[pipeline] --- LS
+  end
+  EN -.->|spawns all three workers| MW & CS & RT
+  D -->|"patches with (epoch, seq); whole value at start, restart, load"| DM
+  PV -->|"focus: workspace; one-off requests"| PL
+  LS -->|"workspace set at one seq, issues, stage-started, responses"| SN
+  PL -->|"routing and fingerprints files, with seq"| ST
+  PL -->|"input slices, MessageChannel ports"| CS[[case worker]] & RT[[routing worker]]
+  RT -->|routes, re-validated| PL
+  CS -->|case output| PL
+  PL -->|case bodies, forwarded by transfer| SN
+  PL --> EX[exports]
 ```
 
 ## Invariants & Rules
 
-### AD-1: One document; authored sections plus two saved derived sections [ADOPTED]
+### AD-1: One design bundle; an authored design file plus two saved derived files [ADOPTED]
 - **Binds:** all
 - **Prevents:** outputs drifting from the model; hand edits lost on regeneration; derived data quietly persisted in more places.
 - **Rule:**
-  - The design file holds the authored sections plus two derived sections: `routing` (AD-12) and `fingerprints` (AD-11). Nothing else derived is saved in it.
+  - The design file holds the authored sections only. The routing file (AD-12) and the fingerprints file (AD-11) are separate derived files, each tagged with the design revision it belongs to.
+  - The **design bundle** is the design file, the routing file, the fingerprints file and the content-addressed assets (AD-8), saved, versioned (AD-13) and shared as one. Nothing else derived is saved in it.
   - Every output is derived and is never edited inside keeb-cad. Changes the model can't express are made after **export** (escape hatch).
   - **Stable outputs:** the same file with the same app version gives the same outputs on every reopen. An edit changes only the outputs whose inputs it changed.
 
@@ -181,21 +190,24 @@ graph LR
 - **Binds:** model, editor, every package that defines commands
 - **Prevents:** ad-hoc mutation; broken undo; outputs previewed outside the design; undo floods; commands the UI or shortcuts can't see; per-command inverse code drifting from the command; fixes applied differently by each panel.
 - **Rule:**
-  - **Design state** lives in one ts-inject service, held in a `shallowRef`. `Design` is the whole design file's content (`DesignFile`, Data Schema): the authored sections plus the routing and fingerprints sections. **Exactly three ways write it:** registered commands; `replaceDesign` (load, file open, version switch, migration result), which reaches a committed revision and clears undo history; and `pipeline`'s derived-section writer, which changes only `routing` and `fingerprints` and adds no undo entry (AD-11, AD-12). The register rejects a command whose result changes either, with a typed `Rejection`. `replaceDesign` lives in the register concept: it takes `unknown`, migrates, parses with the design schema, deep-freezes the result with Immer's `freeze(value, true)`, then writes. A `format-too-new` file is not opened, so it never reaches `replaceDesign` (AD-8).
+  - **Design state** lives in one ts-inject service, held in a `shallowRef`. `Design` is the design file's content (`DesignFile`, Data Schema): the authored sections only. **Exactly two ways write it:** registered commands, and `replaceDesign` (load, file open, version switch, migration result), which reaches a committed revision and clears undo history. The routing and fingerprints files are not part of it (AD-1). `replaceDesign` lives in the register concept: it takes `unknown`, migrates, parses with the design schema, deep-freezes the result with Immer's `freeze(value, true)`, then writes. A `format-too-new` file is not opened, so it never reaches `replaceDesign` (AD-8).
   - Every change to an authored section is a named command (e.g. `moveSlot`, `setGap`, `setAnchor`, `addVertex`, `setParameter`, `renameParameter`, `setBinding`, `addBuildEntry`, `setEntryInputs`), and nothing else writes to them.
   - **Command register.** It lists entries of two kinds: **commands** (undoable; write authored sections) and **actions** (not undoable; never write authored sections: Reroute, Accept output change, save, export). Menus and shortcuts see both. A command is a plain definition: name, input schema (AD-24's schema format), an availability check over the read-only design, and its apply step; actions are defined the same way. The UI reads the input schemas directly; exporting them as JSON Schema is deferred until an agent feature is planned. Its concept folder exports it; its package exports one list of its commands; the root container appends each package's list with one ts-inject `appendValue('commands', …)` per package (AD-25). Package partials never provide `commands`. The register service is built from that array and refuses duplicate names at startup; tests enforce the same and assert that every exported command is registered. Menus, undo labels and shortcuts read the register. Only registered commands run. No import-time self-registration.
-  - **Writing.** A command **replaces** plain values in refs and never mutates them, through **Immer** with auto-freeze on and patches off, using one `new Immer({ autoFreeze: true })` instance, not the global default. A command's apply step receives a draft typed `Writable<Design>` and returns `void` or a `Rejection` built with `model`'s `reject(kind, ids, message)`. The register keeps a rejection outside the Immer producer (returning `undefined` to Immer) and on a rejection discards the produced value: no ref write, no undo entry. After every produced value the register runs `model`'s structural checks (acyclicity, AD-3) and rejects the same way. `run` returns `Result<void, Rejection>` and throws only on a bug. Every operation that can fail in an expected way returns a `Result<T, E>` (`replaceDesign` included); the apply step alone stays `void | Rejection`, and the register wraps it. The register's file is the only `produce` call and the only import of `immer` (with `freeze` and `castDraft`, which puts frozen records back into a draft for undo). Every design value is therefore frozen, so Vue never proxies it and a stray write throws.
+  - **Writing.** A command **replaces** plain values in refs and never mutates them, through **Immer** with auto-freeze on and patches on, using the register file's `new Immer({ autoFreeze: true })` instance with `enablePatches()`, not the global default. A command's apply step receives a draft typed `Writable<Design>` and returns `void` or a `Rejection` built with `model`'s `reject(kind, ids, message)`. The register keeps a rejection outside the Immer producer (returning `undefined` to Immer) and on a rejection discards the produced value: no ref write, no undo entry. After every produced value the register runs `model`'s structural checks (acyclicity, AD-3) and rejects the same way. `run` returns `Result<void, Rejection>` and throws only on a bug. Every operation that can fail in an expected way returns a `Result<T, E>` (`replaceDesign` included); the apply step alone stays `void | Rejection`, and the register wraps it. The register's file is the only `produce` call, the only import of `immer` (with `freeze` and `castDraft`, which puts frozen records back into a draft for undo) and the one place that sets Immer up; it also exports `applyDesignPatches`. Each thread loads it separately (same code and configuration, its own instance); the model worker's mirror applies patches only through `applyDesignPatches`, so the mirror is deep-frozen too. Every design value is therefore frozen, so Vue never proxies it and a stray write throws.
+  - **Patches to the model worker.** Each applied command's, undo's and redo's patches are the payload to the model worker (AD-11), tagged with (epoch, seq) and the hash of the resulting design (its form is open: Open Questions). They carry no undo meaning; undo keeps its records (below).
   - **Inputs.** The register parses every input through the command's schema before the apply step, and the apply step sees only the parsed result: a fresh plain copy. So Immer never freezes a caller's object, and no Vue proxy enters the design.
   - **Read-only types.** `model` exports `Frozen<T>` (over Immer's `Immutable<T>`) and `Writable<T>` (over `Draft<T>`), both defined in the register's file. Outside an apply step, every design value is `Frozen<…>`: services, computeds, stages, `editor`, tests. `model` exports `Writable<T>` and `defineCommand` and `defineAction`, so any package may define commands. Writes stay confined because **only the register makes a draft** (the `immer` fence), not because the type is hidden: a draft exists only as an apply step's argument inside `run`. An entry that needs services is added through a factory that receives the container. Functions take `Frozen<…>` parameters by default (a `Frozen<T>` holding an array does not compile into a `Readonly<T>` parameter); `geometry` and `reactive`, which sit below `model`, use `readonly` arrays in their own signatures. The default is a **reviewer rule**, not a lint: code review checks that parameters are read-only. A wrong write fails at compile time; a type test proves a nested write does not compile.
   - **A drag changes the design only on drop.** While it lasts, `editor` draws the dragged nodes at their preview position, and nothing else changes: no revision, no live stage, no autosave. The drop runs **one** command (one undo entry); cancel runs nothing. Outline, plates and every other output update after the drop.
+  - **Commands from snapshots.** A command computed from a stage snapshot (a drop, a nudge) carries that snapshot's seq. The register rejects it with a typed `Rejection` when that seq is not main's latest, and `editor` shows the rejection briefly ("the layout changed, drop again").
   - **Nothing in progress reaches the design.** A nudge burst moves the selection on the canvas only and runs one command when it ends (600 ms idle, any other key, any pointer action). An expression field runs its command after a typing pause (debounce) and on Enter or blur. Consecutive commands from one field in one focus session **coalesce** into one undo entry; Esc undoes that entry. There are no gestures: no begin, update or commit, and no marks.
-  - **Undo.** History keeps the **before and after of each touched record** per undo entry. Touched records are found by comparing references between the before and after values (structural sharing keeps untouched records identical). Every command is one undo entry, except that a field's coalesced commands share one. Patches are derived from those records on demand. There is no per-command inverse code.
+  - **Undo.** History keeps the **before and after of each touched record** per undo entry. Touched records are found by comparing references between the before and after values (structural sharing keeps untouched records identical). Every command is one undo entry, except that a field's coalesced commands share one. Undo's own patches are derived from those records on demand. There is no per-command inverse code.
+  - **Undo and the derived files.** Beside each undo record main keeps the routing file current when the record was made (a frozen value held by reference). Undo and redo restore the design and that routing file together and send both to the model worker (AD-12). Undo never restores the fingerprints file: it always holds the latest acceptance, so an accepted output change stays accepted.
   - **Breaks.** An edit that breaks something elsewhere goes through. The break is a violation, and the violation offers its **fixes** right away, without blocking. A fix names any registered entry plus its inputs (e.g. Reroute for `unrouted`); its availability is re-checked just before it is applied. Such breaks include an alteration or other pull left with nothing to pull after a style switch (`pull-count`, AD-18) and an old input an upgrade could not map (`blueprint-input-invalid`). An upgrade that raises a nested blueprint pin (AD-5) shows the raise before it applies. A changed output fingerprint (AD-11) is shown with its difference and accepted through the **Accept output change** action.
   - A command that removes something removes everything keyed to it in the same command (deleting a slot deletes its bindings, combo memberships and overrides; deleting a vertex is rejected while a shape uses it, as is deleting a keymap layer that a binding on another keymap layer, or a combo, references), so one undo restores them all. Whether these refusals become flagged breaks is an open question.
   - A required reference can't be cleared by a cascade: deleting the `libraryVersions` entry or design part that the required `meta.defaultPart` names is refused (typed rejection) or asks for a replacement.
   - `renameParameter` rewrites every expression that uses the name, in the same command.
-  - The routing and fingerprints sections are outside commands and undo (AD-11, AD-12).
-  - The command log is not persisted. The design file holds state, not history.
+  - The routing and fingerprints files are outside commands; undo only keeps them by reference (above, AD-11, AD-12).
+  - The command log is not persisted. The design bundle holds state, not history.
 
 ### AD-3: Placement = one anchor + offset, over one acyclic dependency graph [ADOPTED]
 - **Binds:** model, case, every stage
@@ -210,7 +222,7 @@ graph LR
   - Attach points exist on slots only; a group exposes only its origin.
   - Anchors reference by **id**, never by path.
   - The **dependency graph** is one graph and must be acyclic. `model` rejects a command that would create a cycle, with a typed rejection naming the cycle's ids, so the graph is acyclic after every command. This is structure, not a flagged break (AD-2). A loaded file with a cycle reports `anchor-cycle`; the cycle's members and their dependants are not placed. Pickers don't offer cycle-closing targets.
-  - **Declared reads** (AD-11) are edges of the same graph. Inside a stage, lanes and the design's own work run in the order their reads require; a read loop is a cycle like any other: a command that would close one is rejected, and a loaded file reports it. `build`'s list order is presentation only (AD-18).
+  - **Declared reads** (AD-11) are edges of the same graph. They are data in the pinned blueprint version's declaration (Data Schema, Blueprint declarations), so the register on main checks read loops without running any code. Inside a stage, lanes and the design's own work run in the order their reads require; a read loop is a cycle like any other: a command that would close one is rejected, and a loaded file reports it. `build`'s list order is presentation only (AD-18).
 
 ### AD-4: Exactly two arrangements; the step is a default anchor [ADOPTED]
 - **Binds:** model, editor
@@ -271,12 +283,13 @@ graph LR
 - **Prevents:** noisy diffs, unreadable old files, sections stored in incompatible structures, format lock-in.
 - **Rule:**
   - Designs are KDL v2 files carrying a `format-version`: a top-level node before `meta`, read (with its own schema, a whole number ≥ 1) before anything else is parsed. `model` validates them and migrates older versions forward on load. A newer version than the app knows is not opened: `format-too-new` asks the user to reload to get the newer app. A failed migration reports `migration-failed` and never overwrites the file.
-  - Sections, in this order: `meta` (design id, name, form, defaultPart, gap, licence, provenance), `parameters`, `library-versions`, `parts`, `build`, `layout`, `construction`, `shapes`, `plates`, `case`, `alterations`, `overrides`, `design-rules`, `keymap`, `routing`, `fingerprints`. The schema for each lives in `model`, in one of the two storage structures (AD-23); the fields defined so far are in Data Schema.
+  - Sections, in this order: `meta` (design id, name, form, defaultPart, gap, licence, provenance), `parameters`, `library-versions`, `parts`, `build`, `layout`, `construction`, `shapes`, `plates`, `case`, `alterations`, `overrides`, `design-rules`, `keymap`. The schema for each lives in `model`, in one of the two storage structures (AD-23); the fields defined so far are in Data Schema.
+  - The routing file and the fingerprints file (AD-1) are KDL v2 files with their own schemas, in `model`.
   - `library-versions` is the design's lock on which version of each library item it uses, keyed by library id: one entry per item. A reference to a library part is `ref('library-part')`.
-  - **The canonical writer lives in `model`.** It sets node and property order itself, writes lengths, angles and expressions as quoted strings (`"19mm"`, `"-15deg"`, `"wall + gap"`), and canonicalises numbers.
-  - Loading and then saving an unchanged design reproduces the file byte for byte.
+  - **The canonical writer lives in `model`**, one for each file of the bundle. It sets node and property order itself, writes lengths, angles and expressions as quoted strings (`"19mm"`, `"-15deg"`, `"wall + gap"`), and canonicalises numbers.
+  - Loading and then saving an unchanged design bundle reproduces each file byte for byte.
   - Free-text comments are not preserved.
-  - **Assets** that blueprint inputs reference (SVG or image, STEP) are stored next to the design, keyed by a hash of their content, never inside the file. Sharing or exporting bundles them.
+  - **Assets** that blueprint inputs reference (SVG or image, STEP) are stored in the design bundle, keyed by a hash of their content, never inside the design file.
   - Every id is minted by `model` (kebab-case, unique per design, never reused), except ids starting with `lib:`, which come from the library, not from `model`.
   - The file format doesn't depend on any storage backend.
 
@@ -299,25 +312,25 @@ graph LR
 - **Rule:**
   - Dependencies point only as drawn below. Stages depend only on `model`, `geometry`, `reactive` and `blueprint` (each as drawn) and never import each other. **One named exception:** `routing` imports `drc`.
   - Among workspace packages, `model` imports only `reactive`, `geometry` and `blueprint`. It receives library part and blueprint data from its caller. The build-entry command receives the blueprint from `editor`, which reads it from `library`; `model` mints the ids.
-  - **One reactive graph.** The core uses Vue's reactivity API directly, with no interface of its own. `@vue/reactivity` is imported only by **`reactive`**, through one re-export file; every other package that derives, `model` and the live stages included, uses it through `reactive`. `reactive` also holds the crossing (AD-11) and the recompute trace. Only `editor` and `ui` import `vue` (components) and `@vueuse/core`. No Pinia: UI state lives in ts-inject services holding Vue refs, like design state. Worker code never imports `reactive`.
+  - **One reactive graph, in the model worker** (AD-11). The core uses Vue's reactivity API directly, with no interface of its own. `@vue/reactivity` is imported only by **`reactive`**, through one re-export file; every other package that derives, `model` and the live stages included, uses it through `reactive`. `reactive` also holds the crossing (AD-11) and the recompute trace. The main thread uses Vue reactivity only for the design ref, the stage snapshots and editor state; it derives nothing (AD-25's entry fences check it; the register's structural checks read the design and the pinned declarations only, AD-3). Only `editor` and `ui` import `vue` (components) and `@vueuse/core`. No Pinia: UI state lives in ts-inject services holding Vue refs, like design state. Case and routing worker code never imports `reactive`.
+  - **`protocol`** holds the one concrete message union between main and the model worker (payload types from `model`, the generic machine from `reactive`). It imports only `model` and `reactive`; only `pipeline`, `editor` and `storage` import it. dependency-cruiser fences it, proven by a violation fixture in `tooling/ad10/`. `reactive` holds no payload type.
   - **Three kernel packages** sit below `model`, each holding one concept: `reactive` (the reactive graph's edges) and `geometry` (the 2D kernel, AD-16) import no workspace package; `blueprint` (the sandbox host, the blueprint API's operation and query definitions, and the data-blueprint interpreter) imports only `geometry`.
-  - `blueprint`'s API is plain TypeScript over evaluated values. `model` keeps the one expression parser and passes its evaluator into the interpreter as an argument (AD-17), and owns the schema of the design's own lanes (AD-24). Only `blueprint` imports the sandbox runtime; its technology waits on the sandbox spike (Open Questions).
+  - `blueprint`'s API is plain TypeScript over evaluated values. `model` keeps the one expression parser and passes its evaluator into the interpreter as an argument (AD-17), and owns the schema of the design's own lanes (AD-24). Only `blueprint` imports the sandbox runtime; its engine waits on the blueprints architecture run (Open Questions).
   - **Each stage implements its own lane's operations:** `case` its 3D operations on replicad, `pcb` zones and silkscreen, `model` placing parts (`parts`, `extras`) and shapes. The shared 2D operations come from `geometry`.
   - **`ui`** (the editor's widget layer, AD-26) imports no workspace package; only `editor` imports it. Only `ui` imports `reka-ui` and `@zag-js/hotkeys`.
   - **Shared derivations are small computeds defined in `model`, and only there:** expression evaluation, per-side placements, parts, shapes, the netlist, connections, library lookup. No stage re-derives them. There is no single `resolve` function.
-  - Every derivation reads the design through **per-section selector computeds** (`computed(() => design.value.layout)`), never through `design.value` directly, so a command recomputes only what reads the sections it changed. Verification layer 7's must-not-recompute checks cover it.
+  - Every derivation reads the design mirror through **per-section selector computeds** (`computed(() => design.value.layout)`), never through `design.value` directly, so a command recomputes only what reads the sections it changed. Verification layer 7's must-not-recompute checks cover it.
   - **Every stage output type is defined in `model`** (`PlatesOutput`, `PcbPlacement`, `RouteSet`, `DrcResult`, `CaseOutput`, `FirmwareOutput`).
-  - **Stage signatures:** `(resolved) → { output, violations[] }` for plates, pcb, case, firmware; a live stage's function is wrapped in a computed through `reactive` by `pipeline`, its one owner; stage packages export plain functions, never computeds. `pipeline` also holds the routing section and background results in shallow refs. `routing(resolved, placement, fixedRoutes, { connectionIds, deadline, signal })`, which returns routes for the requested ids only, and `drc(resolved, placement, routes)`. `exports(resolved, outputs)` packages what `pipeline` hands it.
+  - **Stage signatures:** `(resolved) → { output, violations[] }` for plates, pcb, case, firmware; a live stage's function is wrapped in a computed through `reactive` by `pipeline`, its one owner; stage packages export plain functions, never computeds. `pipeline` also holds the routing file and background results in shallow refs. `routing(resolved, placement, fixedRoutes, { connectionIds, deadline, signal })`, which returns routes for the requested ids only, and `drc(resolved, placement, routes)`. `exports(resolved, outputs)` packages what `pipeline` hands it.
   - **Named stage-to-stage flows, all via `pipeline`:** pcb placement (board edge included) → routing and drc; plates → case; pcb → case (a sandwich stacks the PCB, a plateless case holds it by its edge); every stage output → exports. No others. A live flow is one computed reading another.
   - Only `model`'s register concept imports `immer` (AD-2). `valibot` is imported by `model` and by packages that define commands; `ref`, `Id`, `Length` and `Expression` come only from `model` (AD-24).
   - Only `geometry` imports `makerjs`. Only `case` and `routing` import `clipper2-ts`. Only `routing` and `drc` import `flatbush`.
   - Only `viewer3d` imports three.js; only `editor` imports `viewer3d`. Nothing imports `editor`.
-  - **Enforcement:** pnpm strict dependencies, plus dependency-cruiser rules in CI.
+  - **Enforcement:** pnpm strict dependencies, plus dependency-cruiser rules in CI: per package as drawn, and per thread entry point (AD-25).
   - **Shared dependencies go through the pnpm catalog.** A third-party package declared by more than one workspace package is declared there once, and each package uses `catalog:`, so no two packages drift onto different copies (two ts-inject copies would break merging the package partials, AD-25).
 
 ```mermaid
 graph TD
-  editor --> pipeline
   editor --> model
   editor --> reactive
   editor --> library
@@ -340,6 +353,8 @@ graph TD
   storage --> model
   storage --> reactive
   pipeline --> reactive
+  editor & pipeline & storage --> protocol
+  protocol --> model & reactive
   model --> reactive & geometry & blueprint
   plates & pcb & firmware & case --> blueprint
   blueprint --> geometry
@@ -349,39 +364,60 @@ graph TD
   plates & pcb & firmware & drc --> reactive
 ```
 
-### AD-11: Live vs background stages; revisions and cache keys [ADOPTED]
-- **Binds:** model, pipeline, storage, editor, stages
-- **Prevents:** a UI that blocks on slow geometry; stale outputs shown as current; cache false hits after an app update or a non-geometric edit; proxies reaching `postMessage` or files; two exits from the graph; a failed lane blanking what depends on it; an app update changing outputs silently.
+### AD-11: Model worker: live and background stages, the crossing, ordering and cache keys [ADOPTED]
+- **Binds:** reactive, protocol, model, pipeline, storage, editor, stages
+- **Prevents:** a UI that blocks on slow geometry or on the live chain; stale outputs shown as current; a frame mixing revisions; messages applied out of order; derived files saved against another revision; commands computed from an outdated snapshot; cache false hits after an app update or a non-geometric edit; proxies or non-plain values reaching `postMessage` or files; detached buffers left in the worker; two exits from the graph; a failed lane blanking what depends on it; an app update changing outputs silently; edits queuing behind outdated stages; nested workers.
 - **Rule:**
-  - **Live:** `model`'s derivations (the `parts`, `shapes` and `extras` lanes included), plates, pcb placement with part fixed tracks, firmware, and DRC of saved routes against the current placement, all computeds in the reactive graph. The preview is `editor` rendering of these, read directly, not a stage.
-  - **The crossing.** Anything that leaves or enters the reactive graph (workers, storage, file save and load) goes through **one crossing in `reactive`**, next to the re-export, and carries plain values only. `pipeline`, `storage` and `editor` all call it.
-  - **Background** (Web Workers, past the crossing): case (replicad) and routing. They report progress and partial or failed results; a newer committed revision cancels them. Background stages start at committed revisions (every revision, since nothing in progress reaches the design, AD-2); routing starts only at committed revisions (AD-12). A cancelled routing request stops like a deadline (AD-12): it returns what it placed, which is re-validated before it is kept.
+  - **Threads.** Main: the design, the command register, undo, autosave, `storage` (the design bundle's one writer, AD-13), input and drawing. **Model worker:** the design mirror, `model`'s derivations, the live stages, `pipeline`, `geometry` and the blueprint sandboxes of live lanes (synchronous, never on the UI thread). **Case worker** and **routing worker:** the background stages. Each thread's entry merges only its own partials (AD-25).
+  - **Spawning.** Main spawns all three workers and hands the model worker one MessageChannel port to each of case and routing. No worker spawns a worker. To cancel case, `pipeline` asks main to terminate and respawn the case worker and receives a new port.
+  - **Ordering.** Every message main sends to the model worker (whole design or patches) carries **(epoch, seq)** minted on main: seq counts up per design message, and every other message main sends (`focus`, requests) carries the current seq without advancing it; epoch changes on every worker start and restart. Every post, response and derived file echoes the seq it was computed for. Older means a smaller seq in the same epoch; anything from another epoch is dropped. The revision is a content identity only, never an order.
+  - **Live:** `model`'s derivations (the `parts`, `shapes` and `extras` lanes included), layout, plates, pcb placement with part fixed tracks, firmware, and DRC of saved routes against the current placement, all computeds in the reactive graph in the model worker. They run after each applied command (no live stage runs during a drag, AD-2). The preview is `editor` rendering of their posted snapshots, not a stage.
+  - **Visible set first.** The `focus` message names a workspace. After each applied command the worker computes that workspace's set (table below) first and posts it as **one message at one seq**, so a frame never mixes revisions, **within 100 ms of the applied command** (Sergii 2026-11-01; closes PRD §8 Q3 for the visible set). Then it computes the hidden stages, off the main thread; their violation counts show as updating until their seq's issues arrive.
+
+    | Workspace | Visible set |
+    | --- | --- |
+    | Layout | parts, layout, shapes (the outline context line) |
+    | Outline | parts, layout, shapes, plates |
+    | PCB | pcb placement, DRC of saved routes; routing runs in the background |
+    | Case | case: background, outside the 100 ms target; no live stage |
+    | Firmware | parts, layout, firmware |
+
+  - **Newer seqs.** The worker checks for newer patches between stages. A newer seq lets the current stage finish; the worker then applies every pending patch and starts the newest seq from the visible set. An older seq's remaining stages are never computed.
+  - **Reads on main.** Reads of the design (who-points-at, authored values) run on main, where the design lives. Reads of posted outputs (hit-testing, snapping, readouts, violations) use the stage snapshots on main. Anything else is a **one-off request** to the model worker: a kind from a small fixed list of typed request kinds, each defined beside the stage that answers it, answered asynchronously and tagged with its seq; an answer for an older seq is dropped. A command computed from a snapshot follows AD-2's seq check.
+  - **The crossing.** Anything that leaves or enters a thread or a file (workers, storage, file save and load) goes through **one crossing**, and carries plain values and transferred buffers only. `reactive` holds the generic protocol machine: epoch and seq, one dispatcher per side, transfer lists; no payload types. `protocol` holds the **one TypeScript discriminated union** of message kinds between main and the model worker (`design`, `patches`, `focus`, `stage-started`, the workspace set, `issues`, `request`/`response`, `action` (a `pipeline`-owned registered action such as Reroute or Accept output change, which `pipeline` runs and answers by posting the derived file; main never computes a derived file), `failed`, plus the derived files, the forwarded case bodies and the case respawn below). No RPC library. `pipeline`, `storage` and `editor` all call it.
+  - **The design mirror.** Main sends the whole design value, with the routing and fingerprints files main holds, at worker start, on worker restart and on load (`replaceDesign`), and otherwise the patches of each applied command, undo and redo (AD-2), with their (epoch, seq). The worker applies them in order through `applyDesignPatches` (AD-2), so the mirror is deep-frozen; it holds only the authored sections. It checks the hash of the resulting design and on a mismatch asks for the whole value (the hash's form is open: Open Questions). Undo and redo also send the routing and fingerprints files they restore.
+  - **Lifecycle.** Before each stage the model worker posts `stage-started { stage, seq }`. Past about 1 s the status strip shows the running stage and its elapsed time, with a **Restart** action the user chooses. Main restarts the model worker automatically only on a crash (the worker's error event, or a message that fails to deserialize), with a new epoch and the whole design value; everything from the old epoch is dropped. There is no automatic watchdog kill. At startup the editor draws what the design itself gives (preview, tree, authored values) and shows each stage as computing until its first post. The case worker is outside this rule (its own progress and terminate-and-respawn cancel).
+  - **Stage outputs.** The worker posts each stage's **whole output** at its seq, never a diff. The output travels in **transferred typed-array buffers**, packed by an **own struct-of-arrays codec** with ids pre-sorted by the worker, defined beside each output type in `model`, with a round-trip test per codec. Main reads typed views straight from the buffers: no plain objects and no id index built on main. If a codec proves too costly to maintain, its fallback is the same buffers unpacked into plain objects on arrival. Each output replaces the previous one whole in a `shallowRef`; its contents are never deeply reactive and never copied.
+  - **Fresh buffers.** The model worker transfers only buffers packed for that one post, never a buffer a computed, a cache, `pipeline`'s last good output or a later stage holds; the codec packs into new buffers per post. Case bodies received from the case worker are forwarded to main by transfer, and `pipeline` keeps no reference to them. A crossing test posts the same output twice and checks the worker's values are intact.
+  - **Background** (case and routing workers): `pipeline` hands each its input slice over its MessageChannel port, newest seq only. They report progress and partial or failed results to `pipeline`; a newer seq cancels them. Background stages start at committed revisions (every revision, since nothing in progress reaches the design, AD-2); routing starts only at committed revisions (AD-12). A cancelled routing request stops like a deadline (AD-12): it returns what it placed, which `pipeline` re-validates before it is kept. The case worker stays separate from the model worker: OCCT runs long and synchronously, and its cancel is a terminate.
+  - **Case results.** The case worker posts only to `pipeline`. `pipeline` fingerprints the output, keeps the STEP and STL bytes for export and the bodies' hashes, and forwards the mesh bodies to main by transfer; main's snapshot is the only holder of the bodies.
+  - **Derived files.** `pipeline` posts the routing and fingerprints files to main, each tagged with its seq. Main drops a derived file whose seq is not main's latest; `pipeline` re-validates at the newest seq and posts that file instead. Main's `storage` saves the design and its derived files for the same revision in one atomic write (AD-13).
   - **Cache key** = stage id + stage version + library part and blueprint versions used, nested ones included, + hash of the stage's input slice (live stages: of the resolved values they read) (+ routing hash for drc and exports; routing hash + requested connection ids for routing). A routing result cut short by a deadline or a cancel is never cached.
-  - **Input slice.** Each background stage defines its own input slice in its own package: a plain type plus a selector over `model`'s computeds. `pipeline` calls the selector, sends the slice through the crossing and hashes it. **The slice hash is both the cache key's input part and the freshness tag**: a background output whose slice hash differs from the current one is shown marked stale, never as current, including on cache hits. An edit outside a stage's slice never marks it stale.
-  - **Declared reads.** A lane declares what it reads: slices of the design, upstream outputs, queries. Code lists its reads; data infers them from its references. An undeclared read is an error (the lane fails). A lane's declared reads are its input slice: its cache key covers exactly them, and only they cross into the sandbox.
+  - **Input slice.** Each background stage defines its own input slice in its own package: a plain type plus a selector over `model`'s computeds. `pipeline` calls the selector, sends the slice to the stage's worker and hashes it. **The slice hash is both the cache key's input part and the freshness tag**: a background output whose slice hash differs from the current one is shown marked stale, never as current, including on cache hits. An edit outside a stage's slice never marks it stale.
+  - **Declared reads.** A lane declares what it reads: slices of the design, upstream outputs, queries. Code lists its reads in its version's declaration; data infers them from its references. The register checks their loops on main (AD-3). An undeclared read is an error (the lane fails in the worker). A lane's declared reads are its input slice: its cache key covers exactly them, and only they cross into the sandbox.
   - **Queries** ("the tallest part", "parts with role `mount`") are defined in `blueprint` and computed once by the stage that owns the data; every lane that declares one shares the result. The list grows with the stories that need them.
   - **Failed lanes.** A lane that throws or exceeds its step budget shows its last good output marked stale, with `lane-failed`, and pullers keep using that output until the lane runs cleanly. This holds for live lanes as for background stages.
-  - **Fingerprints.** The `fingerprints` section holds one fingerprint per build entry and per design part that applies a blueprint: the hash of its declared input slice plus the hash of its outputs. A design part's slice covers its inputs plus every per-slot override that uses it, and its output hash covers all those runs. Only `pipeline` writes the section, at committed revisions, through the derived-section writer (AD-2), outside undo and outside the revision hash. A different input slice is an edit: `pipeline` writes the new pair. The same slice with different outputs is a change in behaviour (a fix in place, a raised nested pin, a kernel update): the user sees the difference and accepts it with the **Accept output change** action. Nothing changes silently.
-  - Live outputs are current by construction. The routing section, routing results, the export gate and exports keep their revision and routing-hash tags (AD-12, AD-15).
-  - The case solid may be cached by its cache key in memory or browser storage; it is never written to the design file.
-  - `CaseOutput` carries **bodies**, each `{ id, kind, faces, edges }`, typed arrays shaped like replicad's `mesh()` and `meshEdges()` output, transferred from the case worker without copying, plus the STEP and STL bytes written in the case worker. A body is the mesh of one solid; its id is the solid's id. `model` and `case` never import three.js.
-  - `pipeline` keeps the last good output of each background stage and lane, tagged with its slice hash. A background result enters the graph through the crossing as **one plain value, replaced whole in a shallow ref**; its contents (typed arrays, route sets) are never deeply reactive and never copied.
+  - **Fingerprints.** The fingerprints file holds one fingerprint per build entry and per design part that applies a blueprint: the hash of its declared input slice plus the hash of its outputs. A design part's slice covers its inputs plus every per-slot override that uses it, and its output hash covers all those runs. Only `pipeline` computes the file, at committed revisions, and posts it to main (Derived files, above); it is outside commands and outside the revision hash. A different input slice is an edit: `pipeline` writes the new pair. The same slice with different outputs is a change in behaviour (a fix in place, a raised nested pin, a kernel update): the user sees the difference and accepts it with the **Accept output change** action. Nothing changes silently.
+  - Every posted output carries its seq. The routing file, routing results, the export gate and exports keep their revision and routing-hash tags (AD-12, AD-15).
+  - The case solid may be cached by its cache key in memory or browser storage; it is never written to the design bundle.
+  - `CaseOutput` carries **bodies**, each `{ id, kind, faces, edges }`, typed arrays shaped like replicad's `mesh()` and `meshEdges()` output, transferred from the case worker to `pipeline` and on to main without copying, plus the STEP and STL bytes written in the case worker. A body is the mesh of one solid; its id is the solid's id. `model` and `case` never import three.js.
+  - `pipeline` keeps the last good output of each background stage and lane, tagged with its slice hash, except the case bodies, whose only holder is main's snapshot (Case results). A background result enters the model worker's graph as **one plain value, replaced whole in a shallow ref**; its contents (typed arrays, route sets) are never deeply reactive and never copied.
 
-### AD-12: Routing: incremental, browser-only, saved in the routing section [ADOPTED]
+### AD-12: Routing: incremental, browser-only, saved in the routing file [ADOPTED]
 - **Binds:** pcb, routing, drc, pipeline, storage
-- **Prevents:** routing on the undo stack; drags destroying routes; stale routes applied blindly; two writers of the routing section.
+- **Prevents:** routing on the undo stack; drags destroying routes; stale routes applied blindly; two writers of the routing file.
 - **Rule:**
   - Connections realised by fixed tracks (`part-tracks`, AD-14: a part's, or a blueprint's ready-made tracks such as underglow's data line) are `pcb` outputs, move live, and reach routing through pcb → routing. Routing handles only the rest.
   - Connections are per board and never join pads on two boards; a link between the halves is realised by the cable part. In split `reversible` the one board's pads are the `left/` placements' pads (with their F, B and TH copies).
-  - The routing section holds, per board, routes keyed by connection id. A route is never hand-edited.
+  - The routing file (AD-1) holds, per board, routes keyed by connection id, tagged with the design revision it belongs to. A route is never hand-edited.
   - **A saved route is valid when** its connection still exists, both pads are at the same world positions, and `drc` passes it against the current board.
-  - **Only `pipeline` writes the routing section, and only at committed revisions** (undo and redo restore the routing that was current at that revision; the next committed revision re-checks it). At each committed revision it drops invalid routes and requests routing for unrouted connections, passing valid routes as fixed obstacles. While an expression field's focus session is open (AD-2), its typing-pause commands don't trigger this: saved routes are checked for display only, and the drop and reroute run when the session ends (Enter or blur).
+  - **Only `pipeline` computes the routing file, and only at committed revisions**; it posts the file to main with its seq, and main's `storage` saves it (AD-11, AD-13). Undo and redo restore the routing file kept beside the undo record, current at that revision (AD-2); the next committed revision re-checks it. At each committed revision it drops invalid routes and requests routing for unrouted connections, passing valid routes as fixed obstacles. While an expression field's focus session is open (AD-2), its typing-pause commands don't trigger this: saved routes are checked for display only, and the drop and reroute run when the session ends (Enter or blur).
     - The connections whose saved routes were just dropped as invalid (e.g. those a moved part now clashes with) are routed in the same request as the moved part's connections.
   - **Fixed obstacles** cannot be crossed, moved or ripped up. Another net's fixed copper blocks at the same clearance as the engine's own copper; same-net fixed copper does not block, except that every drill keeps AD-20's drill clearances from every other drill, same net included. The engine returns copper only for the connection ids it is asked to route.
   - **Deadline:** `pipeline` sets one per request (value Deferred). The engine checks it, and the abort signal, between connections and bounds each connection's search; past it, it returns what it placed and reports the rest unrouted. It never hangs. Golden tests run with no deadline.
   - **Reroute** is an explicit user action owned by `pipeline`, registered as an action (AD-2), outside commands and undo: it drops the saved routes in a chosen scope (the whole board, or the routes around a chosen unrouted connection) and routes them again. Automatic routing never moves a valid saved route. `pipeline` does not retry the same unrouted set at the same revision and routing hash.
   - A routing result for an older committed revision is re-validated route by route against the current one before it is kept.
-  - The routing section is outside commands and undo. Undo and redo may change copper while staying electrically equal.
+  - The routing file is outside commands; undo only keeps it by reference (AD-2).
   - Unrouted connections are `unrouted` violations, including a connection whose saved route was dropped and did not route again; the UI always shows the count.
   - Any engine sits behind this one stage interface and runs in a Web Worker in the browser. No helper program, no server, no network. The interface stays engine-neutral.
   - **Milestone-1 engine:** keeb-cad's own keyboard router in `routing`: a two-layer grid A* with rip-up and reroute of its own copper, on `clipper2-ts` and `flatbush`, in TypeScript with no Node or DOM APIs (routing verdict, 2026-10-28). tscircuit capacity-autorouter 0.0.1010 was rejected.
@@ -391,14 +427,14 @@ graph TD
 - **Binds:** editor, storage, library, pipeline
 - **Prevents:** a hard dependency on any service; tabs overwriting each other; a file pairing authored state with routes from another revision; storage and the Versions list keeping different revisions; pruning a recovery point.
 - **Rule:**
-  - All persistence goes through the `storage` package interface: `save`, `load`, `listVersions`, `listDesigns`. The saved unit is the whole design file, written atomically: authored sections plus the routing and fingerprints sections valid for that revision.
+  - All persistence goes through the `storage` package interface: `save`, `load`, `listVersions`, `listDesigns`. The saved unit is the **design bundle** (AD-1), written atomically by main's `storage`, its one writer: the design file at its revision plus the latest accepted routing and fingerprints files, each keeping its own revision tag (it may be older than the design's), and the assets. `pipeline` posts both derived files at every seq, even unchanged; one whose seq is not main's latest is dropped (AD-11). Load re-validates routes against the design (AD-12).
   - `listDesigns` returns the designs in browser storage, newest first, each with design id, name, revision and last-saved time. On launch the editor reopens the first; the Start screen lists them.
   - Opening a file never overwrites browser storage: when that design id is stored at another revision, the file's revision opens as current and the stored one stays available through `listVersions`.
-  - **Version retention.** `listVersions` returns every kept version of a design, newest first, each a whole design file with its reason. **Named points** are kept until the design is deleted: the revision current at each file open (`file`), each save, Save to file or Firefox download (`saved`), both sides of a version switch (`switch`), the revision before a migration (`migration`), and the source revision when the design is copied (`copy`). **Rolling:** the last 20 autosaved revisions (`autosave`). Under storage pressure only rolling versions are pruned, oldest first; autosave reports failure only when none remain.
+  - **Version retention.** `listVersions` returns every kept version of a design, newest first, each a whole design bundle with its reason. **Named points** are kept until the design is deleted: the revision current at each file open (`file`), each save, Save to file or Firefox download (`saved`), both sides of a version switch (`switch`), the revision before a migration (`migration`), and the source revision when the design is copied (`copy`). **Rolling:** the last 20 autosaved revisions (`autosave`). Under storage pressure only rolling versions are pruned, oldest first; autosave reports failure only when none remain.
   - Milestone 1 implements browser autosave and file Save/Open.
   - The library ships bundled with the app.
   - No network calls are needed to design or export.
-  - One tab edits a design at a time; only that tab saves. Other tabs open it read-only and never write the derived sections.
+  - One tab edits a design at a time; only that tab saves. Other tabs open it read-only and never write any file of its bundle.
 
 ### AD-14: The netlist and connections are owned by `model` [ADOPTED]
 - **Binds:** model, pcb, routing, drc, firmware
@@ -544,7 +580,7 @@ graph LR
 - **Binds:** model, every stage, exports, fixtures
 - **Prevents:** a variant axis multiplying every stage, cache key and export.
 - **Rule:**
-  - A design has one netlist, one routing section and one firmware.
+  - A design has one netlist, one routing file and one firmware.
   - Different electronics on the same layout are separate designs related by remix (AD-9). There is no variant concept in the model, file or stages.
 
 ### AD-22: Editor views: SVG canvases, one viewport, a 3D viewer of bodies [ADOPTED]
@@ -553,7 +589,7 @@ graph LR
 - **Rule:**
   - Every 2D canvas (Layout, Outline, PCB, Firmware, and isolated part mode in milestone 2) is inline SVG rendered by Vue templates in `editor`. Canvas items are DOM elements: focus, `aria-*`, pointer hit-testing, theme tokens as CSS custom properties (the same ones `ui`'s Tailwind `@theme` defines, AD-26), and reduced motion through CSS. Canvas marks meet 3:1 non-text contrast in both themes; handles keep the 8px canvas hit radius (DESIGN.md `spacing.canvas-hit-radius`) in screen pixels at any zoom.
   - One **viewport** (centre in model mm, y up; zoom) lives in a viewport service and is shared by the 2D workspaces. Isolated part mode has its own zoom. The model-to-screen y-flip happens once, in the viewport transform (AD-7). Text and handles are positioned through that transform but drawn in screen space, so they are never flipped or scaled.
-  - Canvases draw only the resolved design and stage outputs; they compute no geometry (AD-10).
+  - Canvases draw only the design and the posted stage snapshots (AD-11); they compute no geometry (AD-10).
   - `viewer3d` is framework-free: it renders a list of bodies and owns the camera and its pointer and keyboard controls on its own canvas element, and honours `prefers-reduced-motion` (the Home camera move jumps). It never handles `contextmenu`; it exposes picking (screen point → body id) and a top view set from the viewport. `editor` hosts it and owns focus regions, menus and the viewport. Home/0 is the top view derived from the viewport.
   - The 3D viewer never blanks once a body exists: while `CaseOutput` is stale, the last good bodies are drawn grayed (AD-11).
 
@@ -572,19 +608,20 @@ graph LR
 - **Rule:**
   - **One schema format: Valibot.** It declares both the design schema (every authored AD-8 section) and command inputs (AD-2). **Valibot schemas are the source of truth:** every type is inferred (`v.InferOutput`), never declared by hand, except the recursive layout tree's unions and `children` fields, annotated with `v.GenericSchema` (Data Schema).
   - **Shared kinds** are defined once, in `model`: `Id`, `Expression`, `ref(kind)`, `Delta`, `Length`, `Angle`, `Vec2`, `Offset`, `Gap`, `Anchor`, `Revision`, `Hash`, `AssetHash`, `Licence`, `PartId`, `BlueprintId`, `LibraryId`, `Version`, `FormatVersion`, `PartRef`, `SideId` and `Result`. A brand comes from its schema, never from a particular caller: a branded value means "checked".
-  - Schemas use **no transforms**: a parsed value has the structure it was given. That means no value-changing actions (`transform`, `trim`, `toLowerCase`, …); `v.brand`, `v.metadata` and checks are allowed. A value that needs normalising is changed by the command that sets it, where it is visible and undoable. **Pass-through kinds are banned for object values:** `unknown`, `any`, `instance`, `looseObject`, and `custom` over an object return the caller's reference and break the fresh-copy parse. `v.custom` over a primitive (e.g. `` `lib:${string}` ``) is allowed only as a later step in a `v.pipe` whose first item is a primitive schema. There is no schema-kind test: layer 3's checks (caller input not frozen, no proxy in the design, over every registered command, undo, redo, `replaceDesign` and the derived-section writer) catch a pass-through wherever it sits.
+  - Schemas use **no transforms**: a parsed value has the structure it was given. That means no value-changing actions (`transform`, `trim`, `toLowerCase`, …); `v.brand`, `v.metadata` and checks are allowed. A value that needs normalising is changed by the command that sets it, where it is visible and undoable. **Pass-through kinds are banned for object values:** `unknown`, `any`, `instance`, `looseObject`, and `custom` over an object return the caller's reference and break the fresh-copy parse. `v.custom` over a primitive (e.g. `` `lib:${string}` ``) is allowed only as a later step in a `v.pipe` whose first item is a primitive schema. There is no schema-kind test: layer 3's checks (caller input not frozen, no proxy in the design, over every registered command, undo, redo and `replaceDesign`) catch a pass-through wherever it sits.
   - A reference is its **own declared kind** in the schema, `ref(kind)`; never a string that happens to contain an id. Its value is the target kind's id type, with no kind and no wrapper in the value: `ref('library-part')` holds a `PartId`, `ref('library-blueprint')` a `BlueprintId`, `ref('slot')` an `Id`, and `ref('side-placement')` a `SideId`. `ref(kind)` is that id schema piped with `v.metadata({ refKind })`, read only by the generic walk (`v.getMetadata`). Code that uses a field looks the target up in its own section; there is no id index. An input value that holds a reference is a tagged object (`part`, `anchor`, `asset`), so the walk finds it from the union variant (Data Schema).
   - "Who points at X" is **one function in `model` that searches on demand** over the declared references. It walks the schema and the value together, with no per-section code, in one file. It resolves a `SideId` to its authored slot after the side prefix, so deleting the slot cascades to its overrides and an override to a missing slot is dangling. A test walks a design built from every section, so a Valibot upgrade that changes schema internals fails loudly. `Expression` is a reference-carrying kind: the walk parses it with AD-17's parser and yields `parameter` references. Cascade delete (AD-2), dangling-reference checks and the dependency graph (AD-3) use the same walk.
   - File load migrates first, then validates every authored section with the same schemas inside `replaceDesign` (AD-2).
 
 ### AD-25: Wiring and code layout [ADOPTED]
 - **Binds:** all packages
-- **Prevents:** hidden module state that tests can't replace; wiring done three ways; state passed around by hand; behaviour lost when data crosses to a worker or a file.
+- **Prevents:** hidden module state that tests can't replace; wiring done three ways; state passed around by hand; behaviour lost when data crosses to a worker or a file; main bundling derivations or the sandbox.
 - **Rule:**
   - Services are wired with **`@snap/ts-inject`**. No module singletons (imports as the wiring), and no hand-wired factories.
   - **Pure logic is plain functions** (e.g. `placeSlot`: an anchor frame plus an evaluated offset gives a world frame). **Lookups and state** (the derived graph, history, the pipeline, the command register) **are services** wired by ts-inject. Functions with state passed around by hand are not used.
   - Data carries no methods: values are plain (AD-2), so behaviour lives in functions and services, never on the data.
-  - **One partial per package.** Each package that has services exports one `PartialContainer`, `<package>Services` (e.g. `modelServices`), from its root. `main.ts` merges them in AD-10 order, then appends `commands` (AD-2). Merging partials silently keeps the last provider of a token, so **no token is provided by two package partials**: one test asserts that every partial's `getTokens()` lists, worker partials included, are pairwise disjoint and that none contains `commands`. A token is overridden only in tests (on the built root container) and in `main.ts`. A package without services exports no partial. **Each worker builds its own container** in its entry, from its package's worker partial (its cache, kernel, progress and other state are services, per the rule above); it never uses the main thread's container, and only plain data crosses (AD-11): no service, token or container.
+  - **One partial per package per thread.** Each package that has services exports one `PartialContainer` for each thread it serves, `<package><Thread>Services`, from that thread's **subpath export** (e.g. `model/main` exports `modelMainServices`: register, design service; `model/worker` exports `modelWorkerServices`: derivations). Shared pure parts (types, schemas, the blueprint declaration schema) are importable by both without pulling in either side. Each thread's entry imports only its own subpaths. Each thread's entry (main, model worker, case worker, routing worker) merges only its own, in AD-10 order; `main.ts` then appends `commands` (AD-2). Merging partials silently keeps the last provider of a token, so **no token is provided by two partials merged in one entry**: one test asserts that every partial's `getTokens()` lists, for every thread, are pairwise disjoint and that none contains `commands`. A token is overridden only in tests (on the built root container) and in `main.ts`. A package without services exports no partial. Each worker builds its own container in its entry (its cache, kernel, progress and other state are services, per the rule above); it never uses the main thread's container, and only plain values and transferred buffers cross (AD-11): no service, token or container.
+  - **Entry fences.** dependency-cruiser checks each entry point's module graph: main's never reaches `blueprint`, the stage packages or the sandbox runtime; no worker's reaches `ui` or `vue`. This makes "main derives nothing" (AD-10) a failing check.
   - Inside a package, folders are **by concept**, not by kind. Code that spans two concepts lives with the concept it produces. Stateful services stay in their concept's folder; there is no `services/` folder.
   - The packages are those drawn in AD-10; no merges. Each closes its public surface through package `exports`.
 
@@ -612,7 +649,7 @@ graph LR
 
 ## Data Schema
 
-The design file's fields defined so far: what layout needs (the `meta`, `library-versions`, `parts`, `layout` and `overrides` sections, and the library part fields layout reads), plus blueprint inputs and the `build` and `fingerprints` sections. **Valibot schemas are the source of truth** (AD-24): every type is inferred with `v.InferOutput`, never declared by hand, and the TypeScript below is notation for the inferred types. The one exception is the recursive layout tree, because TypeScript can't infer a type through the `children` cycle: the `Node` and `Group` unions and the `children` fields are hand-written as `InferOutput<typeof …Fields> & { children: … }`, and the recursive schemas are annotated with `v.GenericSchema<…>`, the only check. Every other field, `Slot` included, is inferred. The decision records are `_bmad-output/architecture-keeb-cad-layout-model/data-schema-draft-2026-10-31.md` (approved 2026-10-31) and `blueprints-directions-2026-11-01.md` (approved 2026-11-01).
+The design file's fields defined so far: what layout needs (the `meta`, `library-versions`, `parts`, `layout` and `overrides` sections, and the library part fields layout reads), plus blueprint inputs, the `build` section and the fingerprints file of the design bundle. **Valibot schemas are the source of truth** (AD-24): every type is inferred with `v.InferOutput`, never declared by hand, and the TypeScript below is notation for the inferred types. The one exception is the recursive layout tree, because TypeScript can't infer a type through the `children` cycle: the `Node` and `Group` unions and the `children` fields are hand-written as `InferOutput<typeof …Fields> & { children: … }`, and the recursive schemas are annotated with `v.GenericSchema<…>`, the only check. Every other field, `Slot` included, is inferred. The decision records are `_bmad-output/architecture-keeb-cad-layout-model/data-schema-draft-2026-10-31.md` (approved 2026-10-31) and `blueprints-directions-2026-11-01.md` (approved 2026-11-01).
 
 **A story can't add or change a section's fields until this section defines them.**
 
@@ -663,8 +700,7 @@ type DesignFile = {
   build: BuildEntry[]                             // blueprints applied once (AD-18)
   layout: Group
   overrides: Override[]                           // per-side differences (decision 54)
-  fingerprints: Fingerprint[]                     // saved derived data, written only by pipeline (AD-11)
-}
+}                                                 // authored sections only (AD-1)
 
 type Form =
   | { type: 'split'; board: 'reversible' | 'mirrored' }   // board limits what the halves may differ in (AD-6)
@@ -733,6 +769,18 @@ type Override =
 // a removed slot keeps its space: the step uses its authored part's rectangle (decision 56)
 // later (mirrored boards): inputs and offset per side
 
+// ── design bundle: saved, versioned and shared as one (AD-1, AD-13) ──
+// the design file (DesignFile) + the routing file + the fingerprints file + content-addressed assets (AD-8)
+// each derived file is its own KDL file with its own schema; computed only by pipeline, saved only by main's storage
+type RoutingFile = {
+  revision: Revision   // the design revision it belongs to
+  // routes per board, keyed by connection id: not yet defined
+}
+type FingerprintsFile = {
+  revision: Revision   // the design revision it belongs to
+  fingerprints: Fingerprint[]
+}
+
 // ── fingerprints: saved derived data (AD-11) ────────────────
 type Fingerprint = {
   id: Id          // the build entry's or design part's id: a key, like routing's connection ids, not a reference; pipeline drops a fingerprint whose owner is gone
@@ -746,13 +794,14 @@ Decisions 53, 55 and 57 and the other items parked for the recipes party (attach
 **Recorded, not typed** (each waits for the story that needs it):
 - **Library part:** pins, pads, envelope, role-tagged outputs (cutouts with a target and a cutout purpose, mounts, display models, the `rectangle`), 3D keep-outs, parameters, `reversible`, `tracks`. First PCB story (`epic-parts-and-pcb`); envelope and `rectangle` with the story that starts parts; cutouts with the plates story.
 - **Authored part blueprints (`type: 'authored'`):** footprint, pins and roles, envelope, 3D keep-outs, role-tagged cutouts, display models, `reversible`. Milestone 2.
-- **Blueprint declarations:** declared inputs with metadata (label, unit, default, a range that may name other inputs, options, help) and the **per-slot** mark; lanes, declared reads and pulls `{ role, target?, count: 'exactly-one' | 'at-least-one' | 'any' }`; role-tagged outputs; declared nets and pin-role joins (AD-14); the blueprint API version; the upgrade mapping (renames, defaults, converted values); licence and provenance. With the story that starts parts (Open Questions).
+- **Blueprint declarations:** declared inputs with metadata (label, unit, default, a range that may name other inputs, options, help) and the **per-slot** mark; lanes, declared reads (data, so the register checks read loops on main without running code, AD-3) and pulls `{ role, target?, count: 'exactly-one' | 'at-least-one' | 'any' }`; role-tagged outputs; declared nets and pin-role joins (AD-14); the blueprint API version; the upgrade mapping (renames, defaults, converted values); licence and provenance. With the story that starts parts (Open Questions).
 
 **Not yet defined:**
 - `PinRole` (the netlist derives rows, columns and LED chains from it, AD-14) and `CutoutPurpose`.
 - How a part parameter binds to geometry (e.g. a screw-hole radius changing its cutout).
 - The keep-out violation's kind and owner (AD-5).
-- Every other design-file section: `parameters`, `construction`, `shapes`, `plates`, `case`, `alterations`, `design-rules`, `keymap`, `routing`. (`overrides` has its M1 part typed.)
+- Every other design-file section: `parameters`, `construction`, `shapes`, `plates`, `case`, `alterations`, `design-rules`, `keymap`. (`overrides` has its M1 part typed.)
+- The routing file's routes.
 
 ## Consistency Conventions
 
@@ -762,8 +811,8 @@ Decisions 53, 55 and 57 and the other items parked for the recipes party (attach
 | Ids | Kebab-case, minted by `model`. Resolved: `<side>/<id>`. Block nodes: `<instance-id>/<block-node-id>`. Pads: `<side>/<slot-id>.<component>.<pin>.<copper>[.<copy>]`, where copper is `F`, `B` or `TH` (through-hole) and `.<copy>` (2, 3, …) numbers repeats of one pin and copper in the library footprint's pad order. Reversible copies are distinct pads. Nets: derived from ids (AD-14). |
 | Units in files | Quoted with an explicit unit or as an expression: `"19mm"`, `"-15deg"`, `"wall + gap"`. |
 | Violations | `{ kind, severity: error \| warning, ids, message, fixes }`; `fixes` lists registered entry names plus inputs (AD-2), possibly empty. Design problems never throw. Commands that can't apply return a typed rejection. Each kind has one owner. `model`: `anchor-cycle`, `construction-undefined` (error: a construction point from parallel or coincident lines; ids name the point and its two lines; it and its dependents are not evaluated), `unresolvable-reference` (warning when a part reference names a design-local part not defined yet, the slot placing with its stand-in rectangle and no footprint; error otherwise), `shape-failed` (error: a resolved shape fails AD-16's checks; ids name the shape and its operands; it and its dependents are not output), `fit-violated` (a key or part sticks out of the outline; ids name it and the shape; severity open), `unit-mismatch`, `unsupported-form`, `part-not-reversible` (a non-reversible part on a split `reversible` board), `overlap` (part envelopes; the one collision check), `blueprint-input-invalid` (an unknown input, a value the blueprint doesn't accept, a slot override of an input not marked per-slot, or an old input an upgrade could not map; severity open), `pin-role-unmatched` (a pin-role join matched zero or several pins, AD-14), `override-not-allowed` (a part swap on a split `reversible` board, AD-6), `negative-length` (a `Length` that evaluates < 0; severity open), `binding-unsupported`, `format-too-new`, `migration-failed`. `blueprint`: `blueprint` (a message the blueprint's author writes, naming the entry and the slot), `lane-failed` (a lane threw or exceeded its step budget; its last good output is shown stale), `blueprint-api-too-new` (written for a newer blueprint API than this app's; not run), `pull-count` (a pull got zero or more than its count allows; reported by the consumer), `role-unconsumed` (warning: an output role no consumer pulls). `routing`: `unrouted`. `drc`: `drc`. A stage reports only its own kinds, plus `blueprint`'s for the lanes it runs. |
-| Stable outputs | Same file + same app version → same bytes for every export. No clocks, randomness, locale or random UUIDs in outputs; tool-generated ids (KiCad UUIDs) are derived from design ids. Only routes and fingerprints are history-dependent, and they are saved. |
-| Verification | Layered: (1) compile time: types, ts-inject, package `exports`, dependency-cruiser; (2) unit tests, written test-first, for functions and services (every test that touches the DOM, in `ui` and `editor` and the SVG canvas included, runs in Vitest browser mode in Chromium and Firefox; everything else on Node; no jsdom); (3) generic checks over every registered command (do → undo → identical; redo; after a run, an undo, a redo, a `replaceDesign` and a derived-section write, the design is deeply frozen and holds no proxy, and the caller's input is not frozen), file save → load round-trip, and only plain data at the crossing; (4) invariants on generated designs, the same rules the app reports as violations (the AD-14 netlist test among them); (5) headless slice scenarios, the ongoing marker; (6) end to end in a real browser, one small journey per slice, screenshot baselines approved by a person; (7) reactive and resource checks: must-not-recompute, frame budget, worker memory; (8) golden end results at milestone acceptance only. |
+| Stable outputs | Same file + same app version → same bytes for every export. No clocks, randomness, locale or random UUIDs in outputs; tool-generated ids (KiCad UUIDs) are derived from design ids. Only routes and fingerprints are history-dependent, and they are saved in the design bundle. |
+| Verification | Layered: (1) compile time: types, ts-inject, package `exports`, dependency-cruiser; (2) unit tests, written test-first, for functions and services (every test that touches the DOM, in `ui` and `editor` and the SVG canvas included, runs in Vitest browser mode in Chromium and Firefox; everything else on Node; no jsdom); (3) generic checks over every registered command (do → undo → identical; redo; after a run, an undo, a redo and a `replaceDesign`, the design and the model worker's mirror are deeply frozen and hold no proxy, and the caller's input is not frozen), design bundle save → load round-trip, only plain values and transferred buffers at the crossing, and a post of the same output twice leaving the worker's values intact (AD-11); (4) invariants on generated designs, the same rules the app reports as violations (the AD-14 netlist test among them); (5) headless slice scenarios, the ongoing marker; (6) end to end in a real browser, one small journey per slice, screenshot baselines approved by a person; (7) reactive and resource checks: must-not-recompute, frame budget, worker memory; (8) golden end results at milestone acceptance only. |
 | Fixtures | Corney Island v0.3 wired and wireless enter as **scripts of layout commands** in tests (`fixtures/`), plus Ergogen's reference output (from `layout-model/sources/`). There is no importer and no hand-written Corney design file. Acceptance (layer 8): key centres, the outline and plates as the same shape, plate cutouts and case dimensions within ±0.05 mm of Ergogen; KiCad output opens in KiCad 10; the fab checker accepts it; ZMK output builds. LambBT and Corax56 are paper checks. |
 | Build order | Work is cut into **vertical slices named by capability**. No walking skeleton, no layered order, no short skeleton. |
 | Recompute debugging | A small text trace modelled on tldraw's `whyAmIRunning` (named nodes, the chain of causes, readable by agents in test output), built on Vue's hooks in `reactive`, plus "this must not recompute" yes/no checks on key paths. No recompute counts. Vue's `onTrack`/`onTrigger` fire only outside production builds and name only the immediate cause, so the cause chain is built in `reactive`. |
@@ -781,7 +830,7 @@ Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-2
 | TypeScript | ~6.0 |
 | Vue (`editor`) / `@vue/reactivity` (`reactive` only, AD-10). Both pinned exactly in the pnpm catalog, `@vue/reactivity`'s entry a YAML alias of `vue`'s, so one number moves both: `@vue/runtime-core` pins `@vue/reactivity` exactly, so a second copy would split the graph; a test asserts one installed copy and that the alias survives pnpm's rewrites | 3.5.44 / 3.5.44 (exact) |
 | @snap/ts-inject (MIT; wiring, AD-25; small project: ~19.6k weekly downloads, two main Snap committers) | ^1.2 (1.2.1 current) |
-| immer (MIT; command writes, `model`'s register only, AD-2; auto-freeze on, patches off). A caret range: the lockfile stops silent upgrades, and an exact pin would also block fix releases | ^11.2.9 |
+| immer (MIT; command writes, `model`'s register only, AD-2; auto-freeze on, patches on as the model worker's payload). A caret range: the lockfile stops silent upgrades, and an exact pin would also block fix releases | ^11.2.9 |
 | valibot (MIT; the one schema format, AD-24). A caret range: the reference walk reads typed public schema properties, so a breaking change fails to compile and fails AD-24's walk test, pinned or not | ^1.5.0 |
 | Vite | ^8.2 (8.3.5 current) |
 | create-vue (TS, Router, Vitest, Playwright, ESLint; its Pinia removed) | 3.24.0 |
@@ -813,12 +862,14 @@ Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-2
 ```text
 keeb-cad/
   packages/
-    reactive/   # @vue/reactivity re-export, the crossing, recompute trace (no workspace imports)
+    reactive/   # @vue/reactivity re-export, the crossing's generic protocol machine (epoch/seq, one dispatcher
+                # per side, transfer lists; no payload types), recompute trace (no workspace imports)
+    protocol/   # the one main <-> model worker message union; imports only model and reactive
     geometry/   # 2D kernel: regions, boolean, offset, normalise + check, flatten; only makerjs import
     model/      # glossary types, stage output types, KDL schema + canonical writer + migrations,
                 # expression parser, derived computeds (expressions, sides, frames, parts, shapes, extras,
                 # netlist, connections), declared references + who-points-at search, commands,
-                # part schema, the design's own lanes' schema, keymap vocabulary
+                # part schema, the design's own lanes' schema, keymap vocabulary, stage output codecs
     blueprint/  # kernel: sandbox host, blueprint API (operations, queries), data-blueprint interpreter; imports only geometry
     plates/     # stage: plate composition (shape minus purpose cutouts) on geometry's kernel
     pcb/        # stage: placement + board edge + part fixed tracks + KiCad writer
@@ -827,8 +878,9 @@ keeb-cad/
     case/       # stage: case lane operations on replicad (worker), cache per named solid
     firmware/   # stage: ZMK writer (shield, physical layout, wired split, RGB, keymap)
     exports/    # packaging: DXF, SVG, gerber, drill, STEP, STL, KiCad, ZMK
-    pipeline/   # orchestration, caching, workers, revision tagging, derived-section writer, export gate
-    storage/    # storage interface + browser/file backends
+    pipeline/   # runs in the model worker: live stage wiring, caching, case + routing workers over ports from main,
+                # seq tagging, routing + fingerprints files (posted to main's storage), export gate
+    storage/    # storage interface + browser/file backends; the design bundle's one writer (main)
     library/    # versioned library parts, footprints + attribution, versioned blueprints (styles, keys, additions)
     viewer3d/   # 3D viewer: three.js scene of bodies, camera + controls (no Vue)
     ui/         # editor widget layer: design tokens (Tailwind @theme), Reka wrappers, hotkey layer,
@@ -840,10 +892,12 @@ keeb-cad/
 ```mermaid
 graph TD
   subgraph Browser
-    E[editor] --> P[pipeline]
-    P --> W1[[case worker]]
-    P --> W2[[routing worker]]
-    E --> ST[storage: browser + file]
+    E["main: editor, design (authored only), register, undo with derived files"] <-->|"crossing: patches with (epoch, seq), focus, requests / workspace set, stage-started, issues, derived files"| MW[["model worker: model, pipeline, live stages, sandboxes"]]
+    E -.->|spawns| MW & W1 & W2
+    MW <-->|MessageChannel port| W1[[case worker]]
+    MW <-->|MessageChannel port| W2[[routing worker]]
+    MW -->|case bodies, forwarded by transfer| E
+    E --> ST["storage: browser + file, the design bundle's one writer"]
   end
   H[Static hosting] -.serves app + WASM.-> Browser
 ```
@@ -865,7 +919,7 @@ graph TD
 | FR-14 tray case (build style and blueprints) | case, model, library | AD-18, AD-5, AD-17 |
 | FR-15 ZMK firmware | firmware | AD-14, AD-15, AD-19 |
 | FR-16 keymap | model, firmware | AD-19, AD-2 |
-| FR-17 live propagation, warnings | model, pipeline, editor | AD-10, AD-11, conventions |
+| FR-17 live propagation, warnings | model and pipeline (model worker), editor | AD-10, AD-11, conventions |
 | FR-18 file, undo, autosave, migrations | model, storage | AD-2, AD-8, AD-13, AD-23 |
 | Editor canvases and Case 3D viewer (UX spines) | editor, viewer3d | AD-22, AD-11 |
 | Code wiring, layout and verification (all) | all packages | AD-25, conventions |
@@ -887,7 +941,7 @@ Raised in `directions-2026-10-30.md` (Open), `code-decisions-list-2026-10-30.md`
 | Registers for everything picked from a list (blueprints, parts, exports) | AD-2, AD-25 | Second list-picker |
 | Joining fitted shapes (the thumb gap: filled or not) | AD-16 | First outline story |
 | Outline-from-keys primitive (not a convex hull, which loses stagger steps; probably padded part envelopes joined) | AD-16 | First outline story |
-| 2D shape `offset` latency: makerjs `model.outline` takes about 70 ms on Corney's outline, more than a live frame; derived shapes (margin, automatic joining) may need offsets live. Options: own exact offset, padded cells without offset, or a worker | AD-16, AD-11 | With the outline-from-keys primitive |
+| 2D shape `offset` latency: makerjs `model.outline` takes about 70 ms on Corney's outline, most of the visible set's 100 ms (AD-11); derived shapes (margin, automatic joining) may need offsets live. Options: own exact offset, padded cells without offset | AD-16, AD-11 | With the outline-from-keys primitive |
 | Reproducing Corney's outline from derived shapes (spike; fallback: a drawn shape) | AD-16, Fixtures | Before relying on derived shapes for acceptance |
 | `fit-violated` severity | AD-16, Violations | First outline story |
 | Blueprint operation list (sketch: combine, offset, extrude, tilt, round/chamfer, pattern; bosses and port cutouts as derived shapes from parts); tilt as new vocabulary | AD-18 | First tray-case story |
@@ -901,11 +955,18 @@ Raised in `directions-2026-10-30.md` (Open), `code-decisions-list-2026-10-30.md`
 | Fit membership: which keys and parts each shape's fit checks (outline only, or each shape's own group) | AD-16 | First outline story |
 | Style switch: whether the old style's input values are kept for switching back (alterations carry over by role, AD-18) | AD-18, AD-2 | Second style |
 | Slice list and order (room's sketch: see keys → change a parameter → drag → body follows → plate DXF → tray in 3D → switch style → footprints and PCB → nets → routing → firmware → wireless copy); whether each slice is checked against Corney | Verification | Sofia's re-slice |
-| Spike (Boundary): the live chain step through the sandbox. Part blueprints run live in `parts`; measure the latency of a warm sandbox call on a drag | AD-10, AD-11, AD-18 | Before the first story that runs a part blueprint |
 | Which story starts parts (Sofia): where `library-versions`, the `parts` section, the required `meta.defaultPart`, the first part blueprint and the `blueprint` package arrive. Story 13.2's chain step needs every slot's rectangle, even at 1u. Also: ticket 14.7 brings every part field at once while "Recorded, not typed" spreads them over the outline, plates and PCB stories; 14.4's `overlap` needs part envelopes before any outline story; 14.5's "default part (none until epic-parts-and-pcb creates one)" contradicts the required `meta.defaultPart` | AD-5, Data Schema | Sofia plans it after the blueprints fold; story 13.2 stays blocked until then |
 | Dissent (Sally): how a cup looks in the case is decided by the style that pulls it, not by the part | AD-18 | First part with a cup (trackball) |
 | Dissent (Splinter): users may pick the wrong one of blueprint and block when saving to the library; a later re-save conversion would help | AD-9 | First save-to-library story |
 | Dissent (Level): under minimal version selection a blueprint can run against a nested version it wasn't tested with | AD-5, AD-18 | First nested blueprint (the combo part) |
+| Spike: re-run the stage-transport spike (`archive/spike-stage-transport`) on AC power; its verdict ran on battery, so no absolute transport time is used as a budget until then | AD-11 | Before any transport time is used as a budget |
+| Spike: the design-mirror hash. In the AC re-run, on Corney and 10x, main-thread time per command for (a) a whole-design hash, (b) per-record hashes cached by reference (a WeakMap on frozen records; rehash only changed records and their parents), (c) no production check (the hash check in dev builds and tests only; production relies on the whole-value resync at start, restart and load); also Immer patch size and worker apply time on deletes and reorders (positional, non-minimal array patches). Decide after the numbers; the design hash then joins the Data Schema's shared kinds beside `Hash` | AD-2, AD-11, Data Schema | The transport spike's AC re-run |
+| Types of the posted model outputs the editor draws (layout, parts, shapes, extras, netlist, connections): AD-10 names only the stage packages' output types, and codecs sit beside each output type | AD-10, AD-11, Data Schema | First story that posts a stage |
+| Drawing a workspace's set after a switch while its snapshot is older than the design (current, grayed or hidden); only startup is decided (computing until the first post) | AD-11, AD-22 | First story that posts a stage |
+| Message types on the case and routing channels: `protocol` imports `reactive`, which case and routing worker code never imports | AD-10, AD-11 | First background stage |
+| How export bytes (STEP and STL kept by `pipeline`, files from `exports`) reach main for Save and download | AD-11, AD-15 | First export story |
+| Whether the routing and fingerprints files carry their own `format-version` or follow the design file's (AD-8) | AD-8, Data Schema | First story that saves a derived file |
+| Sandbox engine for blueprint lanes (they run in the model worker, synchronously; AD-10 keeps the runtime behind `blueprint`) | AD-10, AD-11, AD-18 | The blueprints architecture run (`_bmad-output/initiative-keeb-cad-m1/architecture-blueprints/`) |
 | Who may edit the reviewers' rules file; `bmad-project-context` pitfalls as the loop for repeated agent mistakes | Agents | First slice review |
 
 ## Deferred
@@ -923,7 +984,7 @@ Raised in `directions-2026-10-30.md` (Open), `code-decisions-list-2026-10-30.md`
 | Gerber + drill writer: own vs `circuit-json-to-gerber`; ground pours | Hidden inside `exports` | epic-routing-and-fab, before the first gerber story |
 | KiCad writer: `kicadts` vs own; KiCad schematic export | Hidden inside `exports` (it reads placement and routes); the project suffices as escape hatch | First pcb story |
 | Case-offset corner mapping (AD-18: sharp with a fillet, done as open and close) against Ergogen's `expand` with pointed joints and `fillet: 0.5` | Untested; the case stage runs in the background | epic-tray-case, against Corney's case fixture within ±0.05 mm, before relying on it. A failure reopens AD-18's corner table |
-| Live latency target, set on the max, not the median (Corney's outline: median 1.7–6.9 ms, max 28.4 ms under load) | Needs live stages to measure | Once live stages exist; move the evaluator off the main thread if the max misses it |
+| Checking the visible set's 100 ms target (AD-11) on the max, not the median (Corney's outline: median 1.7–6.9 ms, max 28.4 ms under load) | Needs live stages to measure | Once live stages exist |
 | Corney Island's own ZMK keymap (sizes the neutral vocabulary) | Not in `layout-model/sources` | Before the keymap story |
 | Footprint licence (ceoloide derivation with attribution) | Data, not structure | Before footprint library work |
 | Construction point kinds beyond line intersection; averaged anchors | Corney uses intersection only | During the Corney rebuild |

@@ -3,7 +3,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-  /* Layout: one column: the thread diagram, then the rule changes table, then what is pending and what it costs. */
+  /* Layout: one column: thread diagram, the bundle, the after-a-drop sequence, then the rule tables (first set, gate set), then open items and costs. */
   :root {
     --bg: #f6f7f5; --surface: #ffffff; --fg: #1d2421; --muted: #5d6762;
     --line: #d6dbd7; --accent: #2f6f5e; --warn: #9a5b12;
@@ -26,11 +26,11 @@
     padding-right: max(16px, env(safe-area-inset-right, 0px));
     padding-block: 32px 64px;
   }
-  main { max-width: 960px; margin: 0 auto; display: grid; gap: 32px; }
+  main { max-width: 980px; margin: 0 auto; display: grid; gap: 32px; }
   header, section { display: grid; gap: 10px; min-width: 0; }
   h1 { font-size: 1.9rem; margin: 0; text-wrap: balance; }
   h2 { font-size: 1.25rem; margin: 0; }
-  p, li { max-width: 72ch; margin: 0; }
+  p, li { max-width: 74ch; margin: 0; }
   .lede { color: var(--muted); }
   .tag { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
   code { font-family: var(--mono); font-size: 0.9em; }
@@ -47,9 +47,9 @@
 
 <main>
   <header>
-    <span class="tag">keeb-cad · spine AD-11 reopened · for approval, 2026-11-01</span>
+    <span class="tag">keeb-cad · spine AD-11 reopened · version 3, with the reviewer gate's decisions, 2026-11-01</span>
     <h1>Model Worker Split</h1>
-    <p class="lede">What Sergii decided in the AD-11 coaching run, assembled for one yes before it is written into the spine.</p>
+    <p class="lede">Everything Sergii decided in the AD-11 run and its reviewer gate, assembled for one yes before it is written into the spine. Version 2 was approved; the gate added the second table and changed the diagrams.</p>
   </header>
 
   <section>
@@ -57,24 +57,42 @@
     <div class="diagram"><pre class="mermaid">
 flowchart LR
   subgraph Main["Main thread"]
-    D["Design<br/>commands, undo, autosave,<br/>derived-section writer"]
-    E["Editor<br/>input, drawing,<br/>selection, viewport"]
+    D["Design (authored only)<br/>register, undo with derived files,<br/>autosave"]
+    ST["storage<br/>the bundle's one writer"]
+    E["Editor<br/>input, drawing from snapshots"]
   end
   subgraph MW["Model worker"]
-    MD["Design mirror<br/>patches + hash check"]
-    L["Live stages<br/>parts, layout, shapes, extras,<br/>plates, pcb placement,<br/>firmware, DRC of saved routes"]
-    PL["pipeline"]
-    BS["Blueprint sandboxes<br/>(live lanes), geometry"]
+    MD["Design mirror<br/>applyDesignPatches, frozen"]
+    L["Live stages + pipeline<br/>geometry, live-lane sandboxes"]
   end
-  CW["Case worker<br/>case lanes, replicad"]
+  CW["Case worker"]
   RW["Routing worker"]
-  D -- "patches with revision + hash;<br/>whole value at start, restart, load" --> MD
-  E -- "focus, one-off requests" --> MW
-  MW -- "stage outputs as transferred buffers,<br/>issues, responses" --> E
-  PL -- "input slices (MessageChannel)" --> CW
-  PL -- "input slices (MessageChannel)" --> RW
-  CW -- "CaseOutput bodies" --> E
-  PL -- "derived-section writes" --> D
+  Main -. "spawns all three workers" .-> MW
+  D -- "patches with (epoch, seq);<br/>whole value at start, restart, load" --> MD
+  E -- "focus: workspace; requests" --> MW
+  MW -- "workspace set at one seq,<br/>issues, stage-started, responses" --> E
+  L -- "routing and fingerprints files, with seq" --> ST
+  L -- "input slice (MessageChannel port)" --> CW
+  L -- "input slice (MessageChannel port)" --> RW
+  CW -- "case output" --> L
+  RW -- "routes" --> L
+  L -- "case bodies, forwarded by transfer" --> E
+</pre></div>
+    <ul>
+      <li>All message types live in a new package <code>protocol</code> (imports <code>model</code> and <code>reactive</code>); <code>reactive</code> keeps the generic machine (epoch/seq, dispatchers, transfer lists).</li>
+      <li>Each thread's entry merges only its own service partials; dependency-cruiser checks that main never reaches <code>blueprint</code>, stages or the sandbox, and the worker never reaches <code>ui</code> or Vue.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The design bundle</h2>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+  B["Design bundle<br/>(saved, versioned, shared as one)"]
+  B --> F1["design file<br/>authored sections only"]
+  B --> F2["routing file<br/>tagged with its design revision"]
+  B --> F3["fingerprints file<br/>tagged with its design revision"]
+  B --> F4["assets<br/>content-addressed (AD-8)"]
 </pre></div>
   </section>
 
@@ -84,46 +102,68 @@ flowchart LR
 sequenceDiagram
   autonumber
   participant E as Editor (main)
-  participant D as Design (main)
+  participant D as Design + storage (main)
   participant W as Model worker
   participant C as Case worker
-  E->>D: drop applies one command (AD-2)
-  D->>W: patches, revision 41, hash
-  W->>W: apply patches, check hash
-  W->>W: compute the visible stage first
-  W-->>E: stage output, revision 41 (target: within 100 ms)
-  W->>W: hidden stages, one by one
-  W-->>E: issues per stage (counts marked updating until then)
-  W->>C: case input slice, newest revision only
-  C-->>E: CaseOutput bodies when ready
+  E->>D: drop applies one command, carrying its snapshot's seq
+  D->>D: reject if that seq is not the latest
+  D->>W: patches, (epoch, seq 42)
+  W->>W: apply through applyDesignPatches
+  W-->>E: stage-started (layout, 42)
+  W-->>E: the Layout workspace's set at seq 42 (target: 100 ms)
+  W->>W: hidden stages, each announced
+  W-->>E: issues per stage
+  W-->>D: routing and fingerprints files, seq 42 (dropped if not latest)
+  W->>C: case input slice, newest only
+  C-->>W: case output
+  W-->>E: case bodies, forwarded by transfer
 </pre></div>
-    <ul>
-      <li>During the drag nothing runs: only the dragged nodes move on the canvas (AD-2).</li>
-      <li>A newer revision lets the current stage finish, then starts from the visible stage again.</li>
-    </ul>
   </section>
 
   <section>
-    <h2>Rules that change in the spine</h2>
+    <h2>Rules from the first set (approved in version 2)</h2>
     <div class="tablewrap"><table>
-      <tr><th>AD</th><th>Today</th><th>Becomes</th></tr>
-      <tr><td>AD-11</td><td>Live stages are computeds on main, read directly by the editor</td><td>Live stages run in one model worker. After each applied command: the visible stage first, within 100 ms; hidden stages after, their violation counts marked updating until they arrive. The editor draws from posted snapshots. A newer revision takes over at stage boundaries. One-off requests from a small fixed list, tagged with their revision. <code>pipeline</code> lives in the model worker and feeds case and routing over <code>MessageChannel</code>s.</td></tr>
-      <tr><td>AD-11 crossing</td><td>One crossing in <code>reactive</code>, plain values</td><td>Same principle; the crossing is the hand-rolled protocol: one TS union of about 7 message kinds (design, patches, focus, stage, issues, request/response, failed), plain values and transferred buffers only.</td></tr>
-      <tr><td>AD-10</td><td>One reactive graph (read as on main)</td><td>The one graph lives in the model worker; main uses Vue reactivity only for the design ref and editor state.</td></tr>
-      <tr><td>AD-11 outputs</td><td>Background results replaced whole in a shallowRef</td><td>Every stage output is packed by an own struct-of-arrays codec, ids pre-sorted by the worker, defined beside its output type in <code>model</code>; the editor reads typed views straight from the transferred buffers, with no plain objects and no index on main; a round-trip test per codec. Spike: 0.02–0.075 ms on main per PCB message, lookup 0.02 ms, 1.3 KB.</td></tr>
-      <tr><td>AD-2</td><td>Immer patches off</td><td>Patches on: they are the payload to the worker, tagged with revision and hash.</td></tr>
-      <tr><td>PRD §8 Q3</td><td>Live latency target open</td><td>The visible stage within 100 ms of an applied command.</td></tr>
-      <tr><td>Open Questions</td><td>"The live chain step through the sandbox"</td><td>Closed for frame time (no live stage runs during a drag, AD-2). Blueprint lanes run in the model worker, synchronously.</td></tr>
+      <tr><th>Rule</th><th>Becomes</th></tr>
+      <tr><td>AD-11 live</td><td>Live stages run in one model worker after each applied command; the visible set first, within 100 ms; hidden stages after, their counts marked updating; a newer revision takes over at stage boundaries.</td></tr>
+      <tr><td>AD-11 reads</td><td>Design reads on main; output reads from snapshots on main; anything else a typed one-off request, answered async.</td></tr>
+      <tr><td>AD-11 protocol</td><td>Hand-rolled: one TS union of message kinds, one dispatcher per side, plain values and transferred buffers only.</td></tr>
+      <tr><td>AD-11 outputs</td><td>Whole output per post, own struct-of-arrays codec with pre-sorted ids, read in place on main; fallback: unpack to plain objects.</td></tr>
+      <tr><td>AD-11 pipeline</td><td>Lives in the model worker; case stays its own worker.</td></tr>
+      <tr><td>AD-10</td><td>The one reactive graph lives in the model worker.</td></tr>
+      <tr><td>AD-2</td><td>Immer patches on.</td></tr>
+      <tr><td>PRD §8 Q3</td><td>The visible stage within 100 ms of an applied command.</td></tr>
     </table></div>
   </section>
 
   <section>
-    <h2>Pending and costs</h2>
+    <h2>Rules from the reviewer gate (new in version 3)</h2>
+    <div class="tablewrap"><table>
+      <tr><th>Rule</th><th>Becomes</th></tr>
+      <tr><td>Ordering</td><td>Every message main sends carries <code>(epoch, seq)</code>; every post, response and derived file echoes its seq; "older" = smaller seq in the same epoch; another epoch is dropped. The revision hash stays a content identity.</td></tr>
+      <tr><td>Patches in the worker</td><td>The register's file is the one place that sets up Immer and also exports <code>applyDesignPatches</code>; loaded separately in each thread; the mirror is deep-frozen; the immer fence is unchanged.</td></tr>
+      <tr><td>Design bundle (AD-1, AD-8, AD-13)</td><td>Routing and fingerprints leave the design file: separate files, each tagged with its design revision, saved, versioned and shared with the design and its assets as one bundle. The design file is authored-only; AD-2's derived-section writer goes away.</td></tr>
+      <tr><td>Derived files</td><td><code>pipeline</code> posts them to main with their seq; main's storage writes the bundle atomically; one not at main's latest seq is dropped.</td></tr>
+      <tr><td>Undo (AD-12)</td><td>Each undo record keeps the routing and fingerprints current at it; undo and redo restore them with the design.</td></tr>
+      <tr><td>Workers</td><td>Main spawns all three and gives the model worker a port to case and to routing; to cancel case, <code>pipeline</code> asks main to terminate and respawn it.</td></tr>
+      <tr><td>Case results</td><td>Case posts only to <code>pipeline</code>, which fingerprints them, keeps STEP/STL and forwards the bodies to main by transfer.</td></tr>
+      <tr><td>Protocol home (AD-10)</td><td>New package <code>protocol</code> holds the concrete union (imports <code>model</code>, <code>reactive</code>); <code>reactive</code> keeps the generic machine; new fence and fixture.</td></tr>
+      <tr><td>Visible set</td><td><code>focus</code> names a workspace; a table maps each workspace to its stages; the set is posted as one message at one seq.</td></tr>
+      <tr><td>Commands from snapshots</td><td>Carry their snapshot's seq; the register rejects a stale one with a typed rejection the editor shows briefly.</td></tr>
+      <tr><td>Lifecycle</td><td><code>stage-started</code> before each stage; past about 1 s the status strip shows the running stage with a Restart you choose; automatic restart only on a crash, with a new epoch and the whole value; "computing" until a stage's first post.</td></tr>
+      <tr><td>Buffers</td><td>Transfer only buffers packed for that post; a crossing test posts twice and checks the worker's values.</td></tr>
+      <tr><td>Cycle check (AD-3)</td><td>Declared reads are data in the blueprint version's declaration; the register checks read loops on main.</td></tr>
+      <tr><td>Wiring (AD-25)</td><td>One partial per package per thread; each entry merges its own; dependency-cruiser fences per entry.</td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Open and costs</h2>
     <ul>
-      <li>Decided by spike (archive/spike-stage-transport): the own codec with pre-sorted ids. The run was on battery; absolute times need an AC re-run before any is used as a budget.</li>
-      <li>A round trip after every command, about 1–2 ms (estimate, not measured).</li>
-      <li>Editor code reads snapshots instead of computeds.</li>
-      <li>Stories planned against "computeds on main" need re-reading: 13.1 (parts as a computed), the frame stories, 13.10's design service, 13.11's ui layer.</li>
+      <li class="pending">Open: the design-mirror hash (whole design, per-record cached, or dev and tests only), with patch size and apply time, measured in the transport spike's AC re-run.</li>
+      <li class="pending">Open: the sandbox engine, pending the blueprints architecture run.</li>
+      <li class="pending">Open: re-run the transport spike on AC before any absolute time is used as a budget.</li>
+      <li>A round trip after every command, about 1–2 ms (estimate). Editor code reads snapshots instead of computeds.</li>
+      <li>Stories planned against "computeds on main" and "routing inside the design file" need re-reading: 13.1, 13.10, 13.11, the frame stories, and the routing and storage stories.</li>
     </ul>
   </section>
 </main>
