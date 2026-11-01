@@ -94,7 +94,8 @@ flowchart LR
 - **Binds:** blueprint, pipeline
 - **Prevents:** a stage rerunning every lane for one slot's change; caching a failure that depends on timing.
 - **Rule:**
-  - A lane run's cache key is the stage and its version, the blueprint version, the transitive closure of its pinned `uses` and the hash of exactly the arguments it receives. Identical runs share one entry. A stage receives only lane outputs, never runs blueprint code, and keeps its own AD-11 cache key.
+  - The **lane runner** lives in `model/worker`; it owns the per-run lane cache, which is memory-only and never persisted.
+  - A lane run's cache key is the stage and its version, the blueprint version, the transitive closure of its pinned `uses` and the hash of exactly the arguments it receives, each in its resolved canonical form: quantities, options and text by value; a part ref by the referenced part's content hash (blueprint version plus inputs); an asset by its content hash; a pull by the pulled output's content hash, `count: any` pulls ordered by producer id; an anchor by its resolved frame. Identical runs share one entry. A stage receives only lane outputs, never runs blueprint code, and keeps its own AD-11 cache key.
   - A **deterministic** failure (a throw, the step budget, out of memory, a non-JSON-exact value, an undeclared or missing role, a pending job) is cached like a success: it reruns only when the key changes. Its last good output shows stale with `lane-failed`, carrying the stable message.
   - A lane whose VM is gone (dropped mid-stage after a trap or a pending job) is skipped, marked `unavailable` and **never cached**; it reruns in the next pause. Only the run that trapped is cached.
 
@@ -102,14 +103,15 @@ flowchart LR
 
 - **Binds:** blueprint, library, model
 - **Prevents:** a nested blueprint seeing its caller's state; nested versions decided at run time; a caller's reads changing with a nested upgrade.
-- **Rule:** A declaration lists its `uses` (`{ id, minVersion }`). Adding or upgrading a blueprint runs minimal version selection on main over the `uses` graph and writes the pins into `library-versions`; the worker runs only pinned versions. `use(id, inputs)` calls the nested factory for a fresh instance in the caller's VM, lane and handle table; a `use()` of an id not in `uses` fails the run. A nested blueprint receives only the inputs its caller passes, checked against its declared inputs, and has no pulls or queries of its own.
+- **Rule:** A declaration lists its `uses` (`{ id, minVersion }`). Adding or upgrading a blueprint runs minimal version selection on main over the `uses` graph and writes the pins into `library-versions`; the worker runs only pinned versions. `use(id, inputs)` calls the nested factory for a fresh instance in the caller's VM, lane and handle table; a `use()` of an id not in `uses` fails the run. A nested blueprint receives only the inputs its caller passes; an omitted input takes its declared default; a bad one fails the run with the cause "nested input", naming the blueprint and the input. It has no pulls or queries of its own. `use()` returns the nested lane's checked `{ outputs, problems }`; nested problems join the caller's, naming the nested blueprint. The library build rejects a `uses` cycle, a `uses` target that declares pulls or queries, and a visible `use()` of an id not in `uses`.
 
 ### BP-7 — Authoring: TS compiled at library build
 
 - **Binds:** library, blueprint, model
 - **Prevents:** a compiler in the app; a declaration that disagrees with its code; main reaching `blueprint` through `library`.
 - **Rule:**
-  - Milestone 1 blueprints are TS sources in `library/blueprints-src/`, which import only `blueprint/authoring` (initiative spine AD-10). The library build type-checks and compiles them to JS, evaluates each exported `defineBlueprint({ … })`, validates it with the declaration schema in `model`, and ships JS plus declaration data. Only workers load the JS.
+  - Milestone 1 blueprints are TS sources in `library/blueprints-src/`, which import only `blueprint/authoring` (initiative spine AD-10). Each is one `export default defineBlueprint({ id, version, inputs, uses, lanes: { <stage>: { pulls, queries, outputs, run(args, op) } } })`; the declaration types `args` and `op`.
+  - The library build type-checks it, validates the declaration with the schema in `model`, and splits it into a self-contained script (bundled, no imports, evaluating to `{ lanes: { <stage>: run } }`) and the declaration as JSON; a round-trip test checks the script's lane names against the declaration's. Declaration data ships from `library`'s main subpath; scripts only from `library/worker`, which only the model and case worker entries import. Main never carries blueprint code, even as text.
   - The declaration's schema lives in `model`; the host receives declarations already validated, as plain data. The query list and the API version live in `blueprint` and are checked in the worker.
 
 ### BP-8 — The lane contract
@@ -117,8 +119,8 @@ flowchart LR
 - **Binds:** blueprint, every stage that runs lanes, library
 - **Prevents:** undeclared reads; lanes reaching another stage's operations; two ways outputs return to a stage.
 - **Rule:**
-  - A module exports `lanes = { <stage>(args, op) }`. `args = { inputs, pulls, queries }` holds exactly what the declaration lists: inputs as plain values (quantities as numbers in mm or deg; options and text as strings; part refs, anchors and assets as opaque handles), pulls as handles keyed by role (an array per its count), query results as plain values. `op` exposes only that stage's operations.
-  - A lane returns a map from each declared role to a handle or a plain value. The host checks the roles against the declaration; the stage converts each handle into `model`'s output type; the run's handles are then freed.
+  - A module exports `lanes = { <stage>(args, op) }`. `args = { inputs, pulls, queries }` holds exactly what the declaration lists: inputs as plain values (quantities as numbers in mm or deg; options and text as strings; part refs, anchors and assets as opaque handles), pulls as handles keyed by role (an array per its count), query results as plain values. An anchor input can't feed a `parts` lane (it runs before the layout); the library build rejects one. `op` exposes only that stage's operations.
+  - A lane returns `{ outputs: { <name>: handle | plain | array }, problems: [{ message, severity }] }`. The host checks each output against its declared name and `count` (`one` or `any`, which may be empty); `problems` become `blueprint` violations naming the entry and slot. The stage converts each handle into `model`'s output type; the run's handles are then freed.
 
 ### BP-9 — VM lifecycle
 
@@ -126,7 +128,7 @@ flowchart LR
 - **Prevents:** VM creation inside a synchronous stage; VMs that outlive their pins; leaked handles.
 - **Rule:**
   - One VM per pinned blueprint version, holding its factory and the factories of the transitive closure of its pinned `uses`; a pin change that alters a nested version means a new VM.
-  - A pool in `blueprint`, one per worker. The model worker fills it in its pause between applying patches and running stages; the case worker fills its own before case lanes and rebuilds it after a respawn.
+  - A pool in `blueprint`, one per worker, filled by the lane runner: in the model worker in its pause between applying patches and running stages; in the case worker before case lanes, rebuilt after a respawn. Each stage's operation table and handle converter reach the runner through ts-inject tokens, provided by `pipeline` in the model worker's entry and by the case worker's entry there.
   - One handle table per lane run, owned by the host and shared by nested `use()` calls, freed at the run's end, including quickjs-wasi's internal handle copies.
   - A VM is disposed when its version is no longer pinned in the current design.
 
@@ -153,6 +155,7 @@ flowchart LR
 | Nets and pin-role joins in the declaration | Typed with `PinRole` in the netlist work (AD-14) | First PCB story |
 | The data form's syntax | Decided with the outline primitives | First outline story |
 | In-app TS compilation | No user-authored blueprints in milestone 1 | Milestone 2 authored blueprints |
+| Out-of-memory results that depend on garbage left by earlier runs; data-form failure kinds and keys; tagging handles as 2D or 3D; when case lanes rerun (review-adversary-rerun-2026-11-01.md) | Each first matters in a later story | Story 17 (out of memory, handle tags); the first outline story (data form); the first tray-case story (case reruns) |
 | Absolute timings and memory probes in a browser worker on AC | The spikes ran on battery and the memory probes in Node; rankings hold | Story 17, before a number becomes a budget |
 
 ## Working material
