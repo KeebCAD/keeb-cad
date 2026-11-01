@@ -1,7 +1,7 @@
 # Stories of epic-see-corneys-keys. Table order is build order.
 # Re-planned 2026-10-30 at refinement: ids kept, 5 moves to epic-routing-and-fab, 10-15 added.
 
-next_id = 16
+next_id = 19
 
 [[entry]]
 id = 9
@@ -81,13 +81,46 @@ hitl = false
 risk = "medium"
 
 [[entry]]
+id = 16
+type = "spike"
+title = "A part blueprint answers within the live budget"
+description = "Picks the sandbox runtime for blueprint code (JS/TS, hermetic, deterministic, with a step budget; spine AD-18), verified on the web for its current version and licence, and measures a warm call of a minimal part blueprint for each of Corney's ~50 slots during a drag, in Chromium and Firefox (spine Open Questions: the live chain step through the sandbox). A miss sends the chain step back to bmad-architecture before story 17 starts."
+verify = "A verdict file names the runtime, its version and licence, and the median and max time per drag frame on Corney's slot count in Chromium and Firefox; Sergii signs off pass or miss."
+covers = []
+after = [1]
+hitl = true
+risk = "high"
+
+[[entry]]
+id = 17
+type = "story"
+title = "The blueprint package runs a part blueprint"
+description = "Adds @keeb-cad/blueprint (AD-10 kernel): the sandbox host on spike 16's runtime with its step budget; the smallest blueprint API: typed inputs (quantity, boolean, option, text), one parts lane, role-tagged outputs, and the API version each blueprint records, an app with an older API refusing it with blueprint-api-too-new; declared reads, an undeclared read failing the lane (AD-11); the lane-failed and blueprint violation kinds; model's expression evaluator passed in as an argument (AD-17). Fences: blueprint imports only geometry, and only blueprint imports the sandbox runtime, each with a violation fixture; run tooling/verify-checks.sh."
+verify = "Tests: a test part blueprint returns the same outputs for the same inputs on every run; one exceeding the step budget reports lane-failed; one declaring a newer API is not run and reports blueprint-api-too-new; an undeclared read fails the lane; each new fence rejects its fixture."
+covers = []
+after = [16]
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 18
+type = "story"
+title = "A new design holds a default key part"
+description = "model gets the library-versions and parts sections in their AD-8 positions, meta.defaultPart (required) and DesignPart { type: 'blueprint' } with BlueprintInputs (spine Data Schema); library ships lib:blueprint/choc-key v1, a Choc v2 key at 1u whose outputs are its rectangle (the keycap) and its 3D envelope, no footprints yet; newDesign creates the design part key applying it, pinned in library-versions, and sets meta.defaultPart (EXPERIENCE.md, decided 2026-11-01); model's parts-lane computed resolves each slot's part (its own, else meta.defaultPart) through story 17's blueprint package and exposes its rectangle; a part that doesn't resolve gives the stand-in rectangle and unresolvable-reference (AD-5); deleting the design part or library-versions entry that meta.defaultPart names is rejected (AD-2). Fingerprints arrive with 7.2."
+verify = "A new design has key as its default part, pinned at version 1; a slot resolves its rectangle from it; a file whose default part doesn't resolve places stand-in rectangles and reports unresolvable-reference; deleting key is rejected; save and reopen are byte-identical."
+covers = ["R1"]
+after = [17]
+hitl = false
+risk = "high"
+
+[[entry]]
 id = 2
 type = "story"
 title = "One Corney column resolves from a chain"
 description = "Fills the layout schema section (groups, slots, chain on axis x or y with offset, mm units) and adds the gap (meta.gap, x and y, edge to edge between keycaps) to meta, with addGroup, addSlot, duplicateNode and deleteNode commands, the free arrangement (default anchor = the parent origin), and model's per-side placement computeds with plain functions such as placeSlot that turn a group of chained slots into world frames. Owns AD-24's who-points-at walk (deleteNode cascades over it; story 3's anchor graph uses it). Starts Corney's layout-command script in fixtures/ with one column."
 verify = "A design built by Corney's script with one column as a chain places each key per the AD-4 step rule; deleting a group removes everything referencing it; the reference walk finds every reference in a design built from every section; saving and reopening it places the same."
 covers = ["R1", "R2"]
-after = [1]
+after = [18]
 hitl = false
 risk = "medium"
 
@@ -106,7 +139,7 @@ risk = "medium"
 id = 4
 type = "story"
 title = "Corney wired's left half from commands"
-description = "Rotation about the pivot carries along a chain, and an explicit anchor stops the carry and keeps the index. The part recipe interpreter starts here with one input, `size`, producing the keycap envelope (AD-18), so Corney's far thumb key is 1.5u; it grows one input per later story. Corney's layout-command script authors Corney Island wired's left half (columns, stagger, 3-key thumb fan) through commands without absolute coordinates. A spike check compares its key centres with Ergogen using the existing fixtures/ key-centres harness (initiative Decision 2026-10-30)."
+description = "Rotation about the pivot carries along a chain, and an explicit anchor stops the carry and keeps the index. The key blueprint gains its per-slot `size` input (spine decision 57), so Corney's far thumb key is 1.5u. Corney's layout-command script authors Corney Island wired's left half (columns, stagger, 3-key thumb fan) through commands without absolute coordinates. A spike check compares its key centres with Ergogen using the existing fixtures/ key-centres harness (initiative Decision 2026-10-30)."
 verify = "Invariant tests for rotation carry and the anchor stop pass; the spike check matches every left-half key centre of Corney wired within ±0.05 mm of Ergogen; the script holds no absolute coordinates."
 covers = ["R1", "R2"]
 after = [3]
