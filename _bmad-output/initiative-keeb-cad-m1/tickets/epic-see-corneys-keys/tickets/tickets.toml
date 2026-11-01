@@ -84,10 +84,10 @@ risk = "medium"
 id = 16
 type = "spike"
 title = "A part blueprint answers within the live budget"
-description = "Picks the sandbox runtime for blueprint code (JS/TS, hermetic, deterministic, with a step budget; spine AD-18), verified on the web for its current version and licence, and measures a warm call of a minimal part blueprint for each of Corney's ~50 slots during a drag, in Chromium and Firefox (spine Open Questions: the live chain step through the sandbox). A miss sends the chain step back to bmad-architecture before story 17 starts."
+description = "Picks the sandbox runtime for blueprint code (JS/TS, hermetic, deterministic, with a step budget; spine AD-18), verified on the web for its current version and licence, and measures a warm call of a minimal part blueprint for each of Corney's ~50 slots during a drag, in Chromium and Firefox (spine Open Questions: the live chain step through the sandbox). Runs on fake data, about 50 slot rectangles in Corney's slot count, generated in the spike; it needs no design file, register or parts section. A miss sends the chain step back to bmad-architecture before story 17 starts."
 verify = "A verdict file names the runtime, its version and licence, and the median and max time per drag frame on Corney's slot count in Chromium and Firefox; Sergii signs off pass or miss."
 covers = []
-after = [1]
+after = [9]
 hitl = true
 risk = "high"
 
@@ -109,7 +109,7 @@ title = "A new design holds a default key part"
 description = "model gets the library-versions and parts sections in their AD-8 positions, meta.defaultPart (required) and DesignPart { type: 'blueprint' } with BlueprintInputs (spine Data Schema); library ships lib:blueprint/choc-key v1, a Choc v2 key at 1u whose outputs are its rectangle (the keycap) and its 3D envelope, no footprints yet; newDesign creates the design part key applying it, pinned in library-versions, and sets meta.defaultPart (EXPERIENCE.md, decided 2026-11-01); model's parts-lane computed resolves each slot's part (its own, else meta.defaultPart) through story 17's blueprint package and exposes its rectangle; a part that doesn't resolve gives the stand-in rectangle and unresolvable-reference (AD-5); deleting the design part or library-versions entry that meta.defaultPart names is rejected (AD-2). Fingerprints arrive with 7.2."
 verify = "A new design has key as its default part, pinned at version 1; a slot resolves its rectangle from it; a file whose default part doesn't resolve places stand-in rectangles and reports unresolvable-reference; deleting key is rejected; save and reopen are byte-identical."
 covers = ["R1"]
-after = [17]
+after = [17, 1]
 hitl = false
 risk = "high"
 
