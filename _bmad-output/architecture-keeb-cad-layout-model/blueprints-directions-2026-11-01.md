@@ -1,17 +1,17 @@
 ---
 name: 'keeb-cad: blueprints (the recipe concept, rebuilt), 2026-11-01'
 type: directions-record
-status: approved as a whole by Sergii, 2026-11-01
+status: folded
 created: '2026-11-01'
 origin: 'party-mode session, 2026-11-01 (room: Winston, Amelia, Sally, Mary, John, Sofia, Smithy; walk-ons Grumbal, Boundary, Level, Splinter; guest Priya as the running user)'
 affects: [glossary, AD-2, AD-3, AD-5, AD-6, AD-9, AD-10, AD-11, AD-16, AD-17, AD-18, Data Schema, Open Questions]
 updated: '2026-11-01'
-next: 'approved; bmad-architecture folds it into architecture-keeb-cad-layout-model.md'
+next: 'folded into architecture-keeb-cad-layout-model.md on 2026-11-01 (b10ba5d); kept as history. Open items live in the spine''s Open Questions table'
 ---
 
 # Blueprints, 2026-11-01
 
-These are **directions** that Sergii decided in a party session, one question at a time. They aren't spine rules yet, and the spine is untouched. This record puts them together as one concept so they can be reviewed **as a whole** before anything is folded in.
+These are **directions** that Sergii decided in a party session, one question at a time. Approved as a whole on 2026-11-01 and **folded into the spine in b10ba5d**; the spine is now the authority. This record put them together as one concept so they could be reviewed **as a whole** before anything was folded in.
 
 Each item says what was chosen and why. Items marked *(follows)* weren't asked on their own; they follow from a decision that was. Check them especially carefully.
 
