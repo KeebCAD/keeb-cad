@@ -315,7 +315,7 @@ graph LR
   - **One reactive graph, in the model worker** (AD-11). The core uses Vue's reactivity API directly, with no interface of its own. `@vue/reactivity` is imported only by **`reactive`**, through one re-export file; every other package that derives, `model` and the live stages included, uses it through `reactive`. `reactive` also holds the crossing (AD-11) and the recompute trace. The main thread uses Vue reactivity only for the design ref, the stage snapshots and editor state; it derives nothing (AD-25's entry fences check it; the register's structural checks read the design and the pinned declarations only, AD-3). Only `editor` and `ui` import `vue` (components) and `@vueuse/core`. No Pinia: UI state lives in ts-inject services holding Vue refs, like design state. Case and routing worker code never imports `reactive`.
   - **`protocol`** holds the one concrete message union between main and the model worker (payload types from `model`, the generic machine from `reactive`). It imports only `model` and `reactive`; only `pipeline`, `editor` and `storage` import it. dependency-cruiser fences it, proven by a violation fixture in `tooling/ad10/`. `reactive` holds no payload type.
   - **Three kernel packages** sit below `model`, each holding one concept: `reactive` (the reactive graph's edges) and `geometry` (the 2D kernel, AD-16) import no workspace package; `blueprint` (the sandbox host, the blueprint API's operation and query definitions, and the data-blueprint interpreter) imports only `geometry`.
-  - `blueprint`'s API is plain TypeScript over evaluated values. `model` keeps the one expression parser and passes its evaluator into the interpreter as an argument (AD-17), and owns the schema of the design's own lanes (AD-24). Only `blueprint` imports the sandbox runtime; its engine waits on the blueprints architecture run (Open Questions).
+  - `blueprint`'s API is plain TypeScript over evaluated values. `model` keeps the one expression parser and passes its evaluator into the interpreter as an argument (AD-17), and owns the schema of the design's own lanes (AD-24). Only `blueprint` imports the sandbox runtime, **quickjs-wasi** (one VM per blueprint version; the blueprints architecture, `_bmad-output/initiative-keeb-cad-m1/architecture-blueprints/`).
   - **Each stage implements its own lane's operations:** `case` its 3D operations on replicad, `pcb` zones and silkscreen, `model` placing parts (`parts`, `extras`) and shapes. The shared 2D operations come from `geometry`.
   - **`ui`** (the editor's widget layer, AD-26) imports no workspace package; only `editor` imports it. Only `ui` imports `reka-ui` and `@zag-js/hotkeys`.
   - **Shared derivations are small computeds defined in `model`, and only there:** expression evaluation, per-side placements, parts, shapes, the netlist, connections, library lookup. No stage re-derives them. There is no single `resolve` function.
@@ -892,6 +892,7 @@ Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-2
 | clipper2-ts (BSL-1.0; case offsets (AD-18) and the router (AD-12)). Pinned exactly: semver sorts the older stable `2.0.1` above it, and that lacks the `inflatePathsD` and `ClipperD` scaling fixes | 2.0.1-18 (exact) |
 | flatbush (ISC; `routing` and `drc` spatial index) | 4.6.2 |
 | replicad / replicad-opencascadejs | 1.2.0 / 1.1.0 |
+| quickjs-wasi (MIT; QuickJS-NG in WASM; the blueprint sandbox, `blueprint` only, AD-10). Pinned exactly: 25 releases and 3 majors in its first 8 months | 3.6.3 (exact) |
 | @bgotink/kdl (KDL v2) | 0.4.1 |
 | @tarikjabiri/dxf | 2.9.0 |
 | reka-ui (MIT; widget primitives, `ui` only, AD-26) | 2.11.0 |
@@ -1013,7 +1014,6 @@ Raised in `directions-2026-10-30.md` (Open), `code-decisions-list-2026-10-30.md`
 | Message types on the case and routing channels: `protocol` imports `reactive`, which case and routing worker code never imports | AD-10, AD-11 | First background stage |
 | How export bytes (STEP and STL kept by `pipeline`, files from `exports`) reach main for Save and download | AD-11, AD-15 | First export story |
 | Whether the routing and fingerprints files carry their own `format-version` or follow the design file's (AD-8) | AD-8, Data Schema | First story that saves a derived file |
-| Sandbox engine for blueprint lanes (they run in the model worker, synchronously; AD-10 keeps the runtime behind `blueprint`) | AD-10, AD-11, AD-18 | The blueprints architecture run (`_bmad-output/initiative-keeb-cad-m1/architecture-blueprints/`) |
 | Who may edit the reviewers' rules file; `bmad-project-context` pitfalls as the loop for repeated agent mistakes | Agents | First slice review |
 
 ## Deferred
