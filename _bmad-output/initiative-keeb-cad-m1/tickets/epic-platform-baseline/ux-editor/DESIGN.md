@@ -2,7 +2,7 @@
 name: keeb-cad editor
 description: Browser-only visual keyboard CAD for one expert builder. Catppuccin Frappé dark by default, Latte light; calm density; canvas first, chrome quiet.
 status: final
-updated: 2026-10-31
+updated: 2026-11-01
 colors:
   # Unsuffixed = dark (Catppuccin Frappé, primary). `-light` = Catppuccin Latte.
   # Comment = Catppuccin color name. Latte uses the same name unless a decided fix says otherwise.
@@ -41,7 +41,7 @@ colors:
   overlap-warning-fill: '#e5c89040'   # Yellow at 25% [ASSUMPTION]
   overlap-warning-stroke: '#e5c890'   # Yellow, dashed
   cycle-path: '#e78284'          # Red: anchor-cycle path
-  outline-piece: '#b5bfe2'       # Subtext1
+  outline-shape: '#b5bfe2'       # Subtext1
   vertex: '#eebebe'              # Flamingo
   construction-point: '#99d1db'  # Sky [ASSUMPTION]
   plate-fill: '#949cbb'          # Overlay2; cutouts show the canvas through
@@ -94,7 +94,7 @@ colors:
   overlap-warning-fill-light: '#df8e1d40'
   overlap-warning-stroke-light: '#4c4f69'  # Text, dashed (Yellow is 2.31)
   cycle-path-light: '#d20f39'
-  outline-piece-light: '#5c5f77'
+  outline-shape-light: '#5c5f77'
   vertex-light: '#dd7878'        # with 1px Text casing [ASSUMPTION]
   construction-point-light: '#04a5e5'  # with 1px Text casing [ASSUMPTION]
   plate-fill-light: '#7c7f93'
@@ -422,8 +422,8 @@ General states: hover fills `{colors.hover}` (no Mauve bar); pressed/on fills `{
 - **Top bar** — File menu, design name and save state, workspace tabs, Export menu, undo/redo. `{colors.chrome}`.
 - **Workspace tabs** — `workspace-tab` / `workspace-tab-active`; label and `1`..`5` hint.
 - **Tab badge** — worst output state: progress ring (`{colors.progress}`), stale hatch, ▲ `{colors.warning}`, ● `{colors.error}`; mono count beside ● / ▲.
-- **Left rail + slide-out** — the rail holds Tree and Parameters icons (the icon whose panel is open: `{colors.fill-on}` and a Mauve left bar). One slide-out (`{spacing.slide-out-width}`, `{colors.chrome}`, full work-area height, right corners `{rounded.lg}`, Tree / Parameters tabs) floats over the canvas edge. Tree rows show mono ids with group/slot glyphs; parameter rows show `name = expression = value`.
-- **Status strip** — one entry per output (Outline, Plates, PCB, Case, Firmware) with label, glyph and mono state; then ● / ▲ counts, cursor coordinates, zoom, nudge-step control. `{colors.chrome}`. Pick mode and track drawing show their hint at the left end in mono Text. When entries do not fit (at 1366 px wide), each compresses to `status-entry-compact`: glyph and number (`◌`, `41/56`, `62%`).
+- **Left rail + slide-out** — the rail holds Tree, Parameters and Parts icons (the icon whose panel is open: `{colors.fill-on}` and a Mauve left bar). One slide-out (`{spacing.slide-out-width}`, `{colors.chrome}`, full work-area height, right corners `{rounded.lg}`, Tree / Parameters / Parts tabs) floats over the canvas edge. Tree rows show mono ids with group/slot glyphs; parameter rows show `name = expression = value`; part rows show mono `key · 48 slots`, `row-selected` for the selection, and a muted `+ part` row last.
+- **Status strip** — one entry per output (Outline, Plates, PCB, Case, Firmware) with label, glyph and mono state; then ● / ▲ counts, cursor coordinates, zoom, nudge-step control. `{colors.chrome}`. Pick mode shows its hint at the left end in mono Text. When entries do not fit (at 1366 px wide), each compresses to `status-entry-compact`: glyph and number (`◌`, `41/56`, `62%`).
 - **Nudge-step control** — mono `0.25 mm` button; its small popover holds four expression fields (arrow, Shift+arrow, Ctrl+arrow steps; rotate step for R / Shift+R).
 - **Banner** — `{spacing.banner}` full-width under the top bar, `{colors.chrome}`, 1px `{colors.warning}` bottom edge, ▲ in `{colors.warning}` and a Text label, optional inline `button` (`Take over editing`). → `mockups/key-start.html` (frames 2–3).
 - **Toast** — `{colors.panel}`, plain text, above the status strip at the right `[ASSUMPTION: position]`; rejections lead with ▲.
@@ -438,9 +438,9 @@ General states: hover fills `{colors.hover}` (no Mauve bar); pressed/on fills `{
 - **Anchor picker** — anchor field and a 3×3 attach-point grid (cells at least `{spacing.target-min}`); the chosen point fills `{colors.selection}` `[ASSUMPTION]`.
 - **Part field** — field-styled trigger with ▾; opens the Part picker (see Overlays).
 - **Binding field** — expression-field styling; while capturing, Mauve focus ring and the hint `Tab, Esc, Ctrl+… → pick from list (↓)` in muted text below.
-- **Operation list** — mono rows `name = op(args)`, args in `{colors.text-muted}` (Text when selected), `row-selected` for the selection; outline marked ★ in Yellow; `+ add operation` row in muted text. Collapsed list: a muted `▸ N more` row above the selected entry; collapsed sections show a mono count (`Plates 3`). → `mockups/key-shapes.html`, `mockups/key-case.html`. `[CONTRADICTED in Case: spine AD-18 — the user edits only the build style's settings plus their own recipe; see EXPERIENCE.md › Open Items]`
+- **Operation list** — mono rows `name = op(args)`, args in `{colors.text-muted}` (Text when selected), `row-selected` for the selection; outline marked ★ in Yellow; `+ add operation` row in muted text. Collapsed list: a muted `▸ N more` row above the selected entry; collapsed sections show a mono count (`Plates 3`). → `mockups/key-shapes.html`, `mockups/key-case.html`. `[CONTRADICTED in Case: spine AD-18 — the user edits only the build entries' inputs plus their own case lane; see EXPERIENCE.md › Open Items]`
 - **Vertex table** — mono rows: index, anchor, offset; `row-selected` for the selection.
-- **Plate fields** — piece dropdown, cutout-role checkboxes, user cutout list, export buttons (`button`) per plate.
+- **Plate fields** — shape dropdown, cutout-purpose checkboxes, user cutout list, export buttons (`button`) per plate.
 
 ### Overlays
 
@@ -459,27 +459,24 @@ File menu, Export menu, Design info, Autocomplete dropdown and Context menu use 
 ### Canvas views
 
 - **3D viewer** — Case canvas area; case bodies in `{colors.body-case}`; the selected operation's result outlined in `{colors.selection}`; stale solid grayed under a `{colors.progress}` bar. → `mockups/key-case.html`.
-- **Isolated part mode** — canvas header `‹ Board (Esc) · part <id>` in `{typography.mono}` at the top-left; the part fills the canvas; same chips as PCB. → `mockups/key-cell.html`.
 - **Keymap layer tabs** (Firmware) — overlay at the canvas top-left (chip position), workspace-tab treatment, `{components.keymap-layer-tabs.height}` tall, `+` tab last. → `mockups/key-firmware.html`.
 
 ### Canvas marks
 
-- **Canvas keys** — Layout: filled keycaps (`{colors.key-body}`, `{colors.key-edge}`, `{colors.key-top-face}`), selection outline `{colors.selection}`; slot ids on the top face in `{colors.key-legend}`. Shapes and PCB: keys as `{colors.key-outline-faint}` outlines. → `mockups/key-rendering-1.html` (option a).
+- **Canvas keys** — Layout: filled keycaps (`{colors.key-body}`, `{colors.key-edge}`, `{colors.key-top-face}`), selection outline `{colors.selection}`; slot ids on the top face in `{colors.key-legend}`. Outline and PCB: keys as `{colors.key-outline-faint}` outlines. → `mockups/key-rendering-1.html` (option a).
 - **Right half** — body and top face at `{components.right-half.body-opacity}` until selected; edges, legends and marks stay at full opacity to keep 3:1 contrast `[ASSUMPTION]`.
 - **Mirror axis** — 1px dashed `{colors.mirror-axis}` line along `center`'s y-axis, between the halves, in every 2D workspace that draws both halves.
 - **Firmware legends** — keycaps with legends in `{colors.key-legend}`: transparent binding = faint ▽ in `{colors.text-faint}`; no binding (none) = empty cap; mod-tap / layer-tap = two lines, tap over hold; hardware-less action ▲ in the top-right corner.
-- **Unfitted slot** — dashed `{colors.key-outline-faint}` outline, no fill; keeps its place and index.
+- **Unfitted slot** — dashed `{colors.key-outline-faint}` outline, no fill; keeps its place and index. An unresolved part's stand-in rectangle looks the same, plus its ▲ / ● badge at the top-right.
 - **Group frame** — dashed `{colors.group-frame}` with a grab-handle tab `⠿ <group id>` (`{components.group-frame-tab.height}`, `{components.group-frame-tab.radius}`); selected: frame 2px `{colors.selection}`, tab filled Mauve with a Crust label.
 - **Rotation handle** — small `{rounded.full}` ring in `{colors.rotation-handle}` outside the selection's frame; while dragging, ⊕ in `{colors.rotation-handle}` at the pivot, drawn clear of legends, and a signed delta readout (`−3.4°`) in `{typography.canvas-label}` beside the handle. → `mockups/key-layout.html`.
 - **Anchor link** — dashed `{colors.anchor-link}` line with a dot at the anchor point.
 - **Outline context line** (Layout) — 1px `{colors.outline-context}`, behind keys, not hit-testable.
 - **Overlap area** — error: `{colors.overlap-fill}` with a solid `{colors.error}` outline; warning: `{colors.overlap-warning-fill}` with a dashed `{colors.overlap-warning-stroke}` outline.
 - **Violation marker** — ● / ▲ badge on the id's top-right corner; anchor-cycle path drawn in `{colors.cycle-path}` with arrowheads.
-- **Outline marks** — the outline piece `{colors.outline-piece}`; vertex markers `{colors.vertex}` dots with mono `v-NN` labels; construction point `{colors.construction-point}` crosshair with faint guide lines in `{colors.text-faint}`; plate preview `{colors.plate-fill}` with cutouts as holes; polygon being picked drawn as a 2px `{colors.selection}` polyline. → `mockups/key-shapes.html`.
+- **Outline marks** — the outline shape `{colors.outline-shape}`; vertex markers `{colors.vertex}` dots with mono `v-NN` labels; construction point `{colors.construction-point}` crosshair with faint guide lines in `{colors.text-faint}`; plate preview `{colors.plate-fill}` with cutouts as holes; polygon being picked drawn as a 2px `{colors.selection}` polyline. → `mockups/key-shapes.html`.
 - **Pick marks** — in a pick mode, candidate attach points light as small `{colors.pick-point}` dots; the hovered one gets a ring; a 1px `{colors.pick-point}` rubber band runs from the last picked point to the cursor `[ASSUMPTION: width]`.
 - **PCB marks** — board edge `{colors.edge}`; component outlines `{colors.component-outline}`; pads and routes in their layer's copper (right board swapped, see Colors); ratsnest dashed `{colors.ratsnest}`. Overlays: R·C labels, zero-based (`R0·C0`; overridden labels use the Override style: `*` + Yellow); LED chain numbered `{colors.led-chain}` path with numbers in Text inside Teal-outlined badges. → `mockups/pcb-overrides-1.html` (option a), `mockups/key-pcb.html` (both boards, Matrix and LED chain on, Export menu open).
-- **Track tool** (a part's fixed tracks) — in isolated part mode: tracks in layer copper at net-class width, vias as `{colors.via}` discs with a `{colors.via-hole}` hole, pads in layer copper with Crust drill holes, the track being drawn at full opacity with its next segment dashed.
-- **Part DRC marker** — in isolated part mode only: fault area drawn as an error overlap area, ● badge, and a callout (`{colors.chrome}`, 1px `{colors.error}` edge, mono message) on a Red leader line.
 - **Combo** (Firmware) — dotted `{colors.combo-link}` line joining the combo's keys, combo binding label at its midpoint `[ASSUMPTION]`.
 
 → `mockups/oplist-placement-1.html` (option c), `mockups/canvas-model-storyboard.html` (model b) for composition. Key screens (Frappé; Layout also Latte): `mockups/key-layout.html`, `key-shapes.html`, `key-pcb.html`, `key-firmware.html`, `key-case.html`, `key-cell.html`, `key-panels.html`, `key-start.html`. Their op names, heights, part versions, DRC text, legends and layer names are illustrative.
@@ -491,6 +488,12 @@ The Assembly view is deferred past M1 (initiative Decision 2026-10-26); its deci
 - **Assembly chip** — `Assembly` with an `A` kbd, a chip at the 3D viewer's top-left.
 - **Assembly legend** — `{components.assembly-legend}` card at the top-right of the 3D viewer, flat, shown while Assembly is on: one checkbox row per body (Case, each plate, PCB).
 - Plates and PCB in the 3D viewer: `{colors.body-plate}`, `{colors.body-pcb}`. → `mockups/key-case.html` (frame 2).
+
+Hand-built parts are milestone 2 (decided 2026-11-01, spine AD-5); their decided visuals stay here and are not built in M1:
+
+- **Isolated part mode** — canvas header `‹ Board (Esc) · part <id>` in `{typography.mono}` at the top-left; the part fills the canvas; same chips as PCB. → `mockups/key-cell.html`.
+- **Track tool** (a part's fixed tracks) — in isolated part mode: tracks in layer copper at net-class width, vias as `{colors.via}` discs with a `{colors.via-hole}` hole, pads in layer copper with Crust drill holes, the track being drawn at full opacity with its next segment dashed.
+- **Part DRC marker** — in isolated part mode only: fault area drawn as an error overlap area, ● badge, and a callout (`{colors.chrome}`, 1px `{colors.error}` edge, mono message) on a Red leader line.
 
 ## Do's and Don'ts
 

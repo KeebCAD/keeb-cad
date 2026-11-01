@@ -1,7 +1,7 @@
 ---
 name: keeb-cad editor
 status: final
-updated: 2026-10-31
+updated: 2026-11-01
 sources:
   - ../epic-platform-baseline.md
   - ../../../initiative-keeb-cad-m1.md
@@ -24,23 +24,23 @@ Widgets are Reka UI primitives wrapped in `packages/ui` and styled with Tailwind
 
 **Words.** Domain words are architecture Glossary terms only (route, component, module, pad, side-qualified id, revision…). UI chrome terms that are not domain words: workspace, inspector, slide-out, chip, palette, status strip, badge, toast, banner, keycap, legend.
 
-**Outputs are never edited directly.** Every change is a command on the authored sections. Board routing is automatic (no Route button); there is no manual route editing on the board. A design-local part's fixed tracks are drawn by hand in isolated part mode (see Upstream Handoffs).
+**Outputs are never edited directly.** Every change is a command on the authored sections. Board routing is automatic (no Route button); there is no manual route editing on the board. In M1 a design-local part applies a library part blueprint with inputs; hand-building a part (isolated part mode, fixed tracks) is milestone 2 (see Deferred past M1).
 
 ## Information Architecture
 
-**Workspace per stage.** Five workspaces, each its own place with its own rendering, tools and panels. The 2D workspaces share one viewport: zoom, pan and design coordinates persist across switches. Isolated part mode is the one exception. → `mockups/canvas-model-storyboard.html` (model b; the shared viewport was added after this mock).
+**Workspace per stage.** Five workspaces, each its own place with its own rendering, tools and panels. The 2D workspaces share one viewport: zoom, pan and design coordinates persist across switches. → `mockups/canvas-model-storyboard.html` (model b; the shared viewport was added after this mock).
 
 | Workspace | Key | Canvas shows | Right panel |
 |---|---|---|---|
-| Layout | 1 | both halves as filled keycaps, group frames, anchor links; Outline context line (chip O) | Inspector (anchor, offset, chain, fitted, part with `Edit part` → PCB); Design settings when nothing is selected. → `mockups/key-layout.html` (J2.2 mid-rotation, Frappé and Latte) |
-| Outline | 2 | both halves as faint key outlines; pieces, vertices, construction points; selected plate with cutouts | Operation list: Pieces · Construction · Plates; selected entry's fields below. → `mockups/key-shapes.html` (polygon in `Pick vertices`, list collapsed) |
-| PCB | 3 | the board: components, pads, F.Cu/B.Cu routes, ratsnest; overlay and PCB layer chips | Inspector; design rules when nothing is selected. `Edit part` opens isolated part mode. → `mockups/key-pcb.html` (rerouting, Matrix and LED chain, Export menu), `mockups/key-cell.html` (isolated part mode, track drawing) |
-| Case | 4 | 3D viewer (case bodies; Assembly: see Deferred past M1) | Operation list of case operations; selected operation's fields; tray template parameters live in the Parameters slide-out `[CONTRADICTED: spine AD-18 / PRD FR-14 — the user edits only the build style's settings plus their own recipe; see Open Items › Needs new design]`. → `mockups/key-case.html` (at rest, stale, empty; its Assembly frame is deferred) |
+| Layout | 1 | both halves as filled keycaps, group frames, anchor links; Outline context line (chip O) | Inspector (anchor, offset, chain, fitted, part with a `key ›` link to the Parts tab, the slot's per-slot inputs); Design settings when nothing is selected. → `mockups/key-layout.html` (J2.2 mid-rotation, Frappé and Latte) |
+| Outline | 2 | both halves as faint key outlines; shapes, vertices, construction points; selected plate with cutouts | Operation list: Shapes · Construction · Plates; selected entry's fields below. → `mockups/key-shapes.html` (polygon in `Pick vertices`, list collapsed) |
+| PCB | 3 | the board: components, pads, F.Cu/B.Cu routes, ratsnest; overlay and PCB layer chips | Inspector; design rules when nothing is selected. → `mockups/key-pcb.html` (rerouting, Matrix and LED chain, Export menu) |
+| Case | 4 | 3D viewer (case bodies; Assembly: see Deferred past M1) | Operation list of case operations; selected operation's fields; tray template parameters live in the Parameters slide-out `[CONTRADICTED: spine AD-18 / PRD FR-14 — the user edits only the build entries' inputs plus their own case lane; see Open Items › Needs new design]`. → `mockups/key-case.html` (at rest, stale, empty; its Assembly frame is deferred) |
 | Firmware | 5 | both halves side by side as keycaps with legends; keymap layer tabs overlaid top-left | Binding field and picker; `Matrix & pins → PCB` link. → `mockups/key-firmware.html` (binding field capturing) |
 
 **Both halves.** The left half is authored; the right half is derived (split with a reversible board, AD-6) but drawn and selectable in Layout, Outline, PCB and Firmware. In M1 the right half takes per-side part removal (overrides), keymap and netlist overrides only; its geometry fields are read-only (see Fitted toggle). The right half reads as derived: a thin dashed mirror axis between the halves, and right-half keys at lower opacity until selected. On PCB the right board is the flipped reversible board; its copper colors swap (see DESIGN.md › Colors), and labels still name the layer.
 
-**Panels (hybrid).** Inspector / operation list docked right in every workspace. One slide-out with Tree and Parameters tabs from the thin left rail. Ctrl+K palette everywhere. → `mockups/panel-models.html` (option c), `mockups/oplist-placement-1.html` (option c), `mockups/key-panels.html` (violations panel, palette, context menu, slide-out, Part picker).
+**Panels (hybrid).** Inspector / operation list docked right in every workspace. One slide-out with Tree, Parameters and Parts tabs from the thin left rail. Ctrl+K palette everywhere. → `mockups/panel-models.html` (option c), `mockups/oplist-placement-1.html` (option c), `mockups/key-panels.html` (violations panel, palette, context menu, slide-out, Part picker).
 
 **Global chrome.** Top bar and status strip: see Component Patterns › Global chrome. Output states: see State Patterns.
 
@@ -53,12 +53,13 @@ Widgets are Reka UI primitives wrapped in `packages/ui` and styled with Tailwind
 | Place keys by anchor + offset, chains, gap | Layout, inspector, Design settings, anchor picker, rotation handle | J1.2–4, J2.1–4 |
 | Place parts | P, Part field (Part picker) | J1.5, J3.2–3 |
 | Typed values and expressions; parameters | Expression field, Parameters slide-out | J1.3, J2.3 |
-| Outline from pieces; drawn pieces from operations, polygon vertices | Outline operation list, vertex table `[CONTRADICTED: spine AD-16 / PRD FR-7 — derived pieces are the default; see Open Items › Needs new design]` | J1.6–7 |
+| Outline from shapes; drawn shapes from operations, polygon vertices | Outline operation list, vertex table `[CONTRADICTED: spine AD-16 / PRD FR-7 — derived shapes are the default; see Open Items › Needs new design]` | J1.6–7 |
 | Plates and their exports | Outline → Plates | J1.8 |
-| Design-local part (components, fixed tracks) | Isolated part mode | J1.9 |
+| Design parts (a library part blueprint + its inputs) | Parts tab | J1.9 |
+| Key size per slot | Slot inspector › This slot | J1.9 |
 | Matrix / pin / LED overrides | PCB overlay chips + inspector | J1.10 |
 | Design rules, routing, DRC | PCB right panel, status strip, violations panel | J1.11, J3.5 |
-| Case from the tray build style; fit check against SM-2 | Case operation list, 3D viewer, Parameters slide-out `[CONTRADICTED: spine AD-18 / PRD FR-14 — the user edits only the build style's settings plus their own recipe; see Open Items › Needs new design]` | J1.12, J2.5 |
+| Case from the tray build style; fit check against SM-2 | Case operation list, 3D viewer, Parameters slide-out `[CONTRADICTED: spine AD-18 / PRD FR-14 — the user edits only the build entries' inputs plus their own case lane; see Open Items › Needs new design]` | J1.12, J2.5 |
 | Keymap for both halves | Firmware, keymap layer tabs, binding field | J1.13, J3.6 |
 | Production files | Export menu, plate export buttons | J1.14, J3.7 |
 | See every output follow an edit | Status strip, tab badges, staleness, Outline context line | J2 |
@@ -97,7 +98,7 @@ Behavioral. Visual specs live in DESIGN.md › Components. Every interactive ite
 | Start screen | No design open (the empty state) | New design, Open file (Ctrl+O), recent autosaved designs (arrows and Enter); the first recent row has focus. |
 | Workspace tabs | Top bar | `role=tablist`; keys 1–5 when no field is focused; arrows move between tabs when focused. Each tab carries a tab badge. |
 | Tab badge | Workspace tabs | Repeats the worst output state of that workspace (see State Patterns › Output states). Accessible name = the state text (`PCB: routing 41/56`). |
-| Status strip | Bottom, global | One entry per output — Outline, Plates (worst across plates), PCB (always shows the unrouted count, even `0 unrouted`), Case, Firmware — showing its output state (see State Patterns › Output states). When the strip overflows (at 1366 px wide), entries compress to glyph and number; the full state text shows in a tooltip and stays the accessible name. Click → that workspace. Warning/error counts open the violations panel. The left end shows pick-mode / track-drawing hints. |
+| Status strip | Bottom, global | One entry per output — Outline, Plates (worst across plates), PCB (always shows the unrouted count, even `0 unrouted`), Case, Firmware — showing its output state (see State Patterns › Output states). When the strip overflows (at 1366 px wide), entries compress to glyph and number; the full state text shows in a tooltip and stays the accessible name. Click → that workspace. Warning/error counts open the violations panel. The left end shows pick-mode hints. |
 | Nudge-step control | Status strip | Click opens four expression fields (arrow, Shift, Ctrl step; rotate step); defaults 0.25 / 1 / 0.05 mm and 1°. |
 | Export menu | Top bar, all workspaces | Lists every output. Unavailable items are `aria-disabled` with an inline reason (`blocked: 2 DRC errors, 15 unrouted`) linking to the violations panel. An export whose geometry has a `model` error is blocked (AD-15); that reason comes first, as count + kind: `blocked: 1 construction-undefined`, or `blocked: 2 model errors (anchor-cycle, …)` for several kinds. Warnings never block. KiCad 10 project always enabled, even with model errors. STL/STEP enabled only when Case is `current`; otherwise `blocked: case stale (rev <hash>)` or `blocked: case failed: <message>`. |
 | Toast | Global | Undo/redo (`Undid: <command label>` — one display label per command from the model command registry), rejections (`rejected: <what>` with ▲), re-anchor, format migration, save failure, version switch, and opening a file over a newer stored copy (see State Patterns › File). `role=status`; auto-hides after ~4 s `[ASSUMPTION]`. |
@@ -107,10 +108,10 @@ Behavioral. Visual specs live in DESIGN.md › Components. Every interactive ite
 
 | Component | Use | Behavioral rules |
 |---|---|---|
-| Left rail + slide-out | Left rail; T | One slide-out with Tree and Parameters tabs. T opens it on the last-used tab `[ASSUMPTION]`; palette `Open tree` / `Open parameters`. Non-modal; Esc closes. **Tree:** synced with canvas selection; arrows move, Space toggles, Shift/Ctrl+arrow extend — the keyboard route to multi-select. **Parameters:** rows `name = expression = value`; `+` adds; double-click or F2 renames (references follow); Delete removes, rejected while referenced (`rejected: ks is used by 12 expressions`). |
-| Inspector | Right panel | Shows the selection's fields. Sections are collapsible; the most recently used sections stay open `[ASSUMPTION]`. Multi-selection shows fields common to all; differing values show `mixed`; typing applies to all as one undo step `[ASSUMPTION]`. In PCB with nothing selected: design rules (net classes width/clearance, edge clearance, module keep-outs) as expression fields. |
+| Left rail + slide-out | Left rail; T | One slide-out with Tree, Parameters and Parts tabs. T opens it on the last-used tab `[ASSUMPTION]`; palette `Open tree` / `Open parameters`. Non-modal; Esc closes. **Tree:** synced with canvas selection; arrows move, Space toggles, Shift/Ctrl+arrow extend — the keyboard route to multi-select. **Parameters:** rows `name = expression = value`; `+` adds; double-click or F2 renames (references follow); Delete removes, rejected while referenced (`rejected: ks is used by 12 expressions`). **Parts:** rows `name · N slots`, one per design part; selecting one shows its inspector: blueprint and version, then its part-wide inputs. `+` picks a library part blueprint and creates a design part with its default inputs; Ctrl+D duplicates one. Deleting the part `meta.defaultPart` names is rejected (AD-2). |
+| Inspector | Right panel | Shows the selection's fields. Sections are collapsible; the most recently used sections stay open `[ASSUMPTION]`. Multi-selection shows fields common to all; differing values show `mixed`; typing applies to all as one undo step `[ASSUMPTION]`. A slot shows the Part field, a `key ›` link that selects its part in the Parts tab, and a **This slot** section with only the inputs its part blueprint marks per-slot (e.g. `size`): each shows `inherits <part value>` until typed, and clearing it inherits again; a part with no per-slot inputs has no such section. In PCB with nothing selected: design rules (net classes width/clearance, edge clearance, module keep-outs) as expression fields. |
 | Violations panel | Status strip counts, V | Non-modal, slides up. Grouped by workspace then kind, errors first; each group tagged with its source revision. Stale groups show `stale` and F8 skips them. Unrouted connections appear as `unrouted` entries; while routing runs they collapse to one counted row. Click a violation → switch workspace, select all named ids (side-qualified ids select that half), fit the viewport to them, flash them once. F8 / Shift+F8 step next/previous without opening the panel. No dismiss or mute: a violation leaves only when fixed. Empty: `0 violations`. |
-| Command palette | Ctrl+K, everywhere | Modal. Every named command with its shortcut; jump to any node, piece, parameter or violation by id; jump to a workspace. No match: `no match for "<query>"` `[ASSUMPTION]`. |
+| Command palette | Ctrl+K, everywhere | Modal. Every named command with its shortcut; jump to any node, shape, parameter or violation by id; jump to a workspace. No match: `no match for "<query>"` `[ASSUMPTION]`. |
 | Context menu | Right-click, Shift+F10, Menu key | Palette commands filtered to the selection (or focused item), each with its shortcut. Arrows, Enter, Esc. Right-click is always a context menu, never a direct action — in 3D too. |
 | Cheat sheet | F1, ? | Modal. Every shortcut, grouped by workspace, including focus-dependent keys (Delete). |
 
@@ -124,31 +125,29 @@ Behavioral. Visual specs live in DESIGN.md › Components. Every interactive ite
 | Part field | Inspector, slot | Opens the Part picker anchored beside the field: searchable by name; rows show name, version, footprint preview; Enter picks. Changing part = one undo step; connections re-derive. P on the canvas places a new slot with the Part picker open. |
 | Binding field | Firmware inspector | Selecting a key focuses it. While focused, plain keys, Shift and Alt combinations are captured as bindings; Ctrl combinations always reach the app and are never captured. Tab captures nothing: it advances to the next key — left half then right half, row-major by matrix row/column `[ASSUMPTION]`. Esc always leaves the field (no focus trap). To bind Tab, Esc or a Ctrl combination, use the picker: the field hint reads `Tab, Esc, Ctrl+… → pick from list (↓)`, and ↓ opens the picker. Picker: binding-type dropdown and searchable key list; mod-tap / layer-tap get two fields. Select 2+ keys → `Add combo`. |
 | Fitted toggle | Inspector, any slot on either half | `Fitted: [x] left [x] right`; unticking unfits that side only (an override removing that side's part; the slot keeps its space). Multi-select + toggle = one undo step. On the right half, anchor / offset / chain fields are read-only with `derived from left/<id>` (click selects the source) and lock `geometry overrides need a mirrored board`. |
-| Design settings | Layout inspector, nothing selected | Form (read-only, `split, reversible board`), `gap x`, `gap y` (expression fields; may reference parameters; edge to edge between keycaps), default part. The group inspector shows an optional default part override with `inherits <value>` (there is no group gap); type to override, clear to inherit. Changing the gap = one undo step; chains re-space live. → `mockups/pitch-settings-1.html`. |
+| Design settings | Layout inspector, nothing selected | Form (read-only, `split, reversible board`), `gap x`, `gap y` (expression fields; may reference parameters; edge to edge between keycaps), default part. `New design` creates the design part `key` (the default key blueprint: Choc v2, 1u) and makes it the default part. The group inspector shows an optional default part override with `inherits <value>` (there is no group gap); type to override, clear to inherit. Changing the gap = one undo step; chains re-space live. → `mockups/pitch-settings-1.html`. |
 
 ### Canvas
 
 | Component | Use | Behavioral rules |
 |---|---|---|
-| Canvas keys, Group frame, Anchor link | 2D canvas | Selection and drag: see Interaction Primitives. Anchor links show each node's anchor; not draggable. A slot whose part an override removes on one side keeps its place and index. |
-| Rotation handle | Selected key or group (Layout, isolated part mode) | Drag rotates about the pivot (⊕ shown); a group's pivot defaults to its group origin and is editable in the group inspector (Offset → pivot). The readout during the drag is the delta (`−3.4°`); the inspector shows the absolute rotation. Shift snaps 5°. Only the dragged keys move until release; the drop is one command, one undo step, and writes the deg term. Multi-selection: each node about its own pivot `[ASSUMPTION]`. → `mockups/key-layout.html`. |
-| Outline context line | Layout | The piece holding the outline marker ★, thin and non-editable, behind keys; updates after each applied command (a drop, the end of a nudge burst, a field's typing pause). Plates are not shown in Layout. |
+| Canvas keys, Group frame, Anchor link | 2D canvas | Selection and drag: see Interaction Primitives. Anchor links show each node's anchor; not draggable. A slot whose part an override removes on one side keeps its place and index. A slot whose part doesn't resolve keeps its place with a stand-in rectangle, drawn like an unfitted slot plus ▲/● (`unresolvable-reference`); later keys stay put (AD-5). |
+| Rotation handle | Selected key or group (Layout) | Drag rotates about the pivot (⊕ shown); a group's pivot defaults to its group origin and is editable in the group inspector (Offset → pivot). The readout during the drag is the delta (`−3.4°`); the inspector shows the absolute rotation. Shift snaps 5°. Only the dragged keys move until release; the drop is one command, one undo step, and writes the deg term. Multi-selection: each node about its own pivot `[ASSUMPTION]`. → `mockups/key-layout.html`. |
+| Outline context line | Layout | The shape holding the outline marker ★, thin and non-editable, behind keys; updates after each applied command (a drop, the end of a nudge burst, a field's typing pause). Plates are not shown in Layout. |
 | Canvas marks | All 2D canvases | Vertices, construction points, overlap areas, violation markers, anchor-cycle paths, ratsnest, LED chain, combos: display only, except vertex drag in Outline. Clicking a violation marker selects its ids. |
 | Overlay chips (PCB) | PCB | Toggle buttons with `aria-pressed`: Matrix (M), LED chain (L), Pins (I); off by default, combinable, remembered for the session. Matrix: R·C label per key, zero-based (`R0·C0`), overrides with `*`; row/column overrides are set in the inspector for the selected keys. LED chain: numbered path; `Pick LED order` (pick mode) turns it on while active. Pins: hover or focus the MCU module to show pin → net labels; the inspector lists pins → nets as a keyboard-usable list; pick a pin to reassign. → `mockups/pcb-overrides-1.html` (option a), `mockups/key-pcb.html`. |
-| Layer and view chips | PCB, Layout, Case, isolated part mode | Toggle buttons with `aria-pressed`. PCB layer chips: F.Cu, B.Cu, Edge, Keep-outs; on by default. Outline chip (Layout, O): on by default. |
+| Layer and view chips | PCB, Layout, Case | Toggle buttons with `aria-pressed`. PCB layer chips: F.Cu, B.Cu, Edge, Keep-outs; on by default. Outline chip (Layout, O): on by default. |
 
 ### Workspace-specific
 
 | Component | Use | Behavioral rules |
 |---|---|---|
-| Operation list | Outline, Case `[CONTRADICTED: spine AD-18 / PRD FR-14 — the user edits only the build style's settings plus their own recipe; see Open Items › Needs new design]` | Ordered named entries; selecting one highlights its result (2D in Outline, 3D in Case) and shows its fields below. Add via `+ add operation` or Ctrl+K. A long selected operation (18-vertex polygon) collapses the list to the selected entry, with a `▸ N more` row above it that expands the list. Outline adds Construction (line intersection from two lines, each two anchor-picker points) and Plates sections. `Use as outline` moves the outline marker ★; exactly one piece holds it. |
+| Operation list | Outline, Case `[CONTRADICTED: spine AD-18 / PRD FR-14 — the user edits only the build entries' inputs plus their own case lane; see Open Items › Needs new design]` | Ordered named entries; selecting one highlights its result (2D in Outline, 3D in Case) and shows its fields below. Add via `+ add operation` or Ctrl+K. A long selected operation (18-vertex polygon) collapses the list to the selected entry, with a `▸ N more` row above it that expands the list. Outline adds Construction (line intersection from two lines, each two anchor-picker points) and Plates sections. `Use as outline` moves the outline marker ★; exactly one shape holds it. |
 | Vertex table | Polygon operation | Row = anchor + offset. `Pick vertices` (pick mode): each pick appends a row anchored there with zero offset. Add a row with `+ vertex` or insert row; set its anchor with the anchor picker and type the offset. Dragging a vertex changes its offset (see Write-back). |
-| Plate fields | Outline → Plates | Piece dropdown, cutout-role checkboxes, user cutout pieces list; the canvas previews the plate with cutouts; DXF/SVG/gerber export per plate. |
+| Plate fields | Outline → Plates | Shape dropdown, cutout-purpose checkboxes, user cutout shapes list; the canvas previews the plate with cutouts; DXF/SVG/gerber export per plate. |
 | Keymap layer tabs | Firmware, overlay at the canvas top-left | `role=tablist`. `+` adds; double-click renames; drag or `Move left/right` reorders; right-click → context menu (Rename, Duplicate, Move left/right, Delete); Delete deletes the focused tab; one undo restores it. Layer references are by stable id: reorder and duplicate never rebind; deleting a layer that another layer's binding or a combo references is rejected, naming them (architecture AD-19). |
 | Firmware legends | Firmware canvas | Show each key's binding on the selected layer: transparent = faint ▽; none = empty cap; mod-tap / layer-tap = tap over hold; hardware-less action (RGB without LEDs, Bluetooth on wired) = ▲ plus a violation naming the slot. |
 | 3D viewer | Case | Left-drag orbit; middle-drag or Space+drag pan; wheel zoom to cursor; Home or 0 = top view aligned with the shared viewport; right-click = context menu (Hide body, Top view, Export). Keyboard (viewer focused): arrows orbit, Shift+arrows pan, + / − zoom. The camera starts from the shared viewport's top-down view. Never blanks once a solid exists (see State Patterns). |
-| Isolated part mode | PCB; `Edit part` | Opens the design-local part alone, large and centered, with its own zoom; header `‹ Board (Esc) · part <id>`; the PCB tab stays active. Components placed by drag or inspector fields (offset/rotation expressions; same drag/nudge/rotate rules as keys). Track tool (W) draws the part's fixed tracks. Part-level DRC runs live; while in isolated part mode, its errors show on the canvas only (marker + callout), not in the status strip or tab badge. A group's default part opens the same way (choose which part). Esc (last in Esc precedence) returns to the board at the shared viewport. |
-| Track tool | Isolated part mode, W | Click a pad, click corners, click the target pad to finish; snaps to pads and 45° (Shift = free). X switches F.Cu/B.Cu and drops a via. Backspace removes the last segment; Esc cancels. Existing track: select, drag corners, Delete. Width from net class, overridable in the inspector. One finished track = one undo step. |
 
 ## State Patterns
 
@@ -189,9 +188,9 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 |---|---|---|
 | empty: no design | Start screen | See Component Patterns › Start screen |
 | empty: new design | Layout | One hint: `Add a group (G) or open the command palette (Ctrl+K).` |
-| empty: Outline | Outline | `No pieces. Add a key outline (+) to start the outline.` + `+ Key outline`. Pieces without ★: warning violation `outline: none set` `[CONTRADICTED: spine AD-16 / PRD FR-7 — derived pieces are the default; see Open Items › Needs new design]` |
-| empty: PCB | PCB | No keys: `No parts placed. Place keys in Layout (1).` No default part: `No default part. Create one (Edit part).` |
-| empty: Case | Case | Single action `Insert tray case` — expands the template once into operation list and parameters (AD-18) `[CONTRADICTED: spine AD-18 / PRD FR-14 — the user edits only the build style's settings plus their own recipe; see Open Items › Needs new design]` |
+| empty: Outline | Outline | `No shapes. Add a key outline (+) to start the outline.` + `+ Key outline`. Shapes without ★: warning violation `outline: none set` `[CONTRADICTED: spine AD-16 / PRD FR-7 — derived shapes are the default; see Open Items › Needs new design]` |
+| empty: PCB | PCB | No keys: `No parts placed. Place keys in Layout (1).` A design made in the app always has a default part (`New design` creates `key`); a file whose default part doesn't resolve shows stand-in rectangles and the `unresolvable-reference` violation instead. |
+| empty: Case | Case | Single action `Insert tray case` — expands the template once into operation list and parameters (AD-18) `[CONTRADICTED: spine AD-18 / PRD FR-14 — the user edits only the build entries' inputs plus their own case lane; see Open Items › Needs new design]` |
 | empty: Firmware | Firmware | `No keymap. Add a layer (+).` — `+` creates `base` with every key `none` |
 | empty: panels | Violations, Parameters, Tree | `0 violations`; `No parameters. Type a new name in any field to create one.`; `No nodes. Add a group (G).` `[ASSUMPTION]` |
 
@@ -205,7 +204,6 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 | rejected command | Toast | `rejected: <what + where>`; nothing changes |
 | selection: mixed | Inspector | `mixed` placeholder; slots + groups show common fields only |
 | pick mode active | Status strip left + cursor | `picking: anchor · Enter done · Esc ends` `[ASSUMPTION]`; picked target highlighted |
-| isolated part mode | Canvas header | See Component Patterns › Isolated part mode |
 | focus | Everywhere | `{colors.focus}` ring, offset outside the element |
 
 ## Interaction Primitives
@@ -214,7 +212,7 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 
 **2D pointer map.** Wheel zooms to cursor; middle-drag or Space+drag pans; trackpad two-finger scroll pans, pinch zooms. Left-drag starting on a key moves it; left-drag on a group frame's handle tab moves the group. Click on empty space inside a frame selects the group; drag from empty space (inside or outside frames) box-selects; Shift+drag always box-selects, adding to the selection. Shift-click adds. F fits the selection (or the whole board). Tree and canvas selection stay synced.
 
-**Direct edits per workspace.** Layout: key, group and rotation-handle drags, nudge, rotate. Outline: vertex drag only; other primitives are edited in fields `[ASSUMPTION]`. PCB board: select only. Isolated part mode: component drag, rotation handle, track tool. Firmware and Case: select only. Right half, any workspace: select only.
+**Direct edits per workspace.** Layout: key, group and rotation-handle drags, nudge, rotate. Outline: vertex drag only; other primitives are edited in fields `[ASSUMPTION]`. PCB board: select only. Firmware and Case: select only. Right half, any workspace: select only.
 
 **Chain drag rule.** Dragging a key in a chain changes its own offset; later siblings follow, because an offset carries along the chain. The whole movement goes to `offset.position`, converted into the node's anchor frame; rotation is untouched. Alt-drag compensates: it takes the same change off the next sibling's offset, so only the dragged key moves (Ctrl-drag if Alt collides). Groups drag by the same rule.
 
@@ -230,7 +228,7 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 
 **Pick modes.** Anchor pick, `Pick vertices`, `Pick LED order`, construction-point line anchors, pin reassignment. While active, candidate attach points light as Mauve dots and a rubber band runs from the last picked point to the cursor. Click targets in order, or type an id / Tab through candidates and press Enter. Enter or Esc ends the mode keeping what was picked; one pick session = one undo step `[ASSUMPTION]`.
 
-**Esc precedence.** One Esc does the innermost step only `[ASSUMPTION: order]`: (1) cancel a drag or track being drawn; (2) close an open dropdown or menu; (3) leave a field (restoring an uncommitted value); (4) end a pick mode; (5) close an overlay (palette, cheat sheet, slide-out, violations panel); (6) clear the selection; (7) leave isolated part mode.
+**Esc precedence.** One Esc does the innermost step only `[ASSUMPTION: order]`: (1) cancel a drag or track being drawn; (2) close an open dropdown or menu; (3) leave a field (restoring an uncommitted value); (4) end a pick mode; (5) close an overlay (palette, cheat sheet, slide-out, violations panel); (6) clear the selection.
 
 **Focus and regions.** F6 / Shift+F6 cycle regions: top bar, slide-out (when open), canvas, inspector, status strip `[ASSUMPTION]`. The canvas is one focusable region with an edge focus ring; nudge, rotate and Delete act on the selection only while the canvas has focus. Opening an overlay focuses its first meaningful item; modal overlays (palette, cheat sheet, Part picker) trap focus, non-modal ones (slide-out, violations panel, menus) do not; closing returns focus to the invoker, else the canvas.
 
@@ -259,7 +257,6 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 | Space+drag, middle-drag | Pan |
 | O | Layout: Outline chip |
 | M / L / I | PCB: Matrix / LED chain / Pins chips |
-| W / X / Backspace | Isolated part mode: track tool / switch layer + via / remove last segment |
 | Home, 0 | Case: top view `[ASSUMPTION: 0 alias for laptops without Home]` |
 
 ## Accessibility Floor
@@ -280,17 +277,17 @@ Protagonist: Sergii, builder and sole user, on a laptop.
 ### J1 — First build of Corney Island
 
 1. Sergii launches keeb-cad; no autosave exists, so the Start screen offers New design (→ `mockups/key-start.html`). The empty Layout shows `Add a group (G) or open the command palette (Ctrl+K).`
-2. With nothing selected, Design settings show form `split, reversible board`; Sergii sets `gap x` / `gap y`. G adds group `matrix`; Sergii then adds column groups in a chain, with slots in each. The derived right half appears mirrored as they go.
+2. `New design` has already created the design part `key` (Choc v2, 1u) as the default part. With nothing selected, Design settings show form `split, reversible board`; Sergii sets `gap x` / `gap y`. G adds group `matrix`; Sergii then adds column groups in a chain, with slots in each. The derived right half appears mirrored as they go.
 3. Sergii types stagger offsets as expressions (`5mm`), drags keys roughly and corrects the number; later siblings follow the chain rule.
 4. Sergii builds the thumb group as a chain, anchors it with the anchor picker to a key's attach point, and rotates it with the rotation handle or R.
 5. P places the MCU module, display and TRRS; the Part field picks each from the library, and Sergii anchors each with the anchor picker. No per-side overrides: all fitted on both sides.
-6. Outline (2) (→ `mockups/key-shapes.html`) `[CONTRADICTED: spine AD-16 / PRD FR-7 — derived pieces are the default; see Open Items › Needs new design]`: the viewport stays put. Sergii adds `+ Key outline`, then a polygon; in `Pick vertices` they click key corners and construction points in order and type offsets in the vertex table; then they add an offset operation with a fillet and choose `Use as outline`.
+6. Outline (2) (→ `mockups/key-shapes.html`) `[CONTRADICTED: spine AD-16 / PRD FR-7 — derived shapes are the default; see Open Items › Needs new design]`: the viewport stays put. Sergii adds `+ Key outline`, then a polygon; in `Pick vertices` they click key corners and construction points in order and type offsets in the vertex table; then they add an offset operation with a fillet and choose `Use as outline`.
 7. Sergii adds a construction point (line intersection) in the Construction section and picks it as a vertex anchor.
-8. Sergii adds plates — front plate, backplate, MCU cover — each with a piece and cutout roles; DXF export per plate.
-9. PCB (3): `No default part. Create one (Edit part).` In isolated part mode (→ `mockups/key-cell.html`), Sergii places switch, diode and LED components and draws the part's fixed tracks with W (X for a via); part DRC passes; Esc returns to the board.
+8. Sergii adds plates — front plate, backplate, MCU cover — each with a shape and cutout purposes; DXF export per plate.
+9. PCB (3): every key already carries `key`'s footprints and fixed tracks. In the Parts tab (T), Sergii selects `key` and checks its inputs (LED on); for the 1.5u thumb keys they set `size` in the slot inspector's This slot section.
 10. With the M and L chips on (→ `mockups/key-pcb.html`), Sergii overrides a column (`R1·C5*`) in the inspector and runs `Pick LED order`; I shows pins; Sergii reassigns an MCU pin.
 11. Routing runs on its own; the strip shows `routing 41/56`, with unrouted connections as dashed ratsnest. F8 steps through DRC violations; Sergii fixes each in Layout or design rules.
-12. Case (4) (→ `mockups/key-case.html`) `[CONTRADICTED: spine AD-18 / PRD FR-14 — the user edits only the build style's settings plus their own recipe; see Open Items › Needs new design]`: Sergii inserts the tray case (`Insert tray case`) and sets wall and gap in the Parameters slide-out. To check fit, Sergii reads the case dimensions from the operations' fields and the Parameters slide-out against SM-2's list: wall thickness, PCB-to-wall gap, floor thickness, wall height, screw holes, MCU/USB cutout.
+12. Case (4) (→ `mockups/key-case.html`) `[CONTRADICTED: spine AD-18 / PRD FR-14 — the user edits only the build entries' inputs plus their own case lane; see Open Items › Needs new design]`: Sergii inserts the tray case (`Insert tray case`) and sets wall and gap in the Parameters slide-out. To check fit, Sergii reads the case dimensions from the operations' fields and the Parameters slide-out against SM-2's list: wall thickness, PCB-to-wall gap, floor thickness, wall height, screw holes, MCU/USB cutout.
 13. Firmware (5) (→ `mockups/key-firmware.html`): both halves side by side. Per layer, Sergii selects a key and presses its binding, Tab advancing key by key; Esc and Tab bindings come from the picker (↓); mod-tap gets two fields; combos go through `Add combo`.
 14. From the Export menu, Sergii exports gerber + drill, STL and ZMK config. When gerber is disabled, its reason links to the violations panel.
 15. **Climax:** the status strip reads ✓ across Outline, Plates, PCB `0 unrouted`, Case, Firmware — a full pass from a blank canvas. Ctrl+S asks for a location once and writes the file.
@@ -332,8 +329,8 @@ Rejected:
 - **Tiled outputs** (all outputs side by side) — little value in seeing every output at once.
 - **Structured document** — too data-heavy for things that only make sense visually.
 - **One canvas with layers and modes** — "looks strange"; the same picture every time felt wrong.
-- **Typed command grammar** for pieces — would mean learning a new grammar.
-- **Freehand outline drawing** — the outline is a composition of pieces (PRD FR-7).
+- **Typed command grammar** for shapes — would mean learning a new grammar.
+- **Freehand outline drawing** — the outline is a composition of shapes (PRD FR-7).
 - **Table-based PCB overrides** — overrides live on the canvas.
 - **Peach selection** — Mauve chosen (see DESIGN.md › Colors for the rationale).
 
@@ -356,6 +353,15 @@ Decided, then deferred with the Assembly view (initiative Decision 2026-10-26). 
 - **Assembly legend**: card at the 3D viewer's top-right, one checkbox per body (Case, each plate, PCB) to hide it.
 - Visuals: DESIGN.md › Components › Deferred past M1. → `mockups/key-case.html` (frame 2).
 
+**Hand-built parts (milestone 2).** Decided 2026-11-01 with the blueprints fold: in M1 a design part applies a library part blueprint; hand-building a part is an authored part blueprint, whose code comes in milestone 2 (spine AD-5). It will open from the selected part in the Parts tab (`Edit part`). Kept as decided before:
+
+| Component | Use | Behavioral rules |
+|---|---|---|
+| Isolated part mode | PCB; `Edit part` | Opens the design-local part alone, large and centered, with its own zoom; header `‹ Board (Esc) · part <id>`; the PCB tab stays active. Components placed by drag or inspector fields (offset/rotation expressions; same drag/nudge/rotate rules as keys). Track tool (W) draws the part's fixed tracks. Part-level DRC runs live; while in isolated part mode, its errors show on the canvas only (marker + callout), not in the status strip or tab badge. A group's default part opens the same way (choose which part). Esc (last in Esc precedence) returns to the board at the shared viewport. |
+| Track tool | Isolated part mode, W | Click a pad, click corners, click the target pad to finish; snaps to pads and 45° (Shift = free). X switches F.Cu/B.Cu and drops a via. Backspace removes the last segment; Esc cancels. Existing track: select, drag corners, Delete. Width from net class, overridable in the inspector. One finished track = one undo step. |
+
+Shortcuts: W / X / Backspace = track tool / switch layer + via / remove last segment. Esc precedence ends with leaving isolated part mode. The old J1.9: `No default part. Create one (Edit part).` In isolated part mode (→ `mockups/key-cell.html`), Sergii places switch, diode and LED components and draws the part's fixed tracks with W (X for a via); part DRC passes; Esc returns to the board.
+
 ## Upstream Handoffs
 
 Resolved 2026-10-26 unless marked open: the architecture update (AD-9, AD-13, AD-15, AD-19, AD-22) and the PRD and ticket updates answered them.
@@ -371,6 +377,7 @@ Resolved 2026-10-26 unless marked open: the architecture update (AD-9, AD-13, AD
 | SM-5 "change pitch" axis | Sofia | `pitch-x`, `pitch-y` or both. Resolved (PRD updated 2026-10-26). |
 | Epic companions (story 5 verify) | Sofia | Add DESIGN.md and EXPERIENCE.md to `companions:` in `epic-platform-baseline.md`. Resolved. |
 | Version retention | bmad-architecture | Resolved: named points kept until the design is deleted, plus the last 20 autosaves, pruned first (AD-13). |
+| Hand-building parts is milestone 2 (2026-11-01) | Sofia, John | Open: PRD §5/FR-12, the initiative and epic-parts-and-pcb still say a design-local part's fixed tracks are drawn by hand in isolated part mode in M1; align them with spine AD-5 (authored part blueprints, code in M2). `New design` creating the default `key` answers ticket 14.5's "default part (none until epic-parts-and-pcb creates one)". |
 
 ## Open Items
 
@@ -410,14 +417,14 @@ The register of every inline `[ASSUMPTION]` in this spine, plus gaps and naming 
 
 **Contradicted by the spine (consistency pass 2026-10-30):** the text stays, marked inline `[CONTRADICTED: …]`, until its slice redesigns it.
 
-- Outline › J1.6–7, empty Outline state, the Outline row of Surface closure: the outline is built by hand from a polygon; spine AD-16 and PRD FR-7 make one derived piece per group of keys the default, with drawn pieces as the fallback.
-- Case › workspace row, operation list, empty Case state, J1.12, Surface closure: the tray is a template expanded once into editable operations, with its parameters in the Parameters slide-out; spine AD-18 and PRD FR-14 make the tray a live build style whose settings alone are edited, with the user's own operations as their own recipe applied after it.
+- Outline › J1.6–7, empty Outline state, the Outline row of Surface closure: the outline is built by hand from a polygon; spine AD-16 and PRD FR-7 make one derived shape per group of keys the default, with drawn shapes as the fallback.
+- Case › workspace row, operation list, empty Case state, J1.12, Surface closure: the tray is a template expanded once into editable operations, with its parameters in the Parameters slide-out; spine AD-18 and PRD FR-14 make the tray a live build style (a build entry) whose inputs alone are edited, with the user's own operations in their own case lane.
 
 **Needs new design** (designed when its slice is refined, not before):
 
-- Derived pieces and `fit-violated` on the Outline canvas: how fitted pieces show, join and refit, and how a key or part sticking out is marked — slice 'outline follows the keys' (epic 17).
+- Derived shapes and `fit-violated` on the Outline canvas: how fitted shapes show, join and refit, and how a key or part sticking out is marked — slice 'outline follows the keys' (epic 17).
 - Build-style settings panel: where the tray's settings live and how a setting change shows the case re-deriving — slice 'tray in 3D' (epic 8).
-- The user's own recipe list: adding, ordering and editing their own case operations on top of the style — slice 'my own case operations' (epic 21).
+- The user's own case lane: adding, ordering and editing their own case operations on top of the style — slice 'my own case operations' (epic 21).
 
 **Gaps:**
 
