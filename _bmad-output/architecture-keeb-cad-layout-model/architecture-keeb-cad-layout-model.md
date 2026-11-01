@@ -312,9 +312,10 @@ graph LR
 - **Rule:**
   - Dependencies point only as drawn below. Stages depend only on `model`, `geometry`, `reactive` and `blueprint` (each as drawn) and never import each other. **One named exception:** `routing` imports `drc`.
   - Among workspace packages, `model` imports only `reactive`, `geometry` and `blueprint`. It receives library part and blueprint data from its caller. The build-entry command receives the blueprint from `editor`, which reads it from `library`; `model` mints the ids.
-  - **One reactive graph, in the model worker** (AD-11). The core uses Vue's reactivity API directly, with no interface of its own. `@vue/reactivity` is imported only by **`reactive`**, through one re-export file; every other package that derives, `model` and the live stages included, uses it through `reactive`. `reactive` also holds the crossing (AD-11) and the recompute trace. The main thread uses Vue reactivity only for the design ref, the stage snapshots and editor state; it derives nothing (AD-25's entry fences check it; the register's structural checks read the design and the pinned declarations only, AD-3). Only `editor` and `ui` import `vue` (components) and `@vueuse/core`. No Pinia: UI state lives in ts-inject services holding Vue refs, like design state. Case and routing worker code never imports `reactive`.
+  - **One reactive graph, in the model worker** (AD-11). The core uses Vue's reactivity API directly, with no interface of its own. `@vue/reactivity` is imported only by **`reactive`**, through one re-export file; every other package that derives, `model` and the live stages included, uses it through `reactive`. `reactive` also holds the crossing (AD-11) and the recompute trace. The main thread uses Vue reactivity only for the design ref, the stage snapshots and editor state; it derives nothing: no stage and no blueprint code runs on main (AD-25's entry fences check it). The register's checks read the design and the pinned declarations, and may evaluate input ranges and upgrade conversions with `model`'s evaluator (AD-3, AD-17). Only `editor` and `ui` import `vue` (components) and `@vueuse/core`. No Pinia: UI state lives in ts-inject services holding Vue refs, like design state. Case and routing worker code never imports `reactive`.
   - **`protocol`** holds the one concrete message union between main and the model worker (payload types from `model`, the generic machine from `reactive`). It imports only `model` and `reactive`; only `pipeline`, `editor` and `storage` import it. dependency-cruiser fences it, proven by a violation fixture in `tooling/ad10/`. `reactive` holds no payload type.
   - **Three kernel packages** sit below `model`, each holding one concept: `reactive` (the reactive graph's edges) and `geometry` (the 2D kernel, AD-16) import no workspace package; `blueprint` (the sandbox host, the blueprint API's operation and query definitions, and the data-blueprint interpreter) imports only `geometry`.
+  - **Blueprint authoring.** `blueprint` exposes a type-only subpath, `blueprint/authoring` (the API types and `defineBlueprint`). Blueprint sources live in a build-time root inside `library` (`library/blueprints-src/`) that may import only `blueprint/authoring`; the library build compiles them to JS plus declaration data, which is all `library`'s runtime exports ship. `library`'s runtime imports only `model`; only workers load the compiled JS. Two dependency-cruiser rules, each with a violation fixture, fence both sides.
   - `blueprint`'s API is plain TypeScript over evaluated values. `model` keeps the one expression parser and passes its evaluator into the interpreter as an argument (AD-17), and owns the schema of the design's own lanes (AD-24). Only `blueprint` imports the sandbox runtime, **quickjs-wasi** (one VM per blueprint version; the blueprints architecture, `_bmad-output/initiative-keeb-cad-m1/architecture-blueprints/`).
   - **Each stage implements its own lane's operations:** `case` its 3D operations on replicad, `pcb` zones and silkscreen, `model` placing parts (`parts`, `extras`) and shapes. The shared 2D operations come from `geometry`.
   - **`ui`** (the editor's widget layer, AD-26) imports no workspace package; only `editor` imports it. Only `ui` imports `reka-ui` and `@zag-js/hotkeys`.
@@ -350,6 +351,7 @@ graph TD
   firmware --> model
   exports --> model
   library --> model
+  library -.->|build-time sources only| blueprint
   storage --> model
   storage --> reactive
   pipeline --> reactive
@@ -739,6 +741,7 @@ type BlueprintDeclaration = {
   inputs: Record<string, DeclaredInput>
   lanes: Partial<Record<LaneStage, LaneDeclaration>>
   upgrade?: UpgradeMapping                        // from the previous version only
+  uses: { id: BlueprintId; minVersion: Version }[] // nested blueprints (use()); MVS on main writes the result into library-versions; the worker runs only pins
   nets?: unknown                                  // nets and pin-role joins: typed with PinRole (AD-14)
 }
 type LaneStage = 'parts' | 'shapes' | 'extras' | 'plates' | 'pcb' | 'firmware' | 'case'
@@ -766,7 +769,8 @@ type UpgradeMapping = {
 type Role = string                                // open string (AD-18): 'rectangle', 'cutout', 'mount', 'outline', 'case-body', …
 type Target = 'plate' | 'pcb' | 'case'
 type Unit = 'mm' | 'deg'                          // AD-17's units
-type OutputKind = 'shape' | 'solid' | 'footprint' | 'part-placement' | 'config'   // closed list; grows with the stories
+type OutputKind = 'shape' | 'solid' | 'footprint' | 'part-placement' | 'config' | 'envelope'   // closed list; grows with the stories
+// envelope: a 2D region plus a height range (bottom, top in mm above the plate); live, read by fit and overlap (AD-5, AD-16)
 type QueryName = string                           // one of the queries defined in `blueprint`; closed list, grows with the stories
 // Checks: on main, without running code: input values (blueprint-input-invalid), read loops across
 // blueprints from producer roles, pulls and queries (AD-3), role-unconsumed. At library build: a part

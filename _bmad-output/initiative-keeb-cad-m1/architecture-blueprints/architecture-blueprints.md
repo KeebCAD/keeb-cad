@@ -1,78 +1,160 @@
 ---
 name: 'blueprints'
 type: architecture-spine
-purpose: build-substrate    # build-substrate (default) · discussion · report · deck
+purpose: build-substrate
 altitude: feature
-paradigm: ''
-scope: 'how blueprints are authored, evaluated, sandboxed and run in their stages: evaluation model, operation API and host crossings, sandbox engine, lanes per stage, TS authoring, nesting, caching and fingerprints, failures and step budget'
-status: draft               # draft · final
+paradigm: 'sandboxed plain functions over host calls: a blueprint lane is a pure function of its declared arguments that calls its stage operations synchronously and returns declared, role-tagged outputs'
+scope: 'how blueprints are authored, declared, sandboxed and run in their stages: lane contract, evaluation model, engine and VM lifecycle, determinism, budgets, failures and caching, nesting, TS authoring, the data form'
+status: draft
 created: '2026-11-01'
 updated: '2026-11-01'
-binds: [AD-2, AD-3, AD-5, AD-10, AD-11, AD-17, AD-18, AD-24]
-sources: [_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md, _bmad-output/architecture-keeb-cad-layout-model/blueprints-directions-2026-11-01.md, _bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/sandbox-verdict.md]
+binds: [AD-2, AD-3, AD-5, AD-10, AD-11, AD-17, AD-18, AD-24, AD-25]
+sources:
+  - _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md
+  - _bmad-output/architecture-keeb-cad-layout-model/blueprints-directions-2026-11-01.md
+  - _bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/sandbox-verdict.md
+  - _bmad-output/initiative-keeb-cad-m1/architecture-blueprints/blueprint-calls-verdict-2026-11-01.md
+  - _bmad-output/initiative-keeb-cad-m1/architecture-blueprints/reviews/review-rubric-2026-11-01.md
+  - _bmad-output/initiative-keeb-cad-m1/architecture-blueprints/reviews/review-verification-2026-11-01.md
+  - _bmad-output/initiative-keeb-cad-m1/architecture-blueprints/reviews/review-adversary-2026-11-01.md
 ---
 
 # Architecture Spine — blueprints
 
-<!-- TEMPLATE GUIDE — act on these comments, then delete them; never emit a comment in the finished spine. This is a shape, not a script: keep only the sections this spine needs and cut the rest (no empty headers). A small intent may be just paradigm + a few ADs + conventions; a platform earns more. An inherited epic spine is usually mostly Inherited Invariants + a thin Deferred. Decisions, not rationale (rationale lives in the memlog). Carry shape in diagrams; prose only where it must. -->
-
 ## Design Paradigm
 
-<!-- Name the pattern (a known one loads a whole model for free) and map its layers to namespaces/directories. The smallest, most durable thing here. -->
+**Sandboxed plain functions over host calls.** A pinned blueprint version is compiled once into a factory inside its own sandbox VM. Each lane run calls the factory for a fresh instance and runs one lane function: it receives its declared inputs, pulls and queries as arguments, calls its stage's operations, which run synchronously on the same thread, and returns its declared, role-tagged outputs. Nothing survives between runs. Live lanes run in the model worker, case lanes in the case worker (initiative spine AD-11). Main never runs blueprint code; it reads only declarations, as data.
+
+```mermaid
+flowchart LR
+  subgraph Thread["Model worker (live lanes) or case worker (case lanes)"]
+    ST["stage"] -- "declared args" --> H["blueprint host"]
+    H --> VM["quickjs-wasi VM<br/>per pinned version"]
+    VM -- "op calls; results as JSON strings" --> W["host-call wrapper"]
+    W --> OPS["the stage's operations"]
+    DI["data interpreter<br/>(design's own work)"] --> W
+    H -- "roles checked; handles converted by the stage" --> ST
+  end
+  SRC["library/blueprints-src<br/>(TS, build time)"] -- "library build" --> PKG[("compiled JS +<br/>declaration data")]
+  PKG --> H
+  PKG --> REG["register on main<br/>input checks, read-loop check,<br/>MVS, upgrades"]
+```
 
 ## Inherited Invariants
 
-<!-- Only when this spine inherits a higher-altitude parent. The parent's ADs/conventions/paradigm that bind here, by their ORIGINAL ids — read-only, never renumbered, not re-derived. A local decision that contradicts one is a conflict to surface, not an override. Cut this section otherwise. -->
-
 | Inherited | From parent | Binds here |
 | --- | --- | --- |
-| {AD-id / convention} | {parent spine} | {what it constrains in this scope} |
+| AD-18 | initiative spine | One blueprint concept; lanes per stage; pull, never push; code in a hermetic, deterministic sandbox with a step budget; the data form for the design's own work; nesting by `use()` in the same lane and sandbox |
+| AD-11 | initiative spine | Live lanes run in the model worker after each applied command, never per drag frame; the visible set within 100 ms; a library blueprint's lane reads only inputs, pulls and queries; failed lanes show their last good output stale with `lane-failed`; stage cache keys and fingerprints |
+| AD-10 | initiative spine | `blueprint` imports only `geometry`; only `blueprint` imports quickjs-wasi; `model` passes its evaluator in; the `blueprint/authoring` build-time path and its fences |
+| AD-25 | initiative spine | Per-thread partials and entry fences: main never reaches `blueprint`, a stage or the runtime |
+| AD-5 | initiative spine | Versions immutable and pinned; minimal version selection for nested pins; every part blueprint has exactly one `rectangle` |
+| AD-3, AD-17, AD-24, AD-2 | initiative spine | One acyclic graph with declared reads as edges, checked on main; expressions only through `model`'s evaluator; references a declared kind; commands the only writers |
+| Data Schema: `BlueprintDeclaration` | initiative spine | The declaration's shape (`uses` and the `envelope` output kind included) and its checks |
 
 ## Invariants & Rules
 
-<!-- The durable heart: calls a future builder can't read off compliant code. One block per decision: stable ascending id (never reused/renumbered), Binds, Prevents (the divergence), Rule (enforceable). Tag [ADOPTED] when the user or existing reality settled it. Include a dependency-direction diagram (who may depend on whom) — it IS a rule; author it as valid mermaid, never an empty graph. -->
+### BP-1 — Calls: operations run as they are called
 
-### AD-1 — {decision}
+- **Binds:** blueprint, model, plates, pcb, firmware, case, library
+- **Prevents:** two evaluation styles; a dataflow language grown to avoid measuring; asynchronous host calls inside a lane.
+- **Rule:**
+  - Blueprint code calls its stage's operations; each runs on the host when called, synchronously, on the lane's thread, and returns a result the code may use and measure. Geometry stays on the host; the sandbox holds integer handles.
+  - Every host call goes through **one host-call wrapper** in `blueprint`. Results cross into the guest as **one JSON string**, never built through the engine's object API; the data interpreter (BP-10), which runs on the host, calls the operations directly.
+  - Nothing a lane needs is asynchronous: assets and other declared values are resolved before the run.
 
-- **Binds:** {R ids / unit ids, areas, or `all`}
-- **Prevents:** {the divergence this stops}
-- **Rule:** {the constraint downstream must follow}
+### BP-2 — Engine: quickjs-wasi [ADOPTED]
+
+- **Binds:** blueprint
+- **Prevents:** one trap taking down every blueprint.
+- **Rule:** The runtime is quickjs-wasi, pinned exactly (initiative spine, Stack); only `blueprint` imports it. Detecting a pending job uses its internal `qjs_is_job_pending` export; a contract test covers it and runs on every version bump. The app carries QuickJS-NG's and wasi-libc's licence notices.
+
+### BP-3 — Determinism: a fresh instance in an allow-listed, frozen scope
+
+- **Binds:** blueprint
+- **Prevents:** state surviving between runs; output depending on call history; guest code running while the host reads a failure; host details leaking in.
+- **Rule:**
+  - Each pinned version is compiled once into a **factory**, kept apart from the boundary code; every run calls it for a fresh instance.
+  - The global scope is an **allow-list**: the ECMAScript built-ins minus `Date`, `Math.random`, `WeakRef` and `FinalizationRegistry`, plus the frozen blueprint API. Everything else is deleted, then intrinsics and globals are frozen and the global object made non-extensible; blueprints run in strict mode. A test walks every reachable global against the list.
+  - Every VM has `maxStackSize` 256 KiB and a fixed WASI clock and random source.
+  - The boundary wraps each lane call and each `use()` in `try/catch`, converts a throw with `String()` inside the run's budget and returns `{ failed: <message cut at 500 characters> }` as JSON. The host never reads a guest error object; it throws only message strings into the guest.
+  - A returned value JSON can't carry exactly (`NaN`, `±Infinity`, `undefined`, a function) is a typed failure. The result decode is strict: an empty or unparsable result is a failure. No promise job outlives a run.
+
+### BP-4 — Budgets
+
+- **Binds:** blueprint, pipeline, editor
+- **Prevents:** runaway code or allocation stalling a worker; a slow blueprint nobody can point at; a nondeterministic limit.
+- **Rule:**
+  - **Steps:** 100 interrupt-handler calls per run (about one per 5,000 simple loop iterations; the minimal key uses 1), pinned by a test. The step budget bounds bytecode only. The count may differ by one with call history; that is an accepted limit.
+  - **Memory:** every VM has a `memoryLimit` of 64 MiB, pinned by a test. Out of memory is a typed failure. A VM whose memory has grown past that size is replaced in the next pause.
+  - **Host work:** no budget. The worker records each lane run's time for attribution only: the status strip's running stage names the blueprint, the Inspector shows a lane's last run time. Times never decide an output.
+
+### BP-5 — Each lane run is a cached unit
+
+- **Binds:** blueprint, pipeline
+- **Prevents:** a stage rerunning every lane for one slot's change; caching a failure that depends on timing.
+- **Rule:**
+  - A lane run's cache key is the stage and its version, the blueprint version, the transitive closure of its pinned `uses` and the hash of exactly the arguments it receives. Identical runs share one entry. A stage receives only lane outputs, never runs blueprint code, and keeps its own AD-11 cache key.
+  - A **deterministic** failure (a throw, the step budget, out of memory, a non-JSON-exact value, an undeclared or missing role, a pending job) is cached like a success: it reruns only when the key changes. Its last good output shows stale with `lane-failed`, carrying the stable message.
+  - A lane whose VM is gone (dropped mid-stage after a trap or a pending job) is skipped, marked `unavailable` and **never cached**; it reruns in the next pause. Only the run that trapped is cached.
+
+### BP-6 — Nesting
+
+- **Binds:** blueprint, library, model
+- **Prevents:** a nested blueprint seeing its caller's state; nested versions decided at run time; a caller's reads changing with a nested upgrade.
+- **Rule:** A declaration lists its `uses` (`{ id, minVersion }`). Adding or upgrading a blueprint runs minimal version selection on main over the `uses` graph and writes the pins into `library-versions`; the worker runs only pinned versions. `use(id, inputs)` calls the nested factory for a fresh instance in the caller's VM, lane and handle table; a `use()` of an id not in `uses` fails the run. A nested blueprint receives only the inputs its caller passes, checked against its declared inputs, and has no pulls or queries of its own.
+
+### BP-7 — Authoring: TS compiled at library build
+
+- **Binds:** library, blueprint, model
+- **Prevents:** a compiler in the app; a declaration that disagrees with its code; main reaching `blueprint` through `library`.
+- **Rule:**
+  - Milestone 1 blueprints are TS sources in `library/blueprints-src/`, which import only `blueprint/authoring` (initiative spine AD-10). The library build type-checks and compiles them to JS, evaluates each exported `defineBlueprint({ … })`, validates it with the declaration schema in `model`, and ships JS plus declaration data. Only workers load the JS.
+  - The declaration's schema lives in `model`; the host receives declarations already validated, as plain data. The query list and the API version live in `blueprint` and are checked in the worker.
+
+### BP-8 — The lane contract
+
+- **Binds:** blueprint, every stage that runs lanes, library
+- **Prevents:** undeclared reads; lanes reaching another stage's operations; two ways outputs return to a stage.
+- **Rule:**
+  - A module exports `lanes = { <stage>(args, op) }`. `args = { inputs, pulls, queries }` holds exactly what the declaration lists: inputs as plain values (quantities as numbers in mm or deg; options and text as strings; part refs, anchors and assets as opaque handles), pulls as handles keyed by role (an array per its count), query results as plain values. `op` exposes only that stage's operations.
+  - A lane returns a map from each declared role to a handle or a plain value. The host checks the roles against the declaration; the stage converts each handle into `model`'s output type; the run's handles are then freed.
+
+### BP-9 — VM lifecycle
+
+- **Binds:** blueprint, pipeline, case
+- **Prevents:** VM creation inside a synchronous stage; VMs that outlive their pins; leaked handles.
+- **Rule:**
+  - One VM per pinned blueprint version, holding its factory and the factories of the transitive closure of its pinned `uses`; a pin change that alters a nested version means a new VM.
+  - A pool in `blueprint`, one per worker. The model worker fills it in its pause between applying patches and running stages; the case worker fills its own before case lanes and rebuilds it after a respawn.
+  - One handle table per lane run, owned by the host and shared by nested `use()` calls, freed at the run's end, including quickjs-wasi's internal handle copies.
+  - A VM is disposed when its version is no longer pinned in the current design.
+
+### BP-10 — The data form uses the same operations
+
+- **Binds:** blueprint, model
+- **Prevents:** a second implementation of operations for the design's own work.
+- **Rule:** The data-blueprint interpreter (in `blueprint`, `model`'s evaluator passed in) walks the design's own work and calls the same stage operations through the same host-call wrapper. It needs no sandbox, runs on the lane's thread and is cached per lane run. Its syntax is decided with the first outline story.
 
 ## Consistency Conventions
 
-<!-- Defaults that bind where independent builders would drift. Cut rows that don't apply; add rows the project needs. -->
-
 | Concern | Convention |
 | --- | --- |
-| Naming (entities, files, interfaces, events) | |
-| Data & formats (ids, dates, error shapes, envelopes) | |
-| State & cross-cutting (mutation, errors, logging, config, auth) | |
-
-## Stack
-
-<!-- SEED — verified current at authoring; the code owns this once it exists. Name + version only; the why lives in the memlog. One row per language, framework, key dependency, platform, or chain that's pinned. -->
-
-| Name | Version |
-| --- | --- |
-| {language / framework / key dep / platform / chain} | {pinned version} |
-
-## Structural Seed
-
-<!-- The shapes worth fixing at cold-start — not a fixed list. Include only what's non-obvious at this altitude, and use as many diagrams as convey it, each as VALID mermaid (never a placeholder or empty graph). Candidates: system/container/context view; DEPLOYMENT & ENVIRONMENTS and external provider/infra topology (cover the operational envelope here when this altitude owns it — don't let it fall through); core-entity ERD (names + relationships only; an attribute that's itself an invariant is an AD, not a diagram); a minimal source tree. The code owns the detail — this is scaffold, not a mirror to maintain. -->
-
-```text
-{root}/
-  {dir}/   # {what lives here}
-```
-
-## Capability → Architecture Map
-
-<!-- Present when a ticket drove this run. Bridges the ticket's requirements to where they live + what governs them; the consistency auditor's checklist. Cut otherwise. -->
-
-| Capability / Area | Lives in | Governed by |
-| --- | --- | --- |
-| {R-id / area} | {component / module} | {AD-id, convention, paradigm} |
+| Failure kinds | `lane-failed` names the entry, the slot and its cause (a throw with its message, the step budget, out of memory, a non-JSON-exact value with its path, a pending job, an undeclared or missing role); `unavailable` is transient and uncached; `blueprint-input-invalid` comes from main; `blueprint-api-too-new` and an unknown query from the worker (initiative spine, Violations) |
+| Host API | Every operation is defined once in `blueprint` (signature and JSON result shape) and implemented by the stage that owns the lane (AD-18) |
+| Verification | Per host: a stateful blueprint gives the same output for the same input; a runaway stops at the step budget; an allocation loop fails out of memory, typed; unbounded recursion fails typed; the global allow-list test; a throwing getter never runs on the host; a nested blueprint can't see its caller; the pending-job contract test. At library build: every declaration validates and every part blueprint declares one `rectangle` |
 
 ## Deferred
 
-<!-- Decisions intentionally pushed down, each with the reason it can wait — including whole dimensions this altitude doesn't own yet. The half of the contract that keeps the spine lean. -->
+| Item | Why it can wait | Revisit |
+| --- | --- | --- |
+| A host-work counter in the host-call wrapper (charge 1 + the vertex count of the handles passed; past a budget the call throws and the lane fails) | Milestone 1 blueprints are the app's own; attribution shows a slow one; adding it changes only the wrapper | Third-party blueprints |
+| The blueprint operation list | Owned by the first tray-case story (initiative spine, Open Questions) | First tray-case story |
+| Nets and pin-role joins in the declaration | Typed with `PinRole` in the netlist work (AD-14) | First PCB story |
+| The data form's syntax | Decided with the outline primitives | First outline story |
+| In-app TS compilation | No user-authored blueprints in milestone 1 | Milestone 2 authored blueprints |
+| Absolute timings and memory probes in a browser worker on AC | The spikes ran on battery and the memory probes in Node; rankings hold | Story 17, before a number becomes a budget |
+
+## Working material
+
+Drawn before the calls and model-worker decisions; out of date, kept as history: `blueprint-sketches-2026-11-01.md`, `blueprint-interactions-2026-11-01.html`, `blueprint-walkthrough-2026-11-01.html`.
