@@ -14,7 +14,7 @@ risk: medium
 
 ## Description
 
-The rest of Corney Island's library parts and footprints and Corney's design-local key part place every footprint and keep-out on the PCB, whose edge is composed from the outline; isolated part mode edits a design-local part's components and tracks, and changing the key's part updates every key's footprints; part cutouts move with their part in plate, PCB and case; the PCB follows key moves live and exports a KiCad 10 project as the escape hatch.
+The rest of Corney Island's library parts and footprints and Corney's key part (the library key blueprint, which gains its footprints, pins and fixed tracks here) place every footprint and keep-out on the PCB, whose edge is composed from the outline; changing the keys' part or its inputs updates every key's footprints; part cutouts move with their part in plate, PCB and case; the PCB follows key moves live and exports a KiCad 10 project as the escape hatch.
 
 ## Outcome
 
@@ -23,7 +23,7 @@ For Sergii: Corney's PCB shows every footprint placed from its parts, follows ke
 ## Done when
 
 - Every footprint and keep-out is placed from the slots' parts; the PCB edge comes from the outline.
-- Editing the keys' design-local part updates every key's footprints.
+- Changing the keys' part, or its inputs, updates every key's footprints.
 - The KiCad 10 project export opens in KiCad.
 - The slice scenario and one e2e journey pass.
 
@@ -51,3 +51,4 @@ For Sergii: Corney's PCB shows every footprint placed from its parts, follows ke
 - Waits on epic 19 because: the part schema and part cutouts
 - Decision (2026-10-30, replan): re-sliced as the vertical slice 'Footprints on the PCB'; title, description, outcome and Done when rewritten; earlier Notes stay as history and are re-read against the spine (AD-1 to AD-25) when this epic is refined.
 - Decision (2026-10-31): key cells are folded into parts (initiative Notes, Decision 2026-10-31; spine AD-5). The 2026-10-26 and 2026-10-28 notes above predate it: read `Edit key cell` as `Edit part`, isolated cell mode as isolated part mode, the key-cell track tool as the part's fixed-track tool, a key-cell reference as a part reference, and the `key-cell` connection tag as `fixed-tracks`.
+- Decision (2026-11-01, after PRD aafa741 and EXPERIENCE.md f715ba2): hand-building a part is milestone 2. This supersedes the 2026-10-26 Notes lines on `Edit key cell`, the key-cell track tool and cell-level DRC: isolated part mode, the track tool and the part DRC marker are not built in M1. Still standing: the Part picker's footprint preview, the keep-out gap, the AD-20 LED clearance work and AD-14 connections.

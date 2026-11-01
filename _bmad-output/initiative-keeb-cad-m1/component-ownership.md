@@ -10,10 +10,11 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | Tab badge, status strip output-state entries | route and fab (7) | 7.2 |
 | Left rail + slide-out (Tree tab) | see Corney's keys (13) | 13.15, filled by 13.7 |
 | Left rail + slide-out (Parameters tab) | change a parameter (14) | to plan |
+| Left rail + slide-out (Parts tab) | change a parameter (14) | to plan |
 | Canvas, viewport, selection; Canvas keys, Right half, Mirror axis, Group frame, Unfitted slot | see Corney's keys (13) | 13.7, 13.8 |
 | Banner, Toast | keep my work (16) | 16.1, 16.3 |
 | Start screen, File menu, Design info | keep my work (16) | to plan |
-| Inspector, Design settings, Fitted toggle (moved from 13.8 on 2026-10-30) | change a parameter (14) | 14.5 |
+| Inspector, Design settings, Fitted toggle (moved from 13.8 on 2026-10-30), This slot section (2026-11-01) | change a parameter (14) | 14.5 |
 | Expression field, Autocomplete dropdown | change a parameter (14) | to plan |
 | Violations panel, Violation marker, Overlap area | change a parameter (14) | 14.4, 14.6 |
 | Rotation handle, Anchor link, Pick marks, Nudge-step control | drag keys (15) | 15.5, 15.6 |
@@ -23,7 +24,7 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | Operation list, Vertex table | draw custom pieces (18) | to plan |
 | Part field, Part picker | plates to DXF (19) | 19.2 |
 | Plate fields, Export menu | plates to DXF (19) | 19.3, to plan |
-| Isolated part mode, Track tool, Part DRC marker | footprints on the PCB (6) | to plan |
+| Isolated part mode, Track tool, Part DRC marker | milestone 2 (hand-built parts, decided 2026-11-01) | — |
 | PCB marks | footprints on the PCB (6), extended by nets and matrix (20) and route and fab (7) | to plan |
 | Keymap layer tabs, Binding field, Firmware legends, Combo | firmware and keymap (9) | to plan |
 | 3D viewer | tray in 3D (8) | to plan |
