@@ -26,27 +26,27 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
 
 - R1 (prd FR-1): Build a layout from a blank canvas with groups and slots placed by anchor + offset (offset, then rotate about pivot). Any node anchors to any node, and moving a node moves everything anchored to it, transitively.
 - R2 (prd FR-2): Arrange children freely or as a chain. Corney Island's cumulative column stagger and 3-key thumb fan are expressible without absolute coordinates. Each node has one rotation, carried along the chain; a mid-chain turn that must not carry uses an explicit anchor. Placement reproduces Ergogen within ±0.05 mm.
-- R3 (prd FR-3): Set the design's gap between keycaps (x and y), a key's size (1u, 1.5u: a part recipe's `size` input, adjustable per slot), a default part for every key (a design-local part the user defines, usually a part recipe applied with inputs, or a library part), and overrides per group or part. Changing that part updates every key's footprints. Choc v2 at 19 mm centres is expressible via the gap.
+- R3 (prd FR-3): Set the design's gap between keycaps (x and y), a key's size (1u, 1.5u: a part blueprint's `size` input, adjustable per slot), a default part for every key (a library part blueprint applied with inputs, a new design starting with a Choc v2 key, or a library part), and overrides per group or part. Changing that part updates every key's footprints. Choc v2 at 19 mm centres is expressible via the gap. Building a part by hand is milestone 2.
 - R4 (prd FR-4): Design a split keyboard with a reversible board (one geometry, one PCB; per-side differences are overrides, in M1 removing a part on one side, and a removed slot keeps its space). Split designs with a mirrored board and unibody designs load without a model change; editing them is deferred.
 - R5 (prd FR-5): Copy a design (`Copy design…`) as a new design that records its source design and revision; `Save to file…` keeps the same design and id. Corney Island wireless is a copy of wired with different parts and positions.
-- R6 (prd FR-6): Draw named pieces from key outlines, rectangle, circle, polygon, add/subtract/intersect, and offset with corner style and fillet, and reference pieces from pieces. Corney Island's 18-vertex filleted outline and LambBT's r = 150 mm circle subtraction are expressible.
-- R7 (prd FR-7): The outline is built from pieces. By default each group of keys gets one derived piece that fits its keys and parts with a margin, follows every layout change, and joins the others automatically.
-  - A drawn piece, anchored to keys, groups, construction points or vertices, covers a silhouette that isn't a fit. Accents go on top.
+- R6 (prd FR-6): Draw named shapes from key outlines, rectangle, circle, polygon, add/subtract/intersect, and offset with corner style and fillet, and reference shapes from shapes. Corney Island's 18-vertex filleted outline and LambBT's r = 150 mm circle subtraction are expressible.
+- R7 (prd FR-7): The outline is built from shapes. By default each group of keys gets one derived shape that fits its keys and parts with a margin, follows every layout change, and joins the others automatically.
+  - A drawn shape, anchored to keys, groups, construction points or vertices, covers a silhouette that isn't a fit. Alterations go on top.
   - A key or part that sticks out of the outline is reported, never clipped.
-  - Corney Island's outline is reproduced as the same shape within ±0.05 mm, by a drawn piece if derived pieces can't match it.
+  - Corney Island's outline is reproduced as the same shape within ±0.05 mm, by a drawn shape if derived shapes can't match it.
 - R8 (prd FR-8): Place curated library parts in slots anchored to any node. The library covers everything Corney Island needs, with footprints from keeb-cad's own library carrying attribution.
-- R9 (prd FR-9): Parts bring their cutouts and keep-outs for plate, PCB and case; user cutouts are pieces subtracted with booleans. Moving a part moves its cutouts in every output together.
-- R10 (prd FR-10): Define several plates (Corney: switch plate, backplate, MCU cover) as pieces that update live. Each exports as DXF/SVG or as gerbers.
+- R9 (prd FR-9): Parts bring their cutouts and keep-outs for plate, PCB and case; user cutouts are shapes subtracted with booleans. Moving a part moves its cutouts in every output together.
+- R10 (prd FR-10): Define several plates (Corney: switch plate, backplate, MCU cover) as shapes that update live. Each exports as DXF/SVG or as gerbers.
 - R11 (prd FR-11): The PCB edge comes from the outline, footprints from slot parts, and nets and matrix from layout, parts and per-side overrides. Moving a key updates its footprints and nets. The user can override matrix rows/columns, MCU pins and LED chain order.
 - R12 (prd FR-12): Parts' fixed tracks follow keys live, and other connections route in the browser, in the background, with progress.
   - Routes are saved in the design and kept while their endpoints are unchanged and DRC passes; only broken connections are rerouted.
   - Unrouted connections are always reported.
   - Design rules are obeyed, and a pre-routed module zone is allowed.
-  - No manual editing of board routes; a design-local part's fixed tracks are drawn by hand in isolated part mode.
+  - No manual editing of board routes; a part's fixed tracks come with the part (in M1, from the library).
 - R13 (prd FR-13): Export fab-ready gerbers + drill once routing completes, gated by zero DRC errors. A KiCad export that opens in KiCad 10 is always available as the escape hatch.
 - R14 (prd FR-14): Give the case a build style (tray in M1) whose settings (wall, PCB-to-wall gap, floor, height) re-derive the case on every change. Only the settings are edited, and switching style re-derives the case without losing the design.
-  - The user's own case operations are their own recipe, applied after the style, and follow the layout.
-  - The style and recipes are versioned; an app update never changes a saved case.
+  - The user's own case operations are kept with the design, applied after the style, and follow the layout.
+  - Every blueprint, the build style included, is versioned, and a version never changes; moving to a newer one is deliberate. A fix to an app operation that changes a saved case's output is shown and accepted, never applied silently.
   - The case follows the outline and part cutouts, and rebuilds in the background with progress.
   - It exports STL and STEP. The operation set grows with the app.
 - R15 (prd FR-15): Matrix, pin mapping and ZMK physical layout are derived from the design. A ZMK configuration is exported per design, with RGB for the wired design. The firmware model is neutral, so QMK can be added without design changes.
@@ -58,9 +58,9 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
 
 - C1 (prd §6, FR-18): Browser-only, on current desktop Chromium and Firefox; every stage, including routing and case solids, runs client-side with no server. Firefox saves by download.
 - C2 (prd §6): Stable outputs: the same file reopens to the same outputs, and an edit changes only what it must. Routes are saved, case solids may be cached, and pure derivations are recomputed.
-- C3 (architecture spine): AD-1 to AD-25 bind every epic and story. Work that needs to break one goes back through `bmad-architecture`.
+- C3 (architecture spine): AD-1 to AD-26 bind every epic and story. Work that needs to break one goes back through `bmad-architecture`.
 - C4 (prd SM-1, SM-2, SM-C1): Acceptance is against Corney Island v0.3's Ergogen output within ±0.05 mm: key centres, plate cutouts and case dimensions, and the outline and plates as the same shape (every boundary point within 0.05 mm). No Corney-specific shortcuts.
-- C5 (prd §5, FR-15): ZMK is the only firmware target, and the library is curated (no user-imported parts).
+- C5 (prd §5, FR-15): ZMK is the only firmware target, and the library is curated (building a part by hand is milestone 2).
 - C6 (prd SM-C2): Routing completion is never bought by loosening clearances or hiding unrouted connections.
 
 ## Done when
@@ -77,11 +77,11 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
   - remix and the block library; propagating layout changes between designs
   - MX, Choc v1 and the Sofle thumb as built references
   - editing unibody designs and split designs with a mirrored board
-  - manual editing of board routes (a design-local part's fixed tracks are authored); QMK; Ergogen and KiCad import; KLE
+  - manual editing of board routes; QMK; Ergogen and KiCad import; KLE
   - case styles other than tray, and tenting
   - the Case workspace's Assembly view (plates and PCB at real heights), and the plate and PCB 3D bodies it needs (Decision 2026-10-26)
   - accounts and sharing
-  - bare-chip routing; user-imported parts
+  - bare-chip routing; building a part by hand (milestone 2)
 - Editor views, panels and drag semantics were decided in the UX session (epic-platform-baseline story 5); its DESIGN.md and EXPERIENCE.md are companions of the editor epics.
 - Touch point: Ergogen reference output (Corney Island) — golden comparison; owner: epic-risk-spikes
 - Touch point: routing engine (tscircuit capacity-autorouter or a custom keyboard router, chosen by epic-risk-spikes) — runs in a worker; owner: epic-routing-and-fab
@@ -89,7 +89,7 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
 - Touch point: fab gerber checker — accepts gerbers + drill; owner: epic-routing-and-fab
 - Touch point: ZMK v0.3.0 build toolchain — builds the exported config; owner: epic-firmware-and-keymap
 - Touch point: static host — serves the app and WASM; deferred to the first public preview (milestone 1 runs locally only, epic-platform-baseline Decision 2026-10-26)
-- Tracer path: a blank canvas → Corney's keys → parameters and drag → the outline from pieces → plates → PCB placement and nets → ZMK firmware → browser routing, DRC and gerbers → the tray case, all from one design file, one vertical slice at a time.
+- Tracer path: a blank canvas → Corney's keys → parameters and drag → the outline from shapes → plates → PCB placement and nets → ZMK firmware → browser routing, DRC and gerbers → the tray case, all from one design file, one vertical slice at a time.
 
 ## References
 
@@ -132,3 +132,4 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
 - Decision (2026-10-30, replan): the re-slice supersedes the 2026-10-25 homes for the catalogue schema (now 'plates to DXF'), the worker harness (now 'route and fab', the first background stage) and the export registry (now 'plates to DXF', the first export), and the 2026-10-26 split decisions for epic-layout and epic-design-document (both dropped). Declined from the tree check: 'route and fab' after 'firmware and keymap' (both need only nets; `after` holds prerequisites, build order already puts firmware first).
 - Decision (2026-10-30, replan): the catalogue schema (14.7) moved into 'change a parameter', because pitch-below-min and overlap need the switch's minimum pitch and envelope; it no longer waits for 'plates to DXF'. Moved entries' stale prerequisites were repointed to the new order. Five epic prerequisites (plates on drawn pieces, route on nets, wireless on case, firmware and route) are pinned when those slices plan their stories; no planned entry needs them yet.
 - Decision (2026-10-31): data schema approved — Sergii approved `_bmad-output/architecture-keeb-cad-layout-model/data-schema-draft-2026-10-31.md` as a whole; its types now live in the spine's Data Schema section. Population is dropped: per-side differences are `overrides` entries, in M1 only removing a part on one side of a reversible board, and a removed slot keeps its space; authored slots have no `empty` part. Pitch is retired: `u` is a key-size label (a part recipe's `size` input), not a length, and spacing is one uniform `meta.gap` (edge to edge between keycaps, x and y), so `pitch-below-min` and the minimum pitch go and `overlap` on part envelopes is the one collision check. A key part is usually a part recipe applied with inputs, which a slot may adjust (for example size 1.5u), with hand-built design-local parts as the escape hatch; each recipe kind has its own interpreter, and the part recipe interpreter starts with `size` → keycap envelope in the first story that needs a 1.5u key (13.4, Corney's far thumb key). Form is split with a reversible or mirrored board, or unibody; every part carries one `reversible` flag, and a non-reversible part on a reversible board is the new `part-not-reversible` violation. "Catalogue schema" becomes part schema and every other "catalogue" becomes library (`catalogue-refs` → `library-versions`), `fixed-tracks` becomes `part-tracks`, and the `note` property goes. R3, R4, R5, R8, R11, R12, R17, C5 and Boundaries are reworded; older entries keep the old terms.
+- Decision (2026-11-01, re-derive after PRD aafa741): R3, R6, R7, R9, R10, R12, R14, C3 and C5 re-derived from the PRD update: hand-building a part is milestone 2 (a new design starts with a Choc v2 key), recipe/piece/accent renamed blueprint/shape/alteration, FR-14's versioning (a version never changes; an app operation fix is shown and accepted), and C3 now names AD-1 to AD-26. Boundaries and the tracer path follow the same wording.
