@@ -1,0 +1,242 @@
+<title>Blueprint Interactions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: one reading column, each case a titled section with its diagram and a short "what to notice" list. */
+  :root {
+    --bg: #f6f7f5; --surface: #ffffff; --fg: #1d2421; --muted: #5d6762;
+    --line: #d6dbd7; --accent: #2f6f5e; --warn: #9a5b12;
+    --body: "IBM Plex Sans", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141816; --surface: #1c211f; --fg: #e3e8e5; --muted: #9aa49f;
+      --line: #313a36; --accent: #7cc3ad; --warn: #e0a85c; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141816; --surface: #1c211f; --fg: #e3e8e5; --muted: #9aa49f;
+    --line: #313a36; --accent: #7cc3ad; --warn: #e0a85c; color-scheme: dark;
+  }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 32px 64px;
+  }
+  main { max-width: 920px; margin: 0 auto; display: grid; gap: 40px; }
+  header { display: grid; gap: 8px; }
+  h1 { font-size: 1.9rem; margin: 0; text-wrap: balance; }
+  h2 { font-size: 1.25rem; margin: 0; text-wrap: balance; }
+  p, li { max-width: 68ch; }
+  p { margin: 0; }
+  .lede { color: var(--muted); }
+  code { font-family: var(--mono); font-size: 0.9em; }
+  .tag { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+  section { display: grid; gap: 12px; min-width: 0; }
+  .diagram { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; overflow-x: auto; }
+  .diagram pre { margin: 0; }
+  ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+  .open { color: var(--warn); }
+  .legend { display: grid; gap: 6px; border-left: 3px solid var(--line); padding-left: 12px; color: var(--muted); }
+</style>
+
+<main>
+  <header>
+    <span class="tag">keeb-cad · blueprints architecture · working material, 2026-11-01</span>
+    <h1>Blueprint Interactions</h1>
+    <p class="lede">How a blueprint is run in six cases, drawn for the model under discussion: operations build nodes inside the sandbox, a measuring call forces one node, and the returned tree is evaluated by the stage. Nothing here is decided.</p>
+    <div class="legend">
+      <p><strong>Crossing</strong> = one call between the host and the sandbox (about 10–15 µs in the spike, more with large payloads).</p>
+      <p><strong>Under the "calls" model</strong> every operation would be its own crossing; each case notes where that changes the picture.</p>
+      <p class="open"><strong>Orange</strong> marks a question the architecture has to settle.</p>
+    </div>
+  </header>
+
+  <section>
+    <span class="tag">Where things run</span>
+    <h2>Two threads, a sandbox beside each stage that evaluates</h2>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+  subgraph Main["Main thread (live, inside one frame)"]
+    G["Reactive graph<br/>model computeds"] --> P["parts stage"]
+    G --> X["extras stage"]
+    P --> H1["blueprint host"]
+    X --> H1
+    H1 <--> S1["Sandbox<br/>QuickJS context per blueprint"]
+    H1 --> O1["2D operations<br/>geometry: makerjs, clipper2"]
+    M["model's data interpreter<br/>(design's own work)"] --> O1
+  end
+  subgraph Worker["Case worker (background, committed revisions)"]
+    C["case stage"] --> H2["blueprint host"]
+    H2 <--> S2["Sandbox<br/>QuickJS context per blueprint"]
+    H2 --> O2["3D operations<br/>replicad / OCCT"]
+  end
+  G -- "crossing: input slice as plain values" --> C
+  C -- "crossing: bodies back" --> G
+</pre></div>
+    <ul>
+      <li>Every call between a sandbox and its operations is synchronous, because both sit on the same thread.</li>
+      <li>The thread-to-thread crossing (AD-11) carries plain values only, and only the case stage uses it.</li>
+      <li class="open">Open: one WASM module per thread; is a context per blueprint, per blueprint version, or per lane run?</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="tag">Case 1 · parts lane · live</span>
+    <h2>A key blueprint runs when its inputs change</h2>
+    <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant U as Command (size 1u → 1.5u)
+  participant G as Reactive graph
+  participant H as blueprint host
+  participant S as Sandbox (key@3)
+  participant O as geometry ops
+  U->>G: design replaced (AD-2)
+  G->>G: slot's input slice changed? cache by slice hash
+  G->>H: run parts lane (key@3, inputs)
+  H->>S: parts(inputs)  [crossing]
+  S->>S: rect(), cutout(), footprint() build nodes
+  S-->>H: tree as plain data
+  H->>O: evaluate tree
+  O-->>H: rectangle, cutout, pads
+  H-->>G: part outputs, violations
+  G->>G: chain step reads the rectangle (13.2)
+</pre></div>
+    <ul>
+      <li>One crossing per run. Under the calls model: about 4–6.</li>
+      <li>A key drag changes no part input, so steps 3–9 do not run at all; only a size change or a parameter scrub does.</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="tag">Case 2 · extras lane · live</span>
+    <h2>Underglow measures its own path</h2>
+    <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant G as Reactive graph
+  participant H as blueprint host
+  participant S as Sandbox (underglow@1)
+  participant O as geometry ops
+  G->>H: run extras lane (inputs, outline)
+  H->>S: extras(inputs, outline)  [crossing]
+  S->>S: path = offset(outline, -inset) builds a node
+  S->>H: length(path) forces the node  [crossing]
+  H->>O: evaluate offset
+  O-->>H: path (cached for this run)
+  H-->>S: 182.4
+  S->>H: points(path, n)  [crossing]
+  H-->>S: n points (from the cached path)
+  S->>S: place LED parts, chain order, ledCount
+  S-->>H: tree
+  H->>O: evaluate the rest (path reused)
+  H-->>G: LED parts, firmware config
+</pre></div>
+    <ul>
+      <li>Three crossings. Only the measuring calls cost one each.</li>
+      <li class="open">Open: host work isn't counted by the sandbox's step budget; does the host need its own budget (operations, vertices)?</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="tag">Case 3 · case lane · background</span>
+    <h2>The tray builds the case body in the worker</h2>
+    <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant G as Reactive graph
+  participant PL as pipeline
+  participant C as case stage (worker)
+  participant S as Sandbox (tray@2)
+  participant R as replicad ops
+  G->>PL: committed revision
+  PL->>PL: input slice: outline, pulled cutouts and mounts, query tallest-part
+  PL->>C: slice  [thread crossing]
+  C->>S: case(inputs, reads)  [crossing]
+  S->>S: offset, extrude, subtract build nodes
+  S->>C: bounds(inner) to place bosses  [crossing, optional]
+  C->>R: evaluate offset
+  R-->>C: inner wall
+  C-->>S: bounds
+  S-->>C: tree with spots (host-resolved selectors)
+  C->>R: evaluate solids
+  R-->>C: bodies, STEP, STL
+  C-->>PL: CaseOutput  [thread crossing]
+  PL-->>G: shown, stale if the slice moved on
+</pre></div>
+    <ul>
+      <li>No frame budget here: measuring is cheap relative to OCCT.</li>
+      <li>Pulled cutouts and mounts are already evaluated upstream; the tray never reads the bodies it contributes to (AD-18).</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="tag">Case 4 · nesting</span>
+    <h2>A key uses a footprint blueprint</h2>
+    <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant H as blueprint host
+  participant S as Sandbox (key@3)
+  participant N as choc-footprint@2 (same context)
+  H->>H: resolve pins: key@3 needs choc-footprint ≥2 (MVS, AD-5)
+  H->>S: load key@3 and choc-footprint@2 code
+  H->>S: parts(inputs)  [crossing]
+  S->>N: use('choc-footprint', { hotswap })
+  N-->>S: nodes (no crossing)
+  S-->>H: one tree with the nested nodes inside
+</pre></div>
+    <ul>
+      <li>Nested code runs in the same sandbox and lane (AD-18), so nesting adds no crossings.</li>
+      <li class="open">Open: does the nested blueprint get its own frozen scope inside the context, so it can't see the caller's state?</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="tag">Case 5 · failure</span>
+    <h2>A runaway blueprint during a parameter scrub</h2>
+    <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant G as Reactive graph
+  participant H as blueprint host
+  participant S as Sandbox (bad-key@1)
+  G->>H: run parts lane, frame n
+  H->>S: parts(inputs)  [crossing]
+  S->>S: while (true) …
+  S-->>H: interrupted at step budget (about 2 ms)
+  H-->>G: lane-failed, last good output marked stale (AD-11)
+  G->>H: frame n+1, input changed again
+  Note over G,H: 50 slots × ~2 ms ≈ 100 ms per frame while it keeps failing
+</pre></div>
+    <ul>
+      <li class="open">Open: when does the host stop calling a lane that keeps failing (same inputs, same blueprint version)?</li>
+      <li class="open">Open: the step count can drift by one with call history (accepted in the spike); does that hold here?</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="tag">Case 6 · data form</span>
+    <h2>The design's own shape goes through the same operations</h2>
+    <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant G as Reactive graph
+  participant M as model's data interpreter
+  participant O as geometry ops
+  G->>M: shape "thumb-plate" (data, AD-17 expressions)
+  M->>M: evaluate expressions with model's evaluator
+  M->>M: build the same node tree a code blueprint returns
+  M->>O: evaluate tree
+  O-->>G: region
+</pre></div>
+    <ul>
+      <li>No sandbox: data can't loop, so it needs no step budget.</li>
+      <li>One node vocabulary and one evaluator for both forms is what "one op API serves both" would mean in this model.</li>
+    </ul>
+  </section>
+</main>

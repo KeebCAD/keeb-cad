@@ -1,0 +1,260 @@
+<title>Blueprint Walkthrough</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: one column; each step pairs "In the editor" (what Sergii sees) with "Underneath" (real code and data). */
+  :root {
+    --bg: #f6f7f5; --surface: #ffffff; --code-bg: #eef1ee; --fg: #1d2421; --muted: #5d6762;
+    --line: #d6dbd7; --accent: #2f6f5e; --warn: #9a5b12;
+    --body: "IBM Plex Sans", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141816; --surface: #1c211f; --code-bg: #232a27; --fg: #e3e8e5; --muted: #9aa49f;
+      --line: #313a36; --accent: #7cc3ad; --warn: #e0a85c; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141816; --surface: #1c211f; --code-bg: #232a27; --fg: #e3e8e5; --muted: #9aa49f;
+    --line: #313a36; --accent: #7cc3ad; --warn: #e0a85c; color-scheme: dark;
+  }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 32px 64px;
+  }
+  main { max-width: 920px; margin: 0 auto; display: grid; gap: 36px; }
+  header, section, .step { display: grid; gap: 10px; min-width: 0; }
+  h1 { font-size: 1.9rem; margin: 0; text-wrap: balance; }
+  h2 { font-size: 1.35rem; margin: 0; text-wrap: balance; }
+  h3 { font-size: 1.02rem; margin: 0; }
+  p, li { max-width: 70ch; margin: 0; }
+  .lede, .muted { color: var(--muted); }
+  .tag { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+  .step { border-top: 1px solid var(--line); padding-top: 14px; }
+  .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px; }
+  @media (max-width: 760px) { .pair { grid-template-columns: minmax(0, 1fr); } }
+  .editor { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; }
+  .label { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .under { display: grid; gap: 8px; min-width: 0; }
+  pre { margin: 0; background: var(--code-bg); border-radius: 6px; padding: 10px 12px; overflow-x: auto; font-family: var(--mono); font-size: 0.82rem; line-height: 1.5; }
+  code { font-family: var(--mono); font-size: 0.9em; }
+  .crossing { font-family: var(--mono); font-size: 0.78rem; color: var(--accent); }
+  .open { color: var(--warn); }
+  ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+  table { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  td, th { border-bottom: 1px solid var(--line); padding: 4px 10px 4px 0; text-align: left; }
+  .tablewrap { overflow-x: auto; }
+</style>
+
+<main>
+  <header>
+    <span class="tag">keeb-cad · blueprints architecture · working material, 2026-11-01</span>
+    <h1>Blueprint Walkthrough</h1>
+    <p class="lede">Two changes on Corney Island, followed from what you do in the editor down to the code and data that run. The model shown is the one under discussion (operations build nodes; measuring forces one; the stage evaluates the returned tree). Numbers use Corney's choc v2 values: 19 mm key spacing, 18 × 18 mm keycaps, so <code>gap x = 1 mm</code>. API names are invented for the example.</p>
+  </header>
+
+  <section>
+    <span class="tag">Story 1</span>
+    <h2>You make the home thumb key 1.5u</h2>
+
+    <div class="step">
+      <h3>1. Before anything happens: what's already there</h3>
+      <div class="pair">
+        <div class="editor">
+          <span class="label">In the editor</span>
+          <p>The Parts tab lists one design part, <code>key</code>. It applies the library blueprint <code>choc-key</code>, version 3, with LED on. Every slot uses it unless it says otherwise.</p>
+        </div>
+        <div class="under">
+          <span class="label">Underneath: the design file (AD-8, KDL)</span>
+<pre>library-versions {
+  blueprint "lib:blueprint/choc-key" version=3
+}
+parts {
+  part "key" blueprint="lib:blueprint/choc-key" {
+    inputs pitch="19mm" cap="18mm" led=#true size="1u"
+  }
+}
+meta { defaultPart "key" gap-x="1mm" gap-y="1mm" }</pre>
+          <span class="label">Underneath: choc-key@3, the blueprint's source (shipped with the library)</span>
+<pre>export const inputs = {
+  size:  option(['1u', '1.25u', '1.5u', '2u'], { perSlot: true }),
+  pitch: quantity('mm'), cap: quantity('mm'), led: boolean(),
+}
+
+export function parts({ size, pitch, cap, led }) {
+  const w = units(size) * pitch - (pitch - cap)     // 1.5u → 1.5 × 19 − 1 = 27.5
+  return {
+    rectangle: rect(w, cap),                          // the keycap: what the chain steps by
+    cutout:    { role: 'cutout', target: 'plate', purpose: 'switch', shape: rect(14, 14) },
+    footprint: use('lib:blueprint/choc-footprint', { led }),
+  }
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3>2. You change the size</h3>
+      <div class="pair">
+        <div class="editor">
+          <span class="label">In the editor</span>
+          <p>You select the home thumb key. Slot inspector › This slot › <strong>size</strong>: you pick <code>1.5u</code>.</p>
+        </div>
+        <div class="under">
+          <span class="label">Underneath: one command (AD-2) writes one override</span>
+<pre>slot "thumb-home" { inputs size="1.5u" }</pre>
+          <p class="muted">The design is replaced as a new frozen value. Nothing has run yet.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3>3. Only that slot's part re-runs</h3>
+      <div class="pair">
+        <div class="editor">
+          <span class="label">In the editor</span>
+          <p>Nothing visible yet; this happens inside the same frame.</p>
+        </div>
+        <div class="under">
+          <span class="label">Underneath: the parts computed for thumb-home</span>
+          <p>Its input slice changed (<code>size</code> 1u → 1.5u), so its computed is dirty. The other 49 slots' slices didn't change; their computeds keep their values and don't run.</p>
+          <span class="crossing">crossing 1 of 1: host → sandbox</span>
+<pre>parts({ size: "1.5u", pitch: 19, cap: 18, led: true })</pre>
+          <p class="muted">Inside the sandbox, <code>rect()</code> and <code>use()</code> only build nodes. No geometry is computed there.</p>
+          <span class="crossing">back: sandbox → host, a plain-data tree</span>
+<pre>{ "rectangle": { "op": "rect", "w": 27.5, "h": 18 },
+  "cutout":    { "role": "cutout", "target": "plate", "purpose": "switch",
+                 "shape": { "op": "rect", "w": 14, "h": 14 } },
+  "footprint": { "op": "pads", "pads": [ … 6 pads, LED pads included … ] } }</pre>
+          <p>The host evaluates the tree with <code>geometry</code>'s operations and stores the part: a 27.5 × 18 mm rectangle, a 14 × 14 mm switch cutout, the footprint.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3>4. The layout moves</h3>
+      <div class="pair">
+        <div class="editor">
+          <span class="label">In the editor</span>
+          <p>On the canvas the home thumb key widens, and the far thumb key slides outward along the fan.</p>
+        </div>
+        <div class="under">
+          <span class="label">Underneath: the chain step (spine, Data Schema)</span>
+          <p><code>step = (rectA + rectB) / 2 + gap x</code>, along the chain's axis, carried through the 15° splay.</p>
+          <div class="tablewrap"><table>
+            <tr><th>Step</th><th>Before</th><th>After</th></tr>
+            <tr><td>near → home</td><td>(18 + 18) / 2 + 1 = 19 mm</td><td>(18 + 27.5) / 2 + 1 = 23.75 mm</td></tr>
+            <tr><td>home → far</td><td>19 mm</td><td>23.75 mm</td></tr>
+            <tr><td>far key moved</td><td>—</td><td>9.5 mm along the fan</td></tr>
+          </table></div>
+          <p class="muted">The right half follows (AD-6). Total sandbox cost of this edit: one call, about 15 µs.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <span class="tag">Story 2</span>
+    <h2>You add underglow</h2>
+
+    <div class="step">
+      <h3>1. You add it</h3>
+      <div class="pair">
+        <div class="editor">
+          <span class="label">In the editor</span>
+          <p>You add <strong>Underglow</strong> from the library to the build (where exactly is a UX question). Its inputs appear: <code>inset 3 mm</code>, <code>spacing 25 mm</code>, <code>chain after keys</code>.</p>
+        </div>
+        <div class="under">
+          <span class="label">Underneath: one build entry</span>
+<pre>build {
+  entry "glow" blueprint="lib:blueprint/underglow" {
+    inputs inset="3mm" spacing="25mm"
+  }
+}</pre>
+          <span class="label">Underneath: underglow@1's source</span>
+<pre>export const reads = ['outline']                     // declared read (AD-11)
+
+export function extras({ inset, spacing }, { outline }) {
+  const path = offset(outline, -inset)                // a node
+  const n = Math.floor(length(path) / spacing)        // measuring forces `path`
+  const leds = points(path, n).map((p, i) =>          // measuring again (path cached)
+    part('lib:part/sk6812-mini', { at: p, chain: i }))
+  return { parts: leds, firmware: { underglowCount: n } }
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3>2. It runs, measuring as it goes</h3>
+      <div class="pair">
+        <div class="editor">
+          <span class="label">In the editor</span>
+          <p>LEDs appear along the inside of the outline, 25 mm apart.</p>
+        </div>
+        <div class="under">
+          <span class="crossing">crossing 1: host → sandbox</span>
+<pre>extras({ inset: 3, spacing: 25 }, { outline: { region … 37 segments … } })</pre>
+          <span class="crossing">crossing 2: sandbox asks the host, synchronously</span>
+<pre>length(path)   → host offsets the outline by −3 mm, keeps it → 412.6</pre>
+          <p class="muted"><code>n = floor(412.6 / 25) = 16</code>, computed inside the sandbox.</p>
+          <span class="crossing">crossing 3: sandbox asks again</span>
+<pre>points(path, 16) → [ { x: 104.2, y: -96.1, angle: 0 }, … 16 points … ]</pre>
+          <span class="crossing">back: the returned tree</span>
+<pre>{ "parts": [ { "op": "part", "ref": "lib:part/sk6812-mini",
+               "at": { "x": 104.2, "y": -96.1, "angle": 0 }, "chain": 0 }, … ],
+  "firmware": { "underglowCount": 16 } }</pre>
+          <p>The extras stage places 16 LED parts (with pins, so they join the netlist, AD-14). The firmware stage later reads <code>underglowCount</code>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3>3. You drag a key near the edge</h3>
+      <div class="pair">
+        <div class="editor">
+          <span class="label">In the editor</span>
+          <p>The outline follows the keys, so the LEDs re-flow along it while you drag.</p>
+        </div>
+        <div class="under">
+          <p>The outline is underglow's declared read, so its slice changes on every frame of this drag and the lane re-runs each frame: 3 crossings per frame (about 50 µs), plus the host's offset and sampling work.</p>
+          <p class="open">Open: the host's offset work isn't counted by the sandbox's step budget. The spine already notes a makerjs offset of Corney's outline takes about 70 ms, more than a frame (Open Questions, 2D offset latency).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <span class="tag">Story 3</span>
+    <h2>A blueprint goes wrong</h2>
+    <div class="step">
+      <div class="pair">
+        <div class="editor">
+          <span class="label">In the editor</span>
+          <p>You upgrade <code>choc-key</code> to a version with a bug that loops forever for 1.5u. The two 1.5u slots show their previous keycaps, marked stale, and the status strip counts a <code>lane-failed</code> error naming <code>key</code> and the slots.</p>
+        </div>
+        <div class="under">
+<pre>parts({ size: "1.5u", … })  → stopped at step budget after ~2 ms
+→ violation { kind: "lane-failed", severity: "error",
+              ids: ["key", "thumb-home", "thumb-home-r"], … }</pre>
+          <p>The other 48 slots ran fine. The two failed ones keep their last good rectangle, so the layout doesn't jump (AD-11).</p>
+          <p class="open">Open: on the next edit, are these two retried (2 ms each again) or skipped until the inputs or the version change?</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <span class="tag">What to take from it</span>
+    <ul>
+      <li>A blueprint is a file of JS: it declares inputs and reads, and has one function per lane that takes values and returns a tree.</li>
+      <li>You never see the sandbox; you see inputs in the Inspector, outputs on the canvas, and violations in the status strip.</li>
+      <li>A key costs one call when its inputs change and nothing otherwise. Underglow costs three calls per run, and runs whenever the outline changes.</li>
+      <li class="open">The real risk this surfaces isn't the sandbox; it's host geometry work inside live lanes (the offset).</li>
+    </ul>
+  </section>
+</main>

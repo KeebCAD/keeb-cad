@@ -1,0 +1,129 @@
+<title>Model Worker Split</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: one column: the thread diagram, then the rule changes table, then what is pending and what it costs. */
+  :root {
+    --bg: #f6f7f5; --surface: #ffffff; --fg: #1d2421; --muted: #5d6762;
+    --line: #d6dbd7; --accent: #2f6f5e; --warn: #9a5b12;
+    --body: "IBM Plex Sans", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141816; --surface: #1c211f; --fg: #e3e8e5; --muted: #9aa49f;
+      --line: #313a36; --accent: #7cc3ad; --warn: #e0a85c; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141816; --surface: #1c211f; --fg: #e3e8e5; --muted: #9aa49f;
+    --line: #313a36; --accent: #7cc3ad; --warn: #e0a85c; color-scheme: dark;
+  }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 32px 64px;
+  }
+  main { max-width: 960px; margin: 0 auto; display: grid; gap: 32px; }
+  header, section { display: grid; gap: 10px; min-width: 0; }
+  h1 { font-size: 1.9rem; margin: 0; text-wrap: balance; }
+  h2 { font-size: 1.25rem; margin: 0; }
+  p, li { max-width: 72ch; margin: 0; }
+  .lede { color: var(--muted); }
+  .tag { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+  code { font-family: var(--mono); font-size: 0.9em; }
+  .diagram { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; overflow-x: auto; }
+  .diagram pre { margin: 0; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--line); }
+  th { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+  td:first-child { font-family: var(--mono); white-space: nowrap; }
+  ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+  .pending { color: var(--warn); }
+</style>
+
+<main>
+  <header>
+    <span class="tag">keeb-cad · spine AD-11 reopened · for approval, 2026-11-01</span>
+    <h1>Model Worker Split</h1>
+    <p class="lede">What Sergii decided in the AD-11 coaching run, assembled for one yes before it is written into the spine.</p>
+  </header>
+
+  <section>
+    <h2>Threads and what crosses between them</h2>
+    <div class="diagram"><pre class="mermaid">
+flowchart LR
+  subgraph Main["Main thread"]
+    D["Design<br/>commands, undo, autosave,<br/>derived-section writer"]
+    E["Editor<br/>input, drawing,<br/>selection, viewport"]
+  end
+  subgraph MW["Model worker"]
+    MD["Design mirror<br/>patches + hash check"]
+    L["Live stages<br/>parts, layout, shapes, extras,<br/>plates, pcb placement,<br/>firmware, DRC of saved routes"]
+    PL["pipeline"]
+    BS["Blueprint sandboxes<br/>(live lanes), geometry"]
+  end
+  CW["Case worker<br/>case lanes, replicad"]
+  RW["Routing worker"]
+  D -- "patches with revision + hash;<br/>whole value at start, restart, load" --> MD
+  E -- "focus, one-off requests" --> MW
+  MW -- "stage outputs as transferred buffers,<br/>issues, responses" --> E
+  PL -- "input slices (MessageChannel)" --> CW
+  PL -- "input slices (MessageChannel)" --> RW
+  CW -- "CaseOutput bodies" --> E
+  PL -- "derived-section writes" --> D
+</pre></div>
+  </section>
+
+  <section>
+    <h2>After you drop a key</h2>
+    <div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant E as Editor (main)
+  participant D as Design (main)
+  participant W as Model worker
+  participant C as Case worker
+  E->>D: drop applies one command (AD-2)
+  D->>W: patches, revision 41, hash
+  W->>W: apply patches, check hash
+  W->>W: compute the visible stage first
+  W-->>E: stage output, revision 41 (target: within 100 ms)
+  W->>W: hidden stages, one by one
+  W-->>E: issues per stage (counts marked updating until then)
+  W->>C: case input slice, newest revision only
+  C-->>E: CaseOutput bodies when ready
+</pre></div>
+    <ul>
+      <li>During the drag nothing runs: only the dragged nodes move on the canvas (AD-2).</li>
+      <li>A newer revision lets the current stage finish, then starts from the visible stage again.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Rules that change in the spine</h2>
+    <div class="tablewrap"><table>
+      <tr><th>AD</th><th>Today</th><th>Becomes</th></tr>
+      <tr><td>AD-11</td><td>Live stages are computeds on main, read directly by the editor</td><td>Live stages run in one model worker. After each applied command: the visible stage first, within 100 ms; hidden stages after, their violation counts marked updating until they arrive. The editor draws from posted snapshots. A newer revision takes over at stage boundaries. One-off requests from a small fixed list, tagged with their revision. <code>pipeline</code> lives in the model worker and feeds case and routing over <code>MessageChannel</code>s.</td></tr>
+      <tr><td>AD-11 crossing</td><td>One crossing in <code>reactive</code>, plain values</td><td>Same principle; the crossing is the hand-rolled protocol: one TS union of about 7 message kinds (design, patches, focus, stage, issues, request/response, failed), plain values and transferred buffers only.</td></tr>
+      <tr><td>AD-10</td><td>One reactive graph (read as on main)</td><td>The one graph lives in the model worker; main uses Vue reactivity only for the design ref and editor state.</td></tr>
+      <tr><td>AD-11 outputs</td><td>Background results replaced whole in a shallowRef</td><td>Every stage output is packed by an own struct-of-arrays codec, ids pre-sorted by the worker, defined beside its output type in <code>model</code>; the editor reads typed views straight from the transferred buffers, with no plain objects and no index on main; a round-trip test per codec. Spike: 0.02–0.075 ms on main per PCB message, lookup 0.02 ms, 1.3 KB.</td></tr>
+      <tr><td>AD-2</td><td>Immer patches off</td><td>Patches on: they are the payload to the worker, tagged with revision and hash.</td></tr>
+      <tr><td>PRD §8 Q3</td><td>Live latency target open</td><td>The visible stage within 100 ms of an applied command.</td></tr>
+      <tr><td>Open Questions</td><td>"The live chain step through the sandbox"</td><td>Closed for frame time (no live stage runs during a drag, AD-2). Blueprint lanes run in the model worker, synchronously.</td></tr>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Pending and costs</h2>
+    <ul>
+      <li>Decided by spike (archive/spike-stage-transport): the own codec with pre-sorted ids. The run was on battery; absolute times need an AC re-run before any is used as a budget.</li>
+      <li>A round trip after every command, about 1–2 ms (estimate, not measured).</li>
+      <li>Editor code reads snapshots instead of computeds.</li>
+      <li>Stories planned against "computeds on main" need re-reading: 13.1 (parts as a computed), the frame stories, 13.10's design service, 13.11's ui layer.</li>
+    </ul>
+  </section>
+</main>
