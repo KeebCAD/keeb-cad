@@ -264,7 +264,7 @@ graph LR
 ### AD-7: Coordinates [ADOPTED]
 - **Binds:** model, every stage
 - **Prevents:** flipped or mirrored outputs from mixed conventions.
-- **Rule:** The model uses mm, degrees, **y up**, counter-clockwise positive, right-handed: **+z points toward the viewer of the top view** (up off the desk). Each stage converts to its target's convention at its own output boundary. The model never encodes an output's convention.
+- **Rule:** The model uses mm, degrees, **y up**, counter-clockwise positive, right-handed: **+z points toward the viewer of the top view** (up off the desk). Each stage converts to its target's convention at its own output boundary. Anything read from a file in another convention (a `.kicad_mod` footprint, an SVG asset; both y down) is converted to the model's at its own input boundary, where it is read; stored assets stay untouched (AD-8). The model never encodes an input's or an output's convention.
 
 ### AD-8: Design file = canonical KDL v2, versioned, sectioned, with stable ids [ADOPTED]
 - **Binds:** model, library, storage, editor
