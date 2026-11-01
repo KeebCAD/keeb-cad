@@ -3,7 +3,7 @@ title: 'The workspace matches the 2026-10-30 spine'
 type: 'chore'
 ticket: '9'
 created: '2026-10-31'
-status: 'built'
+status: done
 baseline_revision: 'c65d55ee05a6cecf9ffe0dcbdc70ad102fa58144'
 route: 'full'
 route_source: 'auto'
