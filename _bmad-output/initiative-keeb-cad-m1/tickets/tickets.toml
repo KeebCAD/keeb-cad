@@ -51,25 +51,25 @@ after = [{ epic = 13, needs = "the design file and autosave" }, { epic = 14, nee
 id = 17
 slug = "epic-outline-follows-the-keys"
 title = "Outline follows the keys"
-description = "Derived pieces fit each group of Corney's keys and their parts with a margin, join into the outline, refit live as keys move, and report fit-violated, drawn on the Pieces canvas. Opens with a spike: can derived pieces reproduce Corney's outline as the same shape within ±0.05 mm?"
+description = "Derived shapes fit each group of Corney's keys and their parts with a margin, join into the outline, refit live as keys move, and report fit-violated, drawn on the Outline canvas. Opens with a spike: can derived shapes reproduce Corney's outline as the same shape within ±0.05 mm?"
 covers = ["R7", "R17"]
 after = [{ epic = 15, needs = "live key moves to refit against" }]
 
 [[epic]]
 id = 18
-slug = "epic-draw-custom-pieces"
-title = "Draw custom pieces"
-description = "The user draws pieces from primitives, booleans and offset, with vertices anchored to keys, groups, construction points or other vertices, and accents on top; LambBT's circle subtraction is expressible, and Corney's exact outline is drawn if the opening spike of 'outline follows the keys' says derived pieces can't match it."
+slug = "epic-draw-custom-shapes"
+title = "Draw custom shapes"
+description = "The user draws shapes from primitives, booleans and offset, with vertices anchored to keys, groups, construction points or other vertices, and alterations on top; LambBT's circle subtraction is expressible, and Corney's exact outline is drawn if the opening spike of 'outline follows the keys' says derived shapes can't match it."
 covers = ["R6", "R7"]
-after = [{ epic = 17, needs = "the outline and the Pieces canvas" }]
+after = [{ epic = 17, needs = "the outline and the Outline canvas" }]
 
 [[epic]]
 id = 19
 slug = "epic-plates-to-dxf"
 title = "Plates to DXF"
-description = "Corney's switch plate, backplate and MCU cover are pieces minus part cutouts (Choc v2 switch, M2 screws from the part schema, placed with the Part picker), update live as parts move, and export as DXF and SVG through the export registry, which reports each export available or blocked."
+description = "Corney's switch plate, backplate and MCU cover are shapes minus part cutouts (Choc v2 switch, M2 screws from the part schema, placed with the Part picker), update live as parts move, and export as DXF and SVG through the export registry, which reports each export available or blocked."
 covers = ["R8", "R9", "R10"]
-after = [{ epic = 18, needs = "drawn pieces for the MCU cover and any exact outline" }, { epic = 13, needs = "live stage outputs" }, { epic = 14, needs = "the part schema and the inspector" }]
+after = [{ epic = 18, needs = "drawn shapes for the MCU cover and any exact outline" }, { epic = 13, needs = "live stage outputs" }, { epic = 14, needs = "the part schema and the inspector" }]
 
 [[epic]]
 id = 6
@@ -115,9 +115,9 @@ after = [{ epic = 6, needs = "the PCB edge and part case cutouts" }, { epic = 7,
 id = 21
 slug = "epic-own-case-operations"
 title = "My own case operations"
-description = "The user adds pockets and cuts on top of the tray as the design's own recipe, applied after the style; they follow the layout, and the style and recipe versions are pinned so an app update never changes the saved case."
+description = "The user adds pockets and cuts on top of the tray as the design's own case operations, applied after the style; they follow the layout, and every blueprint version is pinned: a version never changes, and an app operation fix that changes the saved case is shown and accepted."
 covers = ["R14"]
-after = [{ epic = 8, needs = "the tray style and the outline and case recipe interpreter" }]
+after = [{ epic = 8, needs = "the tray style and the case lane's operations" }]
 
 [[epic]]
 id = 22

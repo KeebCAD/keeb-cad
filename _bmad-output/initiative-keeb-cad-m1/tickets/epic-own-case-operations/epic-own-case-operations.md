@@ -14,7 +14,7 @@ risk: medium
 
 ## Description
 
-The user adds pockets and cuts on top of the tray as the design's own recipe, applied after the style; they follow the layout, and the style and recipe versions are pinned so an app update never changes the saved case.
+The user adds pockets and cuts on top of the tray as the design's own case operations, applied after the style; they follow the layout, and every blueprint version is pinned: a version never changes, and an app operation fix that changes the saved case is shown and accepted.
 
 ## Outcome
 
@@ -23,7 +23,7 @@ For Sergii: a custom pocket or cut stays on the case through layout edits and ap
 ## Done when
 
 - The user's own pocket or cut follows a layout edit.
-- Style and recipe versions are pinned; an app update does not change the saved case.
+- Blueprint versions are pinned and never change; an app operation fix that changes the saved case is shown and accepted, never silent.
 - The slice scenario and one e2e journey pass.
 
 ## Boundaries
@@ -38,5 +38,5 @@ For Sergii: a custom pocket or cut stays on the case through layout edits and ap
 
 ## Notes
 
-- Waits on epic 8 because: the tray style and the outline and case recipe interpreter
+- Waits on epic 8 because: the tray style and the case lane's operations
 - Decision (2026-10-30, replan): created as a vertical slice; every slice runs on Corney's layout-command script with its own invariant checks, golden comparisons only in milestone accepted.

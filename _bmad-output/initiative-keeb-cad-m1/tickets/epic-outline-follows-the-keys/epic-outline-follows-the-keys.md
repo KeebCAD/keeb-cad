@@ -14,7 +14,7 @@ risk: medium
 
 ## Description
 
-Derived pieces fit each group of Corney's keys and their parts with a margin, join into the outline, refit live as keys move, and report fit-violated, drawn on the Pieces canvas. Opens with a spike: can derived pieces reproduce Corney's outline as the same shape within ±0.05 mm?
+Derived shapes fit each group of Corney's keys and their parts with a margin, join into the outline, refit live as keys move, and report fit-violated, drawn on the Outline canvas. Opens with a spike: can derived shapes reproduce Corney's outline as the same shape within ±0.05 mm?
 
 ## Outcome
 
@@ -22,8 +22,8 @@ For Sergii: Corney's outline follows every key move with no manual realignment (
 
 ## Done when
 
-- The opening spike reports whether derived pieces reproduce Corney's outline as the same shape within ±0.05 mm.
-- Derived pieces refit live when a key moves, and a sticking-out key or part is fit-violated.
+- The opening spike reports whether derived shapes reproduce Corney's outline as the same shape within ±0.05 mm.
+- Derived shapes refit live when a key moves, and a sticking-out key or part is fit-violated.
 - The slice scenario and one e2e journey pass.
 
 ## Boundaries
