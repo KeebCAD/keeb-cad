@@ -2,7 +2,7 @@
 title: keeb-cad milestone 1
 status: final
 created: 2026-10-25
-updated: 2026-10-31
+updated: 2026-11-01
 ---
 
 # PRD: keeb-cad — Milestone 1
@@ -40,21 +40,21 @@ Positioning: *"Ergogen's power with a visual editor, all the way to gerbers, cas
 - **Node** — an element of the layout: a group or a slot; a key is a slot whose part has a switch component. Placed by **anchor + offset** (offset, then rotate about a pivot); a node has one rotation.
 - **Anchor** — the node (default: parent) a node or geometry point is positioned from.
 - **Arrangement** — how a group places its children: a chain (each child relative to the previous sibling) or free.
-- **Slot** — a place in the layout that holds a part. A slot with no part of its own takes its nearest ancestor's default part, else the design's. A slot may adjust its part's recipe inputs, for example a key size of 1.5u.
-- **Construction point** — a helper point derived from other geometry (for example the intersection of two lines), used as an anchor for piece vertices. Not a physical part.
-- **Part** — what a slot holds: a library part from the curated library (switch, MCU, display, TRRS jack, battery connector, power switch, reset button, screw) or a design-local part the user defines in the design. Parts may carry footprints, cutouts, keep-outs and tracks (tracks drawn into the part, which move with it and are never rerouted). Every part carries one `reversible` flag. What a key carries (switch, diodes, LED placement and their local tracks) is a part like any other, usually made by a part recipe applied with inputs; a hand-built design-local part covers what no recipe does. The design sets a default part, and a group may override it for its slots.
+- **Slot** — a place in the layout that holds a part. A slot with no part of its own takes its nearest ancestor's default part, else the design's. A slot may adjust the inputs its part blueprint marks per-slot, for example a key size of 1.5u.
+- **Construction point** — a helper point derived from other geometry (for example the intersection of two lines), used as an anchor for shape vertices. Not a physical part.
+- **Part** — what a slot holds: a library part from the curated library (switch, MCU, display, TRRS jack, battery connector, power switch, reset button, screw) or a design-local part the user defines in the design. Parts may carry footprints, cutouts, keep-outs and tracks (tracks drawn into the part, which move with it and are never rerouted). Every part carries one `reversible` flag. What a key carries (switch, diodes, LED placement and their local tracks) is a part like any other: in milestone 1, a library part blueprint applied with inputs; a part built by hand is milestone 2. The design sets a default part (a new design starts with a Choc v2 key), and a group may override it for its slots.
 - **Module** — a ready-made board used as a part (nice!nano, nice!view).
-- **Gap** — the space between keycaps, edge to edge, on x and y: one uniform design-wide setting, so rows align. Positions, gaps and offsets are in mm; `1u`, `1.5u`, … are key-size labels (values of a part recipe's `size` input), not lengths.
+- **Gap** — the space between keycaps, edge to edge, on x and y: one uniform design-wide setting, so rows align. Positions, gaps and offsets are in mm; `1u`, `1.5u`, … are key-size labels (values of a part blueprint's `size` input), not lengths.
 - **Form** — split with a reversible board (one geometry; one PCB, flipped for the other half), split with a mirrored board (right half derived from the left, with overrides) or unibody.
 - **Parameter** — a named value with a unit (for example `wall = 1.2mm`), usable in any length or angle.
 - **Expression** — a length or angle written with numbers, units, parameters and `+ - * / ( )` (for example `wall + gap`).
-- **Piece** — a named 2D geometry of the board outline. A **derived** piece fits a group of keys (and their parts) with a margin and follows the layout. A **drawn** piece is built from **geometry operations** (key outline, primitive: rectangle, circle, polygon; boolean: add, subtract, intersect; offset: expand/shrink with corner style), stays put, and is checked against the keys' fit. **Accents** (rounded corners, cut arcs) go on top. Pieces can reference other pieces.
-- **Outline** — the piece that defines the board edge. Plate, PCB edge and case derive from it.
+- **Shape** — a named 2D geometry of the board outline. A **derived** shape fits a group of keys (and their parts) with a margin and follows the layout. A **drawn** shape is built from **geometry operations** (key outline, primitive: rectangle, circle, polygon; boolean: add, subtract, intersect; offset: expand/shrink with corner style), stays put, and is checked against the keys' fit. **Alterations** (rounded corners, cut arcs) go on top. Shapes can reference other shapes.
+- **Outline** — the shape that defines the board edge. Plate, PCB edge and case derive from it.
 - **Cutout** — geometry removed from a plate, PCB or case. Either part-owned (comes with a part) or user-drawn.
-- **Plate** — a 2D piece exported for cutting. A design can have several.
+- **Plate** — a 2D shape exported for cutting. A design can have several.
 - **Build style** — the case's live setting (tray in milestone 1), switchable at any time. The user sees and edits only its settings.
-- **Recipe** — a reusable, versioned feature with settings. A **part recipe** makes a part from inputs (for example a key from its size); a case recipe is a case feature (for example magnet pockets). Each kind of recipe has its own interpreter. The user's own case operations form their own recipe, applied after the build style.
-- **Case** — 3D solids derived from the build style plus recipes.
+- **Blueprint** — a reusable, versioned feature with inputs that stays live: keys, build styles and case features (for example magnet pockets) are all blueprints. A **part blueprint** makes a part from inputs (for example a key from its size). The user's own case operations are kept with the design and applied after the build style.
+- **Case** — 3D solids derived from the build style plus blueprints.
 - **Routing** — creating PCB traces for the connections between keys, modules and peripherals.
 - **Design rules** — trace widths per net class, clearances and keep-outs that routing and the design-rule check (DRC) enforce.
 - **Keymap** — what each key does, by layer. Firmware-neutral.
@@ -70,8 +70,8 @@ What the user shapes in each output, and what happens when the layout changes.
 | Output | User controls | Follows a layout change by | Update | FRs |
 |---|---|---|---|---|
 | Layout | Nodes, anchors, offsets, rotations and pivots; arrangements; gap; switch type; form; default parts; slots and parts; parameters | — (source of truth) | live | FR-1–4 |
-| Outline | Pieces: by default one derived piece per group of keys, joined automatically; drawn pieces with anchored vertices where the silhouette isn't a fit; accents | Derived pieces refit to the keys; drawn pieces move only where anchored to the changed nodes; a key or part sticking out is reported | live | FR-6–7 |
-| Plate | Which pieces form each plate; extra user cutouts | Recomputed from its pieces plus part-owned cutouts (switch holes, screws) | live | FR-9–10 |
+| Outline | Shapes: by default one derived shape per group of keys, joined automatically; drawn shapes with anchored vertices where the silhouette isn't a fit; alterations | Derived shapes refit to the keys; drawn shapes move only where anchored to the changed nodes; a key or part sticking out is reported | live | FR-6–7 |
+| Plate | Which shapes form each plate; extra user cutouts | Recomputed from its shapes plus part-owned cutouts (switch holes, screws) | live | FR-9–10 |
 | PCB | Parts in slots; default parts per group; per-side overrides (removing a part on one side); matrix, pin and LED-order overrides | Footprints and fixed tracks move with their nodes live; nets and matrix re-derived; saved routes kept where still valid, broken connections rerouted in the background | placement + fixed tracks live; routing background | FR-8, FR-11–13 |
 | Case | Build style (tray) and its settings; the user's own case operations, applied after the style | Re-derived from the outline, part-owned cutouts (USB/MCU wall window, screws) and settings | background | FR-14 |
 | Firmware | Keymap (keys, layers) | Matrix, pins and ZMK physical layout re-derived; keymap entries stay attached to their keys | live | FR-15–16 |
@@ -92,9 +92,10 @@ The user can arrange a group's children freely, or as a chain: each child is pla
 - Placement follows one documented frame rule: a child's offset is applied in the frame of the previous sibling, then rotated about its pivot. A node has one rotation, and it carries to later siblings; a turn in the middle of a chain that must not carry is expressed by anchoring the next sibling explicitly (Corney Island's 90° far thumb key is last in its fan, so it is unaffected). The rule must reproduce Ergogen's placement within ±0.05 mm.
 
 #### FR-3: Gap, switch type, key size and default part
-The user can set the design's gap between keycaps (x and y), set a key's size (1u, 1.5u, …: a part recipe's `size` input, adjustable per slot), define the part every key holds (switch, diodes, LED placement) as a design-local part (usually a part recipe applied with inputs, or hand-built) or pick a library part, set it as the default part for every key, and override settings for a group of keys or parts (for example the outer column's switch pads, screw-hole sizes per output).
+The user can set the design's gap between keycaps (x and y), set a key's size (1u, 1.5u, …: a part blueprint's `size` input, adjustable per slot), choose the part every key holds (switch, diodes, LED placement) as a library part blueprint applied with inputs (a new design starts with a Choc v2 key) or a library part, set it as the default part for every key, and override settings for a group of keys or parts (for example the outer column's switch pads, screw-hole sizes per output).
 - Changing that part updates every key's footprints on the PCB.
 - Choc v2 at 19 mm centres (Corney Island) is expressible via the gap.
+- Building a part by hand (its own footprint, components and fixed tracks) is milestone 2 (§5).
 
 #### FR-4: Form: split with a reversible board now, ready for mirrored and unibody
 The user can design a split keyboard with a reversible board: one geometry and one PCB for both halves, differing per side only through overrides (in milestone 1, removing a part on one side; the removed slot keeps its space).
@@ -106,21 +107,21 @@ The user can copy a design as a new design (`Copy design…`: new name and id, r
 - Saving to another file (`Save to file…`) keeps the same design and id; only `Copy design…` makes a new design.
 - In milestone 1, a layout change made after the copy is made in each design separately. [NON-GOAL for milestone 1: several electronics setups in one design; layout changes propagating between designs]
 
-### 4.2 Pieces and outline
+### 4.2 Shapes and outline
 
-**Description:** The board outline is composed of pieces. Derived pieces fit the keys and follow the layout; drawn pieces use a small, composable set of geometry operations, the same set Ergogen uses, anchored to the layout and edited visually.
+**Description:** The board outline is composed of shapes. Derived shapes fit the keys and follow the layout; drawn shapes use a small, composable set of geometry operations, the same set Ergogen uses, anchored to the layout and edited visually.
 
-#### FR-6: Drawn pieces
-The user can draw named pieces from key outlines, primitives (rectangle, circle, polygon), booleans (add, subtract, intersect) and offset (expand/shrink with corner style and fillet), and reference one piece from another.
+#### FR-6: Drawn shapes
+The user can draw named shapes from key outlines, primitives (rectangle, circle, polygon), booleans (add, subtract, intersect) and offset (expand/shrink with corner style and fillet), and reference one shape from another.
 - Corney Island's 18-vertex outline with its fillets, and LambBT's 150 mm-radius circle subtraction, are expressible (see the addendum for the operation inventory).
 
 #### FR-7: The outline follows the keys
-The user builds the board outline from pieces. By default each group of keys gets one derived piece, which fits its keys and parts with a margin, follows every layout change, and joins the others automatically. Where the intended silhouette isn't a fit, the user adds a drawn piece (FR-6) whose primitives and vertices are anchored to keys, groups, construction points or other vertices, and reusable across pieces. Accents (rounded corners, cut arcs) go on top.
+The user builds the board outline from shapes. By default each group of keys gets one derived shape, which fits its keys and parts with a margin, follows every layout change, and joins the others automatically. Where the intended silhouette isn't a fit, the user adds a drawn shape (FR-6) whose primitives and vertices are anchored to keys, groups, construction points or other vertices, and reusable across shapes. Alterations (rounded corners, cut arcs) go on top.
 - A key or part that sticks out of the outline is reported, never silently clipped.
-- Moving a column moves the derived pieces with it. Drawn pieces move only where they are anchored to the moved nodes (directly or via construction points).
-- Corney Island's outline is reproduced as the same shape within ±0.05 mm. If derived pieces can't match it, a drawn piece does.
+- Moving a column moves the derived shapes with it. Drawn shapes move only where they are anchored to the moved nodes (directly or via construction points).
+- Corney Island's outline is reproduced as the same shape within ±0.05 mm. If derived shapes can't match it, a drawn shape does.
 
-**Notes:** the user writes intent (fit the keys), not construction. Drawn pieces remain because all three reference boards hand-author their outlines.
+**Notes:** the user writes intent (fit the keys), not construction. Drawn shapes remain because all three reference boards hand-author their outlines.
 
 ### 4.3 Parts and cutouts
 
@@ -130,13 +131,13 @@ The user can place library parts in slots anchored to any node. Milestone 1's li
 - Footprints come from keeb-cad's own library, likely derived from ceoloide's footprints with attribution (licence: §8 Q6).
 
 #### FR-9: Part-owned and user cutouts
-Parts bring their own cutouts (switch hole in the plate, screw holes, USB/MCU window in the case wall) and keep-outs. The user can add other cutouts as pieces subtracted with booleans.
+Parts bring their own cutouts (switch hole in the plate, screw holes, USB/MCU window in the case wall) and keep-outs. The user can add other cutouts as shapes subtracted with booleans.
 - Moving a part moves its cutouts in plate, PCB and case together.
 
 ### 4.4 Plate
 
-#### FR-10: Plates as pieces
-The user can define one or more plates (Corney Island: front/switch plate, backplate and MCU cover) as pieces, and export each as DXF/SVG for cutting or as gerbers to fab it as a PCB (as Corney Island does).
+#### FR-10: Plates as shapes
+The user can define one or more plates (Corney Island: front/switch plate, backplate and MCU cover) as shapes, and export each as DXF/SVG for cutting or as gerbers to fab it as a PCB (as Corney Island does).
 - Plates update live when the layout or outline changes.
 
 ### 4.5 PCB and routing
@@ -152,7 +153,7 @@ A part's fixed tracks move with their key live. Connections between keys, module
 - The router connects to modules only (nice!nano), not bare chips; a pre-routed zone around a module is allowed.
 - Connections the router cannot complete are reported as unrouted, never hidden.
 - Routing obeys design rules: power/battery net widths, module keep-outs (nice!nano antenna on the wireless design), edge clearance.
-- No manual editing of board routes in milestone 1; connections between keys, modules and peripherals are always routed automatically. A design-local part's fixed tracks are drawn by hand in isolated part mode. [NON-GOAL: board route editing]
+- No manual editing of board routes in milestone 1; connections between keys, modules and peripherals are always routed automatically. A part's fixed tracks come with the part (in milestone 1, from the library). [NON-GOAL: board route editing]
 - Fallback if the routing spike fails: see SM-3.
 
 #### FR-13: Production and escape-hatch export
@@ -164,8 +165,8 @@ When routing completes, keeb-cad exports fab-ready gerbers and drill files direc
 
 #### FR-14: Tray build style
 The user gives the case a build style; milestone 1 ships tray. The style has settings (wall thickness, PCB-to-wall gap, floor thickness, height), and the case is re-derived from them on every change. The user edits only the settings, never the style's inner operations. The style is a setting, not a one-time choice: switching it re-derives the case without losing the design.
-- The user can add their own case operations on top (for example a pocket or a cut). They are kept with the design as the user's own recipe, applied after the style, and follow the layout like everything else.
-- The style and every recipe are versioned. An app update never changes a saved case; moving to a newer version is the user's deliberate choice.
+- The user can add their own case operations on top (for example a pocket or a cut). They are kept with the design as the user's own case operations, applied after the style, and follow the layout like everything else.
+- Every blueprint, the build style included, is versioned, and a version never changes; moving to a newer version is the user's deliberate choice. A fix to one of the app's own operations can still change a saved case's output: it is shown, and the user accepts it, never applied silently.
 - The case follows the outline and part-owned cutouts, rebuilding in the background with visible progress. It exports STL and STEP.
 - The operation set grows with the app (tilt, chamfer and more later); the model does not assume straight extrusion.
 
@@ -201,7 +202,7 @@ The user can save and open a design as one file, and undo/redo every edit (every
 - Choc v1, MX and Sofle thumb cluster as built references (milestone 2).
 - Unibody and mirrored split editing (model must be ready, editing deferred).
 - Several electronics setups (variants) in one design; propagating layout changes between designs (milestone 2 remix).
-- Manual editing or locking of board routes (a design-local part's fixed tracks are authored, see FR-12).
+- Manual editing or locking of board routes.
 - QMK output.
 - Ergogen config import.
 - Case styles other than tray; tenting.
@@ -209,7 +210,7 @@ The user can save and open a design as one file, and undo/redo every edit (every
 - Importing KiCad boards.
 - KLE / kle-ng format (absolute positioning; rejected in the brief).
 - Bare-chip (MCU) routing; constrained routing mode.
-- User-imported parts.
+- Building a part by hand: its own footprint (drawn, or converted once from KiCad), components and fixed tracks, edited in isolated part mode (milestone 2).
 
 ## 6. Cross-Cutting NFRs
 - **Browser-only:** all stages, including routing and case solids, run client-side.
@@ -238,5 +239,5 @@ The user can save and open a design as one file, and undo/redo every edit (every
 5. **Demand from others** is unproven (research confidence medium-low; no interviews). Milestone 2 tests it.
 6. **Footprint licence:** confirm the licence of ceoloide's footprints allows deriving keeb-cad's library with attribution.
 7. **Split form with a mirrored board:** which reference board to use when it is built (Heatwave is a candidate)?
-8. **Joining fitted pieces (FR-7):** how the default derived pieces join, for example whether the gap between the main keys and the thumbs is filled.
-9. **Build styles and tenting in milestone 1 (FR-14, §5):** which build styles milestone 1 ships beyond tray, and whether tenting (a wedge recipe, or a stand part plus a mount recipe) is in. §5 stays as written until this is decided.
+8. **Joining fitted shapes (FR-7):** how the default derived shapes join, for example whether the gap between the main keys and the thumbs is filled.
+9. **Build styles and tenting in milestone 1 (FR-14, §5):** which build styles milestone 1 ships beyond tray, and whether tenting (a wedge blueprint, or a stand part plus a mount blueprint) is in. §5 stays as written until this is decided.
