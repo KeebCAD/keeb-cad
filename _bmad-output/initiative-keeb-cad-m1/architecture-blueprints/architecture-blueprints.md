@@ -46,8 +46,8 @@ flowchart LR
 | --- | --- | --- |
 | AD-18 | initiative spine | One blueprint concept; lanes per stage; pull, never push; code in a hermetic, deterministic sandbox with a step budget; the data form for the design's own work; nesting by `use()` in the same lane and sandbox |
 | AD-11 | initiative spine | Live lanes run in the model worker after each applied command, never per drag frame; the visible set within 100 ms; a library blueprint's lane reads only inputs, pulls and queries; failed lanes show their last good output stale with `lane-failed`; stage cache keys and fingerprints |
-| AD-10 | initiative spine | `blueprint` imports only `geometry`, `expr` and `schema`; only `blueprint` imports quickjs-wasi; the data interpreter imports `expr`'s evaluator directly; the `blueprint/authoring` build-time path and its fences; the lane runner, lane cache and VM pool in `blueprint/worker` |
-| AD-25 | initiative spine | Per-thread partials and entry fences: main never reaches `blueprint`, a stage or the runtime |
+| AD-10 | initiative spine | `blueprint` imports only `geometry`, `expr`, `schema` and `hashing`; only `blueprint` imports quickjs-wasi; the data interpreter imports `expr`'s evaluator directly; the `blueprint/authoring` build-time path and its fences; the lane runner, lane cache and VM pool in `blueprint/worker` |
+| AD-25 | initiative spine | Per-thread `di` modules and entry fences: main never reaches `blueprint`, a stage or the runtime |
 | AD-5 | initiative spine | Versions immutable and pinned; minimal version selection for nested pins; every part blueprint has exactly one `rectangle` |
 | AD-3, AD-17, AD-24, AD-2 | initiative spine | One acyclic graph with declared reads as edges, checked on main; expressions only through `expr`'s evaluator; references a declared kind; commands the only writers |
 | Data Schema: `BlueprintDeclaration` | initiative spine | The declaration's shape (`uses` and the `envelope` output kind included) and its checks |
@@ -124,11 +124,11 @@ flowchart LR
 
 ### BP-9 — VM lifecycle
 
-- **Binds:** blueprint, pipeline, case
+- **Binds:** blueprint, model, plates, pcb, firmware, case, library
 - **Prevents:** VM creation inside a synchronous stage; VMs that outlive their pins; leaked handles.
 - **Rule:**
   - One VM per pinned blueprint version, holding its factory and the factories of the transitive closure of its pinned `uses`; a pin change that alters a nested version means a new VM.
-  - A pool in `blueprint/worker`, one per worker, filled by the lane runner: in the model worker in its pause between applying patches and running stages; in the case worker before case lanes, rebuilt after a respawn. Each stage's operation table and handle converter reach the runner through ts-inject tokens, provided by `pipeline` in the model worker's entry and by the case worker's entry there.
+  - A pool in `blueprint/worker`, one per worker, filled by the lane runner: in the model worker in its pause between applying patches and running stages; in the case worker before case lanes, rebuilt after a respawn. Each stage passes its operation table and handle converter to the runner as arguments on each lane run (`runner.runLane(lane, { operations, convertHandle }, inputs)`): `model/worker` for `parts`, `shapes` and `extras`, `plates`, `pcb` and `firmware` in the model worker, `case` in the case worker. No tokens and no entry wiring; the runner keeps the pool, the lane cache and the VM lifecycle. The compiled scripts reach the pool as an argument from the worker entry, which reads them from `library/worker` (initiative spine AD-10).
   - One handle table per lane run, owned by the host and shared by nested `use()` calls, freed at the run's end, including quickjs-wasi's internal handle copies.
   - A VM is disposed when its version is no longer pinned in the current design.
 
