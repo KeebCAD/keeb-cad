@@ -120,7 +120,7 @@ flowchart LR
 - **Prevents:** undeclared reads; lanes reaching another stage's operations; two ways outputs return to a stage.
 - **Rule:**
   - A module exports `lanes = { <stage>(args, op) }`. `args = { inputs, pulls, queries }` holds exactly what the declaration lists: inputs as plain values (quantities as numbers in mm or deg; options and text as strings; part refs, anchors and assets as opaque handles), pulls as handles keyed by role (an array per its count), query results as plain values. An anchor input can't feed a `parts` lane (it runs before the layout); the library build rejects one. `op` exposes only that stage's operations.
-  - A lane returns `{ outputs: { <name>: handle | plain | array }, problems: [{ message, severity }] }`. The host checks each output against its declared name and `count` (`one` or `any`, which may be empty); `problems` become `blueprint` violations naming the entry and slot. The stage converts each handle into `model`'s output type; the run's handles are then freed.
+  - A lane returns `{ outputs: { <name>: handle | plain | array }, problems: [{ message, severity }] }`. A part's `rectangle` output is plain `{ w, h }`, centred on the slot's frame (initiative spine AD-5). The host checks each output against its declared name and `count` (`one` or `any`, which may be empty); `problems` become `blueprint` violations naming the entry and slot. The stage converts each handle into `model`'s output type; the run's handles are then freed.
 
 ### BP-9 — VM lifecycle
 
