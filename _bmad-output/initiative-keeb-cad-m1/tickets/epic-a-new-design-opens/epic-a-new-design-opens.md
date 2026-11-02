@@ -28,7 +28,7 @@ For Sergii: the app opens a design in the editor frame and a reload reopens it u
 
 ## Constraints
 
-- C1 (parent C3): Architecture AD-1 to AD-26 bind every story. This slice builds AD-2's register (Immer, Valibot inputs, nothing in progress in the design), AD-8's design file, AD-11's model worker, AD-13's storage, AD-10's `reactive` and `protocol`, AD-25's wiring and AD-26's `ui` layer as written there.
+- C1 (parent C3): Architecture AD-1 to AD-26 bind every story. This slice builds AD-2's register (Immer, Valibot inputs, nothing in progress in the design), AD-8's design file, AD-11's model worker, AD-13's storage, AD-10's `schema`, `messaging`, `protocol`, `design`, `design-file`, `commands`, `workers` and `app`, AD-25's `di` wiring and AD-26's `ui` layer as written there.
 - C2 (parent C1): Current desktop Chromium and Firefox; everything runs client-side.
 - C3 (parent C4): No Corney-specific shortcuts.
 
@@ -63,3 +63,4 @@ For Sergii: the app opens a design in the editor frame and a reload reopens it u
 - Decision (2026-11-02, split check): 7's after drops 2, already implied through 5 → 4 → 3 → 2; its description still names the register it uses.
 - Decision (2026-11-02, split check): cursor coordinates and zoom in the status strip move from 23.8 to 13.7, which builds the viewport service they read; 23.8 shows the error and warning counts and the running-stage entry. 23's R3 drops them and 13's R6 gains them. Rejected: a minimal viewport service in 23.8 (builds 13.7's viewport early, without the canvas it serves).
 - Decision (2026-11-02, split check): 1 opens before the tracer 7, against the tracer-first rule, because 2's register is built against the per-thread partials 1 lays out; as decided on 2026-10-30 for story 9. Rejected: folding 1 into the tracer (plumbing mixed with UI, past one session) and moving it to another epic.
+- Decision: 2026-11-02 — spine package split (b9b4ec5, 411dd17): owners moved, new entry 10 (di replaces ts-inject) after 1; 1 now lays out per-thread di modules and subpaths (the split-check line above says partials); delivery only, no requirement change.

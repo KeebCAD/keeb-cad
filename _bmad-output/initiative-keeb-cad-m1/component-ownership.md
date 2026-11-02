@@ -30,4 +30,4 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | Keymap layer tabs, Binding field, Firmware legends, Combo | firmware and keymap (9) | to plan |
 | 3D viewer | tray in 3D (8) | to plan |
 
-Not a DESIGN.md component, recorded here because every slice's canvas depends on it: the model worker (spawn, design mirror, posts; AD-11) is built by 23.4 (2026-11-02; was 13.20 before the split of epic-see-corneys-keys).
+Not a DESIGN.md component, recorded here because every slice's canvas depends on it: the model worker (`workers`' spawn and lifecycle, `design/worker`'s mirror, `pipeline`'s posts; AD-11) is built by 23.4 (2026-11-02; was 13.20 before the split of epic-see-corneys-keys).

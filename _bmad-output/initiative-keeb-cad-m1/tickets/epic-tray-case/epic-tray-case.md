@@ -46,3 +46,4 @@ For Sergii: Corney's tray case is built in the browser from its settings, seen i
 - Waits on epic 6 because: the PCB edge and part case cutouts
 - Waits on epic 7 because: the background worker harness
 - Decision (2026-10-30, replan): re-sliced as the vertical slice 'Tray in 3D'; title, description, outcome and Done when rewritten; earlier Notes stay as history and are re-read against the spine (AD-1 to AD-25) when this epic is refined.
+- Decision (2026-11-02, replan after the spine package split b9b4ec5): `viewer3d` imports only `schema` (was `model`, 2026-10-27 line above).
