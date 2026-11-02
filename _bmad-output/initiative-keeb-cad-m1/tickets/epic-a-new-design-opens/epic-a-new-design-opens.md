@@ -60,3 +60,4 @@ For Sergii: the app opens a design in the editor frame and a reload reopens it u
 - Decision (2026-11-02, split): the tracer bullet is 7 (was 13.12, the app opens the last design), as decided on 2026-10-30.
 - Waits on epic 1 because: the monorepo scaffold, CI and the UX session result
 - Decision (2026-11-02, split): 1 and 6 waited on 13.9 (done); that prerequisite is dropped rather than making this epic wait on epic-see-corneys-keys, which now waits on this one.
+- Decision (2026-11-02, split check): 7's after drops 2, already implied through 5 → 4 → 3 → 2; its description still names the register it uses.

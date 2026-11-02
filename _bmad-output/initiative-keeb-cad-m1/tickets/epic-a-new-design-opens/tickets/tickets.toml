@@ -76,7 +76,7 @@ title = "The app opens the last design"
 description = "app wiring: story 2's root container provided through app.provide and useService, with lint stopping components importing services as values; the idempotent dev-only devtools.ts and a build check that it never ships; vue-router hash history at /#/design/<id>/<workspace>; the hotkey layer fed from the register; the Firefox Playwright project. At startup the editor draws what the design itself gives and shows each stage as computing until its first post (AD-11). Launch reopens the last autosaved design through story 5's listDesigns, or creates one by newDesign when storage is empty. Story 8 draws the chrome around it."
 verify = "In the locally served build, in Chromium and Firefox: with empty storage, launch opens /#/design/<id>/layout for a new design; a reload reopens the same design; a registered test hotkey runs its command; the production bundle holds no devtools code; lint rejects a component importing a service as a value."
 covers = ["R1", "R3"]
-after = [2, 5, 6]
+after = [5, 6]
 hitl = false
 risk = "medium"
 
