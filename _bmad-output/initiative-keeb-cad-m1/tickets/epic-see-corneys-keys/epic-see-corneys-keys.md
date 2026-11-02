@@ -2,7 +2,7 @@
 type: epic
 title: "See Corney's keys"
 parent: initiative-keeb-cad-m1
-covers: [R1, R2, R4, R17, R18]
+covers: [R1, R2, R4, R17]
 sources: [_bmad-output/initiative-keeb-cad-m1/initiative-keeb-cad-m1.md]
 companions: [_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md, _bmad-output/initiative-keeb-cad-m1/component-ownership.md, _bmad-output/initiative-keeb-cad-m1/architecture-blueprints/architecture-blueprints.md, _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md, _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md]
 after: []
@@ -15,24 +15,24 @@ risk: high
 
 ## Description
 
-On the locally served app, Corney Island's left half resolves from its layout-command script (chains, explicit anchors, rotation carry, the right side of the reversible split board derived), the user adds and deletes groups, slots and keys from a blank canvas, both halves are drawn on the Layout canvas inside the editor frame (global chrome, workspace tabs, docked right panel, status strip, canvas with viewport and selection), and the design reopens from browser autosave unchanged.
+On the locally served app, Corney Island's left half resolves from its layout-command script (chains, explicit anchors, rotation carry, the right side of the reversible split board derived) through blueprint parts in the model worker, the user adds and deletes groups, slots and keys from a blank canvas, and both halves are drawn on the Layout canvas with viewport and selection inside the editor frame that epic-a-new-design-opens builds.
 
 ## Outcome
 
-For Sergii: Corney Island's keys appear in the editor from its layout-command script and survive a reload, proving the reactive graph, model, autosave and the editor frame end to end.
+For Sergii: Corney Island's keys appear in the editor from its layout-command script and survive a reload, proving the blueprint sandbox, the layout model, the posted Layout set and the Layout canvas end to end.
 
 ## Requirements
 
 - R1 (parent R1): A layout is built from a blank canvas with groups and slots, each placed by anchor + offset (offset, then rotate about the pivot). Any node anchors to a slot attach point or a group origin, and moving a node moves everything anchored to it, transitively.
 - R2 (parent R2): Children are arranged freely or as a chain. Corney's cumulative column stagger and 3-key thumb fan are expressed without absolute coordinates; each node has one rotation, carried along its chain, and an explicit anchor stops the carry. Shown by Corney's layout-command script resolving the left half, and 13.4's spike check of its key centres within ±0.05 mm of Ergogen.
 - R3 (parent R4): A split design with a reversible board derives its right half (one geometry, side-qualified ids); a per-side override set by command removes a slot's part on one side, and the removed slot keeps its space. Split files with a mirrored board and unibody files load and report `unsupported-form`.
-- R4 (parent R17): A command that would create an anchor cycle is rejected, naming the cycle's ids. A loaded file with a cycle reports `anchor-cycle`, and an unknown anchor reports `unresolvable-reference`. The status strip shows the error and warning counts.
-- R5 (parent R18): A new design autosaves in the browser after every applied command and reopens from autosave byte-identical, as one versioned canonical file.
-- R6 (parent R1, R17): The layout is built and seen in the editor frame, in both themes: top bar, workspace tabs, status strip (violation counts, cursor, zoom), left rail with the Tree slide-out, the docked right-panel region, and the Layout canvas drawing both halves with viewport (zoom, pan, fit) and selection synced with the tree. G, S, Ctrl+D and Delete add, duplicate and delete. The open design and workspace are in the URL. Shown by one e2e journey in Chromium and Firefox.
+- R4 (parent R17): A command that would create an anchor cycle is rejected, naming the cycle's ids. A loaded file with a cycle reports `anchor-cycle`, and an unknown anchor reports `unresolvable-reference`. The status strip's counts are epic-a-new-design-opens R2.
+- R5: moved to epic-a-new-design-opens R1 (2026-11-02 split).
+- R6 (parent R1, R17): The layout is built and seen on the Layout canvas inside the editor frame (epic-a-new-design-opens R3), in both themes, drawing both halves with viewport (zoom, pan, fit) and selection synced with the tree. G, S, Ctrl+D and Delete add, duplicate and delete. Shown by one e2e journey in Chromium and Firefox.
 
 ## Constraints
 
-- C1 (parent C3): Architecture AD-1 to AD-26 bind every story. This slice builds AD-2's register (Immer, Valibot inputs, nothing in progress in the design), AD-8's design file, AD-13's storage, AD-10's `reactive` and `geometry`, AD-25's wiring and AD-26's `ui` layer as written there.
+- C1 (parent C3): Architecture AD-1 to AD-26 bind every story. This slice builds AD-18's blueprint sandbox and parts lane, AD-4's chain placement, AD-11's posted Layout set and AD-22's Layout canvas as written there, on epic-a-new-design-opens' register, design file, model worker, storage and frame.
 - C2 (parent C1): Current desktop Chromium and Firefox; everything runs client-side.
 - C3 (parent C4): No Corney-specific shortcuts. Checks are invariants plus the headless slice scenario on Corney's layout-command script; the only golden comparison is 13.4's spike check (initiative Decision 2026-10-30).
 
@@ -40,12 +40,13 @@ For Sergii: Corney Island's keys appear in the editor from its layout-command sc
 
 - Corney's layout-command script resolves the left half and the derived right half; both are drawn on the Layout canvas in the editor frame.
 - Groups, slots and keys are added and deleted from a blank canvas through registered commands.
-- A reload reopens the design from autosave byte-identical.
+- A design with layout and parts reopens from autosave byte-identical and places the same.
 - The slice scenario runs headlessly on Corney's script, and one e2e journey runs in a real browser.
 
 ## Boundaries
 
 - Out: what the other slices of the initiative own (initiative breakdown, component-ownership map).
+- Out, owned by epic-a-new-design-opens: the register, the design file, the model worker, autosave, the ui foundation and the editor frame.
 - Out, owned by epic-change-a-parameter: undo and redo, the Inspector, the Fitted toggle, the Violations panel.
 - Out, owned by epic-drag-keys: drag, the anchor picker, the command palette.
 - Out, owned by epic-keep-my-work: Save to file, Open, the start screen, banners and toasts.
@@ -56,7 +57,7 @@ For Sergii: Corney Island's keys appear in the editor from its layout-command sc
 ## References
 
 - parent — _bmad-output/initiative-keeb-cad-m1/initiative-keeb-cad-m1.md, section Requirements
-- architecture — _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md, AD-1 to AD-26 (AD-2, AD-8, AD-10, AD-11, AD-13, AD-24 to AD-26 for this slice)
+- architecture — _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md, AD-1 to AD-26 (AD-4, AD-5, AD-8, AD-11, AD-18, AD-22 to AD-24 for this slice)
 - architecture — _bmad-output/initiative-keeb-cad-m1/architecture-blueprints/architecture-blueprints.md, BP-1 to BP-10 (stories 17, 21, 18)
 - companion — _bmad-output/initiative-keeb-cad-m1/component-ownership.md
 - design — _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md, Components
@@ -95,3 +96,5 @@ For Sergii: Corney Island's keys appear in the editor from its layout-command sc
 - Open question: a bmad-architecture run settles the spine Open Questions this slice now hits: the types of the posted model outputs and their codecs (layout, parts), how a workspace's set is drawn after a switch while its snapshot is older than the design, whether the routing and fingerprints files carry their own format-version, and the routing file's empty form; it also closes the spine's out-of-date 'Which story starts parts' question (16 to 18 answer it). Until it is settled 14, 18, 2 and 7 are not ready. Owner Sergii; before 14 starts.
 - Decision (2026-11-02, refresh from the spine update f57bdbc): the Open question of 2026-11-02 is settled (posted output types and codecs, drawing after a switch, the bundle's one format-version, the routing file's empty form, parts starting in this slice); 14, 18, 2 and 7 are no longer gated on it. 1, 14, 18, 2, 4, 6, 7 and 20 revised in place to match.
 - Decision (2026-11-02, refresh): new 22 ("The Layout set reaches main", after 2, before 7) owns the LayoutOutput and PartsOutput codecs, pipeline's one-message post of the Layout set, focus reordering and main's paired store, so 2 stays a model story and 7 a canvas story. Rejected: folding it into 2 (mixes chain placement with worker transport) or 7 (the largest UI story builds its own data supply).
+- Decision (2026-11-02, split): the epic had grown to 21 entries, so its foundation lane moves to the new epic-a-new-design-opens (23), built first: 13.19, 13.10, 13.1, 13.20, 13.14, 13.11, 13.12, 13.15 are now 23.1 to 23.8, with 23's own Refactor sweep 23.9. This epic keeps 9 and 16 (done), 17, 21, 18, 2, 22, 3, 4, 6, 7, 8 and the sweep 13, which now waits on this epic's entries only; 18 waits on 23.3, 3 on 23.5, 7 on 23.8. R5 moves to 23 as its R1; the status strip half of R4 and the frame half of R6 move as 23's R2 and R3; covers drops R18. The 2026-10-30 rejection of a frame-only slice doesn't apply: 23 runs through every layer and is demoable. Rejected: a blueprints-only epic (no user-visible outcome, as on 2026-11-01). Earlier Decision lines keep the old 13.x refs as history.
+- Decision (2026-11-02, split): the tracer bullet of 13.12 moved with it (now 23.7). This epic's first path through every layer it adds (sandbox, library, model worker's parts lane, design file) is 18, after 17 and 21.

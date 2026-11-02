@@ -40,5 +40,6 @@ For Sergii: Corney's three plates come out as DXF/SVG and follow the layout (R10
 
 - Decision (2026-10-30, replan): created as a vertical slice; every slice runs on Corney's layout-command script with its own invariant checks, golden comparisons only in milestone accepted.
 - Waits on epic 18 because: drawn shapes for the MCU cover and any exact outline
-- Waits on epic 13 because: live stage outputs
+- Waits on epic 23 because: the design file and the register
 - Waits on epic 14 because: the part schema and the inspector
+- Decision (2026-11-02, from the split of epic-see-corneys-keys): its foundation lane moved to epic-a-new-design-opens (23); 19.3 now waits on 23.3 (was 13.1); this epic's after is repointed to 23.

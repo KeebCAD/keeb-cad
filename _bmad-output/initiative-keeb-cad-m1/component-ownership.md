@@ -4,12 +4,12 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 
 | Component (DESIGN.md › Components) | Owning slice | Story |
 | --- | --- | --- |
-| Primitives: Button, Kbd (and the Tabs and Tree wrappers) | see Corney's keys (13) | 13.11 (Tree wrapper 13.7) |
+| Primitives: Button, Kbd (and the Tabs and Tree wrappers) | a new design opens (23), Tree wrapper by see Corney's keys (13) | 23.6 (Tree wrapper 13.7) |
 | Chip | outline follows the keys (17) | to plan |
-| Top bar, Workspace tabs, Status strip | see Corney's keys (13) | 13.15 |
-| Status strip running-stage entry (stage name, elapsed time, Restart; 2026-11-02) | see Corney's keys (13) | 13.15 |
+| Top bar, Workspace tabs, Status strip | a new design opens (23) | 23.8 |
+| Status strip running-stage entry (stage name, elapsed time, Restart; 2026-11-02) | a new design opens (23) | 23.8 |
 | Tab badge, status strip output-state entries | route and fab (7) | 7.2 |
-| Left rail + slide-out (Tree tab) | see Corney's keys (13) | 13.15, filled by 13.7 |
+| Left rail + slide-out (Tree tab) | a new design opens (23), filled by see Corney's keys (13) | 23.8, filled by 13.7 |
 | Left rail + slide-out (Parameters tab) | change a parameter (14) | to plan |
 | Left rail + slide-out (Parts tab) | change a parameter (14) | to plan |
 | Canvas, viewport, selection; Canvas keys, Right half, Mirror axis, Group frame, Unfitted slot | see Corney's keys (13) | 13.7, 13.8 |
@@ -30,4 +30,4 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | Keymap layer tabs, Binding field, Firmware legends, Combo | firmware and keymap (9) | to plan |
 | 3D viewer | tray in 3D (8) | to plan |
 
-Not a DESIGN.md component, recorded here because every slice's canvas depends on it: the model worker (spawn, design mirror, posts; AD-11) is built by 13.20 (2026-11-02).
+Not a DESIGN.md component, recorded here because every slice's canvas depends on it: the model worker (spawn, design mirror, posts; AD-11) is built by 23.4 (2026-11-02; was 13.20 before the split of epic-see-corneys-keys).

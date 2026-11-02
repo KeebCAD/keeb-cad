@@ -2,6 +2,7 @@
 # Re-planned 2026-10-30 at refinement: ids kept, 5 moves to epic-routing-and-fab, 10-15 added.
 # Re-planned 2026-11-02 against the AD-11 model worker and the blueprints spine: 19, 20, 21 added.
 # Refreshed 2026-11-02 from the spine update f57bdbc: 22 added.
+# Split 2026-11-02: 19, 10, 1, 20, 14, 11, 12, 15 moved to epic-a-new-design-opens as 23.1-23.8.
 
 next_id = 23
 
@@ -15,94 +16,6 @@ covers = []
 after = ["1.3"]
 hitl = false
 risk = "low"
-
-[[entry]]
-id = 19
-type = "story"
-title = "The thread plumbing matches the spine"
-description = "Brings the workspace in line with the model-worker spine (AD-10, AD-11, AD-25), structure only, no behaviour change. Scaffolds @keeb-cad/protocol as a stub (the one main <-> model-worker message union; imports only model and reactive; only pipeline, editor and storage import it). model gets per-thread subpath exports, model/main and model/worker, with shared pure parts (types, schemas) importable from both; each package that serves a thread exposes its partial as <package><Thread>Services from that thread's subpath. Adds the per-entry fences: main's graph never reaches blueprint, a stage package or the sandbox runtime; a worker's graph never reaches ui or vue. Rewrites 13.9's rules that contradict the spine: the no-reactive rule covers only case and routing worker code; the editor reaches pipeline only through protocol messages, never by import; model may import blueprint. The blueprint, library/worker and authoring fences stay with 17 and 21. Each new or rewritten rule has a violation fixture."
-verify = "pnpm check passes; each new or rewritten fence rejects its violation fixture; sh tooling/verify-checks.sh passes."
-covers = []
-after = [9]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 10
-type = "story"
-title = "Commands run through the register"
-description = "model's register concept: the design service holding the authored sections in a shallowRef; defineCommand and defineAction (name, input schema, availability check over the read-only design, apply step); the command register service built from the root container's appended commands array, refusing duplicates; run parses every input with its Valibot schema to a fresh copy, applies it through one new Immer({ autoFreeze: true }) instance with enablePatches(), returning the command's patches, keeps a returned Rejection outside the Immer producer, runs the structural-check hook, and returns { ok: true } or a Rejection; replaceDesign takes unknown, migrates (none yet), parses and deep-freezes. Frozen<T> and Writable<T>; Id, Length, Expression and ref(kind) Valibot helpers. The register's file is the one place that sets up Immer and also exports applyDesignPatches (story 20's worker mirror uses it). The root container in main.ts merges main's partials (modelMainServices from model/main, AD-25), none of which holds commands, with the disjoint-getTokens test over every thread's partials; story 12 provides it to components. The design's meta section (design id, name, form; AD-8's first section) is the register's first real data: its Valibot schema in model, and the Design type, the design service and replaceDesign's parse are built on it, so story 1 extends them to the other sections instead of replacing a placeholder. Proven with a test-only command that renames the design; newDesign and id minting stay in story 1, the gap in story 2, provenance in 22.1."
-verify = "Unit tests: a test command changes the design and the result is deeply frozen with no proxy; its caller's input stays unfrozen; a Vue reactive input is stored as plain data; a returned Rejection leaves the design untouched; an invalid input is refused with its path; an unavailable command is refused; a duplicate command name fails at startup; every exported command is registered; a nested write outside apply fails to compile (type test); a command's patches applied through applyDesignPatches to the previous design give the new one; every thread's partials' tokens are disjoint; replaceDesign accepts a valid meta-only design deeply frozen and refuses one with an unknown form, naming the path."
-covers = ["R4"]
-after = [19]
-hitl = false
-risk = "high"
-
-[[entry]]
-id = 1
-type = "story"
-title = "A new design writes and reads back byte-identical"
-description = "model gets the KDL v2 schema skeleton for the layout section, after story 10's meta in AD-8 order (the layout a tree, AD-23), declared in Valibot; every other authored section is added in its AD-8 position by the story that introduces it, never as an empty placeholder here. The design file holds the authored sections only (routing and fingerprints are separate files of the design bundle, AD-1). Also the design file's canonical writer, id minting and the newDesign command (design id, name, form split with a reversible board) registered through story 10's register; reading a file goes through model's migrateBundle (one format-version for the whole bundle, AD-8), then replaceDesign, which only parses, deep-freezes and writes the already-current design; newDesign's caller sets the empty derived files through model's emptyDerivedFiles(revision) (AD-1). Layer-3 generic checks over every registered command, so later stories' commands are covered automatically: after run the design is deeply frozen with no proxy and the caller's input unfrozen, and file write -> read round-trips. Story 10's meta-only replaceDesign test moves to a design with all three sections. Story 2 fills the layout section and adds the gap to meta; story 14 stores the file."
-verify = "A test creates a design by command, writes it, reads it back through replaceDesign and writes again; the two files are byte-identical and the read design is deeply frozen; a file with sections out of order is rewritten in AD-8 order; the generic checks run over every registered command."
-covers = ["R5"]
-after = ["1.1", 10]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 20
-type = "story"
-title = "The model worker mirrors the design"
-description = "reactive's generic protocol machine (epoch and seq, one dispatcher per side, transfer lists) and protocol's first messages: the whole design, patches with (epoch, seq), focus, issues and stage-started (AD-11). Main spawns the model worker from main's partials; the worker entry builds its own container from modelWorkerServices. Main sends the whole design with the derived files it holds (none until 14 adds the derived-files service) at worker start and on replaceDesign, then each applied command's patches; newDesign's caller sends the empty derived files it sets with newDesign's patches, as undo and redo send the files they restore; pipeline echoes the derived files it holds at every seq (AD-13); the worker applies them in order through 10's applyDesignPatches, so its mirror is deep-frozen. The worker posts issues (empty until 13.3) and stage-started, each echoing its seq; main drops a post from an older seq or another epoch. On a crash (the worker's error event or a message that fails to deserialize) main restarts the worker with a new epoch and the whole design. The mirror's hash check waits for its spike (spine Open Questions)."
-verify = "Tests in Chromium and Firefox: after a command the worker's mirror equals main's design and is deeply frozen; a post from an older seq and one from another epoch are dropped; a crashed worker restarts with a new epoch and the whole design; the main entry's graph never reaches pipeline (fence)."
-covers = []
-after = [1]
-hitl = false
-risk = "high"
-
-[[entry]]
-id = 14
-type = "story"
-title = "A new design autosaves and reopens from the browser"
-description = "storage gets its interface (save, load, listVersions, listDesigns) and the browser autosave backend. The saved unit is the design bundle (AD-1, AD-13): the design file, the routing file and the fingerprints file, each tagged with its revision and both empty until 7.1 and 7.2 (epic Decision 2026-11-02), written atomically by main's storage, its one writer. model/main's derived-files service holds the derived files: set from migrateBundle's result or emptyDerivedFiles, replaced by a pipeline post only at main's latest seq; storage's load and a version switch go through migrateBundle (one format-version for the bundle, AD-8), which fills a missing derived file empty. Autosave writes the design plus what the service holds at that moment and never waits for the worker's echo. Autosave after every applied command, 20 rolling versions, through the crossing (reactive's protocol machine and protocol's messages) with plain values only; failure is reported only when no rolling version is left to prune. Main holds the violations posted as issues by story 20's worker, empty until story 3; story 15's status strip reads them. Story 12 reopens the last design through listDesigns."
-verify = "A test runs a command, finds the design bundle autosaved in browser storage, reopens it through load and replaceDesign byte-identical, each file of the bundle round-tripping; a bundle missing its routing file loads with an empty one tagged with the design's revision; autosave completes while the model worker is stopped; the 21st autosave prunes the oldest; only plain data passes the crossing."
-covers = ["R5"]
-after = [20]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 11
-type = "story"
-title = "The ui foundation renders in the workbench"
-description = "packages/ui per AD-26: Tailwind 4 @theme tokens from DESIGN.md (Frappé and Latte, the 4px grid aliases, radii 2/4/8), lint against arbitrary values, the OS-default theme with the localStorage override and the inline index.html script, self-hosted JetBrains Mono, the Icon component on @lucide/vue, Button, Kbd and a Tabs wrapper over Reka's tabs, the number formatter, and the hotkey layer on @zag-js/hotkeys taking plain { id, hotkey } data (story 12 feeds it from the register) with the register test rules (no unmodified or Shift-only symbol keys except a character-matched alias, no Alt+letter, no swap-pair letters). The workbench Vite entry renders every component in every state in both themes; browser-mode component tests mount the same state files."
-verify = "Browser-mode tests in Chromium and Firefox pass for Button, Kbd, Icon, Tabs, the formatter and the hotkey layer (R fires on a Ukrainian layout via KeyboardEvent.code); the workbench builds and nothing in the app imports it; lint rejects an arbitrary-value class."
-covers = ["R6"]
-after = [9]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 12
-type = "story"
-title = "The app opens the last design"
-description = "app wiring: story 10's root container provided through app.provide and useService, with lint stopping components importing services as values; the idempotent dev-only devtools.ts and a build check that it never ships; vue-router hash history at /#/design/<id>/<workspace>; the hotkey layer fed from the register; the Firefox Playwright project. At startup the editor draws what the design itself gives and shows each stage as computing until its first post (AD-11). Launch reopens the last autosaved design through story 14's listDesigns, or creates one by newDesign when storage is empty. Story 15 draws the chrome around it."
-verify = "In the locally served build, in Chromium and Firefox: with empty storage, launch opens /#/design/<id>/layout for a new design; a reload reopens the same design; a registered test hotkey runs its command; the production bundle holds no devtools code; lint rejects a component importing a service as a value."
-covers = ["R5", "R6"]
-after = [10, 14, 11]
-hitl = false
-risk = "medium"
-
-[[entry]]
-id = 15
-type = "story"
-title = "The editor frame shows the design"
-description = "The chrome per EXPERIENCE.md › Global chrome and DESIGN.md › Components: the top bar (design name), workspace tabs on story 11's Tabs wrapper (role=tablist, keys 1-5, the URL follows), the status strip (error and warning counts from the posted issues, cursor, zoom; past about 1 s after a stage-started, the running stage, its elapsed time and a Restart action, AD-11), the left rail with the Tree slide-out shell (T, Esc, empty text; story 7 fills it with nodes), the docked 320px right-panel region and the canvas region with the empty Layout hint; F6 cycles regions; both themes at 1366x768. Tab badges, the save state, the File and Export menus and undo/redo are owned by other slices."
-verify = "In the locally served build at 1366x768, in both themes and in Chromium and Firefox: 1-5 switch workspaces and the URL follows; T opens the tree slide-out and Esc closes it; F6 cycles regions; the empty Layout shows its hint; the status strip shows 0 errors and 0 warnings; a test stage held past 1 s shows its name, elapsed time and Restart, which restarts the model worker."
-covers = ["R4", "R6"]
-after = [12]
-hitl = false
-risk = "medium"
 
 [[entry]]
 id = 16
@@ -144,7 +57,7 @@ title = "A new design holds a default key part"
 description = "model gets the library-versions and parts sections in their AD-8 positions, meta.defaultPart (required) and DesignPart { type: 'blueprint' } with BlueprintInputs (spine Data Schema); library ships lib:blueprint/choc-key v1, a Choc v2 key at 1u whose one output is its rectangle (the keycap), plain { w, h } centred on the slot's frame; no envelope (typed before 14.4) and no footprints yet; newDesign creates the design part key applying it, pinned in library-versions, and sets meta.defaultPart (EXPERIENCE.md, decided 2026-11-01); the parts lane runs in the model worker (model/worker, the script from library/worker through story 21's lane runner; main reads declarations only) and resolves each slot's part to its rectangle through model's one slot -> part run computed (own part, else the nearest group's defaultPart, else meta.defaultPart, 'else' meaning unset; plus per-slot inputs), each run posted once with id '<part id>@<hash of its resolved inputs>' (Data Schema PartsOutput); a slot whose set reference doesn't resolve, or resolves with no run output (blueprint-api-too-new, a first run failing, unavailable), is a stand-in stepping by the next level's rectangle, else the app-defined 'stand-in' run, and reports unresolvable-reference (AD-5); deleting the design part or library-versions entry that meta.defaultPart names is rejected (AD-2). Fingerprints arrive with 7.2; until then the bundle's fingerprints file is empty (epic Decision 2026-11-02)."
 verify = "A new design has key as its default part, pinned at version 1; a slot resolves its rectangle from it; a group's defaultPart overrides meta.defaultPart for its slots; a part with no run output makes its slots stand-ins; a file whose default part doesn't resolve places stand-in rectangles and reports unresolvable-reference; deleting key is rejected; the design bundle saves and reopens byte-identical."
 covers = ["R1"]
-after = [21, 1]
+after = [21, "23.3"]
 hitl = false
 risk = "high"
 
@@ -152,7 +65,7 @@ risk = "high"
 id = 2
 type = "story"
 title = "One Corney column resolves from a chain"
-description = "Fills the layout schema section (groups, slots, chain on axis x or y with offset, mm units) and adds the gap (meta.gap, x and y, edge to edge between keycaps) to meta, with addGroup, addSlot, duplicateNode and deleteNode commands, the free arrangement (default anchor = the parent origin), and model/worker's per-side placement computeds, reading through per-section selector computeds, with plain functions such as placeSlot that turn a group of chained slots into world frames, emitted as LayoutOutput rows (Data Schema): kind, frame, anchorAt (the anchor frame's origin before the offset), part (the slot's PartsOutput row; -1 on groups), fit, placed (false in or below a cycle, with NaN frame and anchorAt). Owns AD-24's who-points-at walk (deleteNode cascades over it; story 3's anchor graph uses it). Carries the must-not-recompute check (moved from 14): placement does not recompute when an unrelated section changes. Starts Corney's layout-command script in fixtures/ with one column."
+description = "Fills the layout schema section (groups, slots, chain on axis x or y with offset, mm units) and adds the gap (meta.gap, x and y, edge to edge between keycaps) to meta, with addGroup, addSlot, duplicateNode and deleteNode commands, the free arrangement (default anchor = the parent origin), and model/worker's per-side placement computeds, reading through per-section selector computeds, with plain functions such as placeSlot that turn a group of chained slots into world frames, emitted as LayoutOutput rows (Data Schema): kind, frame, anchorAt (the anchor frame's origin before the offset), part (the slot's PartsOutput row; -1 on groups), fit, placed (false in or below a cycle, with NaN frame and anchorAt). Owns AD-24's who-points-at walk (deleteNode cascades over it; story 3's anchor graph uses it). Carries the must-not-recompute check (moved from 23.5): placement does not recompute when an unrelated section changes. Starts Corney's layout-command script in fixtures/ with one column."
 verify = "A design built by Corney's script with one column as a chain places each key per the AD-4 step rule; deleting a group removes everything referencing it; the reference walk finds every reference in a design built from every section; saving and reopening it places the same; placement does not recompute when an unrelated section changes."
 covers = ["R1", "R2"]
 after = [18]
@@ -177,7 +90,7 @@ title = "Explicit anchors move dependants, cycles rejected"
 description = "setAnchor anchors any node to any slot attach point or group origin by id (vertex and construction-point anchors arrive with later slices), replacing the default anchor; placement moves dependants transitively. Anchors are a declared reference kind (AD-24), walked by story 2's walk. A command that would close a cycle is rejected through the register's structural check with a typed rejection naming the cycle's ids; a loaded cycle reports anchor-cycle in the worker's posted issues as a { kind, severity, ids, message, fixes } violation and its members are not placed; an unknown anchor id reports unresolvable-reference."
 verify = "Moving an anchored-to node moves its whole dependency chain; a cycle-closing setAnchor is rejected and the design is unchanged; a file with a cycle and one with an unknown id each report their violation with ids."
 covers = ["R1", "R4"]
-after = [2, 14]
+after = [2, "23.5"]
 hitl = false
 risk = "medium"
 
@@ -207,10 +120,10 @@ risk = "medium"
 id = 7
 type = "story"
 title = "Layout canvas shows resolved keys and adds groups and slots"
-description = "The Layout workspace's 2D canvas, inline SVG drawn by Vue templates (AD-22), draws only the design and story 22's posted Layout set (parts and layout) at one seq, computing no geometry; focus names the Layout workspace. Each part rectangle is placed at its slot's frame with translate(x, y) rotate(rot) scale(mirrored ? -1 : 1, 1), in model mm inside the viewport's y-flipped group, strokes non-scaling (AD-22); handles sit only at posted frame and anchorAt points. After a workspace switch the last snapshot draws as is and grays, with the status strip showing updating, if the set hasn't arrived within the switch grace (~200 ms). It draws placed keys as keycaps with group frames and anchor links in both themes; G adds a group, S a slot, Ctrl+D duplicates, Delete deletes, each through the register; click selects, and story 15's tree slide-out lists the nodes on a Tree wrapper over Reka's tree in ui and stays synced; wheel zoom to cursor, middle or Space drag and trackpad pan, F fits; the viewport is a service stored per design id in localStorage and shared across 2D workspaces. Its canvas, selection and viewport are what every later 2D story builds on."
+description = "The Layout workspace's 2D canvas, inline SVG drawn by Vue templates (AD-22), draws only the design and story 22's posted Layout set (parts and layout) at one seq, computing no geometry; focus names the Layout workspace. Each part rectangle is placed at its slot's frame with translate(x, y) rotate(rot) scale(mirrored ? -1 : 1, 1), in model mm inside the viewport's y-flipped group, strokes non-scaling (AD-22); handles sit only at posted frame and anchorAt points. After a workspace switch the last snapshot draws as is and grays, with the status strip showing updating, if the set hasn't arrived within the switch grace (~200 ms). It draws placed keys as keycaps with group frames and anchor links in both themes; G adds a group, S a slot, Ctrl+D duplicates, Delete deletes, each through the register; click selects, and 23.8's tree slide-out lists the nodes on a Tree wrapper over Reka's tree in ui and stays synced; wheel zoom to cursor, middle or Space drag and trackpad pan, F fits; the viewport is a service stored per design id in localStorage and shared across 2D workspaces. Its canvas, selection and viewport are what every later 2D story builds on."
 verify = "In the locally served build: G then S adds a key that appears on the canvas and in the tree, selecting either selects both, Delete removes it; a switch to Outline and back keeps zoom and pan, and so does a reload; a key at +15 deg tilts counter-clockwise on screen; a switch whose set is late shows the snapshot grayed after the grace; an automated check on current snapshots finds every canvas mark at 3:1 contrast in both themes and handles at the canvas hit radius at three zoom levels."
 covers = ["R1", "R6"]
-after = [15, 22]
+after = ["23.8", 22]
 hitl = false
 risk = "medium"
 
@@ -232,6 +145,6 @@ title = "Refactor sweep"
 description = "Cleanup only, scoped at its start from the epic's plans and the review findings it deferred. Scope pushed out of another story becomes a new story, not part of this one."
 verify = "pnpm check and every test of the slice pass, and each cleanup item from the scope list is closed or recorded as deferred."
 covers = []
-after = [9, 19, 10, 1, 20, 14, 11, 12, 15, 16, 17, 21, 18, 2, 22, 3, 4, 6, 7, 8]
+after = [9, 16, 17, 21, 18, 2, 22, 3, 4, 6, 7, 8]
 hitl = false
 risk = "low"

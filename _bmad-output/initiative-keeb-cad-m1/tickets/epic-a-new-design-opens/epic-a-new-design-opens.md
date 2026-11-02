@@ -1,0 +1,62 @@
+---
+type: epic
+title: "A new design opens in the editor frame"
+parent: initiative-keeb-cad-m1
+covers: [R17, R18]
+sources: [_bmad-output/initiative-keeb-cad-m1/initiative-keeb-cad-m1.md]
+companions: [_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md, _bmad-output/initiative-keeb-cad-m1/component-ownership.md, _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md, _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md]
+after: []
+refined: true
+risk: high
+---
+
+# A new design opens in the editor frame
+
+## Description
+
+On the locally served app, launch opens a new design in the editor frame (global chrome, workspace tabs, docked right-panel region, status strip with error and warning counts, the empty Layout hint), every command runs through the register, the model worker mirrors the design, and a reload reopens it from browser autosave byte-identical. Split from epic-see-corneys-keys on 2026-11-02; its stories were that slice's foundation lane.
+
+## Outcome
+
+For Sergii: the app opens a design in the editor frame and a reload reopens it unchanged, proving the register, the design file, the model worker, autosave and the frame end to end before any layout is drawn.
+
+## Requirements
+
+- R1 (parent R18): A new design autosaves in the browser after every applied command and reopens from autosave byte-identical, as one versioned canonical file. (Was epic-see-corneys-keys R5.)
+- R2 (parent R17): A command the register refuses returns a typed rejection and leaves the design unchanged; the status strip shows the error and warning counts. (The status strip half of epic-see-corneys-keys R4; its anchor-cycle rule stays there.)
+- R3 (parent R17): The design is seen in the editor frame, in both themes: top bar, workspace tabs, status strip (violation counts, cursor, zoom), left rail with the Tree slide-out, the docked right-panel region and the canvas region. The open design and workspace are in the URL. (The frame half of epic-see-corneys-keys R6; the Layout canvas stays there.)
+
+## Constraints
+
+- C1 (parent C3): Architecture AD-1 to AD-26 bind every story. This slice builds AD-2's register (Immer, Valibot inputs, nothing in progress in the design), AD-8's design file, AD-11's model worker, AD-13's storage, AD-10's `reactive` and `protocol`, AD-25's wiring and AD-26's `ui` layer as written there.
+- C2 (parent C1): Current desktop Chromium and Firefox; everything runs client-side.
+- C3 (parent C4): No Corney-specific shortcuts.
+
+## Done when
+
+- Launch with empty storage opens a new design in the editor frame at /#/design/<id>/layout, in both themes, in Chromium and Firefox.
+- Every command runs through the register; the model worker's mirror equals main's design after each one.
+- A reload reopens the design from autosave byte-identical.
+- The frame's checks (workspace keys, tree slide-out, F6, status strip at 0 errors and 0 warnings) pass in the locally served build.
+
+## Boundaries
+
+- Out, owned by epic-see-corneys-keys: the layout section, parts and blueprints, the Layout canvas and its drawing, both halves.
+- Out, owned by epic-change-a-parameter: undo and redo, the Inspector, the Violations panel.
+- Out, owned by epic-keep-my-work: Save to file, Open, the start screen, banners and toasts, the top bar's file save state.
+- Out, owned by epic-routing-and-fab: Tab badges and the status strip's output-state entries.
+
+## References
+
+- parent — _bmad-output/initiative-keeb-cad-m1/initiative-keeb-cad-m1.md, section Requirements
+- architecture — _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md, AD-1 to AD-26 (AD-1, AD-2, AD-8, AD-10, AD-11, AD-13, AD-25, AD-26 for this slice)
+- companion — _bmad-output/initiative-keeb-cad-m1/component-ownership.md
+- design — _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md, Components
+- design — _bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md, Global chrome, Edit model, Shortcuts
+
+## Notes
+
+- Decision (2026-11-02, split): split from epic-see-corneys-keys, which had grown to 21 entries. This epic takes its foundation lane (13.19, 13.10, 13.1, 13.20, 13.14, 13.11, 13.12, 13.15 as 1 to 8) with its own Refactor sweep (9); epic-see-corneys-keys keeps the blueprint, layout and canvas lanes. Requirement lines moved unchanged except R2 and R3, which take the status strip and frame halves of 13's R4 and R6. The 2026-10-30 rejection of a frame-only slice doesn't apply: this epic runs through every layer and is demoable. The earlier decisions on these stories stay in epic-see-corneys-keys's Notes as history.
+- Decision (2026-11-02, split): the tracer bullet is 7 (was 13.12, the app opens the last design), as decided on 2026-10-30.
+- Waits on epic 1 because: the monorepo scaffold, CI and the UX session result
+- Decision (2026-11-02, split): 1 and 6 waited on 13.9 (done); that prerequisite is dropped rather than making this epic wait on epic-see-corneys-keys, which now waits on this one.
