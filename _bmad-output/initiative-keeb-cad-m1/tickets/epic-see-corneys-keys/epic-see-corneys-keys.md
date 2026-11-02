@@ -40,7 +40,7 @@ For Sergii: Corney Island's keys appear in the editor from its layout-command sc
 
 - Corney's layout-command script resolves the left half and the derived right half; both are drawn on the Layout canvas in the editor frame.
 - Groups, slots and keys are added and deleted from a blank canvas through registered commands.
-- A design with layout and parts reopens from autosave byte-identical and places the same.
+- Designs with layout and parts pass epic-a-new-design-opens R1's round-trip (its generic checks cover this epic's commands).
 - The slice scenario runs headlessly on Corney's script, and one e2e journey runs in a real browser.
 
 ## Boundaries
@@ -100,3 +100,4 @@ For Sergii: Corney Island's keys appear in the editor from its layout-command sc
 - Decision (2026-11-02, split): the tracer bullet of 13.12 moved with it (now 23.7). This epic's first path through every layer it adds (sandbox, library, model worker's parts lane, design file) is 18, after 17 and 21.
 - Decision (2026-11-02, split check): 18 waits on 23.5 instead of 23.3, since it runs in the model worker (23.4) and its verify saves the design bundle (23.5); no delay, it already sits behind 17 and 21.
 - Decision (2026-11-02, split check): cursor coordinates and zoom in the status strip move from 23.8 to 13.7, which builds the viewport service they read; 23.8 shows the error and warning counts and the running-stage entry. 23's R3 drops them and 13's R6 gains them. Rejected: a minimal viewport service in 23.8 (builds 13.7's viewport early, without the canvas it serves).
+- Decision (2026-11-02, split check): R18 stays with epic-a-new-design-opens; this epic uses autosave and builds nothing for it, so its Done when relies on 23's R1 round-trip, whose generic checks (23.3) run over every registered command. Rejected: 13 taking R18 back with its own Requirements line (two epics owning one parent line).
