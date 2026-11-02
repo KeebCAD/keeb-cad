@@ -7,6 +7,7 @@ sources:
 companions:
   - _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md
   - _bmad-output/initiative-keeb-cad-m1/component-ownership.md
+  - _bmad-output/initiative-keeb-cad-m1/architecture-blueprints/architecture-blueprints.md
 after: []
 risk: high
 status: in-progress
@@ -97,6 +98,7 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
 - prd — _bmad-output/prd-keeb-cad-m1/addendum.md, routing candidates, tray case reference numbers, Ergogen operations
 - architecture — _bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md, Invariants AD-1 to AD-25, Open Questions, Deferred
 - companion — _bmad-output/initiative-keeb-cad-m1/component-ownership.md, which slice builds each shared editor component
+- architecture — _bmad-output/initiative-keeb-cad-m1/architecture-blueprints/architecture-blueprints.md, BP-1 to BP-10: how blueprints are authored, sandboxed and run in their lanes
 - fixture — _bmad-output/layout-model/sources/corney-island.yaml
 
 ## Notes

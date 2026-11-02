@@ -3,7 +3,7 @@ title: 'Sandbox verdict'
 epic: epic-see-corneys-keys
 stories: ['16']
 date: '2026-11-01'
-status: 'draft'
+status: 'final'
 ---
 
 # Sandbox verdict
@@ -336,4 +336,4 @@ Tested on all three hosts in both browsers (`spikes/src/sandbox.test.ts`; the nu
 
 ## Sign-off
 
-Pass / miss: ______  Sergii, date: ______
+Pass / miss: pass, runtime superseded by BP-2 (quickjs-wasi 3.6.3)  Sergii, date: 2026-11-02

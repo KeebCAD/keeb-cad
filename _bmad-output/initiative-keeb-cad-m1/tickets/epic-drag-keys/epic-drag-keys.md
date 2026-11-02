@@ -43,3 +43,4 @@ For Sergii: Corney's thumb fan and columns are edited by hand the way EXPERIENCE
 - Waits on epic 14 because: the command register, undo and the inspector
 - Waits on epic 13 because: resolved keys and the Layout canvas
 - Decision (2026-10-30, from epic-see-corneys-keys planning): 15.2 and 15.4 describe gestures (begin, update, commit, cancel); the spine now has none: a drag moves only the dragged nodes on the canvas and applies one command on drop, and a nudge burst applies one command when it ends (AD-2). Revise them in place when this epic is refined.
+- Decision (2026-11-02, from epic-see-corneys-keys replan): spine G11 is this epic's to build, since a drop is the first command computed from a posted snapshot: such a command carries the snapshot's seq, and the register rejects it with a typed rejection when the seq is not main's latest, the editor showing it briefly ('the layout changed, drop again').

@@ -3,7 +3,7 @@ title: 'A part blueprint answers within the live budget'
 type: 'chore'
 ticket: '16'
 created: '2026-11-01'
-status: 'built'
+status: done
 baseline_revision: 'ed342ec6c19b06bd9840f12c4c6b0073171540de'
 route: 'full'
 route_source: 'auto'
