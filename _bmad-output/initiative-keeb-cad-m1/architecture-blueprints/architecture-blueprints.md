@@ -46,10 +46,10 @@ flowchart LR
 | --- | --- | --- |
 | AD-18 | initiative spine | One blueprint concept; lanes per stage; pull, never push; code in a hermetic, deterministic sandbox with a step budget; the data form for the design's own work; nesting by `use()` in the same lane and sandbox |
 | AD-11 | initiative spine | Live lanes run in the model worker after each applied command, never per drag frame; the visible set within 100 ms; a library blueprint's lane reads only inputs, pulls and queries; failed lanes show their last good output stale with `lane-failed`; stage cache keys and fingerprints |
-| AD-10 | initiative spine | `blueprint` imports only `geometry`; only `blueprint` imports quickjs-wasi; `model` passes its evaluator in; the `blueprint/authoring` build-time path and its fences |
+| AD-10 | initiative spine | `blueprint` imports only `geometry`, `expr` and `schema`; only `blueprint` imports quickjs-wasi; the data interpreter imports `expr`'s evaluator directly; the `blueprint/authoring` build-time path and its fences; the lane runner, lane cache and VM pool in `blueprint/worker` |
 | AD-25 | initiative spine | Per-thread partials and entry fences: main never reaches `blueprint`, a stage or the runtime |
 | AD-5 | initiative spine | Versions immutable and pinned; minimal version selection for nested pins; every part blueprint has exactly one `rectangle` |
-| AD-3, AD-17, AD-24, AD-2 | initiative spine | One acyclic graph with declared reads as edges, checked on main; expressions only through `model`'s evaluator; references a declared kind; commands the only writers |
+| AD-3, AD-17, AD-24, AD-2 | initiative spine | One acyclic graph with declared reads as edges, checked on main; expressions only through `expr`'s evaluator; references a declared kind; commands the only writers |
 | Data Schema: `BlueprintDeclaration` | initiative spine | The declaration's shape (`uses` and the `envelope` output kind included) and its checks |
 
 ## Invariants & Rules
@@ -94,7 +94,7 @@ flowchart LR
 - **Binds:** blueprint, pipeline
 - **Prevents:** a stage rerunning every lane for one slot's change; caching a failure that depends on timing.
 - **Rule:**
-  - The **lane runner** lives in `model/worker`; it owns the per-run lane cache, which is memory-only and never persisted.
+  - The **lane runner** lives in `blueprint/worker`; it owns the per-run lane cache, which is memory-only and never persisted. The case worker loads it without `model`.
   - A lane run's cache key is the stage and its version, the blueprint version, the transitive closure of its pinned `uses` and the hash of exactly the arguments it receives, each in its resolved canonical form: quantities, options and text by value; a part ref by the referenced part's content hash (blueprint version plus inputs); an asset by its content hash; a pull by the pulled output's content hash, `count: any` pulls ordered by producer id; an anchor by its resolved frame. Identical runs share one entry. A stage receives only lane outputs, never runs blueprint code, and keeps its own AD-11 cache key.
   - A **deterministic** failure (a throw, the step budget, out of memory, a non-JSON-exact value, an undeclared or missing role, a pending job) is cached like a success: it reruns only when the key changes. Its last good output shows stale with `lane-failed`, carrying the stable message.
   - A lane whose VM is gone (dropped mid-stage after a trap or a pending job) is skipped, marked `unavailable` and **never cached**; it reruns in the next pause. Only the run that trapped is cached.
@@ -107,12 +107,12 @@ flowchart LR
 
 ### BP-7 — Authoring: TS compiled at library build
 
-- **Binds:** library, blueprint, model
+- **Binds:** library, blueprint, schema
 - **Prevents:** a compiler in the app; a declaration that disagrees with its code; main reaching `blueprint` through `library`.
 - **Rule:**
   - Milestone 1 blueprints are TS sources in `library/blueprints-src/`, which import only `blueprint/authoring` (initiative spine AD-10). Each is one `export default defineBlueprint({ id, version, inputs, uses, lanes: { <stage>: { pulls, queries, outputs, run(args, op) } } })`; the declaration types `args` and `op`.
-  - The library build type-checks it, validates the declaration with the schema in `model`, and splits it into a self-contained script (bundled, no imports, evaluating to `{ lanes: { <stage>: run } }`) and the declaration as JSON; a round-trip test checks the script's lane names against the declaration's. Declaration data ships from `library`'s main subpath; scripts only from `library/worker`, which only the model and case worker entries import. Main never carries blueprint code, even as text.
-  - The declaration's schema lives in `model`; the host receives declarations already validated, as plain data. The query list and the API version live in `blueprint` and are checked in the worker.
+  - The library build type-checks it, validates the declaration with the schema in `schema`, and splits it into a self-contained script (bundled, no imports, evaluating to `{ lanes: { <stage>: run } }`) and the declaration as JSON; a round-trip test checks the script's lane names against the declaration's. Declaration data ships from `library`'s main subpath; scripts only from `library/worker`, which only the model and case worker entries import. Main never carries blueprint code, even as text.
+  - The declaration's schema lives in `schema`; the host receives declarations already validated, as plain data. The query list and the API version live in `blueprint` and are checked in the worker.
 
 ### BP-8 — The lane contract
 
@@ -120,7 +120,7 @@ flowchart LR
 - **Prevents:** undeclared reads; lanes reaching another stage's operations; two ways outputs return to a stage.
 - **Rule:**
   - A module exports `lanes = { <stage>(args, op) }`. `args = { inputs, pulls, queries }` holds exactly what the declaration lists: inputs as plain values (quantities as numbers in mm or deg; options and text as strings; part refs, anchors and assets as opaque handles), pulls as handles keyed by role (an array per its count), query results as plain values. An anchor input can't feed a `parts` lane (it runs before the layout); the library build rejects one. `op` exposes only that stage's operations.
-  - A lane returns `{ outputs: { <name>: handle | plain | array }, problems: [{ message, severity }] }`. A part's `rectangle` output is plain `{ w, h }`, centred on the slot's frame (initiative spine AD-5). The host checks each output against its declared name and `count` (`one` or `any`, which may be empty); `problems` become `blueprint` violations naming the entry and slot. The stage converts each handle into `model`'s output type; the run's handles are then freed.
+  - A lane returns `{ outputs: { <name>: handle | plain | array }, problems: [{ message, severity }] }`. A part's `rectangle` output is plain `{ w, h }`, centred on the slot's frame (initiative spine AD-5). The host checks each output against its declared name and `count` (`one` or `any`, which may be empty); `problems` become `blueprint` violations naming the entry and slot. The stage converts each handle into its output type in `schema`; the run's handles are then freed.
 
 ### BP-9 — VM lifecycle
 
@@ -128,15 +128,15 @@ flowchart LR
 - **Prevents:** VM creation inside a synchronous stage; VMs that outlive their pins; leaked handles.
 - **Rule:**
   - One VM per pinned blueprint version, holding its factory and the factories of the transitive closure of its pinned `uses`; a pin change that alters a nested version means a new VM.
-  - A pool in `blueprint`, one per worker, filled by the lane runner: in the model worker in its pause between applying patches and running stages; in the case worker before case lanes, rebuilt after a respawn. Each stage's operation table and handle converter reach the runner through ts-inject tokens, provided by `pipeline` in the model worker's entry and by the case worker's entry there.
+  - A pool in `blueprint/worker`, one per worker, filled by the lane runner: in the model worker in its pause between applying patches and running stages; in the case worker before case lanes, rebuilt after a respawn. Each stage's operation table and handle converter reach the runner through ts-inject tokens, provided by `pipeline` in the model worker's entry and by the case worker's entry there.
   - One handle table per lane run, owned by the host and shared by nested `use()` calls, freed at the run's end, including quickjs-wasi's internal handle copies.
   - A VM is disposed when its version is no longer pinned in the current design.
 
 ### BP-10 — The data form uses the same operations
 
-- **Binds:** blueprint, model
+- **Binds:** blueprint, expr
 - **Prevents:** a second implementation of operations for the design's own work.
-- **Rule:** The data-blueprint interpreter (in `blueprint`, `model`'s evaluator passed in) walks the design's own work and calls the same stage operations through the same host-call wrapper. It needs no sandbox, runs on the lane's thread and is cached per lane run. Its syntax is decided with the first outline story.
+- **Rule:** The data-blueprint interpreter (in `blueprint`, evaluating with `expr`'s evaluator against its own inputs) walks the design's own work and calls the same stage operations through the same host-call wrapper. It needs no sandbox, runs on the lane's thread and is cached per lane run. Its syntax is decided with the first outline story.
 
 ## Consistency Conventions
 
