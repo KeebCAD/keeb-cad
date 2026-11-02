@@ -24,7 +24,7 @@ For Sergii: the app opens a design in the editor frame and a reload reopens it u
 
 - R1 (parent R18): A new design autosaves in the browser after every applied command and reopens from autosave byte-identical, as one versioned canonical file. (Was epic-see-corneys-keys R5.)
 - R2 (parent R17): A command the register refuses returns a typed rejection and leaves the design unchanged; the status strip shows the error and warning counts. (The status strip half of epic-see-corneys-keys R4; its anchor-cycle rule stays there.)
-- R3 (parent R17): The design is seen in the editor frame, in both themes: top bar, workspace tabs, status strip (violation counts, cursor, zoom), left rail with the Tree slide-out, the docked right-panel region and the canvas region. The open design and workspace are in the URL. (The frame half of epic-see-corneys-keys R6; the Layout canvas stays there.)
+- R3 (parent R17): The design is seen in the editor frame, in both themes: top bar, workspace tabs, status strip (violation counts; cursor and zoom arrive with epic-see-corneys-keys's viewport), left rail with the Tree slide-out, the docked right-panel region and the canvas region. The open design and workspace are in the URL. (The frame half of epic-see-corneys-keys R6; the Layout canvas stays there.)
 
 ## Constraints
 
@@ -61,3 +61,4 @@ For Sergii: the app opens a design in the editor frame and a reload reopens it u
 - Waits on epic 1 because: the monorepo scaffold, CI and the UX session result
 - Decision (2026-11-02, split): 1 and 6 waited on 13.9 (done); that prerequisite is dropped rather than making this epic wait on epic-see-corneys-keys, which now waits on this one.
 - Decision (2026-11-02, split check): 7's after drops 2, already implied through 5 → 4 → 3 → 2; its description still names the register it uses.
+- Decision (2026-11-02, split check): cursor coordinates and zoom in the status strip move from 23.8 to 13.7, which builds the viewport service they read; 23.8 shows the error and warning counts and the running-stage entry. 23's R3 drops them and 13's R6 gains them. Rejected: a minimal viewport service in 23.8 (builds 13.7's viewport early, without the canvas it serves).

@@ -6,7 +6,7 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | --- | --- | --- |
 | Primitives: Button, Kbd (and the Tabs and Tree wrappers) | a new design opens (23), Tree wrapper by see Corney's keys (13) | 23.6 (Tree wrapper 13.7) |
 | Chip | outline follows the keys (17) | to plan |
-| Top bar, Workspace tabs, Status strip | a new design opens (23) | 23.8 |
+| Top bar, Workspace tabs, Status strip | a new design opens (23), cursor and zoom by see Corney's keys (13) | 23.8 (cursor and zoom 13.7) |
 | Status strip running-stage entry (stage name, elapsed time, Restart; 2026-11-02) | a new design opens (23) | 23.8 |
 | Tab badge, status strip output-state entries | route and fab (7) | 7.2 |
 | Left rail + slide-out (Tree tab) | a new design opens (23), filled by see Corney's keys (13) | 23.8, filled by 13.7 |
