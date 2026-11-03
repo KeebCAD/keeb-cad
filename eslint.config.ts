@@ -28,12 +28,13 @@ const IGNORED = [
   'fixtures/corney-island/ergogen/**',
 ]
 
-// Root and app tool configs, tooling/ and the e2e specs run in Node.js.
+// Root, app and editor tool configs, tooling/ and the e2e specs run in Node.js.
 const NODE_FILES = [
   '*.config.ts',
   '.dependency-cruiser.mts',
   'tooling/**',
   'app/*.config.ts',
+  'packages/editor/*.config.ts',
   'app/e2e/**',
 ]
 

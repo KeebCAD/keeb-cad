@@ -22,7 +22,7 @@ Browser CAD for split keyboards: layout to plates, PCB, case and firmware, all c
 
 ## Conventions that differ from defaults
 
-- Run DOM tests in Vitest browser mode (Chromium and Firefox, `app/vitest.config.ts`) with vitest-browser-vue; never add jsdom or @vue/test-utils.
+- Run DOM tests in Vitest browser mode (Chromium and Firefox, `packages/editor/vitest.config.ts`) with vitest-browser-vue; never add jsdom or @vue/test-utils.
 - Put code in the package that owns the concept, never in `model` just because every package can reach it; shared pure logic goes in a cohesive kernel package, one concept per package (as `reactive` and `geometry` are).
 - Commit messages: Conventional Commits, an imperative subject of about 72 characters or fewer (`docs: add …`), details in the body. Don't copy the long third-person, single-line subjects in the history.
 

@@ -1,6 +1,11 @@
-# @keeb-cad/editor
+# @keeb-cad/app
 
-The keeb-cad editor app (Vue 3 + Vite). It is one package in the keeb-cad pnpm workspace, so run every command from the repo root.
+The composition package (AD-10, AD-25): the four thread entries and their wiring. Nothing imports it.
+
+- `src/main.ts`: the main thread's entry; mounts the editor (`@keeb-cad/editor`).
+- `src/model.worker.ts`, `src/case.worker.ts`, `src/routing.worker.ts`: the worker entries, stubs until the workers are spawned.
+
+dependency-cruiser fences each entry's own module graph (`.dependency-cruiser.mts`). It is one package in the keeb-cad pnpm workspace, so run every command from the repo root.
 
 ## Setup
 
@@ -28,6 +33,6 @@ pnpm format    # prettier --write
 ## Run the app
 
 ```sh
-pnpm --filter @keeb-cad/editor dev      # dev server
-pnpm --filter @keeb-cad/editor preview  # serve the production build (run `pnpm build` first)
+pnpm --filter @keeb-cad/app dev      # dev server
+pnpm --filter @keeb-cad/app preview  # serve the production build (run `pnpm build` first)
 ```
