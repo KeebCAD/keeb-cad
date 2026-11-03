@@ -20,9 +20,9 @@ export type DesignPatch = {
 }
 
 /**
- * Deep-freezes a plain value in place with Immer's `freeze(value, true)` and returns it. `freeze`
- * returns early on an object that is already frozen, so a value Immer's auto-freeze produced
- * passes through unchanged.
+ * Deep-freezes a plain value in place with Immer's `freeze(value, true)` and returns it: for values
+ * that never pass through Immer (`replaceDesign`'s parse). `freeze` returns early on an object that
+ * is already frozen.
  */
 export function deepFreeze<T>(value: T): Frozen<T> {
   return freeze(value, true) as Frozen<T>
@@ -41,13 +41,15 @@ export function produceDesign<R>(
   const [design, patches] = immer.produceWithPatches(base as Design, (draft: Writable<Design>) => {
     returned = recipe(draft)
   })
-  return { design: deepFreeze(design), patches: patches as DesignPatch[], returned }
+  // Auto-freeze has already deep-frozen the produced value; the cast only names it.
+  return { design: design as Frozen<Design>, patches: patches as DesignPatch[], returned }
 }
 
-/** Applies a commit's patches to a design and deep-freezes the result: the one patch applier. */
+/** Applies a commit's patches to a design; the result is deep-frozen: the one patch applier. */
 export function applyDesignPatches(
   design: Frozen<Design>,
   patches: readonly DesignPatch[],
 ): Frozen<Design> {
-  return deepFreeze(immer.applyPatches(design as Design, patches as readonly Patch[]))
+  // `applyPatches` on a plain base produces through this instance, so auto-freeze froze it.
+  return immer.applyPatches(design as Design, patches as readonly Patch[]) as Frozen<Design>
 }
