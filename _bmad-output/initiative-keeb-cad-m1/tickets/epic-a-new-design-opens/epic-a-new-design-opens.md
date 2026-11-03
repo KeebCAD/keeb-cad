@@ -14,16 +14,16 @@ risk: high
 
 ## Description
 
-On the locally served app, launch opens a new design in the editor frame (global chrome, workspace tabs, docked right-panel region, status strip with error and warning counts, the empty Layout hint), every command runs through the register, the model worker mirrors the design, and a reload reopens it from browser autosave byte-identical. Split from epic-see-corneys-keys on 2026-11-02; its stories were that slice's foundation lane.
+On the locally served app, launch opens a new design in the editor frame (global chrome, workspace tabs, docked right-panel region, status strip with error and warning counts, the empty Layout hint), every command runs through the design store, the model worker mirrors the design, and a reload reopens it from browser autosave byte-identical. Split from epic-see-corneys-keys on 2026-11-02; its stories were that slice's foundation lane.
 
 ## Outcome
 
-For Sergii: the app opens a design in the editor frame and a reload reopens it unchanged, proving the register, the design file, the model worker, autosave and the frame end to end before any layout is drawn.
+For Sergii: the app opens a design in the editor frame and a reload reopens it unchanged, proving the design store, the design file, the model worker, autosave and the frame end to end before any layout is drawn.
 
 ## Requirements
 
 - R1 (parent R18): A new design autosaves in the browser after every applied command and reopens from autosave byte-identical, as one versioned canonical file. (Was epic-see-corneys-keys R5.)
-- R2 (parent R17): A command the register refuses returns a typed rejection and leaves the design unchanged; the status strip shows the error and warning counts. (The status strip half of epic-see-corneys-keys R4; its anchor-cycle rule stays there.)
+- R2 (parent R17): A command the design store refuses returns a typed rejection and leaves the design unchanged; the status strip shows the error and warning counts. (The status strip half of epic-see-corneys-keys R4; its anchor-cycle rule stays there.)
 - R3 (parent R17): The design is seen in the editor frame, in both themes: top bar, workspace tabs, status strip (violation counts; cursor and zoom arrive with epic-see-corneys-keys's viewport), left rail with the Tree slide-out, the docked right-panel region and the canvas region. The open design and workspace are in the URL. (The frame half of epic-see-corneys-keys R6; the Layout canvas stays there.)
 
 ## Constraints
@@ -35,7 +35,7 @@ For Sergii: the app opens a design in the editor frame and a reload reopens it u
 ## Done when
 
 - Launch with empty storage opens a new design in the editor frame at /#/design/<id>/layout, in both themes, in Chromium and Firefox.
-- Every command runs through the register; the model worker's mirror equals main's design after each one.
+- Every command runs through the design store; the model worker's mirror equals main's design after each one.
 - A reload reopens the design from autosave byte-identical.
 - The frame's checks (workspace keys, tree slide-out, F6, status strip at 0 errors and 0 warnings) pass in the locally served build.
 
@@ -64,3 +64,4 @@ For Sergii: the app opens a design in the editor frame and a reload reopens it u
 - Decision (2026-11-02, split check): cursor coordinates and zoom in the status strip move from 23.8 to 13.7, which builds the viewport service they read; 23.8 shows the error and warning counts and the running-stage entry. 23's R3 drops them and 13's R6 gains them. Rejected: a minimal viewport service in 23.8 (builds 13.7's viewport early, without the canvas it serves).
 - Decision (2026-11-02, split check): 1 opens before the tracer 7, against the tracer-first rule, because 2's register is built against the per-thread partials 1 lays out; as decided on 2026-10-30 for story 9. Rejected: folding 1 into the tracer (plumbing mixed with UI, past one session) and moving it to another epic.
 - Decision: 2026-11-02 — spine package split (b9b4ec5, 411dd17): owners moved, new entry 10 (di replaces ts-inject) after 1; 1 now lays out per-thread di modules and subpaths (the split-check line above says partials); delivery only, no requirement change.
+- Decision (2026-11-03, replan): the first build of 2 (draft PR #6) mixed types, constants, helpers and classes, used a symbol-keyed write between two services, a module-level Immer instance and comments with no lasting value. Sergii's review set code layout and test rules in AGENTS.md (13124c4) and changed the spine (9cee349, 9962510, 840671a): the register and the design state are one service, DesignStore; Immer lives in a DesignPatcher service in both threads; checkStructure returns a Result; the worker mirror deep-freezes whole-value loads; Result and Option come from a new kernel result. New entry 11 (result replaces the plain Result) after 10; 2 now waits on 11, takes the new terms and is rebuilt from main, its first build closed unmerged as the baseline it is compared against. 4 and 7 take the new names. R2's wording names the design store; what is required is unchanged.

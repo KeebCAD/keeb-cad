@@ -41,7 +41,8 @@ For Sergii: a design is never lost: it saves to a file, reopens in both browsers
 
 - Decision (2026-10-30, replan): created as a vertical slice; every slice runs on Corney's layout-command script with its own invariant checks, golden comparisons only in milestone accepted.
 - Waits on epic 23 because: the design file and autosave
-- Waits on epic 14 because: parameters and the command register
+- Waits on epic 14 because: parameters and the design store
 - Waits on epic 15 because: gestures and revisions
 - Decision (2026-10-30, from epic-see-corneys-keys planning): 13.14 owns browser autosave with 20 rolling versions; 16.2 adds named points and the file backend on top of it and should stop restating the rolling versions. Revise it in place when this epic is refined.
 - Decision (2026-11-02, from the split of epic-see-corneys-keys): its foundation lane moved to epic-a-new-design-opens (23); 16.2 now waits on 23.3 (was 13.1), and 13.14 in the Notes above is now 23.5; this epic's after is repointed to 23.
+- Decision (2026-11-03, replan): the spine merged the command register and the design state into one service, the design store (9cee349); this file's current wording takes the new name, dated lines above stay as written. Delivery only, no requirement change.

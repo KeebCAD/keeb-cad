@@ -19,7 +19,7 @@ after = [{ epic = 1, needs = "the monorepo scaffold the fixtures harness lives i
 id = 23
 slug = "epic-a-new-design-opens"
 title = "A new design opens in the editor frame"
-description = "On the locally served app, launch opens a new design in the editor frame (global chrome, workspace tabs, docked right-panel region, status strip with error and warning counts, the empty Layout hint), every command runs through the register, the model worker mirrors the design, and a reload reopens it from browser autosave byte-identical."
+description = "On the locally served app, launch opens a new design in the editor frame (global chrome, workspace tabs, docked right-panel region, status strip with error and warning counts, the empty Layout hint), every command runs through the design store, the model worker mirrors the design, and a reload reopens it from browser autosave byte-identical."
 covers = ["R17", "R18"]
 after = [{ epic = 1, needs = "the monorepo scaffold, CI and the UX session result" }]
 
@@ -29,7 +29,7 @@ slug = "epic-see-corneys-keys"
 title = "See Corney's keys"
 description = "On the locally served app, Corney Island's left half resolves from its layout-command script (chains, explicit anchors, rotation carry, the right side of the reversible split board derived) through blueprint parts in the model worker, the user adds and deletes groups, slots and keys from a blank canvas, and both halves are drawn on the Layout canvas with viewport and selection inside the editor frame."
 covers = ["R1", "R2", "R4", "R17"]
-after = [{ epic = 1, needs = "the monorepo scaffold, CI and the UX session result" }, { epic = 23, needs = "the register, the design file, the model worker, autosave and the editor frame" }]
+after = [{ epic = 1, needs = "the monorepo scaffold, CI and the UX session result" }, { epic = 23, needs = "the design store, the design file, the model worker, autosave and the editor frame" }]
 
 [[epic]]
 id = 14
@@ -37,7 +37,7 @@ slug = "epic-change-a-parameter"
 title = "Change a parameter"
 description = "The user edits the gap, a slot's key size, default parts or a parameter in the expression field (inspector, Design settings, Parameters), sees Corney's keys move live, gets overlap in the violations panel, and undoes the edit as one registered command."
 covers = ["R3", "R17", "R18"]
-after = [{ epic = 23, needs = "the register, the design file and the editor frame" }, { epic = 13, needs = "Corney's script and the Layout canvas" }]
+after = [{ epic = 23, needs = "the design store, the design file and the editor frame" }, { epic = 13, needs = "Corney's script and the Layout canvas" }]
 
 [[epic]]
 id = 15
@@ -45,7 +45,7 @@ slug = "epic-drag-keys"
 title = "Drag keys"
 description = "The user drags, rotates and nudges keys and groups by the chain rule, re-anchors with the anchor picker keeping the node in place (anchor cycles rejected and shown), and each gesture is one undo step; the UX assumptions are reviewed after the Corney layout rebuild."
 covers = ["R1", "R2", "R18"]
-after = [{ epic = 14, needs = "the command register, undo and the inspector" }, { epic = 13, needs = "resolved keys and the Layout canvas" }]
+after = [{ epic = 14, needs = "the design store, undo and the inspector" }, { epic = 13, needs = "resolved keys and the Layout canvas" }]
 
 [[epic]]
 id = 16
@@ -53,7 +53,7 @@ slug = "epic-keep-my-work"
 title = "Keep my work"
 description = "The user saves to a file and opens it in Chromium and Firefox from the File menu and Start screen, older files migrate and newer or broken ones are refused safely, and a second tab opens read-only until it takes over; Save to file keeps the design and its id."
 covers = ["R5", "R18"]
-after = [{ epic = 23, needs = "the design file and autosave" }, { epic = 14, needs = "parameters and the command register" }, { epic = 15, needs = "gestures and revisions" }]
+after = [{ epic = 23, needs = "the design file and autosave" }, { epic = 14, needs = "parameters and the design store" }, { epic = 15, needs = "gestures and revisions" }]
 
 [[epic]]
 id = 17
@@ -77,7 +77,7 @@ slug = "epic-plates-to-dxf"
 title = "Plates to DXF"
 description = "Corney's switch plate, backplate and MCU cover are shapes minus part cutouts (Choc v2 switch, M2 screws from the part schema, placed with the Part picker), update live as parts move, and export as DXF and SVG through the export registry, which reports each export available or blocked."
 covers = ["R8", "R9", "R10"]
-after = [{ epic = 18, needs = "drawn shapes for the MCU cover and any exact outline" }, { epic = 23, needs = "the design file and the register" }, { epic = 14, needs = "the part schema and the inspector" }]
+after = [{ epic = 18, needs = "drawn shapes for the MCU cover and any exact outline" }, { epic = 23, needs = "the design file and the design store" }, { epic = 14, needs = "the part schema and the inspector" }]
 
 [[epic]]
 id = 6

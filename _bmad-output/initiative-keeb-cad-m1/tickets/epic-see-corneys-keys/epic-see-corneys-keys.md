@@ -46,7 +46,7 @@ For Sergii: Corney Island's keys appear in the editor from its layout-command sc
 ## Boundaries
 
 - Out: what the other slices of the initiative own (initiative breakdown, component-ownership map).
-- Out, owned by epic-a-new-design-opens: the register, the design file, the model worker, autosave, the ui foundation and the editor frame.
+- Out, owned by epic-a-new-design-opens: the design store, the design file, the model worker, autosave, the ui foundation and the editor frame.
 - Out, owned by epic-change-a-parameter: undo and redo, the Inspector, the Fitted toggle, the Violations panel.
 - Out, owned by epic-drag-keys: drag, the anchor picker, the command palette.
 - Out, owned by epic-keep-my-work: Save to file, Open, the start screen, banners and toasts.
@@ -102,3 +102,4 @@ For Sergii: Corney Island's keys appear in the editor from its layout-command sc
 - Decision (2026-11-02, split check): 18 waits on 23.5 instead of 23.3, since it runs in the model worker (23.4) and its verify saves the design bundle (23.5); no delay, it already sits behind 17 and 21.
 - Decision (2026-11-02, split check): cursor coordinates and zoom in the status strip move from 23.8 to 13.7, which builds the viewport service they read; 23.8 shows the error and warning counts and the running-stage entry. 23's R3 drops them and 13's R6 gains them. Rejected: a minimal viewport service in 23.8 (builds 13.7's viewport early, without the canvas it serves).
 - Decision (2026-11-02, split check): R18 stays with epic-a-new-design-opens; this epic uses autosave and builds nothing for it, so its Done when relies on 23's R1 round-trip, whose generic checks (23.3) run over every registered command. Rejected: 13 taking R18 back with its own Requirements line (two epics owning one parent line).
+- Decision (2026-11-03, replan): the spine merged the command register and the design state into one service, the design store (9cee349); this file's current wording takes the new name, dated lines above stay as written. Delivery only, no requirement change.
