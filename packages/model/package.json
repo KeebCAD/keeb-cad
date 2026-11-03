@@ -9,7 +9,6 @@
     "./worker": "./src/worker.ts"
   },
   "dependencies": {
-    "@snap/ts-inject": "catalog:",
     "valibot": "catalog:"
   }
 }

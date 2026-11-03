@@ -12,15 +12,17 @@ catalog:
   # copy would split the reactive graph (tooling/vue-reactivity.spec.ts checks both).
   vue: &vue 3.5.44
   '@vue/reactivity': *vue
-  '@snap/ts-inject': ^1.2
   '@tsconfig/node26': ^26.0.1
   '@types/node': ^26.6.6
   '@vitejs/plugin-vue': ^6.0.8
+  '@vitest/browser-playwright': 5.0.5
   '@vue/tsconfig': ^0.9.1
+  ts-pattern: ^5.9.0
   typescript: ~6.0.0
   valibot: ^1.5.0
   vite: ^8.2.2
   vitest: ^5.0.5
+  vitest-browser-vue: 3.1.0
   vue-tsc: ^3.3.11
 
 strictPeerDependencies: true

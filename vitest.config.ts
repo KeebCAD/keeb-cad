@@ -9,6 +9,17 @@ export default defineConfig({
       'packages/*',
       'fixtures',
       {
+        // di's root specs touch no DOM, so they run on Node (Verification layer 2); its
+        // vitest.config.ts runs only the Vue bridge's, in browsers.
+        test: {
+          name: 'di',
+          root: 'packages/di',
+          environment: 'node',
+          include: ['src/**/*.spec.ts'],
+          exclude: [...configDefaults.exclude, 'src/vue/**'],
+        },
+      },
+      {
         test: {
           name: 'tooling',
           environment: 'node',

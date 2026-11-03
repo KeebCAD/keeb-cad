@@ -116,11 +116,14 @@ const escape = (s: string) => s.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&
 export const ws = (names: string) => `^(packages/(${names})/|@keeb-cad/(${names})(/|$))`
 export const FIXTURES = '^(fixtures/|@keeb-cad/fixtures(/|$))'
 
-/** One entry of a package (`.` is its root), by resolved source file or by bare specifier. */
+/**
+ * One entry of a package (`.` is its root), by resolved source file (`src/<sub>.ts`, or a folder
+ * entry `src/<sub>/index.ts`) or by bare specifier.
+ */
 export const entry = (name: string, sub: string) =>
   sub === '.'
     ? String.raw`^(packages/${escape(name)}/src/index\.ts$|@keeb-cad/${escape(name)}$)`
-    : String.raw`^(packages/${escape(name)}/src/${escape(sub)}\.ts$|@keeb-cad/${escape(name)}/${escape(sub)}$)`
+    : String.raw`^(packages/${escape(name)}/src/${escape(sub)}(\.ts|/index\.ts)$|@keeb-cad/${escape(name)}/${escape(sub)}$)`
 
 /** The files a row's rules apply to: `app` only at its sources, as `pnpm depcruise` cruises them. */
 export const sourcePath = (name: string) =>
@@ -256,9 +259,20 @@ const config: IConfiguration = {
       'only-editor-imports-di-vue',
       'di',
       'vue',
-      ['^packages/editor/'],
+      // di's own sources belong to di-root-reaches-no-vue, so a root → bridge import reports once.
+      ['^packages/editor/', '^packages/di/src/'],
       "Only editor imports di's Vue bridge (AD-25).",
     ),
+    {
+      name: 'di-root-reaches-no-vue',
+      comment:
+        "di's root never reaches its Vue bridge, so it stays Vue-free on every thread (AD-25).",
+      severity: 'error',
+      from: { path: '^packages/di/src/', pathNot: '^packages/di/src/vue/' },
+      // The whole bridge folder, so a future bridge-internal file stays fenced too, and the bare
+      // specifier, which the owner fence no longer catches from di's own sources.
+      to: { path: ['^packages/di/src/vue/', '^@keeb-cad/di/vue$'], reachable: true },
+    },
     {
       name: 'model-root-and-main-reach-no-blueprint',
       comment:
@@ -297,7 +311,7 @@ const config: IConfiguration = {
       comment: 'Only editor, ui and di/vue import Vue (AD-10).',
       severity: 'error',
       from: {
-        pathNot: ['^packages/editor/', '^packages/ui/', String.raw`^packages/di/src/vue(\.ts$|/)`],
+        pathNot: ['^packages/editor/', '^packages/ui/', '^packages/di/src/vue/'],
       },
       to: { path: VUE, pathNot: ws('editor|ui') },
     },
