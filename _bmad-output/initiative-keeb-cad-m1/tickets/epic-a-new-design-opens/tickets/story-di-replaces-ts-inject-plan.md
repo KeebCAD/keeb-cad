@@ -3,7 +3,7 @@ title: 'di replaces ts-inject'
 type: 'refactor'
 ticket: '10'
 created: '2026-11-03'
-status: 'built'
+status: done
 baseline_revision: 'bde2486e0de4ab3cb444b15fb58cc577bc3cd47c'
 route: 'full'
 route_source: 'auto'

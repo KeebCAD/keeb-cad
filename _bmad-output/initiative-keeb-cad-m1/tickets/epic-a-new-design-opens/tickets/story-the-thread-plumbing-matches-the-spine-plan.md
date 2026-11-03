@@ -3,7 +3,7 @@ title: 'The thread plumbing matches the spine'
 type: 'refactor'
 ticket: '1'
 created: '2026-11-03'
-status: 'built'
+status: done
 baseline_revision: '75ca4eea2f20bfd7e3f706307ebc659810b57de8'
 route: 'full'
 route_source: 'auto'
