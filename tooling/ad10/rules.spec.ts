@@ -107,8 +107,8 @@ describe('AD-10 graph rules, generated from GRAPH', async () => {
   const result = await cruiseGenerated()
   const violations = violationsOf(result)
 
-  it('covers all 28 packages plus fixtures', () => {
-    expect(ROWS).toHaveLength(29)
+  it('covers all 29 packages plus fixtures', () => {
+    expect(ROWS).toHaveLength(30)
   })
 
   it.each(ROWS)('%s: an undrawn import fires its imports-only rule, and only it', (row) => {
@@ -130,11 +130,12 @@ describe('AD-10 graph rules, generated from GRAPH', async () => {
     }
   })
 
-  it('gives every non-kernel row di and reactive, and no kernel either', () => {
-    expect(allowedTargets('plates')).toEqual(expect.arrayContaining(['di', 'reactive']))
+  it('gives every non-kernel row di, reactive and result, and no kernel any', () => {
+    expect(allowedTargets('plates')).toEqual(expect.arrayContaining(['di', 'reactive', 'result']))
     expect(allowedTargets('geometry')).toEqual([])
     expect(allowedTargets('di')).toEqual([])
     expect(allowedTargets('reactive')).toEqual([])
+    expect(allowedTargets('result')).toEqual([])
   })
 })
 
@@ -214,6 +215,11 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
           'packages/storage/src/index.ts',
           '@vue/reactivity',
         ),
+        v(
+          'only-specs-import-result-testing',
+          'packages/storage/src/index.ts',
+          '@keeb-cad/result/testing',
+        ),
         v('only-ui-imports-reka-and-zag', 'packages/editor/src/index.ts', '@zag-js/hotkeys'),
         v('only-ui-imports-reka-and-zag', 'packages/editor/src/index.ts', 'reka-ui'),
         v(
@@ -231,6 +237,8 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
           'packages/pipeline/src/index.ts',
           '@keeb-cad/model/main',
         ),
+        v('result-imports-no-npm-package', 'packages/result/src/index.ts', 'valibot'),
+        v('result-imports-only-drawn-edges', 'packages/result/src/index.ts', '@keeb-cad/di'),
         v('worker-entries-reach-no-ui', 'app/src/model.worker.ts', '@keeb-cad/di/vue'),
         v('worker-entries-reach-no-ui', 'app/src/model.worker.ts', '@keeb-cad/ui'),
         v('worker-entries-reach-no-ui', 'app/src/model.worker.ts', 'packages/editor/src/index.ts'),
@@ -257,6 +265,11 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
   it('allows a model test to import fixtures', () => {
     expect(violations.filter((v) => v.from === 'packages/model/src/x.spec.ts')).toEqual([])
     expect(edgesOf(result, 'packages/model/src/x.spec.ts')).toContain('@keeb-cad/fixtures')
+  })
+
+  it('allows a storage test to import result/testing', () => {
+    expect(violations.filter((v) => v.from === 'packages/storage/src/x.spec.ts')).toEqual([])
+    expect(edgesOf(result, 'packages/storage/src/x.spec.ts')).toContain('@keeb-cad/result/testing')
   })
 
   // Each allowed edge reports nothing and was really cruised, not silently dropped.
@@ -300,9 +313,9 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
     ],
     [
       'a non-kernel package',
-      "di's root and reactive",
+      "di's root, reactive and result's root",
       'packages/storage/src/index.ts',
-      ['@keeb-cad/di', '@keeb-cad/reactive'],
+      ['@keeb-cad/di', '@keeb-cad/reactive', '@keeb-cad/result'],
     ],
     [
       'di/vue',

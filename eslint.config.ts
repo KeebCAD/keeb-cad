@@ -74,6 +74,23 @@ export default defineConfigWithVueTs(
     ...pluginVitest.configs.recommended,
     files: ['**/*.spec.ts'],
     ignores: ['app/e2e/**'],
+    rules: {
+      ...pluginVitest.configs.recommended.rules,
+      'vitest/expect-expect': [
+        'error',
+        { assertFunctionNames: ['expect', 'expectTypeOf', 'expectOk', 'expectErr'] },
+      ],
+    },
+  },
+
+  {
+    // Ok and Err, Some and None share signatures; the side that ignores a callback keeps it so
+    // the callback's type arguments still infer.
+    name: 'keeb-cad/result-mirrored-parameters',
+    files: ['packages/result/src/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
   },
 
   skipFormatting,
