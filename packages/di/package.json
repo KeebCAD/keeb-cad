@@ -5,6 +5,19 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./vue": "./src/vue.ts"
+    "./vue": "./src/vue/index.ts"
+  },
+  "dependencies": {
+    "ts-pattern": "catalog:",
+    "vue": "catalog:"
+  },
+  "devDependencies": {
+    "@tsconfig/node26": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:",
+    "vitest-browser-vue": "catalog:"
   }
 }

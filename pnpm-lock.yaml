@@ -164,9 +164,6 @@ settings:
 
 catalogs:
   default:
-    '@snap/ts-inject':
-      specifier: ^1.2
-      version: 1.2.1
     '@tsconfig/node26':
       specifier: ^26.0.1
       version: 26.0.1
@@ -176,12 +173,18 @@ catalogs:
     '@vitejs/plugin-vue':
       specifier: ^6.0.8
       version: 6.0.10
+    '@vitest/browser-playwright':
+      specifier: 5.0.5
+      version: 5.0.5
     '@vue/reactivity':
       specifier: 3.5.44
       version: 3.5.44
     '@vue/tsconfig':
       specifier: ^0.9.1
       version: 0.9.1
+    ts-pattern:
+      specifier: ^5.9.0
+      version: 5.9.2
     typescript:
       specifier: ~6.0.0
       version: 6.0.3
@@ -194,6 +197,9 @@ catalogs:
     vitest:
       specifier: ^5.0.5
       version: 5.0.5
+    vitest-browser-vue:
+      specifier: 3.1.0
+      version: 3.1.0
     vue:
       specifier: 3.5.44
       version: 3.5.44
@@ -265,9 +271,6 @@ importers:
       '@keeb-cad/editor':
         specifier: workspace:*
         version: link:../packages/editor
-      '@snap/ts-inject':
-        specifier: 'catalog:'
-        version: 1.2.1
       vue:
         specifier: 'catalog:'
         version: 3.5.44(typescript@6.0.3)
@@ -324,7 +327,36 @@ importers:
 
   packages/design-file: {}
 
-  packages/di: {}
+  packages/di:
+    dependencies:
+      ts-pattern:
+        specifier: 'catalog:'
+        version: 5.9.2
+      vue:
+        specifier: 'catalog:'
+        version: 3.5.44(typescript@6.0.3)
+    devDependencies:
+      '@tsconfig/node26':
+        specifier: 'catalog:'
+        version: 26.0.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      '@vitest/browser-playwright':
+        specifier: 'catalog:'
+        version: 5.0.5(playwright@1.64.1)(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))(vitest@5.0.5)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite:
+        specifier: 'catalog:'
+        version: 8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-playwright@5.0.5)(@vitest/ui@5.0.5)(jsdom@30.1.3)(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
+      vitest-browser-vue:
+        specifier: 'catalog:'
+        version: 3.1.0(@vue/compiler-dom@3.5.44)(@vue/server-renderer@3.5.44)(vitest@5.0.5)(vue@3.5.44(typescript@6.0.3))
 
   packages/drc: {}
 
@@ -347,7 +379,7 @@ importers:
         specifier: 'catalog:'
         version: 6.0.10(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))(vue@3.5.44(typescript@6.0.3))
       '@vitest/browser-playwright':
-        specifier: 5.0.5
+        specifier: 'catalog:'
         version: 5.0.5(playwright@1.64.1)(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))(vitest@5.0.5)
       '@vue/tsconfig':
         specifier: 'catalog:'
@@ -362,7 +394,7 @@ importers:
         specifier: 'catalog:'
         version: 5.0.5(@types/node@26.6.6)(@vitest/browser-playwright@5.0.5)(@vitest/ui@5.0.5)(jsdom@30.1.3)(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
       vitest-browser-vue:
-        specifier: 3.1.0
+        specifier: 'catalog:'
         version: 3.1.0(@vue/compiler-dom@3.5.44)(@vue/server-renderer@3.5.44)(vitest@5.0.5)(vue@3.5.44(typescript@6.0.3))
       vue-tsc:
         specifier: 'catalog:'
@@ -384,9 +416,6 @@ importers:
 
   packages/model:
     dependencies:
-      '@snap/ts-inject':
-        specifier: 'catalog:'
-        version: 1.2.1
       valibot:
         specifier: 'catalog:'
         version: 1.5.0(typescript@6.0.3)
@@ -861,9 +890,6 @@ packages:
 
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
-
-  '@snap/ts-inject@1.2.1':
-    resolution: {integrity: sha512-FEGXdq6//0AujnObmhDAIMoeFpnXRrXLAeOEppRO0XtcHCfA0s6jwnxwvKVhKcJxZnAYNbv3yUIWZs2bdmYuNA==}
 
   '@tsconfig/node26@26.0.1':
     resolution: {integrity: sha512-NQT8JUFDKeAIWpR1dakeF534msQAsoSLr1WpKdRDt3sCvk2fsFK3EVKUBG5xKYVamiRO6yTfniiyvCaqOGgn/g==}
@@ -2343,6 +2369,9 @@ packages:
     peerDependencies:
       typescript: '>=4.8.4'
 
+  ts-pattern@5.9.2:
+    resolution: {integrity: sha512-qAf+7M7Jjk7uebZeIo9uEzyintfuRtgHdzM9dqxRKcMi2dt76Ec+FH2wW3bnU9TuGLkZIJLoLs7cCQnU7Tu8ig==}
+
   tsconfig-paths-webpack-plugin@4.2.0:
     resolution: {integrity: sha512-zbem3rfRS8BgeNK50Zz5SIQgXzLafiHjOwUAvk/38/o1jHn/V5QAgVUcz884or7WYcPaH3N2CIfUc2u0ul7UcA==}
     engines: {node: '>=10.13.0'}
@@ -3105,8 +3134,6 @@ snapshots:
     optional: true
 
   '@rolldown/pluginutils@1.0.1': {}
-
-  '@snap/ts-inject@1.2.1': {}
 
   '@tsconfig/node26@26.0.1': {}
 
@@ -4661,6 +4688,8 @@ snapshots:
   ts-api-utils@2.5.0(typescript@6.0.3):
     dependencies:
       typescript: 6.0.3
+
+  ts-pattern@5.9.2: {}
 
   tsconfig-paths-webpack-plugin@4.2.0:
     dependencies:

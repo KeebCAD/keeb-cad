@@ -1,0 +1,11 @@
+{
+  // The specs: the Vue bridge's run in Vitest browser mode, the root's on Node.
+  "extends": "./tsconfig.lib.json",
+  "include": ["src/**/*.spec.ts"],
+  "exclude": [],
+  "compilerOptions": {
+    "lib": ["ES2023", "ESNext.Disposable", "DOM", "DOM.Iterable"],
+    "types": ["vitest-browser-vue"],
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo"
+  }
+}
