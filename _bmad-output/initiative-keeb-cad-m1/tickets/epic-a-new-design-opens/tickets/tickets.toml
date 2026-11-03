@@ -49,6 +49,17 @@ hitl = false
 risk = "high"
 
 [[entry]]
+id = 12
+type = "story"
+title = "The code follows AGENTS.md's rules"
+description = "Applies AGENTS.md's code layout and test rules (2026-11-03) to the packages 2 did not rebuild, and makes the checkable ones lint rules: no type or interface declared outside a folder's types.ts (spec files exempt), entry files (index.ts, main.ts, worker.ts) only re-export, and no mutable state at module level in a spec. Moves the inline types out of di (19) and schema (10) into their types.ts; moves hashing's hash out of its index.ts into hash.ts and editor's mountEditor out of its index.ts; drops the AD-n and ticket references and the comments that restate code (22 AD tags in 12 files, counted 2026-11-03). Records what the lint caught in 2's rebuild that the prose rules had not, as input for sharpening AGENTS.md."
+verify = "pnpm check passes with the three lint rules on; a violation fixture fails each rule; no source file outside spec files declares a type outside types.ts; every entry file is re-exports only; no AD-n or ticket reference in packages/*/src."
+covers = []
+after = [2]
+hitl = false
+risk = "low"
+
+[[entry]]
 id = 3
 type = "story"
 title = "A new design writes and reads back byte-identical"
@@ -56,7 +67,7 @@ description = "schema gets the KDL v2 schema skeleton for the layout section, af
 verify = "A test creates a design by command, writes it, reads it back through replaceDesign and writes again; the two files are byte-identical and the read design is deeply frozen; a file with sections out of order is rewritten in AD-8 order; the generic checks run over every registered command; a design file whose meta fails its schema is refused as design-invalid with that path."
 unknown = "The spine's Open Question 'Load failure types' (one LoadError, migrateBundle's Result, a derived file failing its schema) is settled before this story is planned."
 covers = ["R1"]
-after = ["1.1", 2]
+after = ["1.1", 2, 12]
 hitl = false
 risk = "medium"
 
