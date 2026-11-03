@@ -31,3 +31,23 @@ Browser CAD for split keyboards: layout to plates, PCB, case and firmware, all c
 - Upgrade Vue by editing the `&vue` line in `pnpm-workspace.yaml`. `pnpm update vue@x` and `pnpm add --save-catalog vue@x` write a literal version over `catalog:`, install a second `@vue/reactivity` and fail `tooling/vue-reactivity.spec.ts`.
 
 <!-- /bmad:context -->
+
+## Code layout
+
+- Put every type a folder declares, private ones included, in that folder's `types.ts`; spec files may declare their own.
+- Give each file one kind of thing: a class file holds only its class; tokens, errors, `define*` factories and helper functions each get their own file.
+- Make entry files (`index.ts`, `main.ts`, `worker.ts`) only re-export; code lives in a file named for what it does.
+- Order a class top-down: public API first, private details below.
+- Hold state in `di` services, never in a module-level singleton that functions reach for.
+- Write a comment only for a why the code can't say. No AD-n or ticket references, no restating a signature, no file-header essays.
+- Name a thing for what it does, checked against the spine's glossary; never after the library it wraps.
+
+## Tests
+
+- Keep no mutable state at module level in a spec; create spies and recordings inside the test.
+- Arrange only what the test uses, passed as arguments to an `arrange` helper; write one only when a test has something to build.
+- Start recording after arrange; a helper never takes a hidden step the assertions depend on.
+- Assert relative to the arranged state, never a number a helper's hidden steps produced.
+- Write a shared assertion once; assert whole values (`toEqual`, `toMatchObject`) instead of narrowing in the test.
+- Use `@ts-expect-error` only in a type-only test; test a runtime check with a value the types accept.
+- Test a rule where it is defined; a package that uses it tests only its own part.
