@@ -78,7 +78,16 @@ export default defineConfigWithVueTs(
       ...pluginVitest.configs.recommended.rules,
       'vitest/expect-expect': [
         'error',
-        { assertFunctionNames: ['expect', 'expectTypeOf', 'expectOk', 'expectErr'] },
+        {
+          assertFunctionNames: [
+            'expect',
+            'expectTypeOf',
+            'expectOk',
+            'expectErr',
+            'expectDeeplyFrozen',
+            'expectNothingFrozen',
+          ],
+        },
       ],
     },
   },

@@ -1,1 +1,1 @@
-export {}
+export { checkStructure } from './check-structure'

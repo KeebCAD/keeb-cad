@@ -10,6 +10,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@keeb-cad/design": "workspace:*",
+    "@keeb-cad/di": "workspace:*",
     "@keeb-cad/editor": "workspace:*",
     "vue": "catalog:"
   },
