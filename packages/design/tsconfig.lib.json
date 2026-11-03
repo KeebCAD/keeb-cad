@@ -1,0 +1,12 @@
+{
+  // The design store and the patcher. No DOM lib: design/worker runs in the model worker.
+  "extends": "../../tsconfig.base.json",
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.spec.ts"],
+  "compilerOptions": {
+    // Symbol.dispose and Symbol.asyncDispose, which di's container calls on dispose().
+    "lib": ["ES2023", "ESNext.Disposable"],
+    "noEmit": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo"
+  }
+}

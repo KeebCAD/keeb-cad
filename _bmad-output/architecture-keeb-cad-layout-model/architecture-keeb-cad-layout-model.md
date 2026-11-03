@@ -990,6 +990,8 @@ Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-2
 | result (own kernel package: obsidian-journal's Result, Option, AsyncResult and attempt with their tests; AD-24) | — |
 | immer (MIT; command writes, `design` only: its `DesignPatcher`, on main and in `design/worker`, AD-2; auto-freeze on, patches on as the model worker's payload). A caret range: the lockfile stops silent upgrades, and an exact pin would also block fix releases | ^11.2.9 |
 | valibot (MIT; the one schema format, AD-24). A caret range: the reference walk reads typed public schema properties, so a breaking change fails to compile and fails AD-24's walk test, pinned or not | ^1.5.0 |
+| @noble/hashes (MIT, no dependencies, audited; `hashing` only: `hash` is the SHA-256 of the canonical encoding, synchronous). Provisional until the mirror-hash spike (Open Questions) | ^2.4.0 |
+| nanoevents (MIT, no dependencies; `design`'s commit event, behind its `TypedEmitter`/`Subscribable` pair, AD-2) | ^10.0.0 |
 | Vite | ^8.2 (8.3.5 current) |
 | create-vue (TS, Router, Vitest, Playwright, ESLint; its Pinia removed) | 3.24.0 |
 | vue-router | 5.4.0 |

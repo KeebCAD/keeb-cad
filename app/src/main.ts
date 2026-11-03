@@ -1,4 +1,6 @@
-// The main thread's entry: mounts the editor.
 import { mountEditor } from '@keeb-cad/editor'
 
+import { createMainContainer } from './main-container'
+
+await createMainContainer()
 mountEditor('#app')
