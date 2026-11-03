@@ -3,14 +3,23 @@
 import { fileURLToPath } from 'node:url'
 import type { IConfiguration, IForbiddenRuleType } from 'dependency-cruiser'
 
-/** The seven kernels import no workspace package at all, `di` and `reactive` included (AD-10). */
-export const KERNELS = ['expr', 'reactive', 'messaging', 'hashing', 'geometry', 'di', 'ui'] as const
+/** The eight kernels import no workspace package at all, `di` and `reactive` included (AD-10). */
+export const KERNELS = [
+  'expr',
+  'reactive',
+  'messaging',
+  'hashing',
+  'geometry',
+  'di',
+  'result',
+  'ui',
+] as const
 
-/** Every other package may import these without a drawn edge (AD-10's `di` and `reactive` notes). */
-export const OPEN_KERNELS = ['di', 'reactive'] as const
+/** Every other package may import these without a drawn edge (AD-10's open-kernel notes). */
+export const OPEN_KERNELS = ['di', 'reactive', 'result'] as const
 
 /**
- * AD-10's graph as data: each package (27 under packages/, plus `app` and `fixtures`) and the
+ * AD-10's graph as data: each package (28 under packages/, plus `app` and `fixtures`) and the
  * packages it is drawn to. One `<package>-imports-only-drawn-edges` rule is generated per row.
  */
 export const GRAPH: Readonly<Record<string, readonly string[]>> = {
@@ -20,6 +29,7 @@ export const GRAPH: Readonly<Record<string, readonly string[]>> = {
   hashing: [],
   geometry: [],
   di: [],
+  result: [],
   ui: [],
   schema: ['expr'],
   blueprint: ['geometry', 'expr', 'schema', 'hashing'],
@@ -101,7 +111,7 @@ export const ENTRY_ONLY: Readonly<Record<string, Readonly<Record<string, string>
 
 const isKernel = (name: string) => (KERNELS as readonly string[]).includes(name)
 
-/** The packages a row may import: its drawn targets, plus `di` and `reactive` unless a kernel. */
+/** The packages a row may import: its drawn targets, plus the open kernels unless a kernel. */
 export const allowedTargets = (name: string): string[] => [
   ...new Set([...(GRAPH[name] ?? []), ...(isKernel(name) ? [] : OPEN_KERNELS)]),
 ]
@@ -345,6 +355,24 @@ const config: IConfiguration = {
       npm('reka-ui|@zag-js/hotkeys'),
       'Only ui imports reka-ui and @zag-js/hotkeys.',
     ),
+    {
+      name: 'result-imports-no-npm-package',
+      comment: 'result imports no npm package; its specs may import vitest (AD-10, AD-24).',
+      severity: 'error',
+      from: { path: '^packages/result/', pathNot: TEST_FILE },
+      to: {
+        path: '(^|/)node_modules/|^[^./]',
+        pathNot: [ANY_WORKSPACE_TARGET, FIXTURES],
+      },
+    },
+    {
+      name: 'only-specs-import-result-testing',
+      comment: 'Only spec files, and the testing folder itself, import result/testing.',
+      severity: 'error',
+      from: { pathNot: [TEST_FILE, '^packages/result/src/testing/'] },
+      // The whole folder, so a resolved import of one helper file is fenced too.
+      to: { path: ['^packages/result/src/testing/', '^@keeb-cad/result/testing$'] },
+    },
     {
       name: 'fixtures-only-in-tests',
       comment: 'fixtures are imported only by tests.',

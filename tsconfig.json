@@ -7,6 +7,7 @@
     { "path": "./packages/hashing" },
     { "path": "./packages/geometry" },
     { "path": "./packages/di" },
+    { "path": "./packages/result" },
     { "path": "./packages/ui" },
     { "path": "./packages/schema" },
     { "path": "./packages/blueprint" },
