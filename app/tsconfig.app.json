@@ -1,8 +1,7 @@
 {
   // The shared base comes second so its strictness applies; DOM `lib`/`types` are restored below.
   "extends": ["@vue/tsconfig/tsconfig.dom.json", "../tsconfig.base.json"],
-  "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
-  "exclude": ["src/**/*.spec.ts"],
+  "include": ["env.d.ts", "src/**/*"],
   "compilerOptions": {
     // Restore what tsconfig.base.json overrides from @vue/tsconfig/tsconfig.dom.json.
     "lib": ["ES2023", "DOM", "DOM.Iterable"],

@@ -117,7 +117,7 @@ revert
 echo "== AD-10 break"
 put packages/plates/src/index.ts "import '@keeb-cad/pcb'"
 expect_check 'AD-10 break' fail
-expect_commit 'AD-10 break' refused 'plates-and-pcb-import-only-model-geometry-reactive'
+expect_commit 'AD-10 break' refused 'plates-imports-only-drawn-edges'
 revert
 
 echo "== type error"
@@ -145,7 +145,7 @@ expect_commit 'broken build' allowed
 revert
 
 echo "== smoke fails"
-sed -i 's#No design open.#Something else.#' "$wt/app/src/views/HomeView.vue"
+sed -i 's#No design open.#Something else.#' "$wt/packages/editor/src/views/HomeView.vue"
 expect_check 'smoke fails' fail
 # `pnpm check` stops at the unit test, which sees the same text; run the smoke step on its own.
 if (cd "$wt" && pnpm build && pnpm smoke) >"$log" 2>&1; then

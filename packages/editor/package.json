@@ -1,0 +1,31 @@
+{
+  "name": "@keeb-cad/editor",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test:unit": "vitest"
+  },
+  "dependencies": {
+    "vue": "catalog:",
+    "vue-router": "5.4.0"
+  },
+  "devDependencies": {
+    "@tsconfig/node26": "catalog:",
+    "@types/node": "catalog:",
+    "@vitejs/plugin-vue": "catalog:",
+    "@vitest/browser-playwright": "5.0.5",
+    "@vue/tsconfig": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:",
+    "vitest-browser-vue": "3.1.0",
+    "vue-tsc": "catalog:"
+  },
+  "engines": {
+    "node": ">=26"
+  }
+}

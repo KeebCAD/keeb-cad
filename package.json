@@ -15,8 +15,8 @@
     "format": "prettier --write .",
     "depcruise": "depcruise packages app/src fixtures --config .dependency-cruiser.mts",
     "test": "vitest run",
-    "build": "pnpm --filter @keeb-cad/editor build",
-    "smoke": "pnpm --filter @keeb-cad/editor test:e2e",
+    "build": "pnpm --filter @keeb-cad/app build",
+    "smoke": "pnpm --filter @keeb-cad/app test:e2e",
     "check:fast": "pnpm lint && pnpm format:check && pnpm depcruise",
     "check": "pnpm typecheck && pnpm check:fast && pnpm test && pnpm build && pnpm smoke"
   },

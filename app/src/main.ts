@@ -1,10 +1,4 @@
-import { createApp } from 'vue'
+// The main thread's entry: mounts the editor.
+import { mountEditor } from '@keeb-cad/editor'
 
-import App from './App.vue'
-import router from './router'
-
-const app = createApp(App)
-
-app.use(router)
-
-app.mount('#app')
+mountEditor('#app')

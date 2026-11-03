@@ -8,7 +8,6 @@ export default defineConfig({
     projects: [
       'packages/*',
       'fixtures',
-      'app',
       {
         test: {
           name: 'tooling',

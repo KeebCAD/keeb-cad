@@ -1,5 +1,5 @@
 {
-  "name": "@keeb-cad/editor",
+  "name": "@keeb-cad/app",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -7,26 +7,22 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:unit": "vitest",
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@keeb-cad/editor": "workspace:*",
     "@snap/ts-inject": "catalog:",
-    "vue": "catalog:",
-    "vue-router": "5.4.0"
+    "vue": "catalog:"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
-    "@tsconfig/node26": "^26.0.1",
+    "@tsconfig/node26": "catalog:",
     "@types/node": "catalog:",
-    "@vitejs/plugin-vue": "^6.0.8",
-    "@vitest/browser-playwright": "5.0.5",
-    "@vue/tsconfig": "^0.9.1",
+    "@vitejs/plugin-vue": "catalog:",
+    "@vue/tsconfig": "catalog:",
     "typescript": "catalog:",
-    "vite": "^8.2.2",
+    "vite": "catalog:",
     "vite-plugin-vue-devtools": "^8.2.1",
-    "vitest": "catalog:",
-    "vitest-browser-vue": "3.1.0",
     "vue-tsc": "catalog:"
   },
   "engines": {
