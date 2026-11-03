@@ -14,7 +14,7 @@ Browser CAD for split keyboards: layout to plates, PCB, case and firmware, all c
 
 - Architecture spine (AD-1 to AD-26): `_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md`
 - Which story owns which component: `_bmad-output/initiative-keeb-cad-m1/component-ownership.md`
-- Package import rules (AD-10): `.dependency-cruiser.mts`, proven by the violation tree in `tooling/ad10/`
+- Package import rules (AD-10, AD-25): the `GRAPH` table in `.dependency-cruiser.mts` generates one rule per package; `tooling/ad10/rules.spec.ts` proves those from the table, and the subpath, entry-fence, kernel and npm rules from the hand-written fixtures in `tooling/ad10/violations/`
 
 ## Running and verifying
 
