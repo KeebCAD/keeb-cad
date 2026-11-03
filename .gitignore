@@ -17,3 +17,6 @@ playwright-report/
 
 # Boards written by spikes/ kicad-drc
 spikes/out/
+
+# Claude Code agent worktrees (local checkouts of other branches; `git worktree list` tracks them)
+.claude/worktrees/
