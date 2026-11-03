@@ -2,7 +2,7 @@ import type { Id } from './kinds'
 
 // Refusals (AD-2, Data Schema): values code builds and nothing parses, so plain TypeScript.
 
-/** What a rejection names. Each member is added by the story that first names one. */
+/** What a rejection names: `Id` for now; it becomes a union as stories name other ids (LibraryId in 13.18). */
 export type ItemId = Id
 
 /**
