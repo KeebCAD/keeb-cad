@@ -4,7 +4,8 @@
   "include": ["env.d.ts", "src/**/*"],
   "compilerOptions": {
     // Restore what tsconfig.base.json overrides from @vue/tsconfig/tsconfig.dom.json.
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    // ESNext.Disposable: di's container, compiled here through its source, calls Symbol.dispose.
+    "lib": ["ES2023", "ESNext.Disposable", "DOM", "DOM.Iterable"],
     "types": [],
 
     // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.

@@ -977,7 +977,7 @@ Decisions 53, 55 and 57 and the other items parked for the recipes party (attach
 
 ## Stack
 
-Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-26 (renderers, npm) and 2026-10-28 (clipper2-ts and makerjs, npm and GitHub); 2026-10-28 (flatbush, npm); 2026-10-30 (Vue, `@vue/reactivity`, npm); 2026-10-30 (reka-ui, @zag-js/hotkeys, @vueuse/core, tailwindcss, npm and spikes, `ui-layer-decisions-2026-10-30.md`); 2026-10-30 (immer, valibot, @valibot/to-json-schema: npm and a schema spike; @zag-js/hotkeys: package source read); 2026-11-02 (flatbush 4.7.0, npm, `reviews/review-verification-split-2026-11-02.md`).
+Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-26 (renderers, npm) and 2026-10-28 (clipper2-ts and makerjs, npm and GitHub); 2026-10-28 (flatbush, npm); 2026-10-30 (Vue, `@vue/reactivity`, npm); 2026-10-30 (reka-ui, @zag-js/hotkeys, @vueuse/core, tailwindcss, npm and spikes, `ui-layer-decisions-2026-10-30.md`); 2026-10-30 (immer, valibot, @valibot/to-json-schema: npm and a schema spike; @zag-js/hotkeys: package source read); 2026-11-02 (flatbush 4.7.0, npm, `reviews/review-verification-split-2026-11-02.md`); 2026-11-03 (@noble/hashes 2.4.0, npm).
 
 | Name | Version |
 | --- | --- |
@@ -986,6 +986,7 @@ Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-2
 | di (own kernel package: obsidian-journal's container with its tests; wiring, AD-25) | — |
 | immer (MIT; command writes, `design` only: its register and `design/worker`'s mirror, AD-2; auto-freeze on, patches on as the model worker's payload). A caret range: the lockfile stops silent upgrades, and an exact pin would also block fix releases | ^11.2.9 |
 | valibot (MIT; the one schema format, AD-24). A caret range: the reference walk reads typed public schema properties, so a breaking change fails to compile and fails AD-24's walk test, pinned or not | ^1.5.0 |
+| @noble/hashes (MIT; `hashing` only: SHA-256 for the synchronous `hash`, AD-10; provisional until the mirror-hash spike) | 2.4.0 |
 | Vite | ^8.2 (8.3.5 current) |
 | create-vue (TS, Router, Vitest, Playwright, ESLint; its Pinia removed) | 3.24.0 |
 | vue-router | 5.4.0 |

@@ -8,6 +8,15 @@
     "./worker": "./src/worker.ts"
   },
   "dependencies": {
-    "immer": "^11.2.9"
+    "@keeb-cad/di": "workspace:*",
+    "@keeb-cad/hashing": "workspace:*",
+    "@keeb-cad/model": "workspace:*",
+    "@keeb-cad/reactive": "workspace:*",
+    "@keeb-cad/schema": "workspace:*",
+    "immer": "^11.2.9",
+    "valibot": "catalog:"
+  },
+  "devDependencies": {
+    "vitest": "catalog:"
   }
 }

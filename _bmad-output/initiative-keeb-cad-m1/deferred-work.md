@@ -17,3 +17,9 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-thread-plumbing-matches-the-spine-plan.md`
   summary: AGENTS.md's "proven by the violation tree in tooling/ad10/" is stale; the graph rules are now proven by a tree rules.spec.ts generates from GRAPH, the committed tree only holds subpath, fence, kernel and npm fixtures.
   evidence: 23.1 review pass 1, finding 5; AGENTS.md line 17 vs tooling/ad10/rules.spec.ts.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-commands-run-through-the-register-plan.md`
+  summary: Decide whether a command whose apply changes nothing commits (seq +1, empty patches, commit event) and becomes an undo entry.
+  evidence: 23.2's register commits it today (review pass 1, finding 7); the spine is silent; harmless until undo (14.1).
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-commands-run-through-the-register-plan.md`
+  summary: Define the design patch type in the spine's Data Schema so protocol can type the patches message from schema; move DesignPatch out of design.
+  evidence: AD-10 lets protocol import only schema and messaging, and AD-11's patches payload needs a type; 23.2 put DesignPatch in design (review pass 1, finding 8). Needed before 23.4.

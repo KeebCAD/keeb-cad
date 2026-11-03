@@ -9,6 +9,7 @@
     "./worker": "./src/worker.ts"
   },
   "dependencies": {
+    "@keeb-cad/schema": "workspace:*",
     "valibot": "catalog:"
   }
 }

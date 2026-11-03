@@ -2,6 +2,8 @@
   "extends": "../../tsconfig.base.json",
   "include": ["src"],
   "compilerOptions": {
+    // di's container, compiled here through its source, calls Symbol.dispose and Symbol.asyncDispose.
+    "lib": ["ES2023", "ESNext.Disposable"],
     "composite": true,
     "emitDeclarationOnly": true,
     "outDir": "dist",
