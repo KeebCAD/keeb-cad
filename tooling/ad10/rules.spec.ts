@@ -99,12 +99,11 @@ for (const row of ROWS) {
   }
 }
 
-let generated: Promise<ICruiseResult> | undefined
-const cruiseGenerated = () =>
-  (generated ??= cruiseWithConfig(['packages', 'app', 'fixtures'], generatedDir))
+// The graph describe awaits this while collecting, so it always runs; one cruise serves every use.
+const generated = cruiseWithConfig(['packages', 'app', 'fixtures'], generatedDir)
 
 describe('AD-10 graph rules, generated from GRAPH', async () => {
-  const result = await cruiseGenerated()
+  const result = await generated
   const violations = violationsOf(result)
 
   it('covers all 29 packages plus fixtures', () => {
@@ -248,16 +247,14 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
   })
 
   it('reports no import under two rules', async () => {
-    const edges = [...violations, ...violationsOf(await cruiseGenerated())].map(
+    const edges = [...violations, ...violationsOf(await generated)].map(
       (v) => `${v.from} -> ${v.to}`,
     )
     expect(edges.filter((e, i) => edges.indexOf(e) !== i)).toEqual([])
   })
 
   it('exercises every forbidden rule in the config, here or in the generated tree', async () => {
-    const reported = new Set(
-      [...violations, ...violationsOf(await cruiseGenerated())].map((v) => v.rule),
-    )
+    const reported = new Set([...violations, ...violationsOf(await generated)].map((v) => v.rule))
     const configured = new Set((config.forbidden ?? []).map((r) => r.name))
     expect(reported).toEqual(configured)
   })
@@ -348,11 +345,13 @@ describe('AD-10 config on the real editor', async () => {
   // The violation tree has no node_modules, so its bare imports stay unresolved. Only a
   // real, declared import proves the resolve options and the anchored `exclude` keep a
   // resolved npm target for the Vue rule to see.
-  const result = await cruiseWithConfig(['packages/editor/src/index.ts'], repoRoot)
+  const result = await cruiseWithConfig(['packages/editor/src/mount-editor.ts'], repoRoot)
 
-  it('resolves and keeps the vue dependency of packages/editor/src/index.ts', () => {
-    const index = result.modules.find((m) => m.source === 'packages/editor/src/index.ts')
-    const dep = index?.dependencies.find((d) => d.module === 'vue')
+  it('resolves and keeps the vue dependency of packages/editor/src/mount-editor.ts', () => {
+    const mountEditor = result.modules.find(
+      (m) => m.source === 'packages/editor/src/mount-editor.ts',
+    )
+    const dep = mountEditor?.dependencies.find((d) => d.module === 'vue')
     expect(dep).toBeDefined()
     expect(dep?.couldNotResolve).toBe(false)
     expect(dep?.resolved).toMatch(new RegExp(VUE))

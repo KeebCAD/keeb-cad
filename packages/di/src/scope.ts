@@ -1,10 +1,16 @@
 import { match } from 'ts-pattern'
 
-import { type Bindings, Slot, type StoredEntry, disposeSlots } from './bindings'
-import { ContainerDisposedError, TokenNotRegisteredError } from './errors'
-import { currentChain, type Resolver, withResolutionContext } from './inject'
+import { disposeSlots } from './disposal'
+import { ContainerDisposedError } from './errors/container-disposed-error'
+import { TokenNotRegisteredError } from './errors/token-not-registered-error'
+import { currentChain, withResolutionContext } from './inject'
 import { Lifetime } from './lifetime'
-import { type AnyTokenLike, type MultiToken, type TokenLike, tokenKind } from './token'
+import { Slot } from './slot'
+import { tokenKind } from './token'
+
+import type { Bindings } from './bindings'
+import type { StoredEntry } from './stored-entry'
+import type { AnyTokenLike, MultiToken, Resolver, TokenLike } from './types'
 
 export class Scope implements Resolver {
   readonly #bindings: Bindings
@@ -14,30 +20,6 @@ export class Scope implements Resolver {
 
   constructor(bindings: Bindings) {
     this.#bindings = bindings
-  }
-
-  #resolveSingle(token: AnyTokenLike, stored: StoredEntry): unknown {
-    return match(stored.entry.lifetime)
-      .with(Lifetime.Container, () => stored.slot.getOrCreate(this, token, stored.entry.factory))
-      .with(Lifetime.Transient, () => withResolutionContext(this, token, stored.entry.factory))
-      .with(Lifetime.Scoped, () =>
-        this.#scopedSlotFor(stored).getOrCreate(this, token, stored.entry.factory),
-      )
-      .exhaustive()
-  }
-
-  #scopedSlotFor(stored: StoredEntry): Slot {
-    let slot = this.#scopedSlots.get(stored)
-    if (!slot) {
-      slot = new Slot()
-      this.#scopedSlots.set(stored, slot)
-      this.#scopedOrder.push(slot)
-    }
-    return slot
-  }
-
-  #ensureNotDisposed(): void {
-    if (this.#disposed) throw new ContainerDisposedError()
   }
 
   resolve<T>(token: TokenLike<T>): T
@@ -65,5 +47,29 @@ export class Scope implements Resolver {
     if (errors.length > 0) {
       throw new AggregateError(errors, 'One or more scope disposers failed.')
     }
+  }
+
+  #resolveSingle(token: AnyTokenLike, stored: StoredEntry): unknown {
+    return match(stored.entry.lifetime)
+      .with(Lifetime.Container, () => stored.slot.getOrCreate(this, token, stored.entry.factory))
+      .with(Lifetime.Transient, () => withResolutionContext(this, token, stored.entry.factory))
+      .with(Lifetime.Scoped, () =>
+        this.#scopedSlotFor(stored).getOrCreate(this, token, stored.entry.factory),
+      )
+      .exhaustive()
+  }
+
+  #scopedSlotFor(stored: StoredEntry): Slot {
+    let slot = this.#scopedSlots.get(stored)
+    if (!slot) {
+      slot = new Slot()
+      this.#scopedSlots.set(stored, slot)
+      this.#scopedOrder.push(slot)
+    }
+    return slot
+  }
+
+  #ensureNotDisposed(): void {
+    if (this.#disposed) throw new ContainerDisposedError()
   }
 }

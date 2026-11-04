@@ -39,6 +39,64 @@ const NODE_FILES = [
   'app/e2e/**',
 ]
 
+// A type that pairs with a same-named value stays in the value's file: TypeScript merges the pair
+// only within one file.
+const PAIRED_TYPES = ['Result', 'Option']
+
+export const TYPES_OUTSIDE_TYPES_TS = {
+  selector: `:matches(TSTypeAliasDeclaration, TSInterfaceDeclaration):not([id.name=/^(${PAIRED_TYPES.join('|')})$/])`,
+  message:
+    "Declare types in this folder's types.ts. A type paired with a same-named value joins PAIRED_TYPES in eslint.config.ts.",
+}
+
+export const ENTRY_RE_EXPORTS_ONLY = {
+  selector:
+    'Program > :not(ExportAllDeclaration, ExportNamedDeclaration[source], ExportNamedDeclaration[declaration=null][specifiers.length=0])',
+  message:
+    'A package entry file only re-exports (`export … from`, `export * from`, or the stub `export {}`); put code in a file named for what it does.',
+}
+
+// The shapes a recording shared between tests takes, at module level or directly in a describe
+// callback. A non-empty table (`as const` or not) is a fixture and stays allowed.
+const DESCRIBE_CALL =
+  "CallExpression:matches([callee.name='describe'], [callee.object.name='describe'], [callee.callee.object.name='describe'])"
+const SPEC_SCOPES = [
+  'Program',
+  'Program > ExportNamedDeclaration',
+  `${DESCRIBE_CALL} > :function > BlockStatement`,
+]
+const inSpecScope = (selector: string) =>
+  `:matches(${SPEC_SCOPES.map((scope) => `${scope} > ${selector}`).join(', ')})`
+const EMPTY_CONTAINER =
+  'ArrayExpression[elements.length=0], ObjectExpression[properties.length=0], NewExpression[callee.name=/^(Map|Set|WeakMap|WeakSet|Array)$/]'
+export const SHARED_SPEC_STATE = [
+  {
+    selector: inSpecScope('VariableDeclaration[kind=/^(let|var)$/]'),
+    message:
+      'No `let` or `var` at module level or in a describe callback; create state inside the test.',
+  },
+  {
+    // Any spy call outside every function but describe callbacks; one inside a helper or a test
+    // is created per call.
+    selector: `CallExpression[callee.object.name='vi'][callee.property.name=/^(fn|spyOn)$/]:not(:function:not(${DESCRIBE_CALL} > :function) CallExpression)`,
+    message:
+      'No vi.fn or vi.spyOn at module level or in a describe callback; create spies inside the test.',
+  },
+  {
+    selector: [
+      `> :matches(${EMPTY_CONTAINER}).init`,
+      `> :matches(TSAsExpression, TSSatisfiesExpression).init > :matches(${EMPTY_CONTAINER}).expression`,
+    ]
+      .map(
+        (init) =>
+          `${inSpecScope("VariableDeclaration[kind='const'] > VariableDeclarator")} ${init}`,
+      )
+      .join(', '),
+    message:
+      'No empty array, object, Map, Set, WeakMap, WeakSet or Array at module level or in a describe callback; create recordings inside the test.',
+  },
+]
+
 export default defineConfigWithVueTs(
   {
     name: 'keeb-cad/files-to-lint',
@@ -99,6 +157,32 @@ export default defineConfigWithVueTs(
     files: ['packages/result/src/**/*.ts'],
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
+  },
+
+  {
+    name: 'keeb-cad/types-in-types-ts',
+    files: ['packages/*/src/**/*.{ts,vue}', 'app/src/**/*.{ts,vue}'],
+    ignores: ['**/types.ts', '**/*.spec.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', TYPES_OUTSIDE_TYPES_TS],
+    },
+  },
+
+  {
+    // Replaces the types rule's options on entry files, so it carries that selector too.
+    name: 'keeb-cad/entry-files-re-export',
+    files: ['packages/*/src/**/{index,main,worker}.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ENTRY_RE_EXPORTS_ONLY, TYPES_OUTSIDE_TYPES_TS],
+    },
+  },
+
+  {
+    name: 'keeb-cad/no-shared-spec-state',
+    files: ['**/*.spec.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ...SHARED_SPEC_STATE],
     },
   },
 

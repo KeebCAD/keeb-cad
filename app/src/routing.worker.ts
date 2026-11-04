@@ -1,2 +1,2 @@
-// The routing worker's entry: background routing, fed by pipeline over a port (AD-12).
+// The routing worker's entry: background routing, fed by pipeline over a port.
 export {}

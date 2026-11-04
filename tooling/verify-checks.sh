@@ -95,7 +95,7 @@ expect_commit() {
   record "$row: git commit" "$want" "$got" "$detail"
 }
 
-# w FILE LINE appends a line; put FILE LINE replaces the file (the stubs hold only `export {}`).
+# w FILE LINE appends a line (creating the file); put FILE LINE replaces or creates the file.
 w() { printf '%s\n' "$2" >>"$wt/$1"; }
 put() { printf '%s\n' "$2" >"$wt/$1"; }
 
@@ -103,9 +103,9 @@ echo "== all green"
 expect_check 'all green' pass
 
 echo "== lint error"
-w packages/model/src/index.ts 'const unused = 1'
+w packages/model/src/verify-broken.ts 'const unused = 1'
 expect_check 'lint error' fail
-expect_commit 'lint error' refused 'packages/model/src/index.ts' 'no-unused-vars'
+expect_commit 'lint error' refused 'packages/model/src/verify-broken.ts' 'no-unused-vars'
 revert
 
 echo "== format drift"
@@ -115,13 +115,13 @@ expect_commit 'format drift' refused 'fixtures/src/index.ts'
 revert
 
 echo "== AD-10 break"
-put packages/plates/src/index.ts "import '@keeb-cad/pcb'"
+put packages/plates/src/verify-broken.ts "import '@keeb-cad/pcb'"
 expect_check 'AD-10 break' fail
 expect_commit 'AD-10 break' refused 'plates-imports-only-drawn-edges'
 revert
 
 echo "== type error"
-put packages/model/src/index.ts "export const broken: number = 'not a number'"
+put packages/model/src/verify-broken.ts "export const broken: number = 'not a number'"
 expect_check 'type error' fail
 expect_commit 'type error' allowed
 revert

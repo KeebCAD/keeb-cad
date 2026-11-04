@@ -1,21 +1,22 @@
 import { match } from 'ts-pattern'
 
-import { Bindings, type StoredEntry, disposeSlots } from './bindings'
-import {
-  CannotOverrideError,
-  ContainerDisposedError,
-  InvalidTokenError,
-  ScopedResolutionOutsideScopeError,
-  TokenNotRegisteredError,
-} from './errors'
-import { currentChain, currentResolver, type Resolver, withResolutionContext } from './inject'
-import { createInjector, InjectorToken } from './injector'
+import { Bindings } from './bindings'
+import { createInjector } from './create-injector'
+import { disposeSlots } from './disposal'
+import { CannotOverrideError } from './errors/cannot-override-error'
+import { ContainerDisposedError } from './errors/container-disposed-error'
+import { InvalidTokenError } from './errors/invalid-token-error'
+import { ScopedResolutionOutsideScopeError } from './errors/scoped-resolution-outside-scope-error'
+import { TokenNotRegisteredError } from './errors/token-not-registered-error'
+import { currentChain, currentResolver, withResolutionContext } from './inject'
+import { InjectorToken } from './injector-token'
 import { Lifetime } from './lifetime'
-import { RegistrationBuilder } from './registration'
+import { RegistrationBuilder } from './registration-builder'
 import { Scope } from './scope'
-import { type AnyTokenLike, isToken, type MultiToken, type TokenLike, tokenKind } from './token'
+import { isToken, tokenKind } from './token'
 
-import type { Module } from './module'
+import type { StoredEntry } from './stored-entry'
+import type { AnyTokenLike, Module, MultiToken, Resolver, TokenLike } from './types'
 
 export class Container implements Resolver {
   readonly #bindings = new Bindings()
@@ -23,29 +24,6 @@ export class Container implements Resolver {
 
   constructor() {
     this.#registerBuiltins()
-  }
-
-  #registerBuiltins(): void {
-    this.register(InjectorToken)
-      .useFactory(() => {
-        const resolver = currentResolver() ?? this
-        return createInjector(resolver)
-      })
-      .lifetime(Lifetime.Transient)
-  }
-
-  #resolveSingle(token: AnyTokenLike, stored: StoredEntry): unknown {
-    return match(stored.entry.lifetime)
-      .with(Lifetime.Container, () => stored.slot.getOrCreate(this, token, stored.entry.factory))
-      .with(Lifetime.Transient, () => withResolutionContext(this, token, stored.entry.factory))
-      .with(Lifetime.Scoped, () => {
-        throw new ScopedResolutionOutsideScopeError(token)
-      })
-      .exhaustive()
-  }
-
-  #ensureNotDisposed(): void {
-    if (this.#disposed) throw new ContainerDisposedError()
   }
 
   register<T>(token: TokenLike<T> | MultiToken<T>): RegistrationBuilder<T>
@@ -140,5 +118,28 @@ export class Container implements Resolver {
     if (errors.length > 0) {
       throw new AggregateError(errors, 'One or more disposers failed.')
     }
+  }
+
+  #registerBuiltins(): void {
+    this.register(InjectorToken)
+      .useFactory(() => {
+        const resolver = currentResolver() ?? this
+        return createInjector(resolver)
+      })
+      .lifetime(Lifetime.Transient)
+  }
+
+  #resolveSingle(token: AnyTokenLike, stored: StoredEntry): unknown {
+    return match(stored.entry.lifetime)
+      .with(Lifetime.Container, () => stored.slot.getOrCreate(this, token, stored.entry.factory))
+      .with(Lifetime.Transient, () => withResolutionContext(this, token, stored.entry.factory))
+      .with(Lifetime.Scoped, () => {
+        throw new ScopedResolutionOutsideScopeError(token)
+      })
+      .exhaustive()
+  }
+
+  #ensureNotDisposed(): void {
+    if (this.#disposed) throw new ContainerDisposedError()
   }
 }

@@ -36,7 +36,7 @@ Browser CAD for split keyboards: layout to plates, PCB, case and firmware, all c
 
 - Put every type a folder declares, private ones included, in that folder's `types.ts`; spec files may declare their own. A type that pairs with a same-named value (`Result`, `Option`) stays in that value's file, since TypeScript merges the pair only within one file.
 - Give each file one kind of thing: a class file holds only its class; tokens, errors, `define*` factories and helper functions each get their own file.
-- Make entry files (`index.ts`, `main.ts`, `worker.ts`) only re-export; code lives in a file named for what it does.
+- Make package entry files (`index.ts`, `main.ts`, `worker.ts`) only re-export; code lives in a file named for what it does.
 - Order a class top-down: public API first, private details below.
 - Hold state in `di` services, never in a module-level singleton that functions reach for.
 - Write a comment only for a why the code can't say. No AD-n or ticket references, no restating a signature, no file-header essays.
