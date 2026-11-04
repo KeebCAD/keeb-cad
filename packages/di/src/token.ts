@@ -1,23 +1,6 @@
-const TOKEN_BRAND = Symbol('di.token')
-const MULTI_TOKEN_BRAND = Symbol('di.multiToken')
+import { MULTI_TOKEN_BRAND, TOKEN_BRAND } from './token-brands'
 
-export interface Token<T> {
-  readonly [TOKEN_BRAND]: true
-  readonly name: string
-  readonly __type?: T
-}
-
-export interface MultiToken<T> {
-  readonly [MULTI_TOKEN_BRAND]: true
-  readonly name: string
-  readonly __type?: T
-}
-
-export type Class<T> = new (...arguments_: never[]) => T
-
-export type TokenLike<T> = Token<T> | Class<T>
-
-export type AnyTokenLike = Token<unknown> | MultiToken<unknown> | Class<unknown>
+import type { AnyTokenLike, MultiToken, Token, TokenKind } from './types'
 
 export function createToken<T>(name: string): Token<T> {
   return { [TOKEN_BRAND]: true, name }
@@ -34,8 +17,6 @@ export function isToken(value: unknown): value is AnyTokenLike {
   if (typeof value !== 'object' || value === null) return false
   return Object.hasOwn(value, TOKEN_BRAND) || Object.hasOwn(value, MULTI_TOKEN_BRAND)
 }
-
-export type TokenKind = 'single' | 'multi'
 
 export function tokenKind(token: AnyTokenLike): TokenKind {
   if (typeof token === 'function') return 'single'

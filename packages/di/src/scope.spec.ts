@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { Container } from './container'
-import { ContainerDisposedError, ScopedResolutionOutsideScopeError } from './errors'
+import { ContainerDisposedError } from './errors/container-disposed-error'
 import { inject } from './inject'
 import { Lifetime } from './lifetime'
 import { createToken } from './token'
@@ -39,15 +39,6 @@ describe('Container.createScope + Scope.resolve', () => {
     expect(s1.resolve(Scoped)).not.toBe(s2.resolve(Scoped))
   })
 
-  it('throws ScopedResolutionOutsideScopeError when resolving a Scoped binding from the container', () => {
-    class Scoped {
-      readonly kind = 'scoped'
-    }
-    const c = new Container()
-    c.register(Scoped).useClass(Scoped).lifetime(Lifetime.Scoped)
-    expect(() => c.resolve(Scoped)).toThrow(ScopedResolutionOutsideScopeError)
-  })
-
   it('lets Scoped factories inject Container-lifetime deps', () => {
     const dep = createToken<string>('Dep')
     class Scoped {
@@ -57,7 +48,7 @@ describe('Container.createScope + Scope.resolve', () => {
     c.register(dep).useValue('v')
     c.register(Scoped).useClass(Scoped).lifetime(Lifetime.Scoped)
     const scope = c.createScope()
-    expect(scope.resolve(Scoped).value).toBe('v')
+    expect(scope.resolve(Scoped)).toEqual({ value: 'v' })
   })
 })
 
@@ -89,7 +80,7 @@ describe('Scope.dispose', () => {
     const c = new Container()
     const scope = c.createScope()
     await scope.dispose()
-    expect(() => scope.resolve(createToken('X'))).toThrow(ContainerDisposedError)
+    expect(() => scope.resolve(createToken('X'))).toThrow(new ContainerDisposedError())
   })
 
   it('disposes scoped instances in reverse insertion order', async () => {

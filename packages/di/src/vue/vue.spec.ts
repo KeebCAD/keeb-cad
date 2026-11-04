@@ -1,21 +1,27 @@
 import { describe, expect, it } from 'vitest'
 import { render } from 'vitest-browser-vue'
-import { defineComponent, h } from 'vue'
+import { type Component, defineComponent, h } from 'vue'
 
 import { Container } from '../container'
-import { MissingInjectorProviderError } from '../errors'
-import { InjectorToken } from '../injector'
+import { MissingInjectorProviderError } from '../errors/missing-injector-provider-error'
+import { InjectorToken } from '../injector-token'
 import { createMultiToken, createToken } from '../token'
 import { provideInjector, useInjector, useService } from './index'
 
-function makeContainer() {
-  const c = new Container()
-  return { c, injector: c.resolve(InjectorToken) }
-}
+import type { Injector } from '../types'
+
+const providing = (injector: Injector, child: Component) =>
+  defineComponent({
+    setup() {
+      provideInjector(injector)
+      return () => h(child)
+    },
+  })
 
 describe('provideInjector + useService', () => {
   it('resolves a single-binding service inside a child component', async () => {
-    const { c, injector } = makeContainer()
+    const c = new Container()
+    const injector = c.resolve(InjectorToken)
     const t = createToken<string>('Greeting')
     c.register(t).useValue('hello')
 
@@ -26,19 +32,13 @@ describe('provideInjector + useService', () => {
       },
     })
 
-    const Root = defineComponent({
-      setup() {
-        provideInjector(injector)
-        return () => h(Child)
-      },
-    })
-
-    const screen = await render(Root)
+    const screen = await render(providing(injector, Child))
     await expect.element(screen.getByText('hello')).toBeInTheDocument()
   })
 
   it('resolves a multi-binding service to an array', async () => {
-    const { c, injector } = makeContainer()
+    const c = new Container()
+    const injector = c.resolve(InjectorToken)
     const t = createMultiToken<string>('Items')
     c.register(t).useValue('a')
     c.register(t).useValue('b')
@@ -50,14 +50,7 @@ describe('provideInjector + useService', () => {
       },
     })
 
-    const Root = defineComponent({
-      setup() {
-        provideInjector(injector)
-        return () => h(Child)
-      },
-    })
-
-    const screen = await render(Root)
+    const screen = await render(providing(injector, Child))
     await expect.element(screen.getByText('a,b')).toBeInTheDocument()
   })
 
@@ -69,13 +62,13 @@ describe('provideInjector + useService', () => {
         return () => h('div')
       },
     })
-    await expect(render(Bad)).rejects.toThrow(MissingInjectorProviderError)
+    await expect(render(Bad)).rejects.toThrow(new MissingInjectorProviderError())
   })
 })
 
 describe('useInjector', () => {
   it('returns the provided injector', async () => {
-    const { injector } = makeContainer()
+    const injector = new Container().resolve(InjectorToken)
     let captured: unknown
     const Child = defineComponent({
       setup() {
@@ -83,13 +76,7 @@ describe('useInjector', () => {
         return () => h('div')
       },
     })
-    const Root = defineComponent({
-      setup() {
-        provideInjector(injector)
-        return () => h(Child)
-      },
-    })
-    await render(Root)
+    await render(providing(injector, Child))
     expect(captured).toBe(injector)
   })
 })

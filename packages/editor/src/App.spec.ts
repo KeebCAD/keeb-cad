@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest'
 import { render } from 'vitest-browser-vue'
 
 import App from './App.vue'
-import router from './router'
+import { createEditorRouter } from './router'
 
 describe('App', () => {
   it('renders the empty editor shell', async () => {
-    router.push('/')
-    await router.isReady()
+    const router = createEditorRouter()
+    await router.push('/')
 
     const screen = await render(App, { global: { plugins: [router] } })
 

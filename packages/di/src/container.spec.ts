@@ -1,19 +1,18 @@
 import { describe, expect, it } from 'vitest'
 
 import { Container } from './container'
-import {
-  CannotOverrideError,
-  CircularDependencyError,
-  ContainerDisposedError,
-  DuplicateRegistrationError,
-  InvalidTokenError,
-  TokenNotRegisteredError,
-} from './errors'
+import { CannotOverrideError } from './errors/cannot-override-error'
+import { CircularDependencyError } from './errors/circular-dependency-error'
+import { ContainerDisposedError } from './errors/container-disposed-error'
+import { DuplicateRegistrationError } from './errors/duplicate-registration-error'
+import { InvalidTokenError } from './errors/invalid-token-error'
+import { ScopedResolutionOutsideScopeError } from './errors/scoped-resolution-outside-scope-error'
+import { TokenNotRegisteredError } from './errors/token-not-registered-error'
 import { inject } from './inject'
 import { Lifetime } from './lifetime'
 import { createMultiToken, createToken } from './token'
 
-import type { Module } from './module'
+import type { Module } from './types'
 
 describe('Container.register + resolve (Container lifetime, single)', () => {
   it('resolves a useValue binding back to the literal', () => {
@@ -70,26 +69,29 @@ describe('Container.register + resolve (Container lifetime, single)', () => {
 
   it('throws TokenNotRegisteredError when resolving an unbound token', () => {
     const c = new Container()
-    expect(() => c.resolve(createToken('Missing'))).toThrow(TokenNotRegisteredError)
+    const missing = createToken('Missing')
+    expect(() => c.resolve(missing)).toThrow(new TokenNotRegisteredError(missing, []))
   })
 
   it('throws DuplicateRegistrationError on a second register for a single-binding token', () => {
     const c = new Container()
     const t = createToken<string>('X')
     c.register(t).useValue('a')
-    expect(() => c.register(t).useValue('b')).toThrow(DuplicateRegistrationError)
+    expect(() => c.register(t).useValue('b')).toThrow(new DuplicateRegistrationError(t))
   })
 
   it('throws InvalidTokenError when register is given a non-token', () => {
     const c = new Container()
-    expect(() => c.register({ name: 'fake' } as never)).toThrow(InvalidTokenError)
+    expect(() => c.register({ name: 'fake' } as never)).toThrow(
+      new InvalidTokenError({ name: 'fake' }),
+    )
   })
 
   it('throws ContainerDisposedError after dispose()', async () => {
     const c = new Container()
     await c.dispose()
-    expect(() => c.resolve(createToken('X'))).toThrow(ContainerDisposedError)
-    expect(() => c.register(createToken('Y'))).toThrow(ContainerDisposedError)
+    expect(() => c.resolve(createToken('X'))).toThrow(new ContainerDisposedError())
+    expect(() => c.register(createToken('Y'))).toThrow(new ContainerDisposedError())
   })
 })
 
@@ -152,29 +154,24 @@ describe('Container.resolve (multi tokens)', () => {
 })
 
 describe('Container.resolve (cycle detection)', () => {
-  it('throws CircularDependencyError when A depends on B and B depends on A', () => {
+  it('throws CircularDependencyError, with the chain, when A depends on B and B depends on A', () => {
     const c = new Container()
     const a = createToken<unknown>('A')
     const b = createToken<unknown>('B')
     c.register(a).useFactory(() => ({ b: inject(b) }))
     c.register(b).useFactory(() => ({ a: inject(a) }))
-    expect(() => c.resolve(a)).toThrow(CircularDependencyError)
+    expect(() => c.resolve(a)).toThrow(new CircularDependencyError(['A', 'B', 'A']))
   })
+})
 
-  it('reports the offending chain in the CircularDependencyError', () => {
-    const c = new Container()
-    const a = createToken<unknown>('A')
-    const b = createToken<unknown>('B')
-    c.register(a).useFactory(() => ({ b: inject(b) }))
-    c.register(b).useFactory(() => ({ a: inject(a) }))
-    let captured: unknown
-    try {
-      c.resolve(a)
-    } catch (error) {
-      captured = error
+describe('Container.resolve (Scoped lifetime)', () => {
+  it('throws ScopedResolutionOutsideScopeError when resolving a Scoped binding from the container', () => {
+    class Scoped {
+      readonly kind = 'scoped'
     }
-    expect(captured).toBeInstanceOf(CircularDependencyError)
-    expect((captured as CircularDependencyError).chain).toEqual(['A', 'B', 'A'])
+    const c = new Container()
+    c.register(Scoped).useClass(Scoped).lifetime(Lifetime.Scoped)
+    expect(() => c.resolve(Scoped)).toThrow(new ScopedResolutionOutsideScopeError(Scoped))
   })
 })
 
@@ -257,7 +254,7 @@ describe('Container.autoLoad', () => {
       })
       .eager()
     await c.autoLoad()
-    expect(c.resolve(counter).n).toBe(1)
+    expect(c.resolve(counter)).toEqual({ n: 1 })
   })
 })
 
@@ -457,15 +454,14 @@ describe('override', () => {
 
     c.override(Real).useValue({ kind: 'fake' } as unknown as Real)
 
-    expect(c.resolve(Real).kind).toBe('fake')
+    expect(c.resolve(Real)).toEqual({ kind: 'fake' })
   })
 
   it('refuses an unregistered token', () => {
     const c = new Container()
     const token = createToken<string>('absent')
 
-    expect(() => c.override(token)).toThrow(CannotOverrideError)
-    expect(() => c.override(token)).toThrow(expect.objectContaining({ reason: 'unregistered' }))
+    expect(() => c.override(token)).toThrow(new CannotOverrideError(token, 'unregistered'))
   })
 
   it('refuses a multi-token', () => {
@@ -473,8 +469,7 @@ describe('override', () => {
     const token = createMultiToken<string>('plugins')
     c.register(token).useValue('one')
 
-    expect(() => c.override(token)).toThrow(CannotOverrideError)
-    expect(() => c.override(token)).toThrow(expect.objectContaining({ reason: 'multi' }))
+    expect(() => c.override(token)).toThrow(new CannotOverrideError(token, 'multi'))
   })
 
   it('refuses an already-resolved token', () => {
@@ -483,14 +478,13 @@ describe('override', () => {
     c.register(token).useValue('original')
     c.resolve(token)
 
-    expect(() => c.override(token)).toThrow(CannotOverrideError)
-    expect(() => c.override(token)).toThrow(expect.objectContaining({ reason: 'resolved' }))
+    expect(() => c.override(token)).toThrow(new CannotOverrideError(token, 'resolved'))
   })
 
   it('throws InvalidTokenError when given a non-token', () => {
     const c = new Container()
 
-    expect(() => c.override({} as never)).toThrow(InvalidTokenError)
+    expect(() => c.override({} as never)).toThrow(new InvalidTokenError({}))
   })
 
   it('throws ContainerDisposedError after dispose', async () => {
@@ -499,7 +493,7 @@ describe('override', () => {
     c.register(token).useValue('original')
     await c.dispose()
 
-    expect(() => c.override(token)).toThrow(ContainerDisposedError)
+    expect(() => c.override(token)).toThrow(new ContainerDisposedError())
   })
 
   it('refuses a Scoped binding', () => {
@@ -507,8 +501,7 @@ describe('override', () => {
     const token = createToken<string>('scoped')
     c.register(token).useValue('original').lifetime(Lifetime.Scoped)
 
-    expect(() => c.override(token)).toThrow(CannotOverrideError)
-    expect(() => c.override(token)).toThrow(expect.objectContaining({ reason: 'scoped' }))
+    expect(() => c.override(token)).toThrow(new CannotOverrideError(token, 'scoped'))
   })
 
   it('keeps the overridden binding eager', async () => {

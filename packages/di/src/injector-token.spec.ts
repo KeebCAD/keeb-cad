@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import { Container } from './container'
+import { ScopedResolutionOutsideScopeError } from './errors/scoped-resolution-outside-scope-error'
 import { inject } from './inject'
-import { type Injector, InjectorToken } from './injector'
+import { InjectorToken } from './injector-token'
 import { Lifetime } from './lifetime'
 import { createMultiToken, createToken } from './token'
+
+import type { Injector } from './types'
 
 describe('InjectorToken', () => {
   it('resolves to an Injector that can resolve other tokens', () => {
@@ -36,14 +39,15 @@ describe('InjectorToken', () => {
     expect(inj.resolve(Scoped)).toBe(first)
   })
 
-  it('from the root container throws when asked to resolve a Scoped binding', () => {
+  it('from the root container forwards the Scoped error', () => {
     class Scoped {
       readonly kind = 'scoped'
     }
     const c = new Container()
     c.register(Scoped).useClass(Scoped).lifetime(Lifetime.Scoped)
-    const inj = c.resolve(InjectorToken)
-    expect(() => inj.resolve(Scoped)).toThrow()
+    expect(() => c.resolve(InjectorToken).resolve(Scoped)).toThrow(
+      new ScopedResolutionOutsideScopeError(Scoped),
+    )
   })
 
   it('is injectable into other factories', () => {
@@ -51,8 +55,9 @@ describe('InjectorToken', () => {
       readonly inj: Injector = inject(InjectorToken)
     }
     const c = new Container()
+    const t = createToken<string>('X')
+    c.register(t).useValue('v')
     c.register(Owner).useClass(Owner)
-    const o = c.resolve(Owner)
-    expect(typeof o.inj.resolve).toBe('function')
+    expect(c.resolve(Owner).inj.resolve(t)).toBe('v')
   })
 })

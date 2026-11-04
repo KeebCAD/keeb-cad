@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { CircularDependencyError, NoInjectionContextError } from './errors'
-import { inject, withResolutionContext, type Resolver } from './inject'
+import { CircularDependencyError } from './errors/circular-dependency-error'
+import { NoInjectionContextError } from './errors/no-injection-context-error'
+import { inject, withResolutionContext } from './inject'
 import { createMultiToken, createToken } from './token'
+
+import type { Resolver } from './types'
 
 function fakeResolver(overrides: Partial<Resolver> = {}): Resolver {
   return {
@@ -13,7 +16,7 @@ function fakeResolver(overrides: Partial<Resolver> = {}): Resolver {
 
 describe('inject', () => {
   it('throws NoInjectionContextError when called outside any active context', () => {
-    expect(() => inject(createToken('X'))).toThrow(NoInjectionContextError)
+    expect(() => inject(createToken('X'))).toThrow(new NoInjectionContextError('inject(X)'))
   })
 
   it('delegates to the current resolver inside a context', () => {
@@ -52,7 +55,7 @@ describe('withResolutionContext', () => {
   it('pops the context after the callback returns', () => {
     const t = createToken('X')
     withResolutionContext(fakeResolver(), t, () => {})
-    expect(() => inject(createToken('Y'))).toThrow(NoInjectionContextError)
+    expect(() => inject(createToken('Y'))).toThrow(new NoInjectionContextError('inject(Y)'))
   })
 
   it('pops the context after the callback throws', () => {
@@ -62,7 +65,7 @@ describe('withResolutionContext', () => {
         throw new Error('boom')
       }),
     ).toThrow('boom')
-    expect(() => inject(createToken('Y'))).toThrow(NoInjectionContextError)
+    expect(() => inject(createToken('Y'))).toThrow(new NoInjectionContextError('inject(Y)'))
   })
 
   it('throws CircularDependencyError when the same token re-enters the stack', () => {
@@ -71,23 +74,18 @@ describe('withResolutionContext', () => {
       withResolutionContext(fakeResolver(), t, () =>
         withResolutionContext(fakeResolver(), t, () => {}),
       ),
-    ).toThrow(CircularDependencyError)
+    ).toThrow(new CircularDependencyError(['A', 'A']))
   })
 
   it('preserves the chain in the CircularDependencyError', () => {
     const a = createToken('A')
     const b = createToken('B')
-    let captured: CircularDependencyError | undefined
-    try {
+    expect(() =>
       withResolutionContext(fakeResolver(), a, () =>
         withResolutionContext(fakeResolver(), b, () =>
           withResolutionContext(fakeResolver(), a, () => {}),
         ),
-      )
-    } catch (error) {
-      captured = error as CircularDependencyError
-    }
-    expect(captured).toBeInstanceOf(CircularDependencyError)
-    expect(captured?.chain).toEqual(['A', 'B', 'A'])
+      ),
+    ).toThrow(new CircularDependencyError(['A', 'B', 'A']))
   })
 })

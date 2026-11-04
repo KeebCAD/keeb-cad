@@ -1,11 +1,12 @@
-import { CircularDependencyError, NoInjectionContextError } from './errors'
-import { type AnyTokenLike, type MultiToken, type Token, type TokenLike, tokenName } from './token'
+import { CircularDependencyError } from './errors/circular-dependency-error'
+import { NoInjectionContextError } from './errors/no-injection-context-error'
+import { tokenName } from './token'
 
-export interface Resolver {
-  resolve<T>(token: TokenLike<T>): T
-  resolve<T>(token: MultiToken<T>): T[]
-}
+import type { AnyTokenLike, MultiToken, Resolver, Token, TokenLike } from './types'
 
+// The injection context lives at module level, not in a service: inject() runs in field
+// initialisers with no handle on anything, and the container that would hold it is what this
+// context builds.
 const resolverStack: Resolver[] = []
 const chain: AnyTokenLike[] = []
 
