@@ -16,10 +16,6 @@ Browser CAD for split keyboards: layout to plates, PCB, case and firmware, all c
 - Which story owns which component: `_bmad-output/initiative-keeb-cad-m1/component-ownership.md`
 - Package import rules (AD-10, AD-25): the `GRAPH` table in `.dependency-cruiser.mts` generates one rule per package; `tooling/ad10/rules.spec.ts` proves those from the table, and the subpath, entry-fence, kernel and npm rules from the hand-written fixtures in `tooling/ad10/violations/`
 
-## Running and verifying
-
-- After changing `pnpm check`, `lefthook.yml`, CI or `.dependency-cruiser.mts`, run `sh tooling/verify-checks.sh`; the rule names it expects go stale with no test failing.
-
 ## Conventions that differ from defaults
 
 - Run DOM tests in Vitest browser mode (Chromium and Firefox, `packages/editor/vitest.config.ts`) with vitest-browser-vue; never add jsdom or @vue/test-utils.
