@@ -42,8 +42,25 @@ Browser CAD for split keyboards: layout to plates, PCB, case and firmware, all c
 
 - Keep no mutable state at module level in a spec; create spies and recordings inside the test.
 - Arrange only what the test uses, passed as arguments to an `arrange` helper; write one only when a test has something to build.
+- Arrange only a state real commands could reach; it need not be built through them.
 - Start recording after arrange; a helper never takes a hidden step the assertions depend on.
 - Assert relative to the arranged state, never a number a helper's hidden steps produced.
 - Write a shared assertion once; assert whole values (`toEqual`, `toMatchObject`) instead of narrowing in the test.
 - Use `@ts-expect-error` only in a type-only test; test a runtime check with a value the types accept.
 - Test a rule where it is defined; a package that uses it tests only its own part.
+- Take expected values from the requirement (the ticket, the plan's boundary table), never from running the code. When nothing says what a boundary returns, ask.
+- Give every threshold three rows: just below, on, just above; add empty input and an input that breaks an assumption. "Valid" or "correct" without a number is a question, not a spec. Ask which combinations matter instead of enumerating them.
+- End every task with the decisions you made on your own: limits, rounding, ordering, defaults, error handling.
+- Make a test's name and its `expect`s claim the same thing. Name the boundary's role ("on the clearance limit"); numbers go in parameters or `expected*` constants.
+- Give every test an `expect` that fails when the behaviour breaks. No `if` or loop around `expect`, no expected value computed the way production computes it; `it.each` is the only repetition. Assert a throw as `expect(() => fn()).toThrow(…)`.
+- Assert what a function returns or a visible effect; use `toHaveBeenCalled*` only when the call is the behaviour.
+- Substitute through `di`: register a fake for state or a boundary in the container, never `vi.mock`. Set time with Vitest's fake timers; never register a clock only so tests can control it. Exports read no clock at all.
+- Test calculations as units in the package that owns them (a stage gets the outputs it reads as inputs); test wiring between packages as integration in `pipeline` or `app`.
+- Assert data explicitly, never with snapshots. A person approves every screenshot baseline; an agent never updates a baseline or a snapshot.
+- Find elements by role, then label, then text. `getByTestId` and `data-testid` are a last resort, behind `eslint-disable-next-line … -- <reason>`.
+- Write an end-to-end test only for an action that is irreversible, costs the user material or work, or crosses a boundary no lower level can fake. It covers the normal flow; error flows stay lower.
+- The priority packages are `pcb`, `plates`, `case`, `exports`, `design-file` and `storage`: a mistake there costs a fab order, a print or a user's work. After changing their logic, run Stryker on the changed files and give every survivor a verdict: a test gap (add the boundary row), a boundary the implementation introduced (list it as your decision), or an equivalent mutant (prove it and propose a point-wise exclusion for a person to confirm).
+- Prove a test Stryker can't reach (browser mode, integration) with a toggled bug: break the code, watch the test go red, restore it, and say so in the PR.
+- Only Sonnet-class models or stronger write tests here.
+- Before saying done, run the whole suite (`pnpm test`), not only the files you touched.
+- Never delete, skip or weaken a failing test, raise a timeout without naming the cause, edit runner or mutation config to get green, bypass hooks (`--no-verify`) or force push; report instead. Never change the code under test when asked for tests, or the tests when asked to implement against them.
