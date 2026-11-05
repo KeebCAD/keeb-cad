@@ -5,6 +5,9 @@ import { configDefaults, defineConfig } from 'vitest/config'
 
 const root = fileURLToPath(new URL('./', import.meta.url))
 
+const packageName = (dir: string) =>
+  (JSON.parse(readFileSync(path.join(root, dir, 'package.json'), 'utf8')) as { name: string }).name
+
 // A directory listed as a project, with no config file of its own, inherits nothing from this
 // one (`sequence` included), so each becomes an inline project, which extends it. The name stays
 // the package name Vitest would give the directory.
@@ -15,11 +18,25 @@ const configlessProjects = [
   .map((manifest) => path.dirname(manifest))
   .filter((dir) => !existsSync(path.join(root, dir, 'vitest.config.ts')))
   .map((dir) => ({
+    test: { name: packageName(dir), root: dir },
+  }))
+
+// expectTypeOf and @ts-expect-error do nothing at run time, so a test resting on them passes
+// whatever the types say. Each package whose specs have a tsconfig gets a second project that
+// runs them through vue-tsc instead, and a type error fails the test it sits in.
+const typeProjects = globSync('packages/*/tsconfig.vitest.json', { cwd: root })
+  .map((tsconfig) => path.dirname(tsconfig))
+  .map((dir) => ({
     test: {
-      name: (
-        JSON.parse(readFileSync(path.join(root, dir, 'package.json'), 'utf8')) as { name: string }
-      ).name,
+      name: `${packageName(dir)} types`,
       root: dir,
+      typecheck: {
+        enabled: true,
+        only: true,
+        checker: 'vue-tsc',
+        tsconfig: 'tsconfig.vitest.json',
+        include: ['src/**/*.spec.ts'],
+      },
     },
   }))
 
@@ -35,6 +52,7 @@ export default defineConfig({
     projects: [
       'packages/*/vitest.config.ts',
       ...configlessProjects,
+      ...typeProjects,
       {
         // di's root specs touch no DOM, so they run on Node (Verification layer 2); its
         // vitest.config.ts runs only the Vue bridge's, in browsers.

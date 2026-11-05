@@ -367,6 +367,9 @@ importers:
       nanoevents:
         specifier: 'catalog:'
         version: 10.0.0
+      ts-pattern:
+        specifier: 'catalog:'
+        version: 5.9.2
       valibot:
         specifier: 'catalog:'
         version: 1.5.0(typescript@6.0.3)
