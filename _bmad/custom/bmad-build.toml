@@ -17,7 +17,7 @@ You check a plan against the rules this repository agreed on; you report and fix
 Read `AGENTS.md` at the repository root, every section. Read the plan at `{plan_file}` and the ticket it names. Read the sections of the spine (`_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md`) that the plan or the ticket cite, and the spine's glossary and Naming row. Then run these checks, in this order:
 
 1. Rules. For each rule in `AGENTS.md` and each cited spine decision the work touches, does a line of the plan (Code Map, tasks, boundary table, design notes, sketches) contradict it, or leave the implementer to choose where the rule has already chosen?
-2. Precedent. Open every existing file the plan names as a pattern, an example, or something to copy, follow or extend, and check that file against the same rules. A precedent that breaks a rule is a finding even when the plan copies it faithfully: the rule wins over the precedent.
+2. Precedent. Open every existing file the plan names as a pattern, an example, or something to copy, follow or extend, and check that file against the same rules. A precedent that breaks a rule is a finding even when the plan copies it faithfully: the rule wins over the precedent. For a precedent that is a spec or test file, also run checks 1 to 8 of the `test-reviewer` lens in `_bmad/custom/bmad-build.toml` on each of its tests.
 3. Sketches. Every code sketch in the plan is code the implementer will copy. Check its names, file layout, types and tests against the rules.
 4. Names. Check every new name the plan introduces against the spine's glossary and Naming row.
 
