@@ -44,6 +44,7 @@ Browser CAD for split keyboards: layout to plates, PCB, case and firmware, all c
 
 - Keep no mutable state at module level in a spec; create spies and recordings inside the test.
 - Arrange only what the test uses, passed as arguments to an `arrange` helper; write one only when a test has something to build.
+- Build schema values the test doesn't read with the concept's test builder (`schema/testing`: `aDesign({ layout })`), never a copied literal; a new schema concept ships its builder in the same PR. Write out only the data the test is about (the spine's Test builders row).
 - Arrange only a state real commands could reach; it need not be built through them.
 - Start recording after arrange; a helper never takes a hidden step the assertions depend on.
 - Assert relative to the arranged state, never a number a helper's hidden steps produced.

@@ -3,8 +3,9 @@
 # Re-planned 2026-11-02 after the spine package split (b9b4ec5, 411dd17): 10 added after 1.
 # Re-planned 2026-11-05 after the spine settled 23.3 (020596c): 15 added after 13, before 3.
 # Re-planned 2026-11-05 after the spine-gap sweep (A8, E10): 16 added after 3.
+# Re-planned 2026-11-05 after the spine added Test builders: 17 added after 3, before 16.
 
-next_id = 17
+next_id = 18
 
 [[entry]]
 id = 1
@@ -106,13 +107,24 @@ hitl = false
 risk = "medium"
 
 [[entry]]
+id = 17
+type = "story"
+title = "Specs build schema values with test builders"
+description = "Adds schema's testing subpath, schema/testing, per the spine's Test builders convention and AD-10 (2026-11-05): one hand-written builder per concept that exists today, aMeta, aForm, aLayout and aDesign, each returning a valid value with defaults that a test overrides field by field (aDesign({ layout })). Adds the fence to .dependency-cruiser.mts's GRAPH: only spec files import schema/testing, with a violation fixture in tooling/ad10/violations/. Moves the specs that copy a design they don't read onto the builders: storage's read-bundle and write-bundle, commands' new-design, and the design object (not the KDL text) in design-file's migrate-bundle. Leaves design-file's read-kdl, round-trip and write-design-file and migrate-bundle's KDL text as written, since that data is what those tests are about. No behaviour change."
+verify = "Each builder's one test: its output parses through its schema; a production file importing schema/testing fails dependency-cruiser (violation fixture); read-bundle, write-bundle, new-design and migrate-bundle hold no copied meta or layout literal they don't assert on; Stryker on the touched design-file and storage pure files leaves no new survivor; pnpm test passes."
+covers = []
+after = [3]
+hitl = false
+risk = "low"
+
+[[entry]]
 id = 16
 type = "story"
 title = "run copies its input and checks every produced design"
 description = "design's store per spine AD-2 Inputs and Writing (sweep A8, E10, 2026-11-05): run unwraps the caller's input with toRaw and copies it with structuredClone before it parses (a value that can't be cloned is a bug and throws), so Immer never freezes a caller's object and no Vue proxy enters the design; after every produced value, beside checkStructure, the store parses the design with schema's design schema, and a failure is a bug: run throws InvariantError naming the issue paths and the command id, and nothing is committed. Replaces the per-entry generic checks (AD-24's pass-through ban is a schema-quality rule with no safety role); closes deferred-work's per-entry checks item."
 verify = "design's unit tests: a Vue reactive input is stored as plain data and stays unfrozen in the caller; an input holding a function throws on clone and commits nothing; a test command whose apply spreads its input with an extra key throws InvariantError naming that key's path and the command id, with no ref write, no commit event and seq unchanged; a command producing a valid design commits as before."
 covers = []
-after = [3]
+after = [3, 17]
 hitl = false
 risk = "medium"
 
