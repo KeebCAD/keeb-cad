@@ -3,7 +3,13 @@ import { hash } from '@keeb-cad/hashing'
 import { reactive } from '@keeb-cad/reactive'
 import { AsyncResult, InvariantError, Option } from '@keeb-cad/result'
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
-import { type Design, type DesignInvalid, formSchema, type Rejection } from '@keeb-cad/schema'
+import {
+  type Design,
+  type DesignInvalid,
+  formSchema,
+  type Frozen,
+  type Rejection,
+} from '@keeb-cad/schema'
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
@@ -17,28 +23,30 @@ import { DesignStore } from './design-store'
 import { DuplicateCommandIdError } from './duplicate-command-id-error'
 import type { Committed, CommitEvent } from './types'
 
-class Rename implements Command<v.InferOutput<typeof Rename.input>> {
+// Unlike a real command, which forwards to one model operation, a test command edits the draft
+// itself, so the store's tests need no domain.
+class RenameDesign implements Command<v.InferOutput<typeof RenameDesign.input>> {
   static readonly kind = 'command'
-  static readonly id = 'test.rename'
-  static readonly label = 'Rename'
+  static readonly id = 'meta.renameDesign'
+  static readonly label = 'Rename design'
   static readonly input = v.object({ name: v.pipe(v.string(), v.minLength(1)) })
 
-  available(): boolean {
+  available(_design: Frozen<Design>): boolean {
     return true
   }
 
-  apply(draft: Writable<Design>, input: v.InferOutput<typeof Rename.input>): void {
+  apply(draft: Writable<Design>, input: v.InferOutput<typeof RenameDesign.input>): void {
     draft.meta.name = input.name
   }
 }
 
 class SetForm implements Command<v.InferOutput<typeof SetForm.input>> {
   static readonly kind = 'command'
-  static readonly id = 'test.setForm'
+  static readonly id = 'meta.setForm'
   static readonly label = 'Set form'
   static readonly input = v.object({ form: formSchema })
 
-  available(): boolean {
+  available(_design: Frozen<Design>): boolean {
     return true
   }
 
@@ -47,10 +55,10 @@ class SetForm implements Command<v.InferOutput<typeof SetForm.input>> {
   }
 }
 
-class Load implements Action<v.InferOutput<typeof Load.input>, DesignInvalid> {
+class LoadDesign implements Action<v.InferOutput<typeof LoadDesign.input>, DesignInvalid> {
   static readonly kind = 'action'
-  static readonly id = 'test.load'
-  static readonly label = 'Load'
+  static readonly id = 'file.loadDesign'
+  static readonly label = 'Load design'
   static readonly input = v.object({
     design: v.pipe(
       v.unknown(),
@@ -60,11 +68,11 @@ class Load implements Action<v.InferOutput<typeof Load.input>, DesignInvalid> {
 
   readonly #store = inject(DesignStore)
 
-  available(): boolean {
+  available(_current: Option<Committed>): boolean {
     return true
   }
 
-  apply(input: v.InferOutput<typeof Load.input>): AsyncResult<void, DesignInvalid> {
+  apply(input: v.InferOutput<typeof LoadDesign.input>): AsyncResult<void, DesignInvalid> {
     return AsyncResult.fromResult(this.#store.replaceDesign(input.design))
   }
 }
@@ -85,36 +93,8 @@ async function arrange(arrangement: Arrangement = {}): Promise<DesignStore> {
   return store
 }
 
-function entryCommand(id: string): CommandHandle {
-  return class implements Command<v.InferOutput<typeof Rename.input>> {
-    static readonly kind = 'command'
-    static readonly id = id
-    static readonly label = 'Command'
-    static readonly input = Rename.input
-
-    available(): boolean {
-      return true
-    }
-
-    apply(_draft: Writable<Design>, _input: v.InferOutput<typeof Rename.input>): void {}
-  }
-}
-
-function entryAction(id: string): ActionHandle {
-  return class implements Action<v.InferOutput<typeof Rename.input>, never> {
-    static readonly kind = 'action'
-    static readonly id = id
-    static readonly label = 'Action'
-    static readonly input = Rename.input
-
-    available(): boolean {
-      return true
-    }
-
-    apply(_input: v.InferOutput<typeof Rename.input>): AsyncResult<void, never> {
-      return AsyncResult.ok()
-    }
-  }
+function unibodyDesign() {
+  return { meta: { ...metaOnlyDesign().meta, form: { type: 'unibody' } } }
 }
 
 function recordCommits(store: DesignStore): CommitEvent[] {
@@ -141,11 +121,11 @@ function expectNothingCommitted(
 describe('DesignStore', () => {
   describe('run, for a command', () => {
     it('commits a command: a frozen design, the next seq, its revision and its patches', async () => {
-      const store = await arrange({ commands: [Rename], design: metaOnlyDesign() })
+      const store = await arrange({ commands: [RenameDesign], design: metaOnlyDesign() })
       const before = committed(store)
       const events = recordCommits(store)
 
-      expectOk(store.run(Rename, { name: 'Corne v2' }))
+      expectOk(store.run(RenameDesign, { name: 'Corne v2' }))
 
       const design = { meta: { ...before.design.meta, name: 'Corne v2' } }
       const after = { design, seq: before.seq + 1, revision: hash(design) }
@@ -181,26 +161,26 @@ describe('DesignStore', () => {
 
     it('refuses with the rejection the apply step returns and discards its draft', async () => {
       const rejection: Rejection = { kind: 'stale', seq: 1, latest: 2 }
-      class Refuse implements Command<v.InferOutput<typeof Rename.input>> {
+      class RejectRename implements Command<v.InferOutput<typeof RejectRename.input>> {
         static readonly kind = 'command'
-        static readonly id = 'test.refuse'
-        static readonly label = 'Refuse'
-        static readonly input = Rename.input
+        static readonly id = 'meta.rejectRename'
+        static readonly label = 'Reject rename'
+        static readonly input = v.object({ name: v.string() })
 
-        available(): boolean {
+        available(_design: Frozen<Design>): boolean {
           return true
         }
 
-        apply(draft: Writable<Design>, input: v.InferOutput<typeof Rename.input>): Rejection {
+        apply(draft: Writable<Design>, input: v.InferOutput<typeof RejectRename.input>): Rejection {
           draft.meta.name = input.name
           return rejection
         }
       }
-      const store = await arrange({ commands: [Refuse], design: metaOnlyDesign() })
+      const store = await arrange({ commands: [RejectRename], design: metaOnlyDesign() })
       const before = store.current
       const events = recordCommits(store)
 
-      const result = store.run(Refuse, { name: 'discarded' })
+      const result = store.run(RejectRename, { name: 'discarded' })
 
       expectErr(result)
       expect(result.error).toBe(rejection)
@@ -209,16 +189,16 @@ describe('DesignStore', () => {
     })
 
     it('refuses input the schema refuses, with plain issue paths', async () => {
-      const store = await arrange({ commands: [Rename], design: metaOnlyDesign() })
+      const store = await arrange({ commands: [RenameDesign], design: metaOnlyDesign() })
       const before = store.current
       const events = recordCommits(store)
 
-      const result = store.run(Rename, { name: '' })
+      const result = store.run(RenameDesign, { name: '' })
 
       expectErr(result)
       expect(result.error).toEqual({
         kind: 'input-invalid',
-        command: 'test.rename',
+        command: 'meta.renameDesign',
         issues: [{ path: ['name'], message: expect.any(String) }],
       })
 
@@ -226,31 +206,33 @@ describe('DesignStore', () => {
     })
 
     it.each([
-      ['valid input', { name: 'discarded' }],
-      ['input its schema refuses', { name: '' }],
+      ['valid input', { board: 'mirrored' }],
+      ['input its schema refuses', { board: 'tented' }],
     ])('refuses a command that is unavailable, given %s', async (_name, input) => {
-      class Locked implements Command<v.InferOutput<typeof Rename.input>> {
+      class SetBoard implements Command<v.InferOutput<typeof SetBoard.input>> {
         static readonly kind = 'command'
-        static readonly id = 'test.locked'
-        static readonly label = 'Locked'
-        static readonly input = Rename.input
+        static readonly id = 'meta.setBoard'
+        static readonly label = 'Set board'
+        static readonly input = v.object({
+          board: v.pipe(v.string(), v.picklist(['reversible', 'mirrored'])),
+        })
 
-        available(): boolean {
-          return false
+        available(design: Frozen<Design>): boolean {
+          return design.meta.form.type === 'split'
         }
 
-        apply(draft: Writable<Design>, input: v.InferOutput<typeof Rename.input>): void {
-          draft.meta.name = input.name
+        apply(draft: Writable<Design>, input: v.InferOutput<typeof SetBoard.input>): void {
+          draft.meta.form = { type: 'split', board: input.board }
         }
       }
-      const store = await arrange({ commands: [Locked], design: metaOnlyDesign() })
+      const store = await arrange({ commands: [SetBoard], design: unibodyDesign() })
       const before = store.current
       const events = recordCommits(store)
 
-      const result = store.run(Locked, input)
+      const result = store.run(SetBoard, input)
 
       expectErr(result)
-      expect(result.error).toEqual({ kind: 'unavailable', command: 'test.locked' })
+      expect(result.error).toEqual({ kind: 'unavailable', command: 'meta.setBoard' })
 
       expectNothingCommitted(store, before, events)
     })
@@ -258,25 +240,25 @@ describe('DesignStore', () => {
     it('throws on a command that is not registered', async () => {
       const store = await arrange({ design: metaOnlyDesign() })
 
-      expect(() => store.run(Rename, { name: 'Corne v2' })).toThrow(
-        new InvariantError('Command "test.rename" is not registered.'),
+      expect(() => store.run(RenameDesign, { name: 'Corne v2' })).toThrow(
+        new InvariantError('Command "meta.renameDesign" is not registered.'),
       )
     })
 
     it('throws before any design is loaded', async () => {
-      const store = await arrange({ commands: [Rename] })
+      const store = await arrange({ commands: [RenameDesign] })
 
-      expect(() => store.run(Rename, { name: 'Corne v2' })).toThrow(InvariantError)
+      expect(() => store.run(RenameDesign, { name: 'Corne v2' })).toThrow(InvariantError)
     })
 
     it('lets a throwing listener escape after the commit', async () => {
-      const store = await arrange({ commands: [Rename], design: metaOnlyDesign() })
+      const store = await arrange({ commands: [RenameDesign], design: metaOnlyDesign() })
       const before = committed(store)
       store.events.on('commit', () => {
         throw new Error('listener failed')
       })
 
-      expect(() => store.run(Rename, { name: 'Corne v2' })).toThrow('listener failed')
+      expect(() => store.run(RenameDesign, { name: 'Corne v2' })).toThrow('listener failed')
 
       const design = { meta: { ...before.design.meta, name: 'Corne v2' } }
       expect(store.current).toEqual(
@@ -287,11 +269,11 @@ describe('DesignStore', () => {
 
   describe('run, for an action', () => {
     it('runs with no design loaded and commits what it hands to replaceDesign', async () => {
-      const store = await arrange({ actions: [Load] })
+      const store = await arrange({ actions: [LoadDesign] })
       const events = recordCommits(store)
       const value = metaOnlyDesign()
 
-      expectOk(await store.run(Load, { design: value }))
+      expectOk(await store.run(LoadDesign, { design: value }))
 
       const after = { design: value, seq: 1, revision: hash(value) }
       expect(store.current).toEqual(Option.some(after))
@@ -299,72 +281,72 @@ describe('DesignStore', () => {
     })
 
     it('refuses input the schema refuses, with plain issue paths, without applying', async () => {
-      const store = await arrange({ actions: [Load] })
+      const store = await arrange({ actions: [LoadDesign] })
       const events = recordCommits(store)
 
-      const result = await store.run(Load, { design: null })
+      const result = await store.run(LoadDesign, { design: null })
 
       expectErr(result)
       expect(result.error).toEqual({
         kind: 'input-invalid',
-        command: 'test.load',
+        command: 'file.loadDesign',
         issues: [{ path: ['design'], message: 'A design to load.' }],
       })
       expectNothingCommitted(store, Option.none(), events)
     })
 
     it.each([
-      ['valid input', { name: 'Corne v2' }],
-      ['input its schema refuses', { name: '' }],
+      ['valid input', { fileName: 'corne.kdl' }],
+      ['input its schema refuses', { fileName: '' }],
     ])(
       'refuses an action that is unavailable, given %s, without applying',
       async (_name, input) => {
-        const applied: unknown[] = []
-        class Closed implements Action<v.InferOutput<typeof Rename.input>, never> {
+        const saved: unknown[] = []
+        class SaveDesign implements Action<v.InferOutput<typeof SaveDesign.input>, never> {
           static readonly kind = 'action'
-          static readonly id = 'test.closed'
-          static readonly label = 'Closed'
-          static readonly input = Rename.input
+          static readonly id = 'file.saveDesign'
+          static readonly label = 'Save design'
+          static readonly input = v.object({ fileName: v.pipe(v.string(), v.minLength(1)) })
 
-          available(): boolean {
-            return false
+          available(current: Option<Committed>): boolean {
+            return current.isSome()
           }
 
-          apply(input: v.InferOutput<typeof Rename.input>): AsyncResult<void, never> {
-            applied.push(input)
+          apply(input: v.InferOutput<typeof SaveDesign.input>): AsyncResult<void, never> {
+            saved.push(input)
             return AsyncResult.ok()
           }
         }
-        const store = await arrange({ actions: [Closed] })
+        const store = await arrange({ actions: [SaveDesign] })
 
-        const result = await store.run(Closed, input)
+        const result = await store.run(SaveDesign, input)
 
         expectErr(result)
-        expect(result.error).toEqual({ kind: 'unavailable', command: 'test.closed' })
-        expect(applied).toEqual([])
+        expect(result.error).toEqual({ kind: 'unavailable', command: 'file.saveDesign' })
+        expect(saved).toEqual([])
       },
     )
 
     it('gives the availability check no design before any load', async () => {
       const seen: Option<Committed>[] = []
-      class Probe implements Action<v.InferOutput<typeof Probe.input>, never> {
+      class StartDesign implements Action<v.InferOutput<typeof StartDesign.input>, never> {
         static readonly kind = 'action'
-        static readonly id = 'test.probe'
-        static readonly label = 'Probe'
+        static readonly id = 'file.startDesign'
+        static readonly label = 'Start design'
         static readonly input = v.object({})
 
         available(current: Option<Committed>): boolean {
           seen.push(current)
-          return true
+          return current.isNone()
         }
 
-        apply(_input: v.InferOutput<typeof Probe.input>): AsyncResult<void, never> {
+        apply(_input: v.InferOutput<typeof StartDesign.input>): AsyncResult<void, never> {
           return AsyncResult.ok()
         }
       }
-      const store = await arrange({ actions: [Probe] })
+      const store = await arrange({ actions: [StartDesign] })
 
-      expectOk(await store.run(Probe, {}))
+      expectOk(await store.run(StartDesign, {}))
 
       expect(seen).toEqual([Option.none()])
     })
@@ -372,8 +354,8 @@ describe('DesignStore', () => {
     it('throws on an action that is not registered', async () => {
       const store = await arrange()
 
-      expect(() => store.run(Load, { design: metaOnlyDesign() })).toThrow(
-        new InvariantError('Action "test.load" is not registered.'),
+      expect(() => store.run(LoadDesign, { design: metaOnlyDesign() })).toThrow(
+        new InvariantError('Action "file.loadDesign" is not registered.'),
       )
     })
   })
@@ -385,27 +367,27 @@ describe('DesignStore', () => {
       ['two runs', [{ name: 'Corne v2' }, { name: 'Corne v3' }], 1],
     ])('constructs a command lazily, once: %s', async (_name, inputs, expectedConstructed) => {
       let constructed = 0
-      class Counted implements Command<v.InferOutput<typeof Rename.input>> {
+      class NameDesign implements Command<v.InferOutput<typeof NameDesign.input>> {
         static readonly kind = 'command'
-        static readonly id = 'test.counted'
-        static readonly label = 'Counted'
-        static readonly input = Rename.input
+        static readonly id = 'meta.nameDesign'
+        static readonly label = 'Name design'
+        static readonly input = v.object({ name: v.string() })
 
         constructor() {
           constructed += 1
         }
 
-        available(): boolean {
+        available(_design: Frozen<Design>): boolean {
           return true
         }
 
-        apply(draft: Writable<Design>, input: v.InferOutput<typeof Rename.input>): void {
+        apply(draft: Writable<Design>, input: v.InferOutput<typeof NameDesign.input>): void {
           draft.meta.name = input.name
         }
       }
-      const store = await arrange({ commands: [Counted], design: metaOnlyDesign() })
+      const store = await arrange({ commands: [NameDesign], design: metaOnlyDesign() })
 
-      for (const input of inputs) store.run(Counted, input)
+      for (const input of inputs) store.run(NameDesign, input)
 
       expect(constructed).toBe(expectedConstructed)
     })
@@ -416,27 +398,27 @@ describe('DesignStore', () => {
       ['two runs', [{}, {}], 1],
     ])('constructs an action lazily, once: %s', async (_name, inputs, expectedConstructed) => {
       let constructed = 0
-      class Counted implements Action<v.InferOutput<typeof Counted.input>, never> {
+      class OpenDesign implements Action<v.InferOutput<typeof OpenDesign.input>, never> {
         static readonly kind = 'action'
-        static readonly id = 'test.counted'
-        static readonly label = 'Counted'
+        static readonly id = 'file.openDesign'
+        static readonly label = 'Open design'
         static readonly input = v.object({})
 
         constructor() {
           constructed += 1
         }
 
-        available(): boolean {
+        available(_current: Option<Committed>): boolean {
           return true
         }
 
-        apply(_input: v.InferOutput<typeof Counted.input>): AsyncResult<void, never> {
+        apply(_input: v.InferOutput<typeof OpenDesign.input>): AsyncResult<void, never> {
           return AsyncResult.ok()
         }
       }
-      const store = await arrange({ actions: [Counted] })
+      const store = await arrange({ actions: [OpenDesign] })
 
-      for (const input of inputs) await store.run(Counted, input)
+      for (const input of inputs) await store.run(OpenDesign, input)
 
       expect(constructed).toBe(expectedConstructed)
     })
@@ -445,20 +427,50 @@ describe('DesignStore', () => {
   describe('startup', () => {
     it('starts with a command and an action of distinct ids', async () => {
       await expect(
-        arrange({ commands: [entryCommand('test.a')], actions: [entryAction('test.b')] }),
+        arrange({ commands: [RenameDesign], actions: [LoadDesign] }),
       ).resolves.toBeInstanceOf(DesignStore)
     })
 
     it('refuses a command and an action with one id', async () => {
-      await expect(
-        arrange({ commands: [entryCommand('test.a')], actions: [entryAction('test.a')] }),
-      ).rejects.toThrow(new DuplicateCommandIdError(['test.a']))
+      class ImportDesign implements Action<v.InferOutput<typeof ImportDesign.input>, never> {
+        static readonly kind = 'action'
+        static readonly id = 'meta.renameDesign'
+        static readonly label = 'Import design'
+        static readonly input = v.object({})
+
+        available(_current: Option<Committed>): boolean {
+          return true
+        }
+
+        apply(_input: v.InferOutput<typeof ImportDesign.input>): AsyncResult<void, never> {
+          return AsyncResult.ok()
+        }
+      }
+
+      await expect(arrange({ commands: [RenameDesign], actions: [ImportDesign] })).rejects.toThrow(
+        new DuplicateCommandIdError(['meta.renameDesign']),
+      )
     })
 
     it('refuses two commands with one id', async () => {
-      await expect(
-        arrange({ commands: [entryCommand('test.a'), entryCommand('test.a')] }),
-      ).rejects.toThrow(new DuplicateCommandIdError(['test.a']))
+      class RetitleDesign implements Command<v.InferOutput<typeof RetitleDesign.input>> {
+        static readonly kind = 'command'
+        static readonly id = 'meta.renameDesign'
+        static readonly label = 'Retitle design'
+        static readonly input = v.object({ title: v.string() })
+
+        available(_design: Frozen<Design>): boolean {
+          return true
+        }
+
+        apply(draft: Writable<Design>, input: v.InferOutput<typeof RetitleDesign.input>): void {
+          draft.meta.name = input.title
+        }
+      }
+
+      await expect(arrange({ commands: [RenameDesign, RetitleDesign] })).rejects.toThrow(
+        new DuplicateCommandIdError(['meta.renameDesign']),
+      )
     })
   })
 
