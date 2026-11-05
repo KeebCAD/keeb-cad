@@ -86,7 +86,7 @@ flowchart LR
 - **Prevents:** runaway code or allocation stalling a worker; a slow blueprint nobody can point at; a nondeterministic limit.
 - **Rule:**
   - **Steps:** 100 interrupt-handler calls per run (about one per 5,000 simple loop iterations; the minimal key uses 1), pinned by a test. The step budget bounds bytecode only. The count may differ by one with call history; that is an accepted limit.
-  - **Memory:** every VM has a `memoryLimit` of 64 MiB, pinned by a test. Out of memory is a typed failure. A VM whose memory has grown past that size is replaced in the next pause.
+  - **Memory:** every VM has a `memoryLimit` of 64 MiB, pinned by a test. Out of memory is a typed failure. A VM whose memory has grown past 48 MiB is replaced in the next pause. The lane cache is LRU with 500 entries. The app's blueprint API version is 1; 13.17 records the two Deferred items (out of memory from earlier garbage, 2D/3D handle tags) without code.
   - **Host work:** no budget. The worker records each lane run's time for attribution only: the status strip's running stage names the blueprint, the Inspector shows a lane's last run time. Times never decide an output.
 
 ### BP-5 — Each lane run is a cached unit

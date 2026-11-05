@@ -12,7 +12,7 @@ Already open in the spine's Open Questions or a ticket's `unknown` (cited, not n
 - A5 13.2, 13.4 say `fixtures/`; the spine says `reference-designs/` (23.14 renames).
 - A6 15.5 says `[`/`]` rotate; EXPERIENCE (2026-10-30) says R / Shift+R.
 - A7 Ownership: Parameters tab, Parts tab, expression field and autocomplete have no story; 14.5 and 19.2 both claim the Part field; 14.3's verify repeats 13.18's; 14.5, 14.3, 15.4–15.6 cite retired `epic-layout`/`epic-layout-editor` stories.
-- A8 13.2 says 23.3's generic checks cover its commands; deferred-work says 13.2 decides their home (rec: `commands`).
+- ✅ A8 Per-entry generic checks (13.2). **Sergii: A (reframed after a pressure test: the validator was doing a cloner's job)** — `run` copies the input explicitly (`toRaw`, then `structuredClone`, which throws on non-plain values as a bug, then parse); AD-2's "fresh plain copy" becomes that step; AD-24's pass-through ban becomes a schema-quality rule with no safety role; no per-entry generic checks, no lint; the deferred-work entry is closed. Follow-up E10: validating the design after each command.
 
 ## B. AD-11 worker, protocol, background stages
 - ✅ B1 Worker start with no design loaded (23.4, 23.7). **Sergii: A** — spawn or send nothing until the store holds its first `Committed`; the first message is `replaceDesign`'s whole bundle; order is load, then spawn.
@@ -52,18 +52,21 @@ Already open in the spine's Open Questions or a ticket's `unknown` (cited, not n
 - ✅ D10 P places a slot (19.2). **Sergii: A** — a child of the selected group (or the selected slot's group, else the root), appended after its last sibling with no offset; picking the part is a separate undo step (AddSlot, then setPart).
 
 ## E. AD-2 commands, undo, ids
-- E1 Scripts can't name nodes they created, since ids are random (13.2, 13.4, 13.6, 13.8). Rec: Add* inputs take an optional caller-chosen id; mint only when omitted.
-- E2 Inputs and defaults of AddGroup, AddSlot, DuplicateNode, DeleteNode; no SetOffset anywhere (13.2, 13.4, 13.7). Rec: `{ parent?, index?, id?, …fields }`; duplicate after the original, internal refs remapped.
+- ✅ E1 Naming created nodes (13.2, 13.4, 13.6, 13.8). **Sergii: A** — Add commands take an optional caller-chosen `id` (checked with `idSchema`, refused if it exists in the design), minted with `mintId()` when omitted; an omitted `parent` means the root. 
+- ✅ E1b Naming in the UI (13.7, 19.2, palette). **Sergii: A** — the add flow (G, S, P, palette) shows an optional id field, pre-filled with a minted id and editable before commit, through E1's `id` input; ids never change afterwards (readable in tree, messages and pad names; no schema change; AD-9 merge base intact); rename stays a later decision.
+- ✅ E2 Add/duplicate/delete inputs (13.2, 13.4, 13.7). **Sergii: A** — Add commands carry `{ parent?, index?, id?, …fields }` (index defaults to append; fields as their stories add them; G adds a free group, S a slot); Duplicate inserts after the original, mints new ids for the copied subtree (a chosen id gets a readable suffix, `thumb-home-2`) and remaps references inside the copy; Delete takes a list of ids and refuses the root; editing after creation is 14.5's setters (E5).
 - E3 Undo record shape (14.1; Open Q). Rec: nested references; amend AD-23.
 - E4 Coalescing API, empty-stack undo, depth (14.1, 14.5). Rec: `run(…, { coalesce })`; `unavailable`; unbounded.
 - E5 Commands behind the inspector and settings (14.5, 14.3, 14.7). Rec: name `setOffset`, `setChain`, `setGap`, `setDefaultPart`, `setSlotInputs`.
-- E6 Deleting a node others anchor to (13.2, 13.3). Rec: clear dangling anchors; delete only keyed list items.
-- E7 A command to delete a design part or pin, for 13.18's rejection (13.18). Rec: a minimal `parts.deletePart`.
+- ✅ E6 Deleting an anchored-to node (13.2, 13.3). **Sergii: A** — a node anchored to the deleted node or its subtree falls back to its default anchor, keeping its offset; the cascade deletes only list items keyed to the deleted ids (overrides now, bindings later); one undo restores all. 13.2's verify line changes.
+- ✅ E7 Delete command for 13.18's rejection (13.18). **Sergii: A** — 13.18 adds a minimal `parts.deletePart` (and `library.unpin` if the pin case is tested) carrying the check; AD-2's "refused" wins over "asks for a replacement"; ModelRejectionKind gains `default-part-required` (13.18).
 - E8 Stale seq in practice: a new gesture before the last snapshot arrives (15.4, 15.5). Rec: hold the start until the latest snapshot; stale snaps back with a toast.
 - E9 setAnchor keeps the offset or the world position; unsetting (13.3; Open Q). Rec: keep the offset; the node moves.
 
+- ✅ E10 Design validity after a command (from A8's pressure test). **Sergii: A** — after every command's produced value the store parses the design with `designSchema` beside `checkStructure`; a failure is a bug: `InvariantError` naming the issue paths and the command id, nothing committed. Evidence: a spread input leaks an extra key past TypeScript (no exact types, TS #12936; the `Exact` workaround regressed in TS 6.0.3, #63515) and strict objects refuse it on reload; measured parse cost ~0.4 µs per node (21 µs for 40 keys, 1.9 ms for 5,000).
+
 ## F. AD-3, AD-4 placement
-- F1 What a group contributes to a chain step (13.2, 13.4). Rec: the bounding extent of its placed slots along the axis.
+- ✅ F1 A group in a chain (13.2, 13.4). **Sergii: A** — a group's extent along the chain's axis is the bounding extent of its placed slots' rectangles (recursively through nested groups) in the group's own frame; chains step groups like slots. Changes the glossary's "group … no size" and AD-4.
 - F2 Which edges form the acyclic graph; cycle id order (13.3). Rec: include default-anchor edges; order along the cycle; members only.
 - F3 A node anchored to an unknown id (13.3). Rec: not placed, like a cycle.
 - F4 Attach points: default and coordinates (13.3). Rec: default `center`; ±w/2, ±h/2 in the slot frame.
@@ -77,14 +80,14 @@ Already open in the spine's Open Questions or a ticket's `unknown` (cited, not n
 - G2 Grammar and unit algebra (14.2, 15.2). Rec: standard precedence; ± needs equal units; no unit×unit.
 - G3 A bad expression: refused or a violation; what stages use (14.2, 14.5, 14.4). Rec: commands refuse; a loaded file reports and leaves the node unplaced; `negative-length` an error.
 - G4 Parameter cycles, rename and delete outcomes (14.2; partly open). Rec: reuse the cycle rejection; widen `ItemId`.
-- G5 What the literal-only expr stub accepts, permanently (13.17, 13.2). Rec: `[-]digits[.digits]` + `mm`|`deg`; `Result<{ value, unit }, ParseError>`.
-- G6 Who reports `unit-mismatch` and `negative-length` before 14.2 (13.2). Rec: nobody until 14.2; say so in 13.2.
+- ✅ G5 The literal-only expr stub (13.17, 13.2). **Sergii: A** — only `-?digits(.digits)?` immediately followed by lowercase `mm` or `deg` (no space, `+`, exponent, leading `.`, or unitless number); returns `Result<{ value, unit }, ParseError>`.
+- ✅ G6 Units before 14.2 (13.2). **Sergii: A** — a quantity field's schema refuses a literal of the wrong unit (a check from its `quantity(unit)` metadata): `input-invalid` or `design-invalid` at its path; `negative-length` waits for 14.2's evaluator; 13.2's ticket says so.
 - G7 Write-back: which term, rounding, printing (15.2, 15.4, 15.5). Rec: top-level additive term only; half away from zero; shortest decimal.
 
 ## H. AD-5, AD-6 parts and sides
-- H1 choc-key's keycap at 1u and 1.5u, and NewDesign's default gap (13.18, 13.2, 13.4). Rec: 18×18, 27×18, gap 1 mm (Corney's 19 mm steps).
-- H2 Stand-in cases and what each reports (13.18). Rec: not found → `unresolvable-reference`; found without output → only the blueprint violation.
-- H3 The app-defined stand-in rectangle (13.18). Rec: the 1u size.
+- ✅ H1 Key size and default gap (13.18, 13.2, 13.4). **Sergii: A** — choc-key keycap 18 × 18 mm at 1u, 27 × 18 mm at 1.5u; NewDesign's `meta.gap` is 1 mm on x and y (Corney's 19 mm steps, Ergogen's keycw/keych 18).
+- ✅ H2 Stand-in cases (13.18). **Sergii: A** — a reference that can't be found (missing design part, unpinned blueprint, unknown library part) reports `unresolvable-reference` naming the slot, a warning for a design-local part, an error for a library or blueprint reference; a found part with no output reports only its blueprint violation; either way the slot is a stand-in.
+- ✅ H3 App-defined stand-in rectangle (13.18). **Sergii: A** — 18 × 18 mm (the 1u key), drawn as a placeholder, so a broken file keeps its 19 mm steps.
 - H4 Override identity and de-duplication (13.6). Rec: the target is the key; a repeat replaces.
 - H5 Disallowed overrides: outcome per case (13.6). Rec: the command accepts only `'empty'`; a loaded swap reports `override-not-allowed`.
 - H6 `size` into choc-key v1 in place or v2 (13.4). Rec: v1 in place before the first public preview.
@@ -102,7 +105,7 @@ Already open in the spine's Open Questions or a ticket's `unknown` (cited, not n
 - I6 Which violations block which export (19.3). Rec: by the ids each export reads.
 
 ## J. Blueprint sandbox numbers (13.17, 13.21)
-- J1 VM replacement size, lane-cache cap, the two Deferred items, the app's blueprint API version. Rec: 48 MiB, LRU with an entry cap, record-only, version 1.
+- ✅ J1 Sandbox numbers (13.17, 13.21). **Sergii: A** — replace a VM past 48 MiB (64 MiB limit); lane cache LRU, 500 entries, memory-only; 13.17 records the two Deferred items without code; the app's blueprint API version is 1.
 
 ## Unsliced epics leaning on undefined spine areas
 plates-to-dxf (the `plates` section, `CutoutPurpose`, part-parameter binding); routing-and-fab (routes in the routing file, `design-rules`); wireless-copy (`PinRole`, `keymap`, `case`).
