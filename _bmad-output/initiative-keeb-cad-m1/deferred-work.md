@@ -53,3 +53,7 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-a-new-design-writes-and-reads-back-byte-identical-plan.md`
   summary: Per-entry generic checks (caller's input not frozen, no proxy in the design, over every registered entry that writes the design) move to 13.2; decide there whether they live in `commands` (where the input schemas are) or `app`.
   evidence: Sergii, 2026-11-05: in 23.3 they could not fail, since NewDesign's input never enters the design; the design's deep freeze is already `design`'s unit rule, so an `app` copy was a retest.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-a-new-design-writes-and-reads-back-byte-identical-plan.md`
+  summary: Two replaceDesign tests in packages/design/src/store/design-store.spec.ts assert more than their names claim (the commit event, the caller's input unfrozen, nothing committed).
+  evidence: precedent tests `loads a valid design deeply frozen, with the next seq and its revision` and `refuses an invalid design with its issue paths`; rule `Make a test's name and its expects claim the same thing.` 23.3 renames or splits them as they move (conformance pass 6).
