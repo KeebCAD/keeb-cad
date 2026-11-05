@@ -1,8 +1,10 @@
 export { DesignStore } from './store/design-store'
 export { DuplicateCommandIdError } from './store/duplicate-command-id-error'
+export { emptyDerivedFiles } from './store/empty-derived-files'
 export type {
   Committed,
   CommitEvent,
+  DerivedFiles,
   DesignStoreEvents,
   Subscribable,
   TypedEmitter,

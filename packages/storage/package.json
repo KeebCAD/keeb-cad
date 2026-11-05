@@ -5,5 +5,16 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@keeb-cad/design-file": "workspace:*",
+    "@keeb-cad/result": "workspace:*",
+    "@keeb-cad/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "valibot": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
   }
 }

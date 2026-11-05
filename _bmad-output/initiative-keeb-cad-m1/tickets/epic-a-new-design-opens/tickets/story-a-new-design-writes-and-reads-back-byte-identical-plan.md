@@ -3,14 +3,14 @@ title: 'A new design writes and reads back byte-identical'
 type: 'feature'
 ticket: '3'
 created: '2026-11-05'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: 'e8674dbe1b6351e9cf5746ea96ee4e7cce84cf8c'
 route: 'full'
 route_source: 'auto'
 risk: 'high'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/AGENTS.md'
@@ -99,9 +99,32 @@ context:
 
 ## Implementation Notes
 
+- Toggled bug: `readBundle` dropping the routing text turned `app/src/bundle-round-trip.spec.ts` red at `emptied: []` (byte identity alone can't see it: the refilled empty file writes the same text); restored, green.
+- Stryker (design-file, storage): 99.14, three equivalent survivors, exclusions proposed for a person: `read-kdl.ts` `getLocation(…)?.` twice (`parseKdl` always stores locations), and the `flattened === undefined` conditional (`Map.get(undefined)` is `undefined`).
+- `schema/src/frozen.spec.ts`: `toEqualTypeOf` → `.branded.toEqualTypeOf`, needed for the recursive layout intersections; checked to still fail on a wrong nested type.
+- Implementer's decisions: recursive schemas annotated `v.GenericSchema<unknown, Node|Group>`; property names kebab-case like nodes; the reader passes what no schema field takes on for the schema to refuse (arguments under their index, a bare one-argument node as its value, a misnamed item as `{ [name]: … }`); a repeated child node, a second format-version node, or a property and a child node with one key is unreadable (messages name the lines); format-version must be one bare argument; numbers written in JS shortest form; an unsupported schema kind throws `InvariantError`; a derived file both listed unreadable and present empties as `unreadable`.
+- Not in the plan: `storage` devDependency `valibot`; root `vitest.config.ts` gains the `app` Node project.
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+Pass 1 (quick, test-reviewer): high 0, medium 1, low 8, false 4, maybe-false 0; no quote dropped.
+
+| # | Finding | Verdict | Route | Evidence |
+|---|---------|---------|-------|----------|
+| 1 | A property and a child node with one key overwrite each other in `readFields` | medium | patch | Real: `shellOf` sets properties, the child loop assigns `fields[key]` and `seen` tracks children only; `meta id="a" { id "b" }` loads as `b`, a silent loss AD-8's repeated-node rule forbids. |
+| 2 | design-store specs narrowed to `toMatchObject` | low | patch | Real: wrong or extra `routing`/`fingerprints` pass; AGENTS.md "assert whole values". |
+| 3 | `accepts a chain and a free group holding groups and slots` holds no nested free group | low | patch | Real: name claims more than the data. |
+| 4 | Reader picks group or slot by content, not node name | low | reject | Real: a malformed `group` without `arrangement` is read as `{ group: … }` with odd issue paths, but it is still refused; well-formed files read correctly; a by-name pick needs the codec to enumerate a lazy union (more than a direct correction). Told to Sergii. |
+| 5 | App byte check can't see a lost derived file | low | reject | Real: refilled empties write the same text; `emptied: []` is what catches it (the toggled bug went red there). Stated in the PR. |
+| 6 | Stryker verdicts and toggled bug not recorded in the plan | low | reject | Fix edits this build's plan; recorded in Implementation Notes and the PR. |
+| 7 | `frozen.spec.ts` changed to `.branded.toEqualTypeOf` | low | reject | `.branded` compares deeply through the recursive intersections; the implementer checked it still fails on a wrong nested type. Stated in the PR. |
+| 8 | Expected KDL messages are the library's wording | false | reject | The input places the bad token at 3:30 and 1:6/1:9; the requirement is the reader's located message, which is the library's text. |
+| 9 | Undocumented codec, number, message and derived-file decisions | low | reject | Fix edits this build's plan; listed in Implementation Notes and for Sergii. |
+| 10 | `writeBundle` expected via the writers | false | reject | The boundary row names the writers ("each its file writer's text") and each has its own unit test. |
+| 11 | mintId's "two differ" is random | false | reject | Accepted with the nanoid decision (~2^-62). |
+| 12 | `readDerivedFile` empties a file both listed unreadable and present as `unreadable` | false | reject | `migrateBundle` never produces both; `unreadable` wins by the plan's frozen rule "a derived file that is not valid KDL is listed in unreadable and passed on as absent". |
 
 ## Design Notes
 
@@ -113,7 +136,7 @@ context:
 
 **Decision (plan): the root group is the center.** The glossary's center is the top-level group of a split form, so `NewDesign`'s free root group is it; 13.2 gives it content.
 
-**Decision (plan): text layout.** Child nodes indent 4 spaces; every file ends with one newline; a node with no child nodes has no braces. An empty list is a bare node (`fingerprints`); an empty `flatten` list writes nothing, and the reader reads an absent `flatten` list as `[]`. AD-8 doesn't fix these. A repeated node's message names the node and the lines of both occurrences (plan decision; AD-8 fixes only `file-unreadable`).
+**Decision (plan): text layout.** The KDL library's formatter writes the text with its defaults (AD-8, amended in 541b04a after PR #16's review): child nodes indent one tab, a string is quoted only where KDL v2 needs it, every file ends with one newline, a node with no child nodes has no braces. An empty list is a bare node (`fingerprints`); an empty `flatten` list writes nothing, and the reader reads an absent `flatten` list as `[]`. AD-8 doesn't fix these. A repeated node's message names the node and the lines of both occurrences (plan decision; AD-8 fixes only `file-unreadable`).
 
 **Decision (plan): `RawBundle` and `DesignBundle`** are package-local plain parameter types (`design-file`'s and `storage`'s), not shared kinds and never in a file; `app` passes the store's `Committed`, which fits `DesignBundle`. **`RawBundle`** is `{ design?: string; routing?: string; fingerprints?: string }` (KDL texts), `design-file`'s own type. No design text → `file-unreadable`.
 
@@ -178,7 +201,7 @@ Four reviewer passes (Sonnet, context-free); no finding dropped, every quote ver
 | rules | derived file unreadable | `unreadable: ['routing']` | `emptied: [{ file: 'routing', reason: 'unreadable' }]` | unit (design) |
 | rules | derived file missing | no routing, no fingerprints | `emptied` both with `missing`, in that order | unit (design) |
 | rules | derived files frozen | valid routing and fingerprints objects | both deeply frozen in `current`; the caller's objects not frozen | unit (design) |
-| rules | codec: canonical text | NewDesign-shaped design with meta `corne`/`Corne`, a free root `root` | exactly `format-version 1\nmeta id="corne" name="Corne" {\n    form type="split" board="reversible"\n}\nlayout id="root" arrangement="free"\n` (AD-8's rules plus this plan's layout decisions) | unit (design-file) |
+| rules | codec: canonical text | NewDesign-shaped design with meta `corne`/`Corne`, a free root `root` | exactly `format-version 1\nmeta id=corne name=Corne {\n\tform type=split board=reversible\n}\nlayout id=root arrangement=free\n` (AD-8's rules plus this plan's layout decisions) | unit (design-file) |
 | rules | empty derived files | `emptyDerivedFiles(R)` | `{ routing: { revision: R }, fingerprints: { revision: R, fingerprints: [] } }` | unit (design) |
 | rules | codec: empty derived texts | routing `{ revision: 'r1' }`; fingerprints `{ revision: 'r1', fingerprints: [] }` | `revision "r1"\n`; `revision "r1"\nfingerprints\n` | unit (design-file) |
 | rules | codec: absent flatten list | `layout id="root" arrangement="free"` | `layout.children` read as `[]` | unit (design-file) |

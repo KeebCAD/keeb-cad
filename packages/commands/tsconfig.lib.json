@@ -1,0 +1,12 @@
+{
+  // Every command and action. No DOM lib: entries run on main through the design store.
+  "extends": "../../tsconfig.base.json",
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.spec.ts"],
+  "compilerOptions": {
+    // Symbol.dispose and Symbol.asyncDispose, which di's container calls on dispose().
+    "lib": ["ES2023", "ESNext.Disposable"],
+    "noEmit": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo"
+  }
+}

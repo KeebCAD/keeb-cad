@@ -10,9 +10,13 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@keeb-cad/commands": "workspace:*",
     "@keeb-cad/design": "workspace:*",
     "@keeb-cad/di": "workspace:*",
     "@keeb-cad/editor": "workspace:*",
+    "@keeb-cad/result": "workspace:*",
+    "@keeb-cad/schema": "workspace:*",
+    "@keeb-cad/storage": "workspace:*",
     "vue": "catalog:"
   },
   "devDependencies": {
@@ -24,6 +28,7 @@
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plugin-vue-devtools": "^8.2.1",
+    "vitest": "catalog:",
     "vue-tsc": "catalog:"
   },
   "engines": {

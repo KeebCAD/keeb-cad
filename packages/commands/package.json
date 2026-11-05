@@ -7,6 +7,16 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@keeb-cad/design": "workspace:*",
+    "@keeb-cad/di": "workspace:*",
+    "@keeb-cad/model": "workspace:*",
+    "@keeb-cad/result": "workspace:*",
+    "@keeb-cad/schema": "workspace:*",
     "valibot": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
   }
 }

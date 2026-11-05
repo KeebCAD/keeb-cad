@@ -1,16 +1,23 @@
-import type { Design, Frozen, Revision } from '@keeb-cad/schema'
+import type { Design, FingerprintsFile, Frozen, Revision, RoutingFile } from '@keeb-cad/schema'
 
 import type { DesignPatch } from '../patching/types'
 
+export interface DerivedFiles {
+  routing: RoutingFile
+  fingerprints: FingerprintsFile
+}
+
 export interface Committed {
   design: Frozen<Design>
+  routing: Frozen<RoutingFile>
+  fingerprints: Frozen<FingerprintsFile>
   seq: number
   revision: Revision
 }
 
 export type CommitEvent =
   | { kind: 'patches'; patches: readonly DesignPatch[]; seq: number; revision: Revision }
-  | { kind: 'whole'; design: Frozen<Design>; seq: number; revision: Revision }
+  | { kind: 'whole'; committed: Committed }
 
 export type DesignStoreEvents = {
   commit: (event: CommitEvent) => void

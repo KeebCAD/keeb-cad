@@ -1,0 +1,10 @@
+{
+  // The KDL codec and the bundle's readers and writers. No DOM lib: pure functions.
+  "extends": "../../tsconfig.base.json",
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.spec.ts"],
+  "compilerOptions": {
+    "noEmit": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo"
+  }
+}

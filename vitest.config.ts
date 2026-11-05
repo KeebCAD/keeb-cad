@@ -65,6 +65,15 @@ export default defineConfig({
         },
       },
       {
+        // app's specs wire the main container on Node; its end-to-end specs run under Playwright.
+        test: {
+          name: '@keeb-cad/app',
+          root: 'app',
+          environment: 'node',
+          include: ['src/**/*.spec.ts'],
+        },
+      },
+      {
         test: {
           name: 'tooling',
           environment: 'node',
