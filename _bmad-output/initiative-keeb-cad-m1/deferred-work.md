@@ -42,3 +42,6 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-test-harness-enforces-agents-md-s-test-rules-plan.md`
   summary: Decide whether to require a reason on eslint-disable comments (e.g. eslint-comments/require-description), as AGENTS.md's test-id line asks.
   evidence: A bare eslint-disable-next-line silences no-restricted-properties and every ported rule (no-test-ids spec shows suppression works without a reason); enforcing it is a new rule, so it goes to Sergii.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-commands-run-through-the-design-store-plan.md`
+  summary: Split `packages/di/src/token.ts` so each helper gets its own file: it holds `createToken`, `createMultiToken`, `isToken`, `tokenKind` and `tokenName` together.
+  evidence: AGENTS.md "tokens, errors, `define*` factories and helper functions each get their own file"; found by the plan-conformance reviewer's precedent check on story 2's plan (2026-11-05 dry run, PR #14).
