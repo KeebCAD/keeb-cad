@@ -40,16 +40,16 @@ Already open in the spine's Open Questions or a ticket's `unknown` (cited, not n
 - ✅ C11 Copy's name and provenance display (22.1). **Sergii: A** — name non-empty, not unique, default `<source name> copy`; the info shows the source's current name when stored, else its id, then `· rev <short hash>`.
 
 ## D. AD-26 and UX: editor frame and UI behaviour
-- D1 Where an entry declares hotkeys and what input a hotkey run passes (23.6, 23.7). Rec: optional static `hotkeys` and default input on the handle.
-- D2 Are workspace keys, T, Esc, F6 registered actions or editor-local (23.6–23.8)? Rec: actions over UI-state di interfaces.
-- D3 Workspaces 2–5 content; Layout hint naming keys that do nothing yet (23.8). Rec: blank regions; hint verbatim.
-- D4 F6 on an empty region (23.8). Rec: region roots are focusable landmarks.
-- D5 Number formatter rounding and edges (23.6). Rec: half away from zero, no `-0`, `≈` prefix, unit suffix.
-- D6 Ctrl vs Cmd on macOS (23.6). Rec: Ctrl only in M1; a Deferred row.
-- D7 Layout canvas numbers: zoom range, wheel step, F padding, hit-radius levels, cursor/zoom format; unplaced rows (13.7). Rec: Sergii sets the numbers; unplaced rows not drawn.
-- D8 Load-failure treatments: banner or toast (16.1). Rec: banner for refusals, toast for reset and migrated.
-- D9 Nudge-step control storage and validation (15.5). Rec: per design in localStorage; refuse a non-positive step.
-- D10 Where P places a slot; one or two undo steps (19.2). Rec: in the selected group, appended; two steps.
+- ✅ D1 Hotkeys and invocation input (23.6, 23.7). **Sergii: A (reframed; no hotkey input)** — the handle gets one optional static `hotkeys` (a list of chords); every UI invocation (hotkey, menu, palette) goes through one `editor` invoke path that builds the input from UI state with a per-entry input builder where needed, `{}` otherwise.
+- ✅ D2 UI keys (23.6–23.8). **Sergii: B, as classes** (reversed from A after Winston found A's tokens invert the editor→commands edge, AD-25) — UI-only keys (1–5, T, Esc, F6, later F1, `?`) are `UiAction` classes in `editor` (statics kind, id, label, input, optional hotkeys; `available()`/`apply(input)` with `inject()`), registered by `registerUiAction` into `editor`'s `uiActions` multi token; `editor`'s shortcut registry merges them with the store's entries for the hotkey layer, palette and cheat sheet; AD-26 amended; glossary gains `UiAction`.
+- ✅ D3 Other workspaces and the Layout hint (23.8). **Sergii: A** — workspaces 2–5 render an empty canvas region with no text; the Layout hint is EXPERIENCE's text verbatim; inert G and Ctrl+K accepted until 13.7 and the palette story.
+- ✅ D4 F6 and empty regions (23.8). **Sergii: A** — each region root is a focusable, labelled landmark (`tabindex="-1"`, `aria-label`); F6 lands on it even when empty; the cycle order is EXPERIENCE's list.
+- ✅ D5 Number formatter (23.6). **Sergii: A** — round half away from zero on the decimal value (`1.005` → `1.01`); a value rounding to zero prints `0`, never `-0`; `≈` before the number when rounding changed it (`≈ 1.23`); the formatter takes `(value, unit)` and appends the unit (`19 mm`).
+- ✅ D6 Ctrl vs Cmd (23.6). **Sergii: B** — chords use zag's `mod` (Cmd on macOS, Ctrl elsewhere; per its 1.47.0 README); the formatter shows `⌘K` / `Ctrl+K`; AD-26 rule: no `mod+` chord the browser reserves (W, T, N, Q, L).
+- ✅ D7 Layout canvas numbers (13.7). **Sergii: A** — zoom 10%–2000%, ×1.1 per wheel notch toward the cursor; F fits the selection, else the whole board, with 24 px padding; hit-radius tests at 50%, 100%, 400%; status strip cursor `x 12.34 y -5.67` (mm via the formatter) and zoom as a whole percent; unplaced rows not drawn (the violation shows the cycle, 14.6). Tunable constants in one place.
+- ✅ D8 Load-failure treatments (16.1, 23.7). **Sergii: A** — persistent banner (`role="alert"`) for `format-too-new`, `migration-failed` and the launch fallback (naming the failure); timed toast for a reset derived file and "upgraded from format N".
+- ✅ D9 Nudge-step control (15.5). **Sergii: A** — a UI-state `di` service in `editor`, persisted per design id in `localStorage` like the viewport; fields are expressions (parameters allowed); a step that isn't a positive length (angle for rotate) is refused and the previous value kept.
+- ✅ D10 P places a slot (19.2). **Sergii: A** — a child of the selected group (or the selected slot's group, else the root), appended after its last sibling with no offset; picking the part is a separate undo step (AddSlot, then setPart).
 
 ## E. AD-2 commands, undo, ids
 - E1 Scripts can't name nodes they created, since ids are random (13.2, 13.4, 13.6, 13.8). Rec: Add* inputs take an optional caller-chosen id; mint only when omitted.
