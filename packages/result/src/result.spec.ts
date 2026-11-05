@@ -112,16 +112,12 @@ describe('Result', () => {
   describe('type narrowing', () => {
     it('isOk narrows to Ok<T, E>', () => {
       const r: Result<number, TestError> = Result.ok(1)
-      if (r.isOk()) {
-        expectTypeOf(r).toEqualTypeOf<Ok<number, TestError>>()
-      }
+      expectTypeOf([r].filter((x) => x.isOk())).toEqualTypeOf<Ok<number, TestError>[]>()
     })
 
     it('isErr narrows to Err<T, E>', () => {
       const r: Result<number, TestError> = Result.err(new TestError('x'))
-      if (r.isErr()) {
-        expectTypeOf(r).toEqualTypeOf<Err<number, TestError>>()
-      }
+      expectTypeOf([r].filter((x) => x.isErr())).toEqualTypeOf<Err<number, TestError>[]>()
     })
   })
 
@@ -295,10 +291,10 @@ describe('Result', () => {
     it('Err iterator yield type carries the error in a covariant slot', () => {
       const r: Result<number, TestError> = Result.err(new TestError('x'))
       const iter = r[Symbol.iterator]()
-      const first = iter.next()
-      if (!first.done) {
-        expectTypeOf(first.value).toEqualTypeOf<ErrYield<TestError>>()
-      }
+      expectTypeOf(iter.next())
+        .extract<IteratorYieldResult<unknown>>()
+        .toHaveProperty('value')
+        .toEqualTypeOf<ErrYield<TestError>>()
     })
 
     it('Err iterator throws InvariantError if consumed past the yield', () => {

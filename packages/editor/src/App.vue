@@ -3,7 +3,7 @@ import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <div class="editor-shell" data-testid="editor-shell">
+  <div class="editor-shell">
     <header class="editor-shell__bar">
       <h1 class="editor-shell__title">keeb-cad</h1>
     </header>

@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import { ENTRY_RE_EXPORTS_ONLY, TYPES_OUTSIDE_TYPES_TS } from '../../eslint.config'
 import { restrictedSyntax } from './restricted-syntax'
+import { COLD_CONFIG_TIMEOUT } from './cold-config-timeout'
 
 const ENTRY = ENTRY_RE_EXPORTS_ONLY.message
 
-describe('package entry files only re-export', () => {
+describe('package entry files only re-export', { timeout: COLD_CONFIG_TIMEOUT }, () => {
   it.each(['packages/x/src/index.ts', 'packages/x/src/main.ts', 'packages/x/src/worker.ts'])(
     'rejects a function in %s',
     async (filePath) => {

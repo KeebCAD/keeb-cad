@@ -11,6 +11,8 @@ export default defineConfig({
   optimizeDeps: { include: ['vue', 'vue-router'] },
   test: {
     root: fileURLToPath(new URL('./', import.meta.url)),
+    // A config file of its own inherits nothing from the root, so it shuffles again here.
+    sequence: { shuffle: true },
     browser: {
       enabled: true,
       provider: playwright(),

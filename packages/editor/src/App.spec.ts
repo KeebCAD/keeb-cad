@@ -11,8 +11,8 @@ describe('App', () => {
 
     const screen = await render(App, { global: { plugins: [router] } })
 
-    await expect.element(screen.getByTestId('editor-shell')).toBeVisible()
+    await expect.element(screen.getByRole('main')).toBeVisible()
     await expect.element(screen.getByRole('heading', { level: 1 })).toHaveTextContent('keeb-cad')
-    await expect.element(screen.getByTestId('empty-editor')).toHaveTextContent('No design open.')
+    await expect.element(screen.getByText('No design open.', { exact: true })).toBeVisible()
   })
 })

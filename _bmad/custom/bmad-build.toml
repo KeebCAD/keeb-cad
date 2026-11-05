@@ -6,4 +6,79 @@ activation_steps_append = [
 
 persistent_facts = [
   "Plan size in this project: the SCOPE STANDARD target is up to 3000 tokens, superseding the 900–1600 range in the workflow and the plan template's 'Target: 900–1300 / above 1600' comment. Step-02's token-count gate fires only above 3000 tokens.",
+  "Every plan carries a boundary table: for each threshold the work introduces or relies on, one row just below, one on and one just above it, each with its input and expected output taken from the requirement. Rows are sorted into four groups (production bugs, rules, module boundaries, glue), and every row has a level column naming where its test runs (unit in the owning package, integration in `pipeline` or `app`, or end to end). The table is frozen as acceptance when the plan is approved: implementation adds tests for its rows and changes no row. Its rows do not count toward the 3000-token plan cap.",
 ]
+
+# The test-reviewer lens is adapted from the ninja-testing plugin's agents/test-reviewer.md.
+# MIT License, Copyright (c) 2026 Illya Klymov.
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+# associated documentation files (the "Software"), to deal in the Software without restriction,
+# including without limitation the rights to use, copy, modify, merge, publish, distribute,
+# sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions: The above copyright notice and this
+# permission notice shall be included in all copies or substantial portions of the Software.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+# NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+# OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# Runs in both sets under one id, so a quick review and a thorough one both read the tests.
+[[workflow.quick_lenses]]
+id = "test-reviewer"
+name = "Test Reviewer"
+when = "the unified diff at {diff_file} adds, changes or deletes a file whose name contains `.spec.` or `.test.`"
+instruction = """
+Launch a context-free subagent on a Sonnet-class model with this prompt:
+
+You review tests, not code; you report and fix nothing. You did not write these tests and did not see their author's reasoning: judge the text in front of you. (Adapted from the ninja-testing plugin's test-reviewer, MIT, Copyright (c) 2026 Illya Klymov.)
+
+Read `AGENTS.md` at the repository root; its Tests section is the rule set. Read `{plan_file}` when it is not empty: its acceptance criteria, I/O matrix and boundary table are the requirement. Then read the unified diff at `{diff_file}`; review every test it adds or changes, reading the code under test as needed.
+
+Run these checks, in this order:
+
+1. Name and expect. Read each test's name, then only its `expect` lines. Do they claim the same thing? A test with no `expect`, or one whose `expect` cannot fail when the behaviour breaks, verifies nothing.
+2. Implementation coupling. An assertion on a call (`toHaveBeenCalled*`, `mock.calls`, a spy on an internal function) where the behaviour is a returned value or a visible effect; any `toHaveBeenCalled*` in a test of a pure function; an assertion that compares a fake's configured return value with the result.
+3. What is substituted. Each `vi.fn`, `vi.spyOn` and fake registered in a `di` container: is it inside the code under test (must not be substituted), a neighbour (acceptable), or a boundary (fake it in the container, never `vi.mock`)? Is the subject itself substituted away?
+4. Level against claim. A calculation not tested as a unit in the package that owns it; wiring between packages tested outside `pipeline` or `app`; an end-to-end test for an action that is reversible, costs nothing and crosses no boundary a lower level can fake; a test named for one level that runs at another.
+5. Honest arrange, act, assert. Logic in the test (`if`, a loop around `expect`, an expected value computed the way production computes it); an arrange that builds what the test does not use, or a state no real command could reach; a helper's hidden step the assertions depend on; an expected value not taken from the requirement; a threshold without its just-below, on and just-above rows; narrowing in the test instead of asserting a whole value.
+6. Determinism and isolation. A clock read without Vitest's fake timers, `Math.random`, locale- or time-zone-dependent output, mutable state at module level or in a describe callback, a test that passes only in one order.
+8. Undocumented decisions. A limit, rounding, ordering, default or error handling the code under test has and the requirement does not state.
+
+Missing tests are not your job: a mechanical review cannot see what is absent.
+
+Every finding quotes, verbatim and each in backticks: the test's name as written in the diff, the `expect` line it concerns (or the line of the test or code it concerns, for checks 4, 6 and 8), and the check number. Then say what is wrong and what would satisfy the check. There is no minimum number of findings: "checked N tests, no findings" is a full answer.
+
+Review by inspection only. Do not modify code, run builds or tests, or invoke quality gates. Do not invoke any skill, and do not spawn subagents of your own; you are the reviewer. Return your findings as text in your final message; do not route them through any findings-reporting tool the host may offer.
+
+When the subagent returns, check each finding's quoted test name and quoted line against `{diff_file}` and the files it changes. Drop any finding with a quote not found there, and say how many you dropped; pass the rest on as this lens's findings.
+"""
+
+[[workflow.thorough_lenses]]
+id = "test-reviewer"
+name = "Test Reviewer"
+when = "the unified diff at {diff_file} adds, changes or deletes a file whose name contains `.spec.` or `.test.`"
+instruction = """
+Launch a context-free subagent on a Sonnet-class model with this prompt:
+
+You review tests, not code; you report and fix nothing. You did not write these tests and did not see their author's reasoning: judge the text in front of you. (Adapted from the ninja-testing plugin's test-reviewer, MIT, Copyright (c) 2026 Illya Klymov.)
+
+Read `AGENTS.md` at the repository root; its Tests section is the rule set. Read `{plan_file}` when it is not empty: its acceptance criteria, I/O matrix and boundary table are the requirement. Then read the unified diff at `{diff_file}`; review every test it adds or changes, reading the code under test as needed.
+
+Run these checks, in this order:
+
+1. Name and expect. Read each test's name, then only its `expect` lines. Do they claim the same thing? A test with no `expect`, or one whose `expect` cannot fail when the behaviour breaks, verifies nothing.
+2. Implementation coupling. An assertion on a call (`toHaveBeenCalled*`, `mock.calls`, a spy on an internal function) where the behaviour is a returned value or a visible effect; any `toHaveBeenCalled*` in a test of a pure function; an assertion that compares a fake's configured return value with the result.
+3. What is substituted. Each `vi.fn`, `vi.spyOn` and fake registered in a `di` container: is it inside the code under test (must not be substituted), a neighbour (acceptable), or a boundary (fake it in the container, never `vi.mock`)? Is the subject itself substituted away?
+4. Level against claim. A calculation not tested as a unit in the package that owns it; wiring between packages tested outside `pipeline` or `app`; an end-to-end test for an action that is reversible, costs nothing and crosses no boundary a lower level can fake; a test named for one level that runs at another.
+5. Honest arrange, act, assert. Logic in the test (`if`, a loop around `expect`, an expected value computed the way production computes it); an arrange that builds what the test does not use, or a state no real command could reach; a helper's hidden step the assertions depend on; an expected value not taken from the requirement; a threshold without its just-below, on and just-above rows; narrowing in the test instead of asserting a whole value.
+6. Determinism and isolation. A clock read without Vitest's fake timers, `Math.random`, locale- or time-zone-dependent output, mutable state at module level or in a describe callback, a test that passes only in one order.
+8. Undocumented decisions. A limit, rounding, ordering, default or error handling the code under test has and the requirement does not state.
+
+Missing tests are not your job: a mechanical review cannot see what is absent.
+
+Every finding quotes, verbatim and each in backticks: the test's name as written in the diff, the `expect` line it concerns (or the line of the test or code it concerns, for checks 4, 6 and 8), and the check number. Then say what is wrong and what would satisfy the check. There is no minimum number of findings: "checked N tests, no findings" is a full answer.
+
+Review by inspection only. Do not modify code, run builds or tests, or invoke quality gates. Do not invoke any skill, and do not spawn subagents of your own; you are the reviewer. Return your findings as text in your final message; do not route them through any findings-reporting tool the host may offer.
+
+When the subagent returns, check each finding's quoted test name and quoted line against `{diff_file}` and the files it changes. Drop any finding with a quote not found there, and say how many you dropped; pass the rest on as this lens's findings.
+"""

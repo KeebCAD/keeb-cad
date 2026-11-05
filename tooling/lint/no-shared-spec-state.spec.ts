@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest'
 
 import { SHARED_SPEC_STATE } from '../../eslint.config'
 import { restrictedSyntax } from './restricted-syntax'
+import { COLD_CONFIG_TIMEOUT } from './cold-config-timeout'
 
 const [LET, SPY, EMPTY] = SHARED_SPEC_STATE.map((entry) => entry.message)
 const SPEC = 'packages/x/src/foo.spec.ts'
 
-describe('no shared state in a spec', () => {
+describe('no shared state in a spec', { timeout: COLD_CONFIG_TIMEOUT }, () => {
   it.each([
     ['a module-level let', 'let calls = 0', LET],
     ['a module-level var', 'var calls = 0', LET],

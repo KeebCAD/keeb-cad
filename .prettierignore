@@ -10,6 +10,9 @@ dist-ssr/
 coverage/
 test-results/
 playwright-report/
+# Stryker's sandboxes and reports.
+.stryker-tmp/
+reports/
 # Deliberate AD-10 violations, cruised by tooling/ad10/rules.spec.ts.
 tooling/ad10/violations/
 # Ergogen's input and output, committed verbatim.

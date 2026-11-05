@@ -17,10 +17,11 @@ describe('the check steps', () => {
       check: 'pnpm typecheck && pnpm check:fast && pnpm test && pnpm build && pnpm smoke',
       'check:fast': 'pnpm lint && pnpm format:check && pnpm depcruise',
       typecheck: 'vue-tsc --build',
-      lint: 'eslint .',
+      lint: 'eslint . --cache --cache-location node_modules/.cache/eslint/',
       'format:check': 'prettier --check .',
       depcruise: 'depcruise packages app/src fixtures --config .dependency-cruiser.mts',
       test: 'vitest run',
+      'test:mutation': 'stryker run',
       build: 'pnpm --filter @keeb-cad/app build',
       smoke: 'pnpm --filter @keeb-cad/app test:e2e',
     })
@@ -32,11 +33,13 @@ describe('the check steps', () => {
     ])
   })
 
-  it('CI installs, gets the browsers and runs pnpm check', () => {
+  it('CI installs, gets the browsers and runs pnpm check, then installs and runs the mutation gate', () => {
     expect(runLines(read('.github/workflows/check.yml'))).toEqual([
       'pnpm install --frozen-lockfile',
       'pnpm --filter @keeb-cad/app exec playwright install --with-deps chromium firefox',
       'pnpm check',
+      'pnpm install --frozen-lockfile',
+      'pnpm test:mutation',
     ])
   })
 })
