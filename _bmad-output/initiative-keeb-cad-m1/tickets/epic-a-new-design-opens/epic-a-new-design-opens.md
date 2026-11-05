@@ -28,14 +28,14 @@ For Sergii: the app opens a design in the editor frame and a reload reopens it u
 
 ## Constraints
 
-- C1 (parent C3): Architecture AD-1 to AD-26 bind every story. This slice builds AD-2's register (Immer, Valibot inputs, nothing in progress in the design), AD-8's design file, AD-11's model worker, AD-13's storage, AD-10's `schema`, `messaging`, `protocol`, `design`, `design-file`, `commands`, `workers` and `app`, AD-25's `di` wiring and AD-26's `ui` layer as written there.
+- C1 (parent C3): Architecture AD-1 to AD-26 bind every story. This slice builds AD-2's design store with its command and action classes (Immer, Valibot inputs, nothing in progress in the design), AD-8's design file, AD-11's model worker, AD-13's storage, AD-10's `schema`, `messaging`, `protocol`, `design`, `design-file`, `commands`, `workers` and `app`, AD-25's `di` wiring and AD-26's `ui` layer as written there.
 - C2 (parent C1): Current desktop Chromium and Firefox; everything runs client-side.
 - C3 (parent C4): No Corney-specific shortcuts.
 
 ## Done when
 
 - Launch with empty storage opens a new design in the editor frame at /#/design/<id>/layout, in both themes, in Chromium and Firefox.
-- Every command runs through the design store; the model worker's mirror equals main's design after each one.
+- Every command and action runs through the design store; the model worker's mirror equals main's design after each one.
 - A reload reopens the design from autosave byte-identical.
 - The frame's checks (workspace keys, tree slide-out, F6, status strip at 0 errors and 0 warnings) pass in the locally served build.
 
@@ -66,3 +66,4 @@ For Sergii: the app opens a design in the editor frame and a reload reopens it u
 - Decision: 2026-11-02 — spine package split (b9b4ec5, 411dd17): owners moved, new entry 10 (di replaces ts-inject) after 1; 1 now lays out per-thread di modules and subpaths (the split-check line above says partials); delivery only, no requirement change.
 - Decision (2026-11-03, replan): the first build of 2 (draft PR #6) mixed types, constants, helpers and classes, used a symbol-keyed write between two services, a module-level Immer instance and comments with no lasting value. Sergii's review set code layout and test rules in AGENTS.md (13124c4) and changed the spine (9cee349, 9962510, 840671a): the register and the design state are one service, DesignStore; Immer lives in a DesignPatcher service in both threads; checkStructure returns a Result; the worker mirror deep-freezes whole-value loads; Result and Option come from a new kernel result. New entry 11 (result replaces the plain Result) after 10; 2 now waits on 11, takes the new terms and is rebuilt from main, its first build closed unmerged as the baseline it is compared against. 4 and 7 take the new names. R2's wording names the design store; what is required is unchanged.
 - Decision (2026-11-03, replan): new entry 12 (the code follows AGENTS.md's rules) after 2, and 3 waits on it, so the lint guards every story after the rebuild of 2 instead of arriving with the Refactor sweep (9). Rejected: folding it into 9, which would leave 3 to 8 checked by prose only.
+- Decision (2026-11-05, replan): the spine settled 23.3's unknown and the questions it raised (020596c, memlog Q1-Q24): the bundle lives in one Committed value, newDesign is an action through replaceDesign, commands and actions become di classes, load failures are a LoadError, broken derived files are emptied with one load flow and a reset point, and acceptDerivedFiles emits an accept event. What R1-R3 require is unchanged; delivery changed. New entry 15 (commands and actions become di classes) after 13, and 3 waits on it; 15 ships the whole entry mechanism and 3 adds only NewDesign. 3 also takes the routing and fingerprints schemas, readers and writers, so its round-trip covers the bundle. Its generic checks run over every registered entry that writes the design, NewDesign first. 5 takes the accept event, autosave on it, the load flow and the reset point. 7 opens a new design on any load failure at launch, leaving the stored one untouched. Sources: reviews/review-reconcile-tickets-23-3-2026-11-05.md in the spine's folder.

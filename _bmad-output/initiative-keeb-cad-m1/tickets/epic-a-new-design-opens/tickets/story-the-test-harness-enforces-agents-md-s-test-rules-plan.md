@@ -3,7 +3,7 @@ title: 'The test harness enforces AGENTS.md''s test rules'
 type: 'chore'
 ticket: '13'
 created: '2026-11-05'
-status: 'built'
+status: done
 baseline_revision: 'e456fc0f14e2bbdf7101e82afb0b31557ae5dc51'
 route: 'full'
 route_source: 'auto'
