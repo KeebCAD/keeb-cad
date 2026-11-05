@@ -53,7 +53,7 @@ Browser CAD for split keyboards: layout to plates, PCB, case and firmware, all c
 - Give every threshold three rows: just below, on, just above; add empty input and an input that breaks an assumption. "Valid" or "correct" without a number is a question, not a spec. Ask which combinations matter instead of enumerating them.
 - End every task with the decisions you made on your own: limits, rounding, ordering, defaults, error handling.
 - Make a test's name and its `expect`s claim the same thing. Name the boundary's role ("on the clearance limit"); numbers go in parameters or `expected*` constants.
-- Give every test an `expect` that fails when the behaviour breaks. No `if` or loop around `expect`, no expected value computed the way production computes it; `it.each` is the only repetition. Assert a throw as `expect(() => fn()).toThrow(…)`.
+- Give every test an `expect` that fails when the behaviour breaks. No `if` or loop around `expect`, no expected value computed the way production computes it, except by calling a function the requirement names and that has unit tests of its own (`revision: hash(design)`); `it.each` is the only repetition. Assert a throw as `expect(() => fn()).toThrow(…)`.
 - Assert what a function returns or a visible effect; use `toHaveBeenCalled*` only when the call is the behaviour.
 - Substitute through `di`: register a fake for state or a boundary in the container, never `vi.mock`. Set time with Vitest's fake timers; never register a clock only so tests can control it. Exports read no clock at all.
 - Test calculations as units in the package that owns them (a stage gets the outputs it reads as inputs); test wiring between packages as integration in `pipeline` or `app`.
