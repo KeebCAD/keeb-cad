@@ -15,16 +15,16 @@ Already open in the spine's Open Questions or a ticket's `unknown` (cited, not n
 - A8 13.2 says 23.3's generic checks cover its commands; deferred-work says 13.2 decides their home (rec: `commands`).
 
 ## B. AD-11 worker, protocol, background stages
-- B1 Worker start with no design loaded (23.4, 23.7). Rec: spawn/send only after the first `Committed`; the mirror is never empty.
-- B2 Crash restart cap (23.4). Rec: after N consecutive crashes with no post, stop and show a failed state; Restart leaves it.
-- B3 Payloads of `focus`, `stage-started`, `issues`, and who sends `focus` (23.4, 23.8). Rec: `issues { seq, violations }`, `focus { workspace }`, sent on switch and at start.
-- B4 Status strip: stale counts, the "about 1 s" threshold (> or ≥), elapsed format, stage label (23.8). Rec: > 1000 ms from `stage-started` receipt, whole seconds, last counts dimmed while stale.
-- B5 Does every commit cancel a running background stage, or only a slice change (7.1, 7.2)? Rec: only when its slice hash changes.
-- B6 Background stage progress, partial and failed shapes; test stage slice type (7.1). Rec: `{ done, total }`, `{ output }` at seq, `{ message }`.
-- B7 Output-hash number canonicalisation across browsers; Accept output change scope (7.2). Rec: fixed decimals in the hash; Accept covers all pending.
-- B8 `LayoutOutput.part`: model emits run ids or wire rows (13.2, 13.22; Open Q). Rec: run ids, codec assigns rows.
-- B9 `frame.rot` normalised or raw sum (13.2, 13.6, 13.22). Rec: raw sum.
-- B10 Tab badge precedence when stages disagree (7.2). Rec: failed > stale > rebuilding/routing > waiting > current.
+- ✅ B1 Worker start with no design loaded (23.4, 23.7). **Sergii: A** — spawn or send nothing until the store holds its first `Committed`; the first message is `replaceDesign`'s whole bundle; order is load, then spawn.
+- ✅ B2 Crash restart cap (23.4). **Sergii: A** — after 3 consecutive crashes with no successful post between, stop restarting; the stage shows failed; only the Restart action clears it.
+- ✅ B3 Payloads of `focus`, `stage-started`, `issues`, and who sends `focus` (23.4, 23.8). **Sergii: A** — `issues { seq, violations: Violation[] }`, `stage-started { seq, stage }`, `focus { workspace }`; `workers` sends `focus` at worker start (the URL's workspace) and on every switch (23.8 calls it).
+- ✅ B4 Status strip (23.8). **Sergii: A** — the running stage shows when more than 1000 ms passed since `stage-started` arrived on main, cleared by the next post; elapsed in whole seconds (`2 s`); label is the stage id; counts show the last known numbers dimmed with `◌` while their seq is behind main's, `0` before the first `issues`.
+- ✅ B5 Commit vs running background stage (7.1, 7.2). **Sergii: A** — a newer commit cancels a running background stage only when its input-slice hash changed; otherwise it runs on and its result is tagged with the latest seq.
+- ✅ B6 Background stage result shapes (7.1). **Sergii: A** — progress `{ done, total }` (editor shows % or N/M per stage), partial `{ seq, output }`, failed `{ seq, message }`; the test stage's input slice typed in `schema`.
+- ✅ B7 Output hashes and Accept scope (7.2). **Sergii: A** — numbers in an output are rounded to 6 decimals before hashing; Accept output change covers all pending changes at once, showing the count and ids.
+- ✅ B8 `LayoutOutput.part` (13.2, 13.22; closes the Open Q). **Sergii: A** — the model emits run ids; 13.22's codec assigns row numbers when packing; 13.2's text says "the slot's run id".
+- ✅ B9 Frame computation and `frame.rot` (13.2, 13.6, 13.22). **Sergii: A (reframed)** — `model` composes frames with 2D affine matrices through one `compose` function in `geometry`; `LayoutOutput` keeps `{ x, y, rot, mirrored }`, `rot` read from the matrix and normalised to (−180, 180]; angle comparisons (tests, 13.4's Ergogen check) are mod 360.
+- ✅ B10 Tab badge precedence (7.2). **Sergii: A** — failed > stale > rebuilding or routing > waiting for edit to finish > current, over the stages AD-11's workspace table assigns to the tab.
 
 ## C. AD-13 storage, versions, tabs, files
 - C1 What a bundle is on disk: container, extension, filename (16.2, 16.1, 23.5's `raw`). Rec: one zip, `.keeb`, slugified name.
