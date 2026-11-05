@@ -7,6 +7,24 @@ activation_steps_append = [
 persistent_facts = [
   "Plan size in this project: the SCOPE STANDARD target is up to 3000 tokens, superseding the 900–1600 range in the workflow and the plan template's 'Target: 900–1300 / above 1600' comment. Step-02's token-count gate fires only above 3000 tokens.",
   "Every plan carries a boundary table: for each threshold the work introduces or relies on, one row just below, one on and one just above it, each with its input and expected output taken from the requirement. Rows are sorted into four groups (production bugs, rules, module boundaries, glue), and every row has a level column naming where its test runs (unit in the owning package, integration in `pipeline` or `app`, or end to end). The table is frozen as acceptance when the plan is approved: implementation adds tests for its rows and changes no row. Its rows do not count toward the 3000-token plan cap.",
+  '''
+Plan conformance. In step 2, after instruction 5's self-review and before the gates, launch a context-free subagent on a Sonnet-class model with the prompt below; the plan's author does not judge its own plan. When it returns, check each finding's quoted plan line against the plan and its quoted rule against `AGENTS.md` or the spine; drop any finding whose quote is not there and say how many you dropped. For each remaining finding, fix the plan, or add an `## Open Questions` entry when only a person can decide. For a precedent finding, the plan follows the rule, and one entry goes to `deferred-work.md` naming the precedent file, its offending line and the rule. Run the reviewer again when a fix changed the Code Map, a sketch or the boundary table. Then add `## Conformance Log` to the plan, after `## Design Notes`: one line per finding (the rule quoted, then `fixed`, `asked` or `deferred`), or `Checked N rules and M precedent files, no findings.` A guard hook refuses `status: 'ready-for-dev'` on a plan without this section.
+
+The reviewer's prompt:
+
+You check a plan against the rules this repository agreed on; you report and fix nothing. You did not write the plan and did not see its author's reasoning: judge the text in front of you.
+
+Read `AGENTS.md` at the repository root, every section. Read the plan at `{plan_file}` and the ticket it names. Read the sections of the spine (`_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md`) that the plan or the ticket cite, and the spine's glossary and Naming row. Then run these checks, in this order:
+
+1. Rules. For each rule in `AGENTS.md` and each cited spine decision the work touches, does a line of the plan (Code Map, tasks, boundary table, design notes, sketches) contradict it, or leave the implementer to choose where the rule has already chosen?
+2. Precedent. Open every existing file the plan names as a pattern, an example, or something to copy, follow or extend, and check that file against the same rules. A precedent that breaks a rule is a finding even when the plan copies it faithfully: the rule wins over the precedent. For a precedent that is a spec or test file, also run checks 1 to 8 of the `test-reviewer` lens in `_bmad/custom/bmad-build.toml` on each of its tests.
+3. Sketches. Every code sketch in the plan is code the implementer will copy. Check its names, file layout, types and tests against the rules.
+4. Names. Check every new name the plan introduces against the spine's glossary and Naming row.
+
+Every finding quotes, verbatim and each in backticks: the plan line, and the rule (the `AGENTS.md` line or the spine sentence); a precedent finding also quotes the offending line of the precedent file, with its path. Then say what is wrong and what would satisfy the rule. There is no minimum number of findings: "checked N rules and M precedent files, no findings" is a full answer.
+
+Review by inspection only. Do not modify files, run builds or tests, or invoke quality gates. Do not invoke any skill, and do not spawn subagents of your own; you are the reviewer. Return your findings as text in your final message.
+''',
 ]
 
 # The test-reviewer lens is adapted from the ninja-testing plugin's agents/test-reviewer.md.

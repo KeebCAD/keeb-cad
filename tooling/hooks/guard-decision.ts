@@ -41,6 +41,11 @@ const DENIED_COMMANDS: GuardRule[] = [
     reason: 'Deleting a test is not a fix. Report the failing test instead.',
   },
   {
+    pattern: /\b(sed|perl)\b[^\n|;&]*\s-i\S*[^\n|;&]*ready-for-dev[^\n|;&]*-plan\.md\b/,
+    reason:
+      'Set a plan’s status with Edit, so the guard can check that its conformance review ran.',
+  },
+  {
     pattern: /\b(stryker|test:mutation)\b[^\n|;&]*\s--(break|thresholds)\b/,
     reason:
       'Mutation thresholds are not changed from the command line. Give each survivor a verdict instead.',
@@ -79,6 +84,15 @@ const ASKED_TEXT: GuardRule[] = [
 
 const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit'])
 
+const PLAN_FILE = /-plan\.md$/
+const READY_STATUS = /^status:\s*['"]?ready-for-dev['"]?\s*$/m
+const CONFORMANCE_LOG = /^## Conformance Log\s*$/m
+const UNREVIEWED_PLAN: GuardDecision = {
+  permissionDecision: 'deny',
+  permissionDecisionReason:
+    'A plan is approved only after its conformance review. Run the plan-conformance reviewer and write its ## Conformance Log first.',
+}
+
 // A heredoc body is data the command writes, not a command it runs.
 const HEREDOC_BODY = /(<<-?\s*(['"]?)(\w+)\2)([^\n]*)\n[\s\S]*?\n[ \t]*\3[ \t]*(?=\n|$)/g
 
@@ -87,11 +101,14 @@ const CONFIG_FILE = /\.(json|[cm]?[jt]s)$/
 // Options whose value may itself end in .ts or .json.
 const FILE_VALUED_OPTIONS = new Set(['--mutate', '-m', '--incrementalFile'])
 
-/** Whether a tool call is denied, needs the person's confirmation, or (undefined) passes. */
-export function guardDecision({
-  tool_name,
-  tool_input = {},
-}: ToolHookInput): GuardDecision | undefined {
+/**
+ * Whether a tool call is denied, needs the person's confirmation, or (undefined) passes.
+ * `currentText` is the edited file's text before the edit.
+ */
+export function guardDecision(
+  { tool_name, tool_input = {} }: ToolHookInput,
+  currentText = '',
+): GuardDecision | undefined {
   if (tool_name === 'Bash') {
     const command = (tool_input.command ?? '').replaceAll(HEREDOC_BODY, '$1$4')
     return firstMatch(DENIED_COMMANDS, command, 'deny')
@@ -105,6 +122,7 @@ export function guardDecision({
     ].join('\n')
     return (
       firstMatch(DENIED_PATHS, path, 'deny') ??
+      (approvesUnreviewedPlan(path, newText, currentText) ? UNREVIEWED_PLAN : undefined) ??
       firstMatch(ASKED_PATHS, path, 'ask') ??
       firstMatch(ASKED_TEXT, newText, 'ask')
     )
@@ -121,6 +139,15 @@ function firstMatch(
     typeof pattern === 'function' ? pattern(text) : pattern.test(text),
   )
   return rule && { permissionDecision, permissionDecisionReason: rule.reason }
+}
+
+/** Whether an edit sets a plan to ready-for-dev while neither the plan nor the edit has its log. */
+function approvesUnreviewedPlan(path: string, newText: string, currentText: string): boolean {
+  return (
+    PLAN_FILE.test(path) &&
+    READY_STATUS.test(newText) &&
+    !CONFORMANCE_LOG.test(`${currentText}\n${newText}`)
+  )
 }
 
 /** Whether a Stryker run is handed a config file as a positional argument. */

@@ -6,6 +6,13 @@ const bash = (command: string) => guardDecision({ tool_name: 'Bash', tool_input:
 const edit = (file_path: string, new_string = '') =>
   guardDecision({ tool_name: 'Edit', tool_input: { file_path, new_string } })
 
+const PLAN = '_bmad-output/x/tickets/story-a-plan.md'
+const READY = "status: 'ready-for-dev'"
+const REVIEWED_PLAN =
+  "---\nstatus: 'draft'\n---\n\n## Conformance Log\n\nChecked 40 rules, no findings.\n"
+const planEdit = (new_string: string, currentText = '') =>
+  guardDecision({ tool_name: 'Edit', tool_input: { file_path: PLAN, new_string } }, currentText)
+
 describe('the guard hook', () => {
   it.each([
     ['a Vitest snapshot update', 'pnpm vitest run -u'],
@@ -110,6 +117,52 @@ describe('the guard hook', () => {
     ['a ticket', '_bmad-output/x.md'],
   ])('allows an edit to %s', (_, path) => {
     expect(edit(path, 'const a = 1')).toBeUndefined()
+  })
+
+  it('denies approving a plan that has no conformance log', () => {
+    expect(planEdit(READY, "---\nstatus: 'draft'\n---\n")).toMatchObject({
+      permissionDecision: 'deny',
+      permissionDecisionReason: expect.stringContaining('Conformance Log'),
+    })
+  })
+
+  it('denies approving a new plan written without a conformance log', () => {
+    expect(
+      guardDecision({
+        tool_name: 'Write',
+        tool_input: { file_path: PLAN, content: `---\n${READY}\n---\n` },
+      }),
+    ).toMatchObject({ permissionDecision: 'deny' })
+  })
+
+  it.each([
+    ['a plan whose conformance log is already written', () => planEdit(READY, REVIEWED_PLAN)],
+    [
+      'a plan written with its conformance log',
+      () =>
+        guardDecision({
+          tool_name: 'Write',
+          tool_input: { file_path: PLAN, content: `---\n${READY}\n---\n\n## Conformance Log\n` },
+        }),
+    ],
+    ['another status on a plan', () => planEdit("status: 'in-progress'")],
+    ['a plan line that names the status in prose', () => planEdit('leave it `ready-for-dev`')],
+    [
+      'the status on a story that is not a plan',
+      () => edit('_bmad-output/x/tickets/story-a.md', READY),
+    ],
+  ])('allows approving %s', (_, decide) => {
+    expect(decide()).toBeUndefined()
+  })
+
+  it('denies a shell edit that approves a plan', () => {
+    expect(bash(`sed -i "s/status: 'draft'/${READY}/" ${PLAN}`)).toMatchObject({
+      permissionDecision: 'deny',
+    })
+  })
+
+  it('allows reading a plan’s status from the shell', () => {
+    expect(bash(`grep ready-for-dev ${PLAN}`)).toBeUndefined()
   })
 
   it('allows a tool it does not guard', () => {
