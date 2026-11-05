@@ -9,6 +9,7 @@ Browser CAD for split keyboards: layout to plates, PCB, case and firmware, all c
 
 - Commit docs-only changes straight to main; put any code change on a branch and open a PR.
 - Add or change a design-file field, schema or shared kind only after the spine's Data Schema section defines it; if it doesn't, stop and ask.
+- Give every decision its rejected alternative: "X, not Y, because Z". This covers a plan's `Decision (plan):` entries, a spine sentence that chooses between options, and the decisions you list at the end of a task. A choice no requirement made is a decision and is labelled as one. When a decision builds by hand the main job of a dependency in the spine's Stack table, that dependency is its Y.
 
 ## Where things are
 
@@ -51,7 +52,7 @@ Browser CAD for split keyboards: layout to plates, PCB, case and firmware, all c
 - Test a rule where it is defined; a package that uses it tests only its own part.
 - Take expected values from the requirement (the ticket, the plan's boundary table), never from running the code. When nothing says what a boundary returns, ask.
 - Give every threshold three rows: just below, on, just above; add empty input and an input that breaks an assumption. "Valid" or "correct" without a number is a question, not a spec. Ask which combinations matter instead of enumerating them.
-- End every task with the decisions you made on your own: limits, rounding, ordering, defaults, error handling.
+- End every task with the decisions you made on your own (limits, rounding, ordering, defaults, error handling), each in the Policy section's "X, not Y, because Z" form.
 - Make a test's name and its `expect`s claim the same thing. Name the boundary's role ("on the clearance limit"); numbers go in parameters or `expected*` constants.
 - Give every test an `expect` that fails when the behaviour breaks. No `if` or loop around `expect`, no expected value computed the way production computes it, except by calling a function the requirement names and that has unit tests of its own (`revision: hash(design)`); `it.each` is the only repetition. Assert a throw as `expect(() => fn()).toThrow(…)`.
 - Assert what a function returns or a visible effect; use `toHaveBeenCalled*` only when the call is the behaviour.

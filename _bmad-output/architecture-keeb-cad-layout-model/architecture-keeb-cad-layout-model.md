@@ -1022,8 +1022,8 @@ Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-2
 
 | Name | Version |
 | --- | --- |
-| TypeScript | ~6.0 |
-| Vue (`editor`) / `@vue/reactivity` (`reactive` only, AD-10). Both pinned exactly in the pnpm catalog, `@vue/reactivity`'s entry a YAML alias of `vue`'s, so one number moves both: `@vue/runtime-core` pins `@vue/reactivity` exactly, so a second copy would split the graph; a test asserts one installed copy and that the alias survives pnpm's rewrites | 3.5.44 / 3.5.44 (exact) |
+| TypeScript (the language of every package) | ~6.0 |
+| Vue (the editor's UI framework; `editor`) / `@vue/reactivity` (`reactive` only, AD-10). Both pinned exactly in the pnpm catalog, `@vue/reactivity`'s entry a YAML alias of `vue`'s, so one number moves both: `@vue/runtime-core` pins `@vue/reactivity` exactly, so a second copy would split the graph; a test asserts one installed copy and that the alias survives pnpm's rewrites | 3.5.44 / 3.5.44 (exact) |
 | di (own kernel package: obsidian-journal's container with its tests; wiring, AD-25) | — |
 | result (own kernel package: obsidian-journal's Result, Option, AsyncResult and attempt with their tests; AD-24) | — |
 | immer (MIT; command writes, `design` only: its `DesignPatcher`, on main and in `design/worker`, AD-2; auto-freeze on, patches on as the model worker's payload). A caret range: the lockfile stops silent upgrades, and an exact pin would also block fix releases | ^11.2.9 |
@@ -1031,25 +1031,25 @@ Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-2
 | nanoid (MIT; `model`'s id minting, AD-8: a custom lowercase-alphanumeric alphabet, so ids are kebab-case) | ^6.0.2 |
 | @noble/hashes (MIT, no dependencies, audited; `hashing` only: `hash` is the SHA-256 of the canonical encoding, synchronous). Provisional until the mirror-hash spike (Open Questions) | ^2.4.0 |
 | nanoevents (MIT, no dependencies; `design`'s commit event, behind its `TypedEmitter`/`Subscribable` pair, AD-2) | ^10.0.0 |
-| Vite | ^8.2 (8.3.5 current) |
-| create-vue (TS, Router, Vitest, Playwright, ESLint; its Pinia removed) | 3.24.0 |
-| vue-router | 5.4.0 |
-| Vitest (Node project) / @vitest/browser-playwright + vitest-browser-vue (DOM project, Chromium and Firefox). Was ^4.1 from the create-vue starter; Vitest 5 chosen 2026-10-30 | 5.0.5 / 5.0.5 (exact, tied to Vitest) + 3.1.0 |
+| Vite (dev server and production build) | ^8.2 (8.3.5 current) |
+| create-vue (the starter the app was scaffolded from: TS, Router, Vitest, Playwright, ESLint; its Pinia removed) | 3.24.0 |
+| vue-router (holds the open design and workspace in the URL) | 5.4.0 |
+| Vitest (the test runner: Node project) / @vitest/browser-playwright + vitest-browser-vue (DOM project, Chromium and Firefox). Was ^4.1 from the create-vue starter; Vitest 5 chosen 2026-10-30 | 5.0.5 / 5.0.5 (exact, tied to Vitest) + 3.1.0 |
 | @lucide/vue (icons, `ui` only, AD-26) | 1.65.0 |
-| @fontsource-variable/jetbrains-mono (OFL-1.1, self-hosted, AD-26) | 5.3.0 |
-| pnpm | 12.15.0 |
-| dependency-cruiser | 18.7.0 |
-| Prettier | 3.9.10 |
-| makerjs (maintenance mode; geometry unchanged since 0.18.1, which Ergogen uses) | 0.19.2 |
+| @fontsource-variable/jetbrains-mono (the UI's monospace font; OFL-1.1, self-hosted, AD-26) | 5.3.0 |
+| pnpm (package manager and workspaces) | 12.15.0 |
+| dependency-cruiser (enforces the package import graph, AD-10) | 18.7.0 |
+| Prettier (code formatting) | 3.9.10 |
+| makerjs (2D boolean, offset and flatten; `geometry` only; maintenance mode; geometry unchanged since 0.18.1, which Ergogen uses) | 0.19.2 |
 | clipper2-ts (BSL-1.0; case offsets (AD-18) and the router (AD-12)). Pinned exactly: semver sorts the older stable `2.0.1` above it, and that lacks the `inflatePathsD` and `ClipperD` scaling fixes | 2.0.1-18 (exact) |
 | flatbush (ISC; `routing` and `drc` spatial index; 4.7.0 released 2026-10-30, not breaking, adds `collides()`) | 4.7.0 |
-| replicad / replicad-opencascadejs | 1.2.0 / 1.1.0 |
+| replicad / replicad-opencascadejs (the case's 3D solids) | 1.2.0 / 1.1.0 |
 | quickjs-wasi (MIT; QuickJS-NG in WASM; the blueprint sandbox, `blueprint` only, AD-10). Pinned exactly: 25 releases and 3 majors in its first 8 months | 3.6.3 (exact) |
-| @bgotink/kdl (KDL v2) | 0.4.1 |
-| @tarikjabiri/dxf | 2.9.0 |
+| @bgotink/kdl (parses and formats KDL v2 text; `design-file` only) | 0.4.1 |
+| @tarikjabiri/dxf (writes DXF exports) | 2.9.0 |
 | reka-ui (MIT; widget primitives, `ui` only, AD-26) | 2.11.0 |
 | @zag-js/hotkeys (MIT; shortcuts, `ui` only, AD-26; standalone, depends only on `@zag-js/dom-query`) | 1.47.0 |
-| @vueuse/core (`ui` and `editor`) | 14.4.0 |
+| @vueuse/core (Vue composition utilities; `ui` and `editor`) | 14.4.0 |
 | tailwindcss / @tailwindcss/vite (`ui` tokens in `@theme`, AD-26) | 4.3.3 / 4.3.3 |
 | 2D canvas: inline SVG via Vue templates (no library) | — |
 | three (3D viewer, `viewer3d` only) | 0.186.1 |
