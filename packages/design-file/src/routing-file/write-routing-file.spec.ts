@@ -8,6 +8,6 @@ describe('writeRoutingFile', () => {
   it('writes an empty routing file as its revision node alone', () => {
     const routing = v.parse(routingFileSchema, { revision: 'r1' })
 
-    expect(writeRoutingFile(routing)).toBe('revision "r1"\n')
+    expect(writeRoutingFile(routing)).toBe('revision r1\n')
   })
 })

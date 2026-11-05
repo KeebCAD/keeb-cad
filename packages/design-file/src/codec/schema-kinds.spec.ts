@@ -79,19 +79,19 @@ const value = v.parse(kindsSchema, {
 const text = [
   String.raw`title "All \"kinds\"\n"`,
   'count 1.5',
-  'settings colour-name="red" label="plain"',
-  'shape kind="circle" radius=2',
-  'tree axis="x" {',
-  '    leaf name="near"',
-  '    branch axis="y" {',
-  '        origin x=-2',
-  '        leaf name="far"',
-  '    }',
+  'settings colour-name=red label=plain',
+  'shape kind=circle radius=2',
+  'tree axis=x {',
+  '\tleaf name=near',
+  '\tbranch axis=y {',
+  '\t\torigin x=-2',
+  '\t\tleaf name=far',
+  '\t}',
   '}',
   'shapes {',
-  '    shape kind="square" corner="round" radius=1',
-  '    shape kind="square" corner="sharp" side=3',
-  '    shape kind="circle" radius=0.5',
+  '\tshape kind=square corner=round radius=1',
+  '\tshape kind=square corner=sharp side=3',
+  '\tshape kind=circle radius=0.5',
   '}',
   'none',
   '',
@@ -120,6 +120,17 @@ describe('the KDL codec over every schema kind it supports', () => {
     expectOk(result)
 
     expect(writeKdl(schema, result.value)).toBe('count 1.5\n')
+  })
+
+  it.each([
+    ['an identifier, bare', 'thumb-near', 'name thumb-near\n'],
+    ['a string led by a digit, quoted', '19mm', 'name "19mm"\n'],
+    ['a string led by a sign and a digit, quoted', '-15deg', 'name "-15deg"\n'],
+    ['a string with a space, quoted', 'wall + gap', 'name "wall + gap"\n'],
+    ['a keyword, quoted', 'true', 'name "true"\n'],
+    ['the empty string, quoted', '', 'name ""\n'],
+  ])('writes %s', (_role, name, expected) => {
+    expect(writeKdl(v.strictObject({ name: v.string() }), { name })).toBe(expected)
   })
 
   it.each([

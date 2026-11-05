@@ -1,73 +1,67 @@
+import { Document, format, Node } from '@bgotink/kdl'
 import { InvariantError } from '@keeb-cad/result'
 import type * as v from 'valibot'
 
-import { formatValue } from './format-value'
+import { codecValue } from './codec-value'
 import { kebabCase } from './kebab-case'
 import { fieldForm, fieldMetadata, listItem, resolveObject } from './schema-fields'
 import type { Fields, ObjectLikeSchema } from './types'
 
-const indentUnit = ' '.repeat(4)
-
-// One node per top-level field, in the schema's entry order.
+// One node per top-level field, in the schema's entry order; a primitive one holds its value as
+// the node's argument.
 export function writeKdl(schema: v.GenericSchema, value: unknown): string {
-  const { children } = writeFields(objectFor(schema, value), value as Fields, 0, false)
-  return children.join('')
+  const nodes = fieldsOf(objectFor(schema, value), value as Fields).flatMap(
+    ([key, field, fieldValue]) => {
+      if (fieldForm(field) !== 'value') return childNodes(key, field, fieldValue)
+      const node = Node.create(kebabCase(key))
+      node.addArgument(codecValue(fieldValue))
+      return [node]
+    },
+  )
+  return format(new Document(nodes))
 }
 
-function writeFields(
-  schema: ObjectLikeSchema,
-  value: Fields,
-  depth: number,
-  valuesAsProperties: boolean,
-): { properties: string; children: string[] } {
-  let properties = ''
-  const children: string[] = []
-  for (const [key, field] of Object.entries(schema.entries) as [string, v.GenericSchema][]) {
-    const fieldValue = value[key]
-    if (fieldValue === undefined) continue
-    const name = kebabCase(key)
-    const form = fieldForm(field)
-    if (form === 'value' && valuesAsProperties) {
-      properties += ` ${name}=${formatValue(fieldValue)}`
-    } else if (form === 'value') {
-      children.push(`${indent(depth)}${name} ${formatValue(fieldValue)}\n`)
-    } else if (form === 'object') {
-      children.push(writeNode(name, objectFor(field, fieldValue), fieldValue as Fields, depth))
-    } else if (fieldMetadata(field).flatten === true) {
-      children.push(...writeItems(listItem(field), fieldValue as unknown[], depth))
+function writeNode(name: string, schema: ObjectLikeSchema, value: Fields): Node {
+  const node = Node.create(name)
+  for (const [key, field, fieldValue] of fieldsOf(schema, value)) {
+    if (fieldForm(field) === 'value') {
+      node.setProperty(kebabCase(key), codecValue(fieldValue))
     } else {
-      const items = writeItems(listItem(field), fieldValue as unknown[], depth + 1)
-      children.push(nodeText(name, '', items, depth))
+      for (const child of childNodes(key, field, fieldValue)) node.appendNode(child)
     }
   }
-  return { properties, children }
+  return node
 }
 
-function writeItems(item: v.GenericSchema, values: readonly unknown[], depth: number): string[] {
+function childNodes(key: string, field: v.GenericSchema, value: unknown): Node[] {
+  const name = kebabCase(key)
+  if (fieldForm(field) === 'object')
+    return [writeNode(name, objectFor(field, value), value as Fields)]
+  const items = writeItems(listItem(field), value as unknown[])
+  if (fieldMetadata(field).flatten === true) return items
+  const list = Node.create(name)
+  for (const item of items) list.appendNode(item)
+  return [list]
+}
+
+function writeItems(item: v.GenericSchema, values: readonly unknown[]): Node[] {
   return values.map((value) => {
     const schema = objectFor(item, value)
     const name = fieldMetadata(schema as v.GenericSchema).node
     if (name === undefined) throw new InvariantError('A list item schema names no KDL node.')
-    return writeNode(name, schema, value as Fields, depth)
+    return writeNode(name, schema, value as Fields)
   })
 }
 
-function writeNode(name: string, schema: ObjectLikeSchema, value: Fields, depth: number): string {
-  const { properties, children } = writeFields(schema, value, depth + 1, true)
-  return nodeText(name, properties, children, depth)
-}
-
-function nodeText(name: string, properties: string, children: string[], depth: number): string {
-  const head = `${indent(depth)}${name}${properties}`
-  return children.length === 0 ? `${head}\n` : `${head} {\n${children.join('')}${indent(depth)}}\n`
+// An absent optional field is omitted.
+function fieldsOf(schema: ObjectLikeSchema, value: Fields): [string, v.GenericSchema, unknown][] {
+  return (Object.entries(schema.entries) as [string, v.GenericSchema][])
+    .filter(([key]) => value[key] !== undefined)
+    .map(([key, field]) => [key, field, value[key]])
 }
 
 function objectFor(schema: v.GenericSchema, value: unknown): ObjectLikeSchema {
   const object = resolveObject(schema, value as Fields)
   if (object === undefined) throw new InvariantError('No variant of the schema takes the value.')
   return object
-}
-
-function indent(depth: number): string {
-  return indentUnit.repeat(depth)
 }

@@ -13,23 +13,23 @@ const lines = (...text: string[]) => text.map((line) => `${line}\n`).join('')
 const canonical = {
   design: lines(
     'format-version 1',
-    String.raw`meta id="corne" name="Corne \"wireless\"" {`,
-    '    form type="split" board="reversible"',
+    String.raw`meta id=corne name="Corne \"wireless\"" {`,
+    '\tform type=split board=reversible',
     '}',
-    'layout id="root" arrangement="free" {',
-    '    group id="thumbs" arrangement="chain" axis="x" {',
-    '        slot id="thumb-near"',
-    '        slot id="thumb-far"',
-    '    }',
-    '    group id="pinky" arrangement="free"',
-    '    slot id="encoder"',
+    'layout id=root arrangement=free {',
+    '\tgroup id=thumbs arrangement=chain axis=x {',
+    '\t\tslot id=thumb-near',
+    '\t\tslot id=thumb-far',
+    '\t}',
+    '\tgroup id=pinky arrangement=free',
+    '\tslot id=encoder',
     '}',
   ),
-  routing: lines('revision "r1"'),
+  routing: lines('revision r1'),
   fingerprints: lines(
-    'revision "r1"',
+    'revision r1',
     'fingerprints {',
-    '    fingerprint id="choc-key" slice="slice-hash" outputs="outputs-hash"',
+    '\tfingerprint id=choc-key slice=slice-hash outputs=outputs-hash',
     '}',
   ),
 }
@@ -54,9 +54,9 @@ describe('a bundle read and written back', () => {
   it('writes the sections in their order, whatever order it read them in', () => {
     const layoutFirst = lines(
       'format-version 1',
-      'layout id="root" arrangement="free"',
-      'meta id="corne" name="Corne" {',
-      '    form type="split" board="reversible"',
+      'layout id=root arrangement=free',
+      'meta id=corne name=Corne {',
+      '\tform type=split board=reversible',
       '}',
     )
 
@@ -65,10 +65,10 @@ describe('a bundle read and written back', () => {
     expect(written.design).toBe(
       lines(
         'format-version 1',
-        'meta id="corne" name="Corne" {',
-        '    form type="split" board="reversible"',
+        'meta id=corne name=Corne {',
+        '\tform type=split board=reversible',
         '}',
-        'layout id="root" arrangement="free"',
+        'layout id=root arrangement=free',
       ),
     )
   })

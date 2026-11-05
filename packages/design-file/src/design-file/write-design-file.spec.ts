@@ -12,7 +12,7 @@ describe('writeDesignFile', () => {
     })
 
     expect(writeDesignFile(design)).toBe(
-      'format-version 1\nmeta id="corne" name="Corne" {\n    form type="split" board="reversible"\n}\nlayout id="root" arrangement="free"\n',
+      'format-version 1\nmeta id=corne name=Corne {\n\tform type=split board=reversible\n}\nlayout id=root arrangement=free\n',
     )
   })
 })
