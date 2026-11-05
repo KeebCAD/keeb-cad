@@ -223,7 +223,7 @@ export default defineConfigWithVueTs(
   {
     // Replaces the types rule's options on entry files, so it carries that selector too.
     name: 'keeb-cad/entry-files-re-export',
-    files: ['packages/*/src/**/{index,main,worker}.ts'],
+    files: ['packages/*/src/**/{index,main,worker}.ts', 'app/src/{main,*.worker}.ts'],
     rules: {
       'no-restricted-syntax': ['error', ENTRY_RE_EXPORTS_ONLY, TYPES_OUTSIDE_TYPES_TS],
     },

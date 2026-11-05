@@ -37,9 +37,16 @@ describe('package entry files only re-export', { timeout: COLD_CONFIG_TIMEOUT },
   })
 
   it.each(['app/src/main.ts', 'app/src/model.worker.ts'])(
-    "exempts app's thread entry %s",
+    "rejects code in app's thread entry %s",
     async (filePath) => {
-      expect(await restrictedSyntax("import { a } from './a'\na()", filePath)).toEqual([])
+      expect(await restrictedSyntax("import { a } from './a'\na()", filePath)).toEqual([
+        ENTRY,
+        ENTRY,
+      ])
     },
   )
+
+  it("allows app's thread entry to re-export its start file", async () => {
+    expect(await restrictedSyntax("export * from './start-main'", 'app/src/main.ts')).toEqual([])
+  })
 })
