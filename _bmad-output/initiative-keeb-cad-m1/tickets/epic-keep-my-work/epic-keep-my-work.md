@@ -42,7 +42,9 @@ For Sergii: a design is never lost: it saves to a file, reopens in both browsers
 - Decision (2026-10-30, replan): created as a vertical slice; every slice runs on Corney's layout-command script with its own invariant checks, golden comparisons only in milestone accepted.
 - Waits on epic 23 because: the design file and autosave
 - Waits on epic 14 because: parameters and the design store
-- Waits on epic 15 because: gestures and revisions
 - Decision (2026-10-30, from epic-see-corneys-keys planning): 13.14 owns browser autosave with 20 rolling versions; 16.2 adds named points and the file backend on top of it and should stop restating the rolling versions. Revise it in place when this epic is refined.
 - Decision (2026-11-02, from the split of epic-see-corneys-keys): its foundation lane moved to epic-a-new-design-opens (23); 16.2 now waits on 23.3 (was 13.1), and 13.14 in the Notes above is now 23.5; this epic's after is repointed to 23.
 - Decision (2026-11-03, replan): the spine merged the command register and the design state into one service, the design store (9cee349); this file's current wording takes the new name, dated lines above stay as written. Delivery only, no requirement change.
+- Decision (2026-11-05, spine-gap sweep A1): no longer waits on epic 15; its need (gestures and revisions) went with the gesture API AD-2 removed, so 16.2 drops 15.1 and this epic builds before epic 15, whose 15.1 waits on 16.1 for the Toast. Rejected: moving the Toast's ownership to 15.1.
+- Decision (2026-11-05, replan after the spine-gap sweep): 16.4 added after 16.1: no story built the undo UI (mod+Z, mod+Shift+Z, the top bar's buttons, the Undid toast) though 15.4's verify presses Ctrl+Z; it sits here because 16.1 builds the Toast; 16.3 waits on it to disable undo and redo in a read-only tab. Rejected: planning it at epic 14's refinement with the Toast moved there.
+- Decision (2026-11-05, replan after the spine-gap sweep, spine-gap-sweep-2026-11-05.md): 16.1–16.3 re-rendered (A2, A3, C1, C5–C8, D8); 16.2's listDesigns description moved to 23.5, which builds it.

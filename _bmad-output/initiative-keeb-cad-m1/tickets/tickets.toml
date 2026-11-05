@@ -40,20 +40,20 @@ covers = ["R3", "R17", "R18"]
 after = [{ epic = 23, needs = "the design store, the design file and the editor frame" }, { epic = 13, needs = "Corney's script and the Layout canvas" }]
 
 [[epic]]
-id = 15
-slug = "epic-drag-keys"
-title = "Drag keys"
-description = "The user drags, rotates and nudges keys and groups by the chain rule, re-anchors with the anchor picker keeping the node in place (anchor cycles rejected and shown), and each gesture is one undo step; the UX assumptions are reviewed after the Corney layout rebuild."
-covers = ["R1", "R2", "R18"]
-after = [{ epic = 14, needs = "the design store, undo and the inspector" }, { epic = 13, needs = "resolved keys and the Layout canvas" }]
-
-[[epic]]
 id = 16
 slug = "epic-keep-my-work"
 title = "Keep my work"
 description = "The user saves to a file and opens it in Chromium and Firefox from the File menu and Start screen, older files migrate and newer or broken ones are refused safely, and a second tab opens read-only until it takes over; Save to file keeps the design and its id."
 covers = ["R5", "R18"]
-after = [{ epic = 23, needs = "the design file and autosave" }, { epic = 14, needs = "parameters and the design store" }, { epic = 15, needs = "gestures and revisions" }]
+after = [{ epic = 23, needs = "the design file and autosave" }, { epic = 14, needs = "parameters and the design store" }]
+
+[[epic]]
+id = 15
+slug = "epic-drag-keys"
+title = "Drag keys"
+description = "The user drags, rotates and nudges keys and groups by the chain rule, re-anchors with the anchor picker keeping the node in place (anchor cycles rejected and shown), and each drop or nudge burst is one undo step; the UX assumptions are reviewed after the Corney layout rebuild."
+covers = ["R1", "R2", "R18"]
+after = [{ epic = 14, needs = "the design store, undo and the inspector" }, { epic = 13, needs = "resolved keys and the Layout canvas" }, { epic = 16, needs = "the Toast, for the stale-drop toast" }]
 
 [[epic]]
 id = 17

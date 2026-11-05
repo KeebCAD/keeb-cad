@@ -43,3 +43,4 @@ For Sergii: Corney's three plates come out as DXF/SVG and follow the layout (R10
 - Waits on epic 23 because: the design file and the register
 - Waits on epic 14 because: the part schema and the inspector
 - Decision (2026-11-02, from the split of epic-see-corneys-keys): its foundation lane moved to epic-a-new-design-opens (23); 19.3 now waits on 23.3 (was 13.1); this epic's after is repointed to 23.
+- Decision (2026-11-05, replan after the spine-gap sweep, spine-gap-sweep-2026-11-05.md): 19.2 re-rendered (D10, H9, E1b) and extends 14.5's Part field instead of building it; 19.3 re-rendered (I5, I6). Rejected: 19.2 building the whole Part field.

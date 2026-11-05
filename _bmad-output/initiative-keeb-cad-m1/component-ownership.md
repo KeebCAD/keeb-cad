@@ -6,7 +6,7 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | --- | --- | --- |
 | Primitives: Button, Kbd (and the Tabs and Tree wrappers) | a new design opens (23), Tree wrapper by see Corney's keys (13) | 23.6 (Tree wrapper 13.7) |
 | Chip | outline follows the keys (17) | to plan |
-| Top bar, Workspace tabs, Status strip | a new design opens (23), cursor and zoom by see Corney's keys (13) | 23.8 (cursor and zoom 13.7) |
+| Top bar, Workspace tabs, Status strip | a new design opens (23), cursor and zoom by see Corney's keys (13) | 23.8 (cursor and zoom 13.7; undo and redo buttons 16.4, 2026-11-05) |
 | Status strip running-stage entry (stage name, elapsed time, Restart; 2026-11-02) | a new design opens (23) | 23.8 |
 | Tab badge, status strip output-state entries | route and fab (7) | 7.2 |
 | Left rail + slide-out (Tree tab) | a new design opens (23), filled by see Corney's keys (13) | 23.8, filled by 13.7 |
@@ -23,7 +23,8 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | Command palette, Context menu, Cheat sheet | drag keys (15) | to plan |
 | Outline context line, Outline marks (shapes, vertices, construction points) | outline follows the keys (17), extended by draw custom shapes (18) | to plan |
 | Operation list, Vertex table | draw custom shapes (18) | to plan |
-| Part field, Part picker | plates to DXF (19) | 19.2 |
+| Part field (2026-11-05: built by 14.5, opens the picker from 19.2) | change a parameter (14), extended by plates to DXF (19) | 14.5 (picker opening 19.2) |
+| Part picker | plates to DXF (19) | 19.2 |
 | Plate fields, Export menu | plates to DXF (19) | 19.3, to plan |
 | Isolated part mode, Track tool, Part DRC marker | milestone 2 (hand-built parts, decided 2026-11-01) | — |
 | PCB marks | footprints on the PCB (6), extended by nets and matrix (20) and route and fab (7) | to plan |

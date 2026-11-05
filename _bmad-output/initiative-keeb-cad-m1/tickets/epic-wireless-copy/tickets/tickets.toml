@@ -4,8 +4,8 @@
 id = 1
 type = "story"
 title = "Copy design records provenance"
-description = "A copyDesign operation makes a new design with a new name and id that records its source design, revision and source licence in meta, keeps every other id, saves it as its own design and leaves the original untouched; it stays available in read-only mode; Save to file keeps the same design and id. epic-editor-shell's Copy design… and Design info use it; epic-parts-and-pcb builds Corney wireless with it."
-verify = "Copying a saved design gives a file with a new id and copied from <id> · rev <hash>, the original's bytes unchanged, and a Save to file of the original keeping its id."
+description = "Copy design makes a new design with a new id and a name (non-empty, need not be unique, default '<source name> copy'), keeps every other id, and records provenance in meta: source design id, source revision and the source's licence (unset when it had none); the copy's own meta.licence starts as the source's (AD-9). It carries the source's routing and fingerprints files and assets unchanged, with their revision tags, and pipeline re-validates them against the copy (AD-12). It saves as its own design, its version list holding a copy named point with the source's bundle at the copied revision ('as copied' in its Versions; from M2 its merge base, AD-9), and never writes the source. It stays available in read-only mode; Save to file keeps the same design and id. Design info (keep my work, to plan) shows the provenance as the source's current name when stored, else its id, then · rev <short hash>; epic-parts-and-pcb builds Corney wireless with it."
+verify = "Copying a saved design gives a new design with a new id, named '<source name> copy' by default, its provenance shown as '<source name> · rev <short hash>' and as the source's id once the source is deleted, the source's routing, fingerprints and assets byte-identical with their revision tags, and an 'as copied' version holding the source's bundle; the source's stored bytes are unchanged; an empty name is refused; a Save to file of the source keeps its id."
 covers = ["R10"]
 after = ["16.3"]
 hitl = false
