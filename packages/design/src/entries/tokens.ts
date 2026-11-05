@@ -1,6 +1,6 @@
 import { createMultiToken } from '@keeb-cad/di'
 
-import type { ActionDefinition, CommandDefinition } from './types'
+import type { ActionHandle, CommandHandle } from './types'
 
-export const commands = createMultiToken<CommandDefinition>('commands')
-export const actions = createMultiToken<ActionDefinition>('actions')
+export const commands = createMultiToken<CommandHandle>('commands')
+export const actions = createMultiToken<ActionHandle>('actions')

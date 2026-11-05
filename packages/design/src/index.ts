@@ -11,9 +11,9 @@ export type {
 export { DesignPatcher } from './patching/design-patcher'
 export type { Changed, DesignPatch, Edit, Writable } from './patching/types'
 
-export { defineCommand } from './entries/define-command'
-export { defineAction } from './entries/define-action'
+export { registerCommand } from './entries/register-command'
+export { registerAction } from './entries/register-action'
 export { actions, commands } from './entries/tokens'
-export type { ActionDefinition, ActionSpec, CommandDefinition, CommandSpec } from './entries/types'
+export type { Action, ActionHandle, Command, CommandHandle } from './entries/types'
 
 export { designModule } from './design-module'

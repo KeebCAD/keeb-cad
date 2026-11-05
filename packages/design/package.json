@@ -16,6 +16,7 @@
     "@keeb-cad/schema": "workspace:*",
     "immer": "^11.2.9",
     "nanoevents": "catalog:",
+    "ts-pattern": "catalog:",
     "valibot": "catalog:"
   },
   "devDependencies": {

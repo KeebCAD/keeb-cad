@@ -1,8 +1,8 @@
-import { inject } from '@keeb-cad/di'
+import { inject, InjectorToken } from '@keeb-cad/di'
 import { hash } from '@keeb-cad/hashing'
 import { checkStructure } from '@keeb-cad/model/main'
 import { shallowRef } from '@keeb-cad/reactive'
-import { InvariantError, Option, Result } from '@keeb-cad/result'
+import { AsyncResult, InvariantError, Option, Result } from '@keeb-cad/result'
 import {
   type Design,
   type DesignInvalid,
@@ -12,10 +12,11 @@ import {
   revisionSchema,
 } from '@keeb-cad/schema'
 import { createNanoEvents } from 'nanoevents'
+import { match, P } from 'ts-pattern'
 import * as v from 'valibot'
 
 import { actions, commands } from '../entries/tokens'
-import type { CommandDefinition } from '../entries/types'
+import type { ActionError, ActionHandle, CommandHandle } from '../entries/types'
 import { parse } from '../parsing/parse'
 import { deepFreeze } from '../patching/deep-freeze'
 import { DesignPatcher } from '../patching/design-patcher'
@@ -37,25 +38,25 @@ export class DesignStore {
     return Option.fromNullable(this.#current.value)
   }
 
-  run<Input extends v.GenericSchema>(
-    command: CommandDefinition<string, Input>,
-    input: v.InferInput<Input>,
-  ): Result<void, Rejection> {
-    if (!this.#commands.includes(command)) {
-      throw new InvariantError(`Command "${command.id}" is not registered.`)
-    }
-    const { design } = this.#committed()
-    if (!command.available(design)) {
-      return Result.err<Rejection>({ kind: 'unavailable', command: command.id })
-    }
-    return parse(command.input, input)
-      .mapErr((issues): Rejection => ({ kind: 'input-invalid', command: command.id, issues }))
-      .flatMap((parsed) => this.#patcher.change(design, (draft) => command.apply(draft, parsed)))
-      .flatMap((changed) => checkStructure(changed.design).map(() => changed))
-      .map(({ design: next, patches }) => {
-        const { seq, revision } = this.#write(next)
-        this.#emitter.emit('commit', { kind: 'patches', patches, seq, revision })
-      })
+  run<H extends CommandHandle>(handle: H, input: v.InferInput<H['input']>): Result<void, Rejection>
+  run<H extends ActionHandle>(
+    handle: H,
+    input: v.InferInput<H['input']>,
+  ): AsyncResult<void, ActionError<H> | Rejection>
+  run(
+    handle: CommandHandle | ActionHandle,
+    input: unknown,
+  ): Result<void, Rejection> | AsyncResult<void, unknown> {
+    return match(handle)
+      .with(
+        P.when((entry): entry is CommandHandle => entry.kind === 'command'),
+        (command) => this.#runCommand(command, input),
+      )
+      .with(
+        P.when((entry): entry is ActionHandle => entry.kind === 'action'),
+        (action) => this.#runAction(action, input),
+      )
+      .exhaustive()
   }
 
   replaceDesign(value: unknown): Result<void, DesignInvalid> {
@@ -71,8 +72,46 @@ export class DesignStore {
   readonly #patcher = inject(DesignPatcher)
   readonly #commands = inject(commands)
   readonly #actions = inject(actions)
+  readonly #injector = inject(InjectorToken)
   readonly #emitter: TypedEmitter<DesignStoreEvents> = createNanoEvents<DesignStoreEvents>()
   readonly #current = shallowRef<Committed | undefined>(undefined)
+
+  #runCommand(handle: CommandHandle, input: unknown): Result<void, Rejection> {
+    this.#ensureRegistered(this.#commands, handle)
+    const { design } = this.#committed()
+    const command = this.#injector.resolve(handle)
+    if (!command.available(design))
+      return Result.err<Rejection>({ kind: 'unavailable', command: handle.id })
+    return parse(handle.input, input)
+      .mapErr((issues): Rejection => ({ kind: 'input-invalid', command: handle.id, issues }))
+      .flatMap((parsed) => this.#patcher.change(design, (draft) => command.apply(draft, parsed)))
+      .flatMap((changed) => checkStructure(changed.design).map(() => changed))
+      .map(({ design: next, patches }) => {
+        const { seq, revision } = this.#write(next)
+        this.#emitter.emit('commit', { kind: 'patches', patches, seq, revision })
+      })
+  }
+
+  #runAction(handle: ActionHandle, input: unknown): AsyncResult<void, unknown> {
+    this.#ensureRegistered(this.#actions, handle)
+    const action = this.#injector.resolve(handle)
+    if (!action.available(this.current))
+      return AsyncResult.err<Rejection>({ kind: 'unavailable', command: handle.id })
+    return parse(handle.input, input).match<AsyncResult<void, unknown>>({
+      ok: (parsed) => action.apply(parsed),
+      err: (issues) =>
+        AsyncResult.err<Rejection>({ kind: 'input-invalid', command: handle.id, issues }),
+    })
+  }
+
+  #ensureRegistered<H extends CommandHandle | ActionHandle>(
+    registered: readonly H[],
+    handle: H,
+  ): void {
+    if (registered.includes(handle)) return
+    const kind = handle.kind === 'command' ? 'Command' : 'Action'
+    throw new InvariantError(`${kind} "${handle.id}" is not registered.`)
+  }
 
   #committed(): Committed {
     const current = this.#current.value

@@ -212,6 +212,15 @@ export default defineConfigWithVueTs(
   },
 
   {
+    // An entry's apply declares its input exactly as its schema outputs, even when it ignores it.
+    name: 'keeb-cad/entry-parameters',
+    files: ['packages/commands/src/**/*.ts', 'packages/design/src/**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
+  },
+
+  {
     name: 'keeb-cad/types-in-types-ts',
     files: ['packages/*/src/**/*.{ts,vue}', 'app/src/**/*.{ts,vue}'],
     ignores: ['**/types.ts', '**/*.spec.ts'],
