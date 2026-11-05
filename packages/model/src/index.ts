@@ -1,1 +1,1 @@
-export {}
+export { mintId } from './ids/mint-id'

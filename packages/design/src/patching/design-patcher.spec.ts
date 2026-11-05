@@ -3,7 +3,7 @@ import { type Design, designSchema, type Mutable, type Rejection } from '@keeb-c
 import * as v from 'valibot'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 
-import { expectDeeplyFrozen, metaOnlyDesign } from '../testing'
+import { expectDeeplyFrozen, emptyLayoutDesign } from '../testing'
 import { deepFreeze } from './deep-freeze'
 import { DesignPatcher } from './design-patcher'
 import type { Writable } from './types'
@@ -11,7 +11,7 @@ import type { Writable } from './types'
 function arrange() {
   return {
     patcher: new DesignPatcher(),
-    design: deepFreeze(v.parse(designSchema, metaOnlyDesign())),
+    design: deepFreeze(v.parse(designSchema, emptyLayoutDesign())),
   }
 }
 
@@ -25,7 +25,7 @@ describe('DesignPatcher', () => {
 
     expectOk(changed)
     expect(changed.value).toEqual({
-      design: { meta: { ...design.meta, name: 'Corne v2' } },
+      design: { ...design, meta: { ...design.meta, name: 'Corne v2' } },
       patches: [{ op: 'replace', path: ['meta', 'name'], value: 'Corne v2' }],
     })
   })
@@ -41,7 +41,7 @@ describe('DesignPatcher', () => {
 
     expectErr(changed)
     expect(changed.error).toBe(rejection)
-    expect(design).toEqual(v.parse(designSchema, metaOnlyDesign()))
+    expect(design).toEqual(v.parse(designSchema, emptyLayoutDesign()))
   })
 
   it('replays patches into the same design, deeply frozen', () => {

@@ -18,7 +18,7 @@ import { registerAction } from '../entries/register-action'
 import { registerCommand } from '../entries/register-command'
 import type { Action, ActionHandle, Command, CommandHandle } from '../entries/types'
 import type { Writable } from '../patching/types'
-import { expectDeeplyFrozen, expectNothingFrozen, metaOnlyDesign } from '../testing'
+import { expectDeeplyFrozen, expectNothingFrozen, emptyLayoutDesign } from '../testing'
 import { DesignStore } from './design-store'
 import { DuplicateCommandIdError } from './duplicate-command-id-error'
 import type { Committed, CommitEvent } from './types'
@@ -75,15 +75,17 @@ class LoadDesign implements Action<LoadDesignInput, DesignInvalid> {
   static readonly label = 'Load design'
   static readonly input = loadDesignInputSchema
 
-  readonly #store = inject(DesignStore)
-
   available(_current: Option<Committed>): boolean {
     return true
   }
 
   apply(input: LoadDesignInput): AsyncResult<void, DesignInvalid> {
-    return AsyncResult.fromResult(this.#store.replaceDesign(input.design))
+    return AsyncResult.fromResult(
+      this.#store.replaceDesign({ design: input.design, unreadable: [] }).map(() => {}),
+    )
   }
+
+  readonly #store = inject(DesignStore)
 }
 
 interface Arrangement {
@@ -98,12 +100,20 @@ async function arrange(arrangement: Arrangement = {}): Promise<DesignStore> {
   for (const handle of arrangement.actions ?? []) registerAction(container, handle)
   await container.autoLoad()
   const store = container.resolve(DesignStore)
-  if (arrangement.design !== undefined) expectOk(store.replaceDesign(arrangement.design))
+  if (arrangement.design !== undefined) {
+    expectOk(store.replaceDesign({ design: arrangement.design, unreadable: [] }))
+  }
   return store
 }
 
 function unibodyDesign() {
-  return { meta: { ...metaOnlyDesign().meta, form: { type: 'unibody' } } }
+  const design = emptyLayoutDesign()
+  return { ...design, meta: { ...design.meta, form: { type: 'unibody' } } }
+}
+
+// The derived files a design starts with, written out as the requirement states them.
+function emptyDerivedFilesAt(revision: string) {
+  return { routing: { revision }, fingerprints: { revision, fingerprints: [] } }
 }
 
 function recordCommits(store: DesignStore): CommitEvent[] {
@@ -130,15 +140,15 @@ function expectNothingCommitted(
 describe('DesignStore', () => {
   describe('run, for a command', () => {
     it('commits a command: a frozen design, the next seq, its revision and its patches', async () => {
-      const store = await arrange({ commands: [RenameDesign], design: metaOnlyDesign() })
+      const store = await arrange({ commands: [RenameDesign], design: emptyLayoutDesign() })
       const before = committed(store)
       const events = recordCommits(store)
 
       expectOk(store.run(RenameDesign, { name: 'Corne v2' }))
 
-      const design = { meta: { ...before.design.meta, name: 'Corne v2' } }
+      const design = { ...before.design, meta: { ...before.design.meta, name: 'Corne v2' } }
       const after = { design, seq: before.seq + 1, revision: hash(design) }
-      expect(store.current).toEqual(Option.some(after))
+      expect(committed(store)).toEqual({ ...after, ...emptyDerivedFilesAt(before.revision) })
       expectDeeplyFrozen(committed(store).design)
       expect(events).toEqual([
         {
@@ -154,16 +164,22 @@ describe('DesignStore', () => {
       ['a plain object', () => ({ form: { type: 'unibody' as const } })],
       ['a Vue reactive object', () => reactive({ form: { type: 'unibody' as const } })],
     ])('stores %s as plain data and never freezes it', async (_name, makeInput) => {
-      const store = await arrange({ commands: [SetForm], design: metaOnlyDesign() })
+      const store = await arrange({ commands: [SetForm], design: emptyLayoutDesign() })
       const before = committed(store)
       const input = makeInput()
 
       expectOk(store.run(SetForm, input))
 
-      const design = { meta: { ...before.design.meta, form: { type: 'unibody' } } }
-      expect(store.current).toEqual(
-        Option.some({ design, seq: before.seq + 1, revision: hash(design) }),
-      )
+      const design = {
+        ...before.design,
+        meta: { ...before.design.meta, form: { type: 'unibody' } },
+      }
+      expect(committed(store)).toEqual({
+        design,
+        ...emptyDerivedFilesAt(before.revision),
+        seq: before.seq + 1,
+        revision: hash(design),
+      })
       expectDeeplyFrozen(committed(store).design)
       expectNothingFrozen(input)
     })
@@ -188,7 +204,7 @@ describe('DesignStore', () => {
           return rejection
         }
       }
-      const store = await arrange({ commands: [RejectRename], design: metaOnlyDesign() })
+      const store = await arrange({ commands: [RejectRename], design: emptyLayoutDesign() })
       const before = store.current
       const events = recordCommits(store)
 
@@ -201,7 +217,7 @@ describe('DesignStore', () => {
     })
 
     it('refuses input the schema refuses, with plain issue paths', async () => {
-      const store = await arrange({ commands: [RenameDesign], design: metaOnlyDesign() })
+      const store = await arrange({ commands: [RenameDesign], design: emptyLayoutDesign() })
       const before = store.current
       const events = recordCommits(store)
 
@@ -252,8 +268,19 @@ describe('DesignStore', () => {
       expectNothingCommitted(store, before, events)
     })
 
+    it('keeps the derived files, by reference, through a command', async () => {
+      const store = await arrange({ commands: [RenameDesign], design: emptyLayoutDesign() })
+      const before = committed(store)
+
+      expectOk(store.run(RenameDesign, { name: 'Corne v2' }))
+
+      const after = committed(store)
+      expect(after.routing).toBe(before.routing)
+      expect(after.fingerprints).toBe(before.fingerprints)
+    })
+
     it('throws on a command that is not registered', async () => {
-      const store = await arrange({ design: metaOnlyDesign() })
+      const store = await arrange()
 
       expect(() => store.run(RenameDesign, { name: 'Corne v2' })).toThrow(
         new InvariantError('Command "meta.renameDesign" is not registered.'),
@@ -267,7 +294,7 @@ describe('DesignStore', () => {
     })
 
     it('lets a throwing listener escape after the commit', async () => {
-      const store = await arrange({ commands: [RenameDesign], design: metaOnlyDesign() })
+      const store = await arrange({ commands: [RenameDesign], design: emptyLayoutDesign() })
       const before = committed(store)
       store.events.on('commit', () => {
         throw new Error('listener failed')
@@ -275,10 +302,13 @@ describe('DesignStore', () => {
 
       expect(() => store.run(RenameDesign, { name: 'Corne v2' })).toThrow('listener failed')
 
-      const design = { meta: { ...before.design.meta, name: 'Corne v2' } }
-      expect(store.current).toEqual(
-        Option.some({ design, seq: before.seq + 1, revision: hash(design) }),
-      )
+      const design = { ...before.design, meta: { ...before.design.meta, name: 'Corne v2' } }
+      expect(committed(store)).toEqual({
+        design,
+        ...emptyDerivedFilesAt(before.revision),
+        seq: before.seq + 1,
+        revision: hash(design),
+      })
     })
   })
 
@@ -286,13 +316,17 @@ describe('DesignStore', () => {
     it('runs with no design loaded and commits what it hands to replaceDesign', async () => {
       const store = await arrange({ actions: [LoadDesign] })
       const events = recordCommits(store)
-      const value = metaOnlyDesign()
+      const value = emptyLayoutDesign()
 
       expectOk(await store.run(LoadDesign, { design: value }))
 
-      const after = { design: value, seq: 1, revision: hash(value) }
-      expect(store.current).toEqual(Option.some(after))
-      expect(events).toEqual([{ kind: 'whole', ...after }])
+      expect(committed(store)).toEqual({
+        design: value,
+        ...emptyDerivedFilesAt(hash(value)),
+        seq: 1,
+        revision: hash(value),
+      })
+      expect(events).toEqual([{ kind: 'whole', committed: committed(store) }])
     })
 
     it('refuses input the schema refuses, with plain issue paths, without applying', async () => {
@@ -375,7 +409,7 @@ describe('DesignStore', () => {
     it('throws on an action that is not registered', async () => {
       const store = await arrange()
 
-      expect(() => store.run(LoadDesign, { design: metaOnlyDesign() })).toThrow(
+      expect(() => store.run(LoadDesign, { design: emptyLayoutDesign() })).toThrow(
         new InvariantError('Action "file.loadDesign" is not registered.'),
       )
     })
@@ -409,7 +443,7 @@ describe('DesignStore', () => {
           draft.meta.name = input.name
         }
       }
-      const store = await arrange({ commands: [NameDesign], design: metaOnlyDesign() })
+      const store = await arrange({ commands: [NameDesign], design: emptyLayoutDesign() })
 
       for (const input of inputs) store.run(NameDesign, input)
 
@@ -508,45 +542,165 @@ describe('DesignStore', () => {
   })
 
   describe('replaceDesign', () => {
-    it('loads a valid design deeply frozen, with the next seq and its revision', async () => {
+    it("commits the design deeply frozen at the first seq with its revision, never freezing the caller's value", async () => {
       const store = await arrange()
-      const events = recordCommits(store)
-      const value = metaOnlyDesign()
+      const design = emptyLayoutDesign()
 
-      expectOk(store.replaceDesign(value))
+      expectOk(store.replaceDesign({ design, unreadable: [] }))
 
-      const after = { design: value, seq: 1, revision: hash(value) }
-      expect(store.current).toEqual(Option.some(after))
+      expect(committed(store)).toEqual({
+        design,
+        ...emptyDerivedFilesAt(hash(design)),
+        seq: 1,
+        revision: hash(design),
+      })
       expectDeeplyFrozen(committed(store).design)
-      expectNothingFrozen(value)
-      expect(events).toEqual([{ kind: 'whole', ...after }])
+      expectNothingFrozen(design)
     })
 
     it('advances the seq from the design it replaces', async () => {
-      const store = await arrange({ design: metaOnlyDesign() })
+      const store = await arrange({ design: emptyLayoutDesign() })
       const before = committed(store)
-      const value = { meta: { ...metaOnlyDesign().meta, name: 'Corne v2' } }
+      const design = {
+        ...emptyLayoutDesign(),
+        meta: { ...emptyLayoutDesign().meta, name: 'Corne v2' },
+      }
 
-      expectOk(store.replaceDesign(value))
+      expectOk(store.replaceDesign({ design, unreadable: [] }))
 
-      expect(store.current).toEqual(
-        Option.some({ design: value, seq: before.seq + 1, revision: hash(value) }),
-      )
+      expect(committed(store)).toEqual({
+        design,
+        ...emptyDerivedFilesAt(hash(design)),
+        seq: before.seq + 1,
+        revision: hash(design),
+      })
     })
 
-    it('refuses an invalid design with its issue paths', async () => {
+    it('emits one whole commit event carrying what it committed', async () => {
+      const store = await arrange()
+      const events = recordCommits(store)
+
+      expectOk(store.replaceDesign({ design: emptyLayoutDesign(), unreadable: [] }))
+
+      expect(events).toEqual([{ kind: 'whole', committed: committed(store) }])
+    })
+
+    it('keeps valid derived files as read, at another revision too, emptying none', async () => {
+      const store = await arrange()
+      const routing = { revision: 'older' }
+      const fingerprints = {
+        revision: 'older',
+        fingerprints: [{ id: 'choc-key', slice: 'slice-hash', outputs: 'outputs-hash' }],
+      }
+
+      const result = store.replaceDesign({
+        design: emptyLayoutDesign(),
+        routing,
+        fingerprints,
+        unreadable: [],
+      })
+
+      expectOk(result)
+      expect(result.value).toEqual({ emptied: [] })
+      expect(committed(store)).toEqual({
+        design: emptyLayoutDesign(),
+        routing,
+        fingerprints,
+        seq: 1,
+        revision: hash(emptyLayoutDesign()),
+      })
+    })
+
+    it("deep-freezes the derived files it keeps, never the caller's", async () => {
+      const store = await arrange()
+      const routing = { revision: 'older' }
+      const fingerprints = { revision: 'older', fingerprints: [] }
+
+      expectOk(
+        store.replaceDesign({ design: emptyLayoutDesign(), routing, fingerprints, unreadable: [] }),
+      )
+
+      expectDeeplyFrozen(committed(store).routing)
+      expectDeeplyFrozen(committed(store).fingerprints)
+      expectNothingFrozen(routing)
+      expectNothingFrozen(fingerprints)
+    })
+
+    it.each([
+      [
+        'routing that fails its schema',
+        { routing: { revision: 3 }, fingerprints: { revision: 'older', fingerprints: [] } },
+        [{ file: 'routing', reason: 'invalid' }],
+        (revision: string) => ({
+          routing: { revision },
+          fingerprints: { revision: 'older', fingerprints: [] },
+        }),
+      ],
+      [
+        'fingerprints with a field their schema does not define',
+        {
+          routing: { revision: 'older' },
+          fingerprints: { revision: 'older', fingerprints: [], colour: 'red' },
+        },
+        [{ file: 'fingerprints', reason: 'invalid' }],
+        (revision: string) => ({
+          routing: { revision: 'older' },
+          fingerprints: { revision, fingerprints: [] },
+        }),
+      ],
+      [
+        'routing listed as unreadable',
+        { fingerprints: { revision: 'older', fingerprints: [] }, unreadable: ['routing' as const] },
+        [{ file: 'routing', reason: 'unreadable' }],
+        (revision: string) => ({
+          routing: { revision },
+          fingerprints: { revision: 'older', fingerprints: [] },
+        }),
+      ],
+      [
+        'both derived files, missing',
+        {},
+        [
+          { file: 'routing', reason: 'missing' },
+          { file: 'fingerprints', reason: 'missing' },
+        ],
+        (revision: string) => ({
+          routing: { revision },
+          fingerprints: { revision, fingerprints: [] },
+        }),
+      ],
+    ])(
+      'empties %s at the new revision, saying which and why',
+      async (_role, files, expectedEmptied, expectedFiles) => {
+        const store = await arrange()
+        const design = emptyLayoutDesign()
+
+        const result = store.replaceDesign({ design, unreadable: [], ...files })
+
+        expectOk(result)
+        expect(result.value).toEqual({ emptied: expectedEmptied })
+        expect(committed(store)).toEqual({
+          design,
+          ...expectedFiles(hash(design)),
+          seq: 1,
+          revision: hash(design),
+        })
+      },
+    )
+
+    it('refuses a design that fails its schema, at the path from the design root, committing nothing', async () => {
       const store = await arrange()
       const before = store.current
       const events = recordCommits(store)
-      const value = metaOnlyDesign()
-      value.meta.form.type = 'tented'
+      const design = emptyLayoutDesign()
+      design.meta.id = 'Corne'
 
-      const result = store.replaceDesign(value)
+      const result = store.replaceDesign({ design, unreadable: [] })
 
       expectErr(result)
       expect(result.error).toEqual({
         kind: 'design-invalid',
-        issues: [{ path: ['meta', 'form', 'type'], message: expect.any(String) }],
+        issues: [{ path: ['meta', 'id'], message: expect.any(String) }],
       })
 
       expectNothingCommitted(store, before, events)

@@ -11,6 +11,12 @@
   "dependencies": {
     "@keeb-cad/result": "workspace:*",
     "@keeb-cad/schema": "workspace:*",
+    "nanoid": "catalog:",
     "valibot": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
   }
 }

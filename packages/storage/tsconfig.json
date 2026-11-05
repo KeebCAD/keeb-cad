@@ -1,10 +1,4 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "include": ["src"],
-  "compilerOptions": {
-    "composite": true,
-    "emitDeclarationOnly": true,
-    "outDir": "dist",
-    "rootDir": "src"
-  }
+  "files": [],
+  "references": [{ "path": "./tsconfig.lib.json" }, { "path": "./tsconfig.vitest.json" }]
 }

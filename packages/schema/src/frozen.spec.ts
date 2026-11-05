@@ -14,6 +14,6 @@ describe('Frozen', () => {
 
 describe('Mutable', () => {
   it('undoes Frozen', () => {
-    expectTypeOf<Mutable<Frozen<Design>>>().toEqualTypeOf<Design>()
+    expectTypeOf<Mutable<Frozen<Design>>>().branded.toEqualTypeOf<Design>()
   })
 })

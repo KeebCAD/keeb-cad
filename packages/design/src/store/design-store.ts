@@ -1,19 +1,19 @@
 import { inject, InjectorToken } from '@keeb-cad/di'
-import { hash } from '@keeb-cad/hashing'
 import { checkStructure } from '@keeb-cad/model/main'
 import { shallowRef } from '@keeb-cad/reactive'
 import { AsyncResult, InvariantError, Option, Result } from '@keeb-cad/result'
 import {
-  type Design,
   type DesignInvalid,
   designSchema,
-  type Frozen,
+  type Emptied,
+  fingerprintsFileSchema,
+  type MigratedBundle,
   type Rejection,
-  revisionSchema,
+  routingFileSchema,
 } from '@keeb-cad/schema'
 import { createNanoEvents } from 'nanoevents'
 import { match, P } from 'ts-pattern'
-import * as v from 'valibot'
+import type * as v from 'valibot'
 
 import { actions, commands } from '../entries/tokens'
 import type { ActionError, ActionHandle, CommandHandle } from '../entries/types'
@@ -21,7 +21,10 @@ import { parse } from '../parsing/parse'
 import { deepFreeze } from '../patching/deep-freeze'
 import { DesignPatcher } from '../patching/design-patcher'
 import { DuplicateCommandIdError } from './duplicate-command-id-error'
+import { emptyDerivedFiles } from './empty-derived-files'
 import { findDuplicateIds } from './find-duplicate-ids'
+import { readDerivedFile } from './read-derived-file'
+import { revisionOf } from './revision-of'
 import type { Committed, DesignStoreEvents, Subscribable, TypedEmitter } from './types'
 
 export class DesignStore {
@@ -59,13 +62,28 @@ export class DesignStore {
       .exhaustive()
   }
 
-  replaceDesign(value: unknown): Result<void, DesignInvalid> {
-    return parse(designSchema, value)
+  replaceDesign(bundle: MigratedBundle): Result<{ emptied: Emptied[] }, DesignInvalid> {
+    return parse(designSchema, bundle.design)
       .mapErr((issues): DesignInvalid => ({ kind: 'design-invalid', issues }))
       .map((parsed) => {
         const design = deepFreeze(parsed)
-        const { seq, revision } = this.#write(design)
-        this.#emitter.emit('commit', { kind: 'whole', design, seq, revision })
+        const revision = revisionOf(design)
+        const empty = emptyDerivedFiles(revision)
+        const routing = readDerivedFile(routingFileSchema, 'routing', bundle)
+        const fingerprints = readDerivedFile(fingerprintsFileSchema, 'fingerprints', bundle)
+        const committed = this.#write({
+          design,
+          routing: deepFreeze(routing.match({ ok: (file) => file, err: () => empty.routing })),
+          fingerprints: deepFreeze(
+            fingerprints.match({ ok: (file) => file, err: () => empty.fingerprints }),
+          ),
+          revision,
+        })
+        const emptied = [routing, fingerprints].flatMap((read) =>
+          read.match({ ok: (): Emptied[] => [], err: (reason) => [reason] }),
+        )
+        this.#emitter.emit('commit', { kind: 'whole', committed })
+        return { emptied }
       })
   }
 
@@ -78,7 +96,8 @@ export class DesignStore {
 
   #runCommand(handle: CommandHandle, input: unknown): Result<void, Rejection> {
     this.#ensureRegistered(this.#commands, handle)
-    const { design } = this.#committed()
+    const current = this.#committed()
+    const { design } = current
     const command = this.#injector.resolve(handle)
     if (!command.available(design))
       return Result.err<Rejection>({ kind: 'unavailable', command: handle.id })
@@ -87,7 +106,11 @@ export class DesignStore {
       .flatMap((parsed) => this.#patcher.change(design, (draft) => command.apply(draft, parsed)))
       .flatMap((changed) => checkStructure(changed.design).map(() => changed))
       .map(({ design: next, patches }) => {
-        const { seq, revision } = this.#write(next)
+        const { seq, revision } = this.#write({
+          ...current,
+          design: next,
+          revision: revisionOf(next),
+        })
         this.#emitter.emit('commit', { kind: 'patches', patches, seq, revision })
       })
   }
@@ -122,9 +145,8 @@ export class DesignStore {
     return current
   }
 
-  #write(design: Frozen<Design>): Committed {
-    const seq = (this.#current.value?.seq ?? 0) + 1
-    const committed = { design, seq, revision: v.parse(revisionSchema, hash(design)) }
+  #write(next: Omit<Committed, 'seq'>): Committed {
+    const committed = { ...next, seq: (this.#current.value?.seq ?? 0) + 1 }
     this.#current.value = committed
     return committed
   }
