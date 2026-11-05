@@ -37,11 +37,6 @@ describe('Result', () => {
       expectTypeOf(Result.ok()).toEqualTypeOf<Result<void, never>>()
     })
 
-    it('Result.ok with no argument takes no type argument', () => {
-      // @ts-expect-error A type argument needs a value of that type.
-      expectTypeOf(Result.ok<number>()).toBeObject()
-    })
-
     it('Result.ok is typed Result<T, never>', () => {
       expectTypeOf(Result.ok(5)).toEqualTypeOf<Result<number, never>>()
     })

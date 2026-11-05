@@ -3,12 +3,8 @@ import { describe, expectTypeOf, it } from 'vitest'
 import type { Design, Frozen, Mutable } from './types'
 
 describe('Frozen', () => {
-  it('refuses a nested write', () => {
-    const rename = (design: Frozen<Design>) => {
-      // @ts-expect-error A frozen design is read-only all the way down.
-      design.meta.form.type = 'unibody'
-    }
-    expectTypeOf(rename).toBeFunction()
+  it('makes a nested object read-only', () => {
+    expectTypeOf<Frozen<Design>['meta']['form']>().toEqualTypeOf<Readonly<Design['meta']['form']>>()
   })
 
   it('keeps a branded id branded', () => {

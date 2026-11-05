@@ -107,6 +107,8 @@ context:
 
 ## Plan Change Log
 
+- 2026-11-05 (Sergii): type-only specs run in `pnpm test` through a `<package> types` Vitest project per `tsconfig.vitest.json` (vue-tsc), because `expectTypeOf(fn).toBeFunction()` beside a `@ts-expect-error` could not fail there. Rows that need `@ts-expect-error` are dropped as edge cases: "id literal" and "`run` input type". The register rows assert the parameter type with `expectTypeOf`.
+
 ## Review Triage Log
 
 Pass 1 (quick, test-reviewer): high 0, medium 1, low 8, false 2, maybe-false 0; one intent gap. Sergii settled it (strict check, then, after the lint premise in the question proved wrong, strict plus a lint exception for entry parameters); the code already matched, so it was not reverted. Patches 3, 4, 5, 7, 8, 9, 11 applied by the implementer; the lint exception, its spec and the test entries' `_input` parameters applied in this session; `pnpm check` green (637 tests).

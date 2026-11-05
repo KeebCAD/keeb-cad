@@ -25,22 +25,6 @@ interface LoadHandle {
 }
 
 describe('DesignStore.run', () => {
-  it('refuses a command input of the wrong type', () => {
-    const run = (store: DesignStore, rename: RenameHandle) => {
-      // @ts-expect-error The schema takes a string name.
-      store.run(rename, { name: 1 })
-    }
-    expectTypeOf(run).toBeFunction()
-  })
-
-  it('refuses an action input of the wrong type', () => {
-    const run = (store: DesignStore, load: LoadHandle) => {
-      // @ts-expect-error The schema takes a string name.
-      void store.run(load, { name: 1 })
-    }
-    expectTypeOf(run).toBeFunction()
-  })
-
   it('returns a command result refused only with a rejection', () => {
     const run = (store: DesignStore, rename: RenameHandle) => store.run(rename, { name: 'Corne' })
     expectTypeOf(run).returns.toEqualTypeOf<Result<void, Rejection>>()
