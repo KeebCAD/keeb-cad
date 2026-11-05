@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { parseKdl } from './parse-kdl'
 import { readKdl } from './read-kdl'
 
-const lines = (...text: string[]) => text.map((line) => `${line}\n`).join('')
+const lines = (...text: string[]) => text.join('\n')
 
 function read(schema: v.GenericSchema, text: string) {
   const document = parseKdl(text)
