@@ -43,3 +43,4 @@ For Sergii: Corney Island wireless exists as a copy of wired with its own electr
 - Waits on epic 7 because: the wired routing and fab path
 - Waits on epic 16 because: Save to file and the File menu
 - Decision (2026-10-30, replan): created as a vertical slice; every slice runs on Corney's layout-command script with its own invariant checks, golden comparisons only in milestone accepted.
+- Decision (2026-11-05, replan after the spine-gap sweep, spine-gap-sweep-2026-11-05.md): 22.1 re-rendered (C9–C11).
