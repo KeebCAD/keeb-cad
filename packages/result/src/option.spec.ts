@@ -49,16 +49,12 @@ describe('Option', () => {
   describe('type narrowing', () => {
     it('isSome narrows to Some<T>', () => {
       const opt: Option<number> = Option.some(1)
-      if (opt.isSome()) {
-        expectTypeOf(opt).toEqualTypeOf<Some<number>>()
-      }
+      expectTypeOf([opt].filter((o) => o.isSome())).toEqualTypeOf<Some<number>[]>()
     })
 
     it('isNone narrows to None<T>', () => {
       const opt: Option<number> = Option.none()
-      if (opt.isNone()) {
-        expectTypeOf(opt).toEqualTypeOf<None<number>>()
-      }
+      expectTypeOf([opt].filter((o) => o.isNone())).toEqualTypeOf<None<number>[]>()
     })
   })
 

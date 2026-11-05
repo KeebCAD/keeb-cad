@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import { TYPES_OUTSIDE_TYPES_TS } from '../../eslint.config'
 import { restrictedSyntax } from './restricted-syntax'
+import { COLD_CONFIG_TIMEOUT } from './cold-config-timeout'
 
 const TYPES = TYPES_OUTSIDE_TYPES_TS.message
 
-describe('types live in types.ts', () => {
+describe('types live in types.ts', { timeout: COLD_CONFIG_TIMEOUT }, () => {
   it.each([
     ['a type alias in a plain package file', 'packages/x/src/foo.ts', 'export type A = string'],
     ['an interface in a plain package file', 'packages/x/src/foo.ts', 'interface A {}'],

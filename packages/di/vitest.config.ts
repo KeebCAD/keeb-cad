@@ -10,6 +10,8 @@ export default defineConfig({
   test: {
     name: 'di/vue',
     root: fileURLToPath(new URL('./', import.meta.url)),
+    // A config file of its own inherits nothing from the root, so it shuffles again here.
+    sequence: { shuffle: true },
     include: ['src/vue/**/*.spec.ts'],
     browser: {
       enabled: true,

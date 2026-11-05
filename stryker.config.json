@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "packageManager": "pnpm",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "testRunner": "vitest",
+  "vitest": { "configFile": "vitest.mutation.config.ts", "related": false },
+  "coverageAnalysis": "perTest",
+  "mutate": [
+    "packages/pcb/src/**/*.ts",
+    "packages/plates/src/**/*.ts",
+    "packages/case/src/**/*.ts",
+    "packages/exports/src/**/*.ts",
+    "packages/design-file/src/**/*.ts",
+    "packages/storage/src/**/*.ts",
+    "!packages/*/src/**/*.spec.ts",
+    "!packages/*/src/**/types.ts",
+    "!packages/*/src/**/index.ts"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 90 },
+  "reporters": ["clear-text", "progress", "html", "json"],
+  "htmlReporter": { "fileName": "reports/mutation/mutation.html" },
+  "jsonReporter": { "fileName": "reports/mutation/mutation.json" },
+  "tempDirName": ".stryker-tmp",
+  "ignorePatterns": [".claude", ".agents", "_bmad", "_bmad-output", "spikes"]
+}

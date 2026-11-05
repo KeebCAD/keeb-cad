@@ -9,6 +9,8 @@ import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
 
 // The one lint config for the whole workspace. Under `hoist: false` every plugin imported here
 // must be a root devDependency. Formatting belongs to Prettier (see .prettierrc.json).
+// `pnpm lint` caches results per file, which holds only while no rule is type-aware: a type-aware
+// rule reads other files, so a cached result would go stale when they change.
 
 // Keep in step with .prettierignore.
 const IGNORED = [
@@ -21,6 +23,9 @@ const IGNORED = [
   '**/coverage/**',
   '**/test-results/**',
   '**/playwright-report/**',
+  // Stryker's sandboxes and reports.
+  '.stryker-tmp/**',
+  'reports/**',
   // Deliberate AD-10 violations, cruised by tooling/ad10/rules.spec.ts.
   'tooling/ad10/violations/**',
   // Ergogen's input and output, committed verbatim.
@@ -97,6 +102,36 @@ export const SHARED_SPEC_STATE = [
   },
 ]
 
+// Test-rule bans ported from the ninja-testing plugin's test-lint (MIT, Copyright (c) 2026 Illya
+// Klymov); the behaviours, not its code.
+export const SNAPSHOT_MESSAGE = 'Assert data explicitly; snapshots are not used here.'
+const SNAPSHOT_MATCHERS = [
+  'toMatchSnapshot',
+  'toMatchInlineSnapshot',
+  'toMatchFileSnapshot',
+  'toThrowErrorMatchingSnapshot',
+  'toThrowErrorMatchingInlineSnapshot',
+]
+// The rule matches whole chains, so each modifier chain is listed.
+const MATCHER_MODIFIERS = ['', 'not.', 'resolves.', 'rejects.', 'resolves.not.', 'rejects.not.']
+const RESTRICTED_MATCHERS = Object.fromEntries(
+  MATCHER_MODIFIERS.flatMap((modifier) =>
+    SNAPSHOT_MATCHERS.map((matcher) => [`${modifier}${matcher}`, SNAPSHOT_MESSAGE]),
+  ),
+)
+
+export const MODULE_MOCK_MESSAGE =
+  'Substitute through di: register a fake in the container instead of mocking a module.'
+
+export const TRY_IN_TEST = {
+  selector:
+    'CallExpression:matches([callee.name=/^(it|test)$/], [callee.object.name=/^(it|test)$/], [callee.callee.object.name=/^(it|test)$/]) > :function TryStatement',
+  message: 'No try in a test; assert a throw as `expect(() => fn()).toThrow(…)`.',
+}
+
+export const TEST_ID_MESSAGE =
+  'Find elements by role, then label, then text. A test id is a last resort, behind `eslint-disable-next-line … -- <reason>`.'
+
 export default defineConfigWithVueTs(
   {
     name: 'keeb-cad/files-to-lint',
@@ -126,6 +161,13 @@ export default defineConfigWithVueTs(
   {
     ...pluginPlaywright.configs['flat/recommended'],
     files: ['app/e2e/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+    rules: {
+      ...pluginPlaywright.configs['flat/recommended'].rules,
+      'playwright/no-skipped-test': 'error',
+      'playwright/no-focused-test': 'error',
+      'playwright/no-conditional-in-test': 'error',
+      'playwright/no-conditional-expect': 'error',
+    },
   },
 
   {
@@ -134,6 +176,15 @@ export default defineConfigWithVueTs(
     ignores: ['app/e2e/**'],
     rules: {
       ...pluginVitest.configs.recommended.rules,
+      'vitest/no-restricted-matchers': ['error', RESTRICTED_MATCHERS],
+      'vitest/no-restricted-vi-methods': [
+        'error',
+        { mock: MODULE_MOCK_MESSAGE, doMock: MODULE_MOCK_MESSAGE },
+      ],
+      'vitest/no-conditional-in-test': 'error',
+      'vitest/no-conditional-expect': 'error',
+      'vitest/no-focused-tests': 'error',
+      'vitest/no-disabled-tests': 'error',
       'vitest/expect-expect': [
         'error',
         {
@@ -179,10 +230,23 @@ export default defineConfigWithVueTs(
   },
 
   {
-    name: 'keeb-cad/no-shared-spec-state',
+    name: 'keeb-cad/spec-restricted-syntax',
     files: ['**/*.spec.ts'],
     rules: {
-      'no-restricted-syntax': ['error', ...SHARED_SPEC_STATE],
+      'no-restricted-syntax': ['error', ...SHARED_SPEC_STATE, TRY_IN_TEST],
+    },
+  },
+
+  {
+    name: 'keeb-cad/no-test-ids',
+    files: ['**/*.{vue,ts,mts,tsx}'],
+    rules: {
+      'no-restricted-properties': ['error', { property: 'getByTestId', message: TEST_ID_MESSAGE }],
+      'vue/no-restricted-static-attribute': [
+        'error',
+        { key: 'data-testid', message: TEST_ID_MESSAGE },
+      ],
+      'vue/no-restricted-v-bind': ['error', { argument: 'data-testid', message: TEST_ID_MESSAGE }],
     },
   },
 

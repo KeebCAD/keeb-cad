@@ -15,6 +15,10 @@ coverage/
 test-results/
 playwright-report/
 
+# Stryker's reports and sandboxes
+reports/mutation/
+.stryker-tmp/
+
 # Boards written by spikes/ kicad-drc
 spikes/out/
 

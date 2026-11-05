@@ -2,7 +2,7 @@
 # Split from epic-see-corneys-keys 2026-11-02: entries 13.19, 13.10, 13.1, 13.20, 13.14, 13.11, 13.12, 13.15 moved here as 1-8.
 # Re-planned 2026-11-02 after the spine package split (b9b4ec5, 411dd17): 10 added after 1.
 
-next_id = 11
+next_id = 15
 
 [[entry]]
 id = 1
@@ -60,14 +60,36 @@ hitl = false
 risk = "low"
 
 [[entry]]
+id = 13
+type = "story"
+title = "The test harness enforces AGENTS.md's test rules"
+description = "Builds the tooling behind AGENTS.md's Tests rules (2026-11-04, adapted from the ninja-testing plugin, ~/Downloads/javascript-ninja-testing-skills, MIT: keep its notice in any file that copies its code). Three Claude Code hooks in a new .claude/settings.json, with no config file (the commands are constants): a guard that denies snapshot and baseline updates (vitest -u, playwright --update-snapshots, edits to __snapshots__/ and *-snapshots/), --no-verify, force push, deleting a spec and changing Stryker thresholds from the command line, and asks before edits to runner or mutation config and before a Stryker disable comment; a stop hook that asks for the whole pnpm test once when tests or logic changed; a PostToolUse hook that runs ESLint (no cache) on each edited file ESLint covers and returns the violations. Ports the needed test-lint rules into the ESLint config, each with a spec in tooling/lint, and makes getByTestId and data-testid errors; replaces the five testId uses (editor-shell, empty-editor) with getByRole('main') and getByText. Turns on Vitest sequence.shuffle and runs pnpm lint with --cache in node_modules/.cache/eslint/, with a comment that type-aware rules would make the cache stale. Adds Stryker on Node projects: mutate lists the pure files of the six priority packages, never code that needs a browser or I/O (storage's IndexedDB backend; those are proven by a toggled bug), pnpm test:mutation, thresholds high 90 low 80 break 90, and a CI job that gates every PR. Adds a bmad-code-review lens override: a context-free Sonnet subagent, when the diff touches *.spec.* or *.test.*, running ninja's test-reviewer checks (name against expects, implementation coupling, what is mocked, level, honest arrange/act/assert, determinism, undocumented decisions) with no finding floor ('checked N tests, no findings' is a full answer), every finding quoting the test name, the expect line and the check number verbatim so triage drops any quote not in the diff. Adds a bmad-build override: the plan carries a boundary table (below, on, above per threshold, sorted production bugs, rules, module boundaries, glue) with a level column per row, frozen as acceptance at plan approval, its rows outside the 3000-token plan cap. Ports two skills against AGENTS.md: mutation-loop (scoped runs, a verdict per survivor) and flaky-triage's diagnosis steps 1-6 (read the log, classify, reproduce by seed, name the source, refuse the four fixes)."
+verify = "pnpm check passes with shuffle on and the ported lint rules, each failing its own violation case in tooling/lint; no getByTestId or data-testid remains; pnpm test:mutation runs and the CI job fails a PR below break 90; a spec edit with a lint violation gets the ESLint output back from the hook; the guard denies vitest -u, playwright --update-snapshots and git push --force, each shown once; the lens fires on a spec diff and stays silent on a docs-only diff."
+covers = []
+after = [12]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 14
+type = "story"
+title = "fixtures is renamed reference-designs"
+description = "Renames the fixtures package to reference-designs (@keeb-cad/reference-designs) per the spine (2026-11-04): the folder, package name, the depcruise FIXTURES pattern and its fixtures-only-in-tests rule (renamed for what it fences), the depcruise and Vitest project lists, tsconfig references, the ad10 violation fixtures that import it, and every importer. No behaviour change."
+verify = "pnpm check passes; no fixtures package name or path remains outside the git history and closed tickets; the renamed depcruise rule still rejects its violation fixture."
+covers = []
+after = [12]
+hitl = false
+risk = "low"
+
+[[entry]]
 id = 3
 type = "story"
 title = "A new design writes and reads back byte-identical"
 description = "schema gets the KDL v2 schema skeleton for the layout section, after story 2's meta in AD-8 order (the layout a tree, AD-23), declared in Valibot; every other authored section is added in its AD-8 position by the story that introduces it, never as an empty placeholder here. The design file holds the authored sections only (routing and fingerprints are separate files of the design bundle, AD-1). Also design-file's canonical writer and migrateBundle, id minting and the newDesign command (design id, name, form split with a reversible board), defined in commands and registered into story 2's register by its concept folder's di module; reading a file goes through design-file's migrateBundle (one format-version for the whole bundle, AD-8), then replaceDesign, which only parses, deep-freezes and writes the already-current design, returning design-invalid with the failing issues' paths (spine 2026-11-03); newDesign's caller sets the empty derived files through design's emptyDerivedFiles(revision) (AD-1). Layer-3 generic checks in app over every registered command, so later stories' commands are covered automatically: after run the design is deeply frozen with no proxy and the caller's input unfrozen, and file write -> read round-trips. Story 2's meta-only replaceDesign test moves to a design with both sections (meta and layout). 13.2 fills the layout section and adds the gap to meta; story 5 stores the file."
-verify = "A test creates a design by command, writes it, reads it back through replaceDesign and writes again; the two files are byte-identical and the read design is deeply frozen; a file with sections out of order is rewritten in AD-8 order; the generic checks run over every registered command; a design file whose meta fails its schema is refused as design-invalid with that path."
+verify = "A test creates a design by command, writes it, reads it back through replaceDesign and writes again; the two files are byte-identical and the read design is deeply frozen; a file with sections out of order is rewritten in AD-8 order; the generic checks run over every registered command; a design file whose meta fails its schema is refused as design-invalid with that path. Sergii approves each test name in design-file's first specs against its expects before merge."
 unknown = "The spine's Open Question 'Load failure types' (one LoadError, migrateBundle's Result, a derived file failing its schema) is settled before this story is planned."
 covers = ["R1"]
-after = ["1.1", 2, 12]
+after = ["1.1", 2, 12, 13]
 hitl = false
 risk = "medium"
 
@@ -87,7 +109,7 @@ id = 5
 type = "story"
 title = "A new design autosaves and reopens from the browser"
 description = "storage gets its interface (save, load, listVersions, listDesigns) and the browser autosave backend. The saved unit is the design bundle (AD-1, AD-13): the design file, the routing file and the fingerprints file, each tagged with its revision and both empty until 7.1 and 7.2 (epic-see-corneys-keys Decision 2026-11-02), written atomically by main's storage, its one writer. design's bundle holds the derived files: set from migrateBundle's result or emptyDerivedFiles; workers hands a pipeline post accepted only at main's latest seq to design.acceptDerivedFiles; storage's load and a version switch go through design-file's migrateBundle (one format-version for the bundle, AD-8), which fills a missing derived file empty. app's autosave subscribes to design's commit event and saves design's bundle as it is at that moment through storage, not through the crossing, and never waits for the worker's echo. Autosave after every applied command, 20 rolling versions; failure is reported only when no rolling version is left to prune. workers holds the violations posted as issues by story 4's worker, empty until 13.3; story 8's status strip reads them. Story 7 reopens the last design through listDesigns."
-verify = "A test runs a command, finds the design bundle autosaved in browser storage, reopens it through load and replaceDesign byte-identical, each file of the bundle round-tripping; a bundle missing its routing file loads with an empty one tagged with the design's revision; autosave completes while the model worker is stopped; the 21st autosave prunes the oldest."
+verify = "A test runs a command, finds the design bundle autosaved in browser storage, reopens it through load and replaceDesign byte-identical, each file of the bundle round-tripping; a bundle missing its routing file loads with an empty one tagged with the design's revision; autosave completes while the model worker is stopped; the 21st autosave prunes the oldest. Sergii approves each test name in storage's first specs against its expects before merge."
 covers = ["R1"]
 after = [4]
 hitl = false
