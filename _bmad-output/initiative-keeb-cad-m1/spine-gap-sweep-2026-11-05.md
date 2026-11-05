@@ -27,17 +27,17 @@ Already open in the spine's Open Questions or a ticket's `unknown` (cited, not n
 - ✅ B10 Tab badge precedence (7.2). **Sergii: A** — failed > stale > rebuilding or routing > waiting for edit to finish > current, over the stages AD-11's workspace table assigns to the tab.
 
 ## C. AD-13 storage, versions, tabs, files
-- C1 What a bundle is on disk: container, extension, filename (16.2, 16.1, 23.5's `raw`). Rec: one zip, `.keeb`, slugified name.
-- C2 Version identity, order, tie-break; does an autosave replace a `reset` point at the same revision (23.5). Rec: key (id, revision, reason class), a monotonic counter, no clock.
-- C3 Autosave failure channel and retry; launch with storage unavailable (23.5, 23.7). Rec: a di failure-state service, retry per event, new unsaved design.
-- C4 Launch when the URL names a design or workspace; the workspace slug list (23.7, 23.8). Rec: URL wins if it loads, else newest, else NewDesign; unknown workspace → `layout`.
-- C5 Which tab edits, and after close or crash (16.3). Rec: a Web Lock per design id; promote only on Take over.
-- C6 Take over: reload latest before writing; demoted tab flushes (16.3). Rec: reload through the load flow; flush then stop.
-- C7 Read-only scope for actions (16.3). Rec: no write to this bundle: disable undo, redo, Reroute, Accept, version switch.
-- C8 Save state and the Chromium file handle (16.2). Rec: saved = revision equals last written; handle in IndexedDB.
-- C9 Where the `copy` named point goes (22.1). Rec: the copy's list.
-- C10 Does a copy carry derived files and assets (22.1). Rec: yes, with their revision tags.
-- C11 Copy's name input and provenance display (22.1). Rec: non-empty, default `<name> copy`, show the id.
+- ✅ C1 A bundle on disk (16.2, 16.1). **Sergii: A** — one zip: `design.kdl`, `routing.kdl`, `fingerprints.kdl`, `assets/<hash>`; extension `.keeb`; filename `<slugified name>.keeb`, Firefox downloads add `.rev<short hash>`. (Needs a zip library: a Stack row when 16.2 is planned.)
+- ✅ C2 Version identity and order (23.5). **Sergii: A** — a version is keyed by (design id, revision, reason class), so same-revision replacement applies only among `autosave` versions and a `reset` point survives; order by a monotonic save counter in `storage`, never a clock.
+- ✅ C3 Autosave failure (23.5, 23.7). **Sergii: A** — autosave is a `di` service with a failure state (a `shallowRef`: empty, or storage's error); it retries on the next commit or accept event and clears on success; 16.x's banner reads it; launch with storage unavailable opens a new, unsaved design and the failure state says why.
+- ✅ C4 Launch and the URL (23.7, 23.8). **Sergii: A** — the URL wins if its design id is stored and loads; else the newest stored design, else NewDesign, with `router.replace`; slugs `layout`, `outline`, `pcb`, `case`, `firmware`; unknown or missing → `layout`; the router owns it, the store follows.
+- ✅ C5 Which tab edits (16.3). **Sergii: A** — a Web Lock named by the design id; its holder edits; when the browser frees it (close or crash) the read-only tab says so and promotes only on the user's Take over.
+- ✅ C6 Take over (16.3). **Sergii: A** — the new editor reloads the stored bundle through the load flow before writing; the demoted tab flushes its last pending commit, stops autosave, and drops an open expression session or nudge burst without committing it.
+- ✅ C7 Read-only scope (16.3). **Sergii: A** — a read-only tab never writes this design's bundle: undo, redo, Reroute, Accept output change and version switch are disabled; New design, Open, Copy design, export and Save to file stay.
+- ✅ C8 Save state and file handle (16.2). **Sergii: A (corrected)** — `saved` = current revision equals the last revision written to the file; the Chromium handle is kept in IndexedDB per design; after a reload the first Save calls `queryPermission()` and on `"prompt"` `requestPermission()` inside that click (MDN: restored handles report "prompt"; requestPermission needs user activation); a refused permission fails the save with its reason, stays unsaved and offers the picker; a cancelled picker does nothing; Open binds later saves to the opened file; 16.2's verify runs reload-then-save in a real Chromium.
+- ✅ C9 The `copy` named point (22.1). **Sergii: A** — in the copy's version list, holding the source's bundle at the copied revision: "as copied" in the copy's Versions and, from M2, its merge base (AD-9); the source is never written.
+- ✅ C10 What a copy carries (22.1). **Sergii: A** — the routing and fingerprints files and the assets, unchanged with their revision tags; `pipeline` re-validates them against the copy (AD-12).
+- ✅ C11 Copy's name and provenance display (22.1). **Sergii: A** — name non-empty, not unique, default `<source name> copy`; the info shows the source's current name when stored, else its id, then `· rev <short hash>`.
 
 ## D. AD-26 and UX: editor frame and UI behaviour
 - D1 Where an entry declares hotkeys and what input a hotkey run passes (23.6, 23.7). Rec: optional static `hotkeys` and default input on the handle.
