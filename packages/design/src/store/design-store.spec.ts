@@ -25,46 +25,55 @@ import type { Committed, CommitEvent } from './types'
 
 // Unlike a real command, which forwards to one model operation, a test command edits the draft
 // itself, so the store's tests need no domain.
-class RenameDesign implements Command<v.InferOutput<typeof RenameDesign.input>> {
+const renameDesignInputSchema = v.object({ name: v.pipe(v.string(), v.minLength(1)) })
+type RenameDesignInput = v.InferOutput<typeof renameDesignInputSchema>
+
+class RenameDesign implements Command<RenameDesignInput> {
   static readonly kind = 'command'
   static readonly id = 'meta.renameDesign'
   static readonly label = 'Rename design'
-  static readonly input = v.object({ name: v.pipe(v.string(), v.minLength(1)) })
+  static readonly input = renameDesignInputSchema
 
   available(_design: Frozen<Design>): boolean {
     return true
   }
 
-  apply(draft: Writable<Design>, input: v.InferOutput<typeof RenameDesign.input>): void {
+  apply(draft: Writable<Design>, input: RenameDesignInput): void {
     draft.meta.name = input.name
   }
 }
 
-class SetForm implements Command<v.InferOutput<typeof SetForm.input>> {
+const setFormInputSchema = v.object({ form: formSchema })
+type SetFormInput = v.InferOutput<typeof setFormInputSchema>
+
+class SetForm implements Command<SetFormInput> {
   static readonly kind = 'command'
   static readonly id = 'meta.setForm'
   static readonly label = 'Set form'
-  static readonly input = v.object({ form: formSchema })
+  static readonly input = setFormInputSchema
 
   available(_design: Frozen<Design>): boolean {
     return true
   }
 
-  apply(draft: Writable<Design>, input: v.InferOutput<typeof SetForm.input>): void {
+  apply(draft: Writable<Design>, input: SetFormInput): void {
     draft.meta.form = input.form
   }
 }
 
-class LoadDesign implements Action<v.InferOutput<typeof LoadDesign.input>, DesignInvalid> {
+const loadDesignInputSchema = v.object({
+  design: v.pipe(
+    v.unknown(),
+    v.check((value) => value !== null, 'A design to load.'),
+  ),
+})
+type LoadDesignInput = v.InferOutput<typeof loadDesignInputSchema>
+
+class LoadDesign implements Action<LoadDesignInput, DesignInvalid> {
   static readonly kind = 'action'
   static readonly id = 'file.loadDesign'
   static readonly label = 'Load design'
-  static readonly input = v.object({
-    design: v.pipe(
-      v.unknown(),
-      v.check((value) => value !== null, 'A design to load.'),
-    ),
-  })
+  static readonly input = loadDesignInputSchema
 
   readonly #store = inject(DesignStore)
 
@@ -72,7 +81,7 @@ class LoadDesign implements Action<v.InferOutput<typeof LoadDesign.input>, Desig
     return true
   }
 
-  apply(input: v.InferOutput<typeof LoadDesign.input>): AsyncResult<void, DesignInvalid> {
+  apply(input: LoadDesignInput): AsyncResult<void, DesignInvalid> {
     return AsyncResult.fromResult(this.#store.replaceDesign(input.design))
   }
 }
@@ -161,17 +170,20 @@ describe('DesignStore', () => {
 
     it('refuses with the rejection the apply step returns and discards its draft', async () => {
       const rejection: Rejection = { kind: 'stale', seq: 1, latest: 2 }
-      class RejectRename implements Command<v.InferOutput<typeof RejectRename.input>> {
+      const rejectRenameInputSchema = v.object({ name: v.string() })
+      type RejectRenameInput = v.InferOutput<typeof rejectRenameInputSchema>
+
+      class RejectRename implements Command<RejectRenameInput> {
         static readonly kind = 'command'
         static readonly id = 'meta.rejectRename'
         static readonly label = 'Reject rename'
-        static readonly input = v.object({ name: v.string() })
+        static readonly input = rejectRenameInputSchema
 
         available(_design: Frozen<Design>): boolean {
           return true
         }
 
-        apply(draft: Writable<Design>, input: v.InferOutput<typeof RejectRename.input>): Rejection {
+        apply(draft: Writable<Design>, input: RejectRenameInput): Rejection {
           draft.meta.name = input.name
           return rejection
         }
@@ -209,19 +221,22 @@ describe('DesignStore', () => {
       ['valid input', { board: 'mirrored' }],
       ['input its schema refuses', { board: 'tented' }],
     ])('refuses a command that is unavailable, given %s', async (_name, input) => {
-      class SetBoard implements Command<v.InferOutput<typeof SetBoard.input>> {
+      const setBoardInputSchema = v.object({
+        board: v.pipe(v.string(), v.picklist(['reversible', 'mirrored'])),
+      })
+      type SetBoardInput = v.InferOutput<typeof setBoardInputSchema>
+
+      class SetBoard implements Command<SetBoardInput> {
         static readonly kind = 'command'
         static readonly id = 'meta.setBoard'
         static readonly label = 'Set board'
-        static readonly input = v.object({
-          board: v.pipe(v.string(), v.picklist(['reversible', 'mirrored'])),
-        })
+        static readonly input = setBoardInputSchema
 
         available(design: Frozen<Design>): boolean {
           return design.meta.form.type === 'split'
         }
 
-        apply(draft: Writable<Design>, input: v.InferOutput<typeof SetBoard.input>): void {
+        apply(draft: Writable<Design>, input: SetBoardInput): void {
           draft.meta.form = { type: 'split', board: input.board }
         }
       }
@@ -302,17 +317,20 @@ describe('DesignStore', () => {
       'refuses an action that is unavailable, given %s, without applying',
       async (_name, input) => {
         const saved: unknown[] = []
-        class SaveDesign implements Action<v.InferOutput<typeof SaveDesign.input>, never> {
+        const saveDesignInputSchema = v.object({ fileName: v.pipe(v.string(), v.minLength(1)) })
+        type SaveDesignInput = v.InferOutput<typeof saveDesignInputSchema>
+
+        class SaveDesign implements Action<SaveDesignInput, never> {
           static readonly kind = 'action'
           static readonly id = 'file.saveDesign'
           static readonly label = 'Save design'
-          static readonly input = v.object({ fileName: v.pipe(v.string(), v.minLength(1)) })
+          static readonly input = saveDesignInputSchema
 
           available(current: Option<Committed>): boolean {
             return current.isSome()
           }
 
-          apply(input: v.InferOutput<typeof SaveDesign.input>): AsyncResult<void, never> {
+          apply(input: SaveDesignInput): AsyncResult<void, never> {
             saved.push(input)
             return AsyncResult.ok()
           }
@@ -329,18 +347,21 @@ describe('DesignStore', () => {
 
     it('gives the availability check no design before any load', async () => {
       const seen: Option<Committed>[] = []
-      class StartDesign implements Action<v.InferOutput<typeof StartDesign.input>, never> {
+      const startDesignInputSchema = v.object({})
+      type StartDesignInput = v.InferOutput<typeof startDesignInputSchema>
+
+      class StartDesign implements Action<StartDesignInput, never> {
         static readonly kind = 'action'
         static readonly id = 'file.startDesign'
         static readonly label = 'Start design'
-        static readonly input = v.object({})
+        static readonly input = startDesignInputSchema
 
         available(current: Option<Committed>): boolean {
           seen.push(current)
           return current.isNone()
         }
 
-        apply(_input: v.InferOutput<typeof StartDesign.input>): AsyncResult<void, never> {
+        apply(_input: StartDesignInput): AsyncResult<void, never> {
           return AsyncResult.ok()
         }
       }
@@ -367,11 +388,14 @@ describe('DesignStore', () => {
       ['two runs', [{ name: 'Corne v2' }, { name: 'Corne v3' }], 1],
     ])('constructs a command lazily, once: %s', async (_name, inputs, expectedConstructed) => {
       let constructed = 0
-      class NameDesign implements Command<v.InferOutput<typeof NameDesign.input>> {
+      const nameDesignInputSchema = v.object({ name: v.string() })
+      type NameDesignInput = v.InferOutput<typeof nameDesignInputSchema>
+
+      class NameDesign implements Command<NameDesignInput> {
         static readonly kind = 'command'
         static readonly id = 'meta.nameDesign'
         static readonly label = 'Name design'
-        static readonly input = v.object({ name: v.string() })
+        static readonly input = nameDesignInputSchema
 
         constructor() {
           constructed += 1
@@ -381,7 +405,7 @@ describe('DesignStore', () => {
           return true
         }
 
-        apply(draft: Writable<Design>, input: v.InferOutput<typeof NameDesign.input>): void {
+        apply(draft: Writable<Design>, input: NameDesignInput): void {
           draft.meta.name = input.name
         }
       }
@@ -398,11 +422,14 @@ describe('DesignStore', () => {
       ['two runs', [{}, {}], 1],
     ])('constructs an action lazily, once: %s', async (_name, inputs, expectedConstructed) => {
       let constructed = 0
-      class OpenDesign implements Action<v.InferOutput<typeof OpenDesign.input>, never> {
+      const openDesignInputSchema = v.object({})
+      type OpenDesignInput = v.InferOutput<typeof openDesignInputSchema>
+
+      class OpenDesign implements Action<OpenDesignInput, never> {
         static readonly kind = 'action'
         static readonly id = 'file.openDesign'
         static readonly label = 'Open design'
-        static readonly input = v.object({})
+        static readonly input = openDesignInputSchema
 
         constructor() {
           constructed += 1
@@ -412,7 +439,7 @@ describe('DesignStore', () => {
           return true
         }
 
-        apply(_input: v.InferOutput<typeof OpenDesign.input>): AsyncResult<void, never> {
+        apply(_input: OpenDesignInput): AsyncResult<void, never> {
           return AsyncResult.ok()
         }
       }
@@ -432,17 +459,20 @@ describe('DesignStore', () => {
     })
 
     it('refuses a command and an action with one id', async () => {
-      class ImportDesign implements Action<v.InferOutput<typeof ImportDesign.input>, never> {
+      const importDesignInputSchema = v.object({})
+      type ImportDesignInput = v.InferOutput<typeof importDesignInputSchema>
+
+      class ImportDesign implements Action<ImportDesignInput, never> {
         static readonly kind = 'action'
         static readonly id = 'meta.renameDesign'
         static readonly label = 'Import design'
-        static readonly input = v.object({})
+        static readonly input = importDesignInputSchema
 
         available(_current: Option<Committed>): boolean {
           return true
         }
 
-        apply(_input: v.InferOutput<typeof ImportDesign.input>): AsyncResult<void, never> {
+        apply(_input: ImportDesignInput): AsyncResult<void, never> {
           return AsyncResult.ok()
         }
       }
@@ -453,17 +483,20 @@ describe('DesignStore', () => {
     })
 
     it('refuses two commands with one id', async () => {
-      class RetitleDesign implements Command<v.InferOutput<typeof RetitleDesign.input>> {
+      const retitleDesignInputSchema = v.object({ title: v.string() })
+      type RetitleDesignInput = v.InferOutput<typeof retitleDesignInputSchema>
+
+      class RetitleDesign implements Command<RetitleDesignInput> {
         static readonly kind = 'command'
         static readonly id = 'meta.renameDesign'
         static readonly label = 'Retitle design'
-        static readonly input = v.object({ title: v.string() })
+        static readonly input = retitleDesignInputSchema
 
         available(_design: Frozen<Design>): boolean {
           return true
         }
 
-        apply(draft: Writable<Design>, input: v.InferOutput<typeof RetitleDesign.input>): void {
+        apply(draft: Writable<Design>, input: RetitleDesignInput): void {
           draft.meta.name = input.title
         }
       }
