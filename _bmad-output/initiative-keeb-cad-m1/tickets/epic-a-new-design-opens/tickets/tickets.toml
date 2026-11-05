@@ -4,8 +4,9 @@
 # Re-planned 2026-11-05 after the spine settled 23.3 (020596c): 15 added after 13, before 3.
 # Re-planned 2026-11-05 after the spine-gap sweep (A8, E10): 16 added after 3.
 # Re-planned 2026-11-05 after the spine added Test builders: 17 added after 3, before 16.
+# Re-planned 2026-11-05 after the deferred-work decisions: 18 added after 17; 16 gains the no-op rule (AD-2).
 
-next_id = 18
+next_id = 19
 
 [[entry]]
 id = 1
@@ -118,11 +119,22 @@ hitl = false
 risk = "low"
 
 [[entry]]
+id = 18
+type = "story"
+title = "Tests and lint close the silent-green shortcuts"
+description = "Applies the 2026-11-05 deferred-work decisions. Turns on Vitest's expect.requireAssertions in every runtime project, so a test that runs no expect fails however it was reached; the plan confirms the typecheck projects are unaffected, or leaves them out. The guard (tooling/hooks/guard-decision.ts) asks before edits to eslint.config.ts and .dependency-cruiser.mts, as it does for runner and mutation configs. ESLint ignores inline config (linterOptions.noInlineConfig: true), and no-warning-comments with terms eslint-disable, eslint-enable and eslint at the start makes such a comment an error, since noInlineConfig alone only warns and leaves a dead comment in the code. The two current disables (packages/reactive/src/index.ts, packages/result/src/async-result.ts) move to file-scoped overrides in eslint.config.ts. The test-id guidance (AGENTS.md's Tests line, the eslint.config.ts message, tooling/lint/no-test-ids.spec.ts) points at a file override instead of an inline disable; the AGENTS.md change lands in this PR. No loop selector around expect (deferred-work, closed 2026-11-05)."
+verify = "A spec in tooling/lint shows eslint-disable-next-line, eslint-disable and an eslint inline-config comment each fail lint; a test with no expect fails the suite (shown with a toggled bug, since it is runner behaviour); guard specs ask on eslint.config.ts and .dependency-cruiser.mts; no eslint-disable comment remains in packages/, app/, fixtures/ or tooling/ outside spec strings; pnpm test passes."
+covers = []
+after = [17]
+hitl = false
+risk = "low"
+
+[[entry]]
 id = 16
 type = "story"
 title = "run copies its input and checks every produced design"
-description = "design's store per spine AD-2 Inputs and Writing (sweep A8, E10, 2026-11-05): run unwraps the caller's input with toRaw and copies it with structuredClone before it parses (a value that can't be cloned is a bug and throws), so Immer never freezes a caller's object and no Vue proxy enters the design; after every produced value, beside checkStructure, the store parses the design with schema's design schema, and a failure is a bug: run throws InvariantError naming the issue paths and the command id, and nothing is committed. Replaces the per-entry generic checks (AD-24's pass-through ban is a schema-quality rule with no safety role); closes deferred-work's per-entry checks item."
-verify = "design's unit tests: a Vue reactive input is stored as plain data and stays unfrozen in the caller; an input holding a function throws on clone and commits nothing; a test command whose apply spreads its input with an extra key throws InvariantError naming that key's path and the command id, with no ref write, no commit event and seq unchanged; a command producing a valid design commits as before."
+description = "design's store per spine AD-2 Inputs and Writing (sweep A8, E10, 2026-11-05): run unwraps the caller's input with toRaw and copies it with structuredClone before it parses (a value that can't be cloned is a bug and throws), so Immer never freezes a caller's object and no Vue proxy enters the design; after every produced value, beside checkStructure, the store parses the design with schema's design schema, and a failure is a bug: run throws InvariantError naming the issue paths and the command id, and nothing is committed. Replaces the per-entry generic checks (AD-24's pass-through ban is a schema-quality rule with no safety role); closes deferred-work's per-entry checks item. A command whose apply step produces no patches returns ok without committing: no seq increment, no commit event (spine AD-2, 2026-11-05)."
+verify = "design's unit tests: a Vue reactive input is stored as plain data and stays unfrozen in the caller; an input holding a function throws on clone and commits nothing; a test command whose apply spreads its input with an extra key throws InvariantError naming that key's path and the command id, with no ref write, no commit event and seq unchanged; a command producing a valid design commits as before; a test command whose apply changes nothing returns ok with no ref write, no commit event and seq unchanged."
 covers = []
 after = [3, 17]
 hitl = false
