@@ -1,4 +1,5 @@
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
+import { aDesign, aFingerprintsFile, aRoutingFile } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { migrateBundle } from './migrate-bundle'
@@ -12,11 +13,6 @@ const sections = [
   'layout id="root" arrangement="free"',
 ]
 
-const design = {
-  meta: { id: 'corne', name: 'Corne', form: { type: 'split', board: 'reversible' } },
-  layout: { id: 'root', arrangement: 'free', children: [] },
-}
-
 const routingText = lines('revision "r1"')
 const fingerprintsText = lines('revision "r1"', 'fingerprints')
 
@@ -26,7 +22,7 @@ describe('migrateBundle', () => {
       const result = migrateBundle({ design: lines('format-version 1', ...sections) })
 
       expectOk(result)
-      expect(result.value).toEqual({ design, unreadable: [] })
+      expect(result.value).toEqual({ design: aDesign(), unreadable: [] })
     })
 
     it('refuses a version below the first as unreadable', () => {
@@ -168,9 +164,9 @@ describe('migrateBundle', () => {
 
       expectOk(result)
       expect(result.value).toEqual({
-        design,
-        routing: { revision: 'r1' },
-        fingerprints: { revision: 'r1', fingerprints: [] },
+        design: aDesign(),
+        routing: aRoutingFile(),
+        fingerprints: aFingerprintsFile(),
         unreadable: [],
       })
     })
@@ -179,20 +175,20 @@ describe('migrateBundle', () => {
       [
         'routing',
         { routing: 'revision "a', fingerprints: fingerprintsText },
-        { design, fingerprints: { revision: 'r1', fingerprints: [] }, unreadable: ['routing'] },
+        () => ({ fingerprints: aFingerprintsFile(), unreadable: ['routing'] }),
       ],
       [
         'fingerprints',
         { routing: routingText, fingerprints: 'revision "a' },
-        { design, routing: { revision: 'r1' }, unreadable: ['fingerprints'] },
+        () => ({ routing: aRoutingFile(), unreadable: ['fingerprints'] }),
       ],
     ])(
       'lists a %s file that is not KDL as unreadable and passes it on as absent',
-      (_file, derived, expectedBundle) => {
+      (_file, derived, expectedDerived) => {
         const result = migrateBundle({ design: lines('format-version 1', ...sections), ...derived })
 
         expectOk(result)
-        expect(result.value).toEqual(expectedBundle)
+        expect(result.value).toEqual({ design: aDesign(), ...expectedDerived() })
       },
     )
 
@@ -203,7 +199,7 @@ describe('migrateBundle', () => {
       })
 
       expectOk(result)
-      expect(result.value).toEqual({ design, unreadable: ['routing'] })
+      expect(result.value).toEqual({ design: aDesign(), unreadable: ['routing'] })
     })
 
     it('passes an absent derived file on as absent, not unreadable', () => {
@@ -213,7 +209,7 @@ describe('migrateBundle', () => {
       })
 
       expectOk(result)
-      expect(result.value).toEqual({ design, routing: { revision: 'r1' }, unreadable: [] })
+      expect(result.value).toEqual({ design: aDesign(), routing: aRoutingFile(), unreadable: [] })
     })
   })
 })

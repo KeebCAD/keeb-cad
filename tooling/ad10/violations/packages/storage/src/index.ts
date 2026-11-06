@@ -8,5 +8,6 @@ import '@keeb-cad/di/vue'
 import 'vue'
 // only-reactive-imports-vue-reactivity: storage reaches it only through reactive.
 import '@vue/reactivity'
-// only-specs-import-result-testing.
+// only-tests-import-testing.
 import '@keeb-cad/result/testing'
+import '@keeb-cad/schema/testing'
