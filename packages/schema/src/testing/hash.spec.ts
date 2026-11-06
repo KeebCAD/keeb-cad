@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest'
 import { aHash } from './hash'
 
 describe('aHash', () => {
-  it('returns its argument as a hash', () => {
-    expect(aHash('h2')).toBe('h2')
+  it.each([
+    ['its default when given none', () => aHash(), 'h1'],
+    ['its argument', () => aHash('h2'), 'h2'],
+  ])('returns %s', (_role, build, expected) => {
+    expect(build()).toBe(expected)
   })
 })

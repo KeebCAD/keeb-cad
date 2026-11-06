@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest'
 import { aRevision } from './revision'
 
 describe('aRevision', () => {
-  it('returns its argument as a revision', () => {
-    expect(aRevision('r2')).toBe('r2')
+  it.each([
+    ['its default when given none', () => aRevision(), 'r1'],
+    ['its argument', () => aRevision('r2'), 'r2'],
+  ])('returns %s', (_role, build, expected) => {
+    expect(build()).toBe(expected)
   })
 })

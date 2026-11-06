@@ -7,19 +7,17 @@ export function aSlot({ id = anId('slot') }: Partial<Slot> = {}): Slot {
 
 export function aFreeGroup({
   id = anId('free-group'),
-  arrangement = 'free',
   children = [],
-}: Partial<FreeGroup> = {}): FreeGroup {
-  return { id, arrangement, children }
+}: Partial<Omit<FreeGroup, 'arrangement'>> = {}): FreeGroup {
+  return { id, arrangement: 'free', children }
 }
 
 export function aChainGroup({
   id = anId('chain-group'),
-  arrangement = 'chain',
   axis = 'x',
   children = [],
-}: Partial<ChainGroup> = {}): ChainGroup {
-  return { id, arrangement, axis, children }
+}: Partial<Omit<ChainGroup, 'arrangement'>> = {}): ChainGroup {
+  return { id, arrangement: 'chain', axis, children }
 }
 
 // A record, not ts-pattern's match: indexing a mapped type with T keeps the branch's return type without a cast.
@@ -34,6 +32,9 @@ export function aGroup<T extends Group['arrangement']>(
   return groupBuilders[arrangement]()
 }
 
-export function aLayout({ id = anId('root'), ...fields }: Partial<FreeGroup> = {}): FreeGroup {
+export function aLayout({
+  id = anId('root'),
+  ...fields
+}: Partial<Omit<FreeGroup, 'arrangement'>> = {}): FreeGroup {
   return aFreeGroup({ id, ...fields })
 }
