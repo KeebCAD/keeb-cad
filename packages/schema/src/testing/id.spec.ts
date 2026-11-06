@@ -1,11 +1,17 @@
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
-import { idSchema } from '../id'
 import { anId } from './id'
 
 describe('anId', () => {
-  it('builds a value its schema accepts', () => {
-    expect(v.safeParse(idSchema, anId()).issues).toBeUndefined()
+  it.each([
+    ['its default when given none', () => anId(), 'id'],
+    ['its argument', () => anId('a-b'), 'a-b'],
+  ])('returns %s', (_role, build, expected) => {
+    expect(build()).toBe(expected)
+  })
+
+  it('throws on a value its schema refuses', () => {
+    expect(() => anId('Corne')).toThrow(v.ValiError)
   })
 })

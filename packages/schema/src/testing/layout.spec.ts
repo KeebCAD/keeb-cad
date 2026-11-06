@@ -1,18 +1,53 @@
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
-import { chainGroupSchema, freeGroupSchema } from '../layout'
-import { aChainGroup, aFreeGroup, aGroup, aLayout } from './layout'
+import { chainGroupSchema, freeGroupSchema, slotSchema } from '../layout'
+import { anId } from './id'
+import { aChainGroup, aFreeGroup, aGroup, aLayout, aSlot } from './layout'
+
+describe('aSlot', () => {
+  it('builds a value its schema accepts', () => {
+    expect(v.safeParse(slotSchema, aSlot()).issues).toBeUndefined()
+  })
+
+  it.each([['id', () => ({ id: anId('other') })]])(
+    'keeps the %s it is given',
+    (_field, makeFields) => {
+      const fields = makeFields()
+
+      expect(aSlot(fields)).toMatchObject(fields)
+    },
+  )
+})
 
 describe('aFreeGroup', () => {
   it('builds a value its schema accepts', () => {
     expect(v.safeParse(freeGroupSchema, aFreeGroup()).issues).toBeUndefined()
+  })
+
+  it.each([
+    ['id', () => ({ id: anId('other') })],
+    ['children', () => ({ children: [aSlot()] })],
+  ])('keeps the %s it is given', (_field, makeFields) => {
+    const fields = makeFields()
+
+    expect(aFreeGroup(fields)).toMatchObject(fields)
   })
 })
 
 describe('aChainGroup', () => {
   it('builds a value its schema accepts', () => {
     expect(v.safeParse(chainGroupSchema, aChainGroup()).issues).toBeUndefined()
+  })
+
+  it.each([
+    ['id', () => ({ id: anId('other') })],
+    ['axis', () => ({ axis: 'y' as const })],
+    ['children', () => ({ children: [aSlot()] })],
+  ])('keeps the %s it is given', (_field, makeFields) => {
+    const fields = makeFields()
+
+    expect(aChainGroup(fields)).toMatchObject(fields)
   })
 })
 
@@ -28,5 +63,14 @@ describe('aGroup', () => {
 describe('aLayout', () => {
   it('builds a value its schema accepts', () => {
     expect(v.safeParse(freeGroupSchema, aLayout()).issues).toBeUndefined()
+  })
+
+  it.each([
+    ['id', () => ({ id: anId('other') })],
+    ['children', () => ({ children: [aSlot()] })],
+  ])('keeps the %s it is given', (_field, makeFields) => {
+    const fields = makeFields()
+
+    expect(aLayout(fields)).toMatchObject(fields)
   })
 })

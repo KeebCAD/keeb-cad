@@ -8,6 +8,15 @@ describe('aSplitForm', () => {
   it('builds a value its schema accepts', () => {
     expect(v.safeParse(formSchema, aSplitForm()).issues).toBeUndefined()
   })
+
+  it.each([['board', () => ({ board: 'mirrored' as const })]])(
+    'keeps the %s it is given',
+    (_field, makeFields) => {
+      const fields = makeFields()
+
+      expect(aSplitForm(fields)).toMatchObject(fields)
+    },
+  )
 })
 
 describe('aUnibodyForm', () => {

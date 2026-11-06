@@ -1,11 +1,12 @@
-import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
-import { revisionSchema } from '../revision'
 import { aRevision } from './revision'
 
 describe('aRevision', () => {
-  it('builds a value its schema accepts', () => {
-    expect(v.safeParse(revisionSchema, aRevision()).issues).toBeUndefined()
+  it.each([
+    ['its default when given none', () => aRevision(), 'r1'],
+    ['its argument', () => aRevision('r2'), 'r2'],
+  ])('returns %s', (_role, build, expected) => {
+    expect(build()).toBe(expected)
   })
 })

@@ -1,11 +1,12 @@
-import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
-import { hashSchema } from '../hash'
 import { aHash } from './hash'
 
 describe('aHash', () => {
-  it('builds a value its schema accepts', () => {
-    expect(v.safeParse(hashSchema, aHash()).issues).toBeUndefined()
+  it.each([
+    ['its default when given none', () => aHash(), 'h1'],
+    ['its argument', () => aHash('h2'), 'h2'],
+  ])('returns %s', (_role, build, expected) => {
+    expect(build()).toBe(expected)
   })
 })

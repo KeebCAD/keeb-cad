@@ -2,7 +2,7 @@ import type { Form } from '../types'
 
 export function aSplitForm({
   board = 'reversible',
-}: Partial<Extract<Form, { type: 'split' }>> = {}): Extract<Form, { type: 'split' }> {
+}: Partial<Omit<Extract<Form, { type: 'split' }>, 'type'>> = {}): Extract<Form, { type: 'split' }> {
   return { type: 'split', board }
 }
 
