@@ -33,10 +33,9 @@ describe('the check steps', () => {
     ])
   })
 
-  it('CI installs, gets the browsers and runs pnpm check, then installs and runs the mutation gate', () => {
+  it('CI installs and runs pnpm check, then installs and runs the mutation gate', () => {
     expect(runLines(read('.github/workflows/check.yml'))).toEqual([
       'pnpm install --frozen-lockfile',
-      'pnpm --filter @keeb-cad/app exec playwright install --with-deps chromium firefox',
       'pnpm check',
       'pnpm install --frozen-lockfile',
       'pnpm test:mutation',

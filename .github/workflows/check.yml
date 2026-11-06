@@ -15,7 +15,14 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    # A normal run takes a few minutes; `playwright install --with-deps` has hung on apt before.
+    # Playwright's image carries Chromium, Firefox and their system packages, so the job installs
+    # no browsers: `playwright install --with-deps` hung on the runner's apt mirror (4 of about 25
+    # runs on 2026-11-06). Vitest browser mode (packages/editor/vitest.config.ts) needs both
+    # browsers, the smoke test Chromium. The tag is the locked Playwright version, checked by
+    # tooling/playwright-image.spec.ts. User 1001 is the runner's, which owns the workspace.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --user 1001
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -27,12 +34,6 @@ jobs:
           node-version-file: mise.toml
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Vitest browser mode runs the editor's tests in both (packages/editor/vitest.config.ts); the
-      # smoke test needs Chromium. app's @playwright/test provides the `playwright` binary.
-      # It takes about 25 s; on a slow apt mirror it crawls for the whole job. Fail fast and re-run
-      # the job: a re-run gets a fresh runner, an in-job retry the same slow mirror.
-      - run: pnpm --filter @keeb-cad/app exec playwright install --with-deps chromium firefox
-        timeout-minutes: 3
       - run: pnpm check
 
   # Stryker mutates the priority packages' pure files and fails below the break threshold in
