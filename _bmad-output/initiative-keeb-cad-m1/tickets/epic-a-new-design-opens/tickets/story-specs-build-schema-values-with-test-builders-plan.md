@@ -34,6 +34,8 @@ context:
 - (after build) A variant schema gets a builder per branch and one common builder taking only the discriminator, which returns that branch's builder output: `aSplitForm`, `aUnibodyForm`, `aForm(type)`; `aFreeGroup`, `aChainGroup`, `aGroup(arrangement)`; `aLayout` stays the design's root, built on `aFreeGroup` with id `root`. Not one builder fixed to one branch, because a test then reads a branch's fields (`aForm('split').board`) without narrowing. The rule is in the spine's Test builders row (6df7480).
 - (after build) The common builder picks the branch through a record keyed by the discriminator, not ts-pattern's `match`, because indexing a mapped type with `T` keeps the branch's return type with no cast (checked: `match` over a generic `T` returns the union, TS2322), and overloads with `match` leave the body loosely checked against its signatures.
 - (after build) Every branded concept gets a builder: `anId`, `aRevision`, `aHash`, `aFormatVersion` take their raw value as an optional argument and parse it; `aFingerprint` takes fields. Not only `Id` and `Revision`, because the spine's Test builders row has each schema concept ship one. Builders and specs then hold no `v.parse` of a branded schema; `mintId` and `revisionOf` keep theirs (production).
+- (review of the post-build commits) The scalar builders' one test checks that each returns its argument (`expect(aRevision('r2')).toBe('r2')`), not that its output parses, because a builder that is only `v.parse` throws before a parse test could fail; the spine's Test builders row says so (e299b2e).
+- (review of the post-build commits) `aSlot` is added, not left until a story needs a slot, because the spine has each schema concept ship a builder.
 - read-bundle's input KDL texts stay written out, not built with design-file's writers, because a writer bug and a mirrored reader bug would cancel out; its routing and fingerprints revisions stay distinct (`r1`, `r2`).
 
 ## Boundaries & Constraints
@@ -70,7 +72,7 @@ context:
 
 **Execution:**
 - [x] `packages/schema/src/testing/` -- `meta.ts` (`aMeta`), `form.ts` (`aForm`), `layout.ts` (`aLayout`), `design.ts` (`aDesign`), `routing-file.ts` (`aRoutingFile`), `fingerprints-file.ts` (`aFingerprintsFile`), each named for its schema file in `src/`; `index.ts` re-exports only.
-- [x] `packages/schema/src/testing/<schema file>.spec.ts` (`meta.spec.ts`, …) -- one test per builder: `expect(v.safeParse(<its schema>, aX()).issues).toBeUndefined()`; `aLayout` against `freeGroupSchema`.
+- [x] `packages/schema/src/testing/<schema file>.spec.ts` (`meta.spec.ts`, …) -- one test per builder (superseded for scalar and common builders: see the frozen block and the Boundary Table): `expect(v.safeParse(<its schema>, aX()).issues).toBeUndefined()`; `aLayout` against `freeGroupSchema`.
 - [x] `packages/schema/package.json` -- `"./testing": "./src/testing/index.ts"`.
 - [x] `.dependency-cruiser.mts` -- replace `only-specs-import-result-testing` by `only-tests-import-testing`: `from.pathNot: [TEST_FILE, '^packages/[^/]+/src/testing/']`, `to.path: ['^packages/[^/]+/src/testing/', '^@keeb-cad/[^/]+/testing$']`.
 - [x] `tooling/ad10/violations/packages/storage/src/index.ts`, `x.spec.ts`, `tooling/ad10/rules.spec.ts` -- the renamed result row, a schema/testing violation row, and the allowed-spec test covering both subpaths. New fixture `tooling/ad10/violations/packages/design/src/testing/bundle.ts` importing `@keeb-cad/schema/testing`, with a test that it reports nothing and the edge was cruised; `tooling/ad10/violations/packages/design/src/index.ts` imports `./testing/bundle` (a resolved folder import) as a violation row.
@@ -92,9 +94,10 @@ context:
 
 - After build (Sergii's variant rule): `aSplitForm`, `aUnibodyForm`, `aForm(type)`, `aFreeGroup`, `aChainGroup`, `aGroup(arrangement)` added; `aMeta`'s default form is `aSplitForm()`; `aLayout` is `aFreeGroup` with id `root`, its id taken with a destructuring default so `aLayout({ id: undefined })` keeps `root`. Each branch builder's test parses through its schema; `aForm` and `aGroup` have one `it.each` row per branch, expecting the branch builder's output. Decision: branch builders' default ids are `free-group` and `chain-group`, not `root`, because `root` is `aLayout`'s. The implementer's `aForm` returning `Form` is superseded.
 - After build (branded builders): defaults `id`, `r1`, `h1`, `1`, not unique per call, because each caller passes the text that matters; a malformed value throwing is not tested, not a second test per builder, because the spine gives each builder one test and the throw is `v.parse`'s. Call sites moved: `aMeta`, the group builders, both derived-file builders, read-bundle and write-bundle (`aRevision('r2')`), design's `empty-derived-files.spec.ts`.
+- Review of the post-build commits, decisions: `aChainGroup`'s axis defaults to `x`, not `y`, because nothing reads it yet and `x` is the schema's first; `aFingerprint` defaults to `id`, `slice` and `outputs` hashes named for their fields, not one shared hash, so a mix-up between the two hashes shows; `aForm` and `aGroup` are tested by `toEqual(branchBuilder())`, not by parsing, because each branch builder's own test proves its output parses and the row proves the common builder picks that branch. Toggled bug: `aRevision` ignoring its argument turned its test red; restored, green.
 - Stryker (migrate-bundle, read-bundle, write-bundle): 29 of 29 killed, score 100; 23.3's three equivalents did not show this run. Re-run by the orchestrator after implementation: same result.
 - Toggled bug: dropping the testing folder from the fence's importer exemption turned the testing-folder test red; narrowing the target to result/testing turned the violation row red; restored, green.
-- Implementer's decisions: migrate-bundle's `it.each` rows carry a thunk, not an object, so no builder runs at collection time; the fence's folder regex is the constant `TESTING_FOLDER`, not inlined twice, because both sides use it; `aForm` returns `Form`, not the split variant, because `Meta.form` takes `Form` and the variant would need a new alias in `types.ts`; design-patcher's spec uses `aDesign()`, not `v.parse(designSchema, aDesign())`, because the builder already returns a `Design`; design-store's overrides use `aDesign({ meta: aMeta({ … }) })`, not spreads.
+- Implementer's decisions: migrate-bundle's `it.each` rows carry a thunk, not an object, so no builder runs at collection time; the fence's folder regex is the constant `TESTING_FOLDER`, not inlined twice, because both sides use it; (superseded by the variant builders; its reason was also wrong: the variant needed no alias) `aForm` returns `Form`; design-patcher's spec uses `aDesign()`, not `v.parse(designSchema, aDesign())`, because the builder already returns a `Design`; design-store's overrides use `aDesign({ meta: aMeta({ … }) })`, not spreads.
 
 ## Plan Change Log
 
@@ -111,9 +114,23 @@ Pass 1 (quick, test-reviewer): high 0, medium 0, low 6, false 1, maybe-false 0; 
 | 5 | No fixture proves a bare `@keeb-cad/*/testing` resolved to `packages/*/src/testing/index.ts` is caught | low | defer | Pre-existing for result/testing; the relative fixture proves `TESTING_FOLDER` on the resolved path shape, the resolution itself is dependency-cruiser's. |
 | 6 | Stryker ticked with no recorded run or verdict | false | reject | The run happened (29/29 killed, re-run by the orchestrator); the fix edits this build's plan. Recorded in Implementation Notes. |
 
+Pass 2 (quick, test-reviewer, on the commits after pass 1: 24f8b89..d860a8e, per AGENTS.md's after-review rule): high 0, medium 0, low 9, false 0, maybe-false 0; no quote dropped.
+
+| # | Finding | Verdict | Route | Evidence |
+|---|---------|---------|-------|----------|
+| 1 | Scalar builders' parse tests cannot fail | low | patch (Sergii) | Real: `v.parse` throws before the `expect`; an ignored argument passes. Tests now check the argument comes back; spine row amended. |
+| 2 | No `aSlot` | low | patch (Sergii) | Real: `slotSchema` and `Slot` exist; spine rule. Added. |
+| 3 | Defaults `axis`, `slice`, `outputs`, fingerprint id unrecorded | low | patch | Recorded in Implementation Notes. |
+| 4 | `aForm`/`aGroup` tests don't parse, no decision | low | patch | Recorded as a decision. |
+| 5 | Spine seed line lists six builders | low | patch | Updated (e299b2e). |
+| 6 | Boundary Table, Tasks, Design Notes stale | low | patch | Updated. |
+| 7 | Superseded implementer decision still listed | low | patch | Marked superseded, with its wrong reason. |
+| 8 | `aLayout().id` being `root` untested | low | reject | The spine gives each builder one test; the destructuring default holds it by construction. |
+| 9 | Post-build code never reviewed | low | patch | This pass. |
+
 ## Design Notes
 
-**Decision (plan): builders return the schema's output type**, not its input type, because specs hand them to typed functions (`writeBundle`, `writeDesignFile`) and a `v.parse` at each call site is what builders remove. Ids and revisions are branded by `v.parse(idSchema, 'corne')` / `v.parse(revisionSchema, 'r1')` inside the builder, never a cast.
+**Decision (plan): builders return the schema's output type**, not its input type, because specs hand them to typed functions (`writeBundle`, `writeDesignFile`) and a `v.parse` at each call site is what builders remove. Ids and revisions are branded through `anId` and `aRevision` (superseding `v.parse` inside each builder), never a cast.
 
 **Decision (plan): signatures** (form and group superseded by Sergii's variant rule in the frozen block) are `aMeta(fields: Partial<Meta> = {}): Meta`, `aLayout(fields: Partial<FreeGroup> = {}): FreeGroup`, `aDesign(fields: Partial<Design> = {}): Design`, `aRoutingFile(fields: Partial<RoutingFile> = {})`, `aFingerprintsFile(fields: Partial<FingerprintsFile> = {})`. Branch builders take only their own branch's fields, not a union-typed override, because `Partial` over a variant lets a test mix two variants' fields.
 
@@ -169,7 +186,18 @@ Three reviewer passes (Sonnet, context-free); 0 findings dropped, every quote ve
 | Group | Boundary | Input | Expected | Level |
 |-------|----------|-------|----------|-------|
 | rules | meta builder | `aMeta()` | `metaSchema` accepts | unit (schema) |
-| rules | form builder | `aForm()` | `formSchema` accepts | unit (schema) |
+| rules | split form builder | `aSplitForm()` | `formSchema` accepts | unit (schema) |
+| rules | unibody form builder | `aUnibodyForm()` | `formSchema` accepts | unit (schema) |
+| rules | common form builder | `aForm('split')`, `aForm('unibody')` | equals that branch builder's output | unit (schema) |
+| rules | free group builder | `aFreeGroup()` | `freeGroupSchema` accepts | unit (schema) |
+| rules | chain group builder | `aChainGroup()` | `chainGroupSchema` accepts | unit (schema) |
+| rules | common group builder | `aGroup('free')`, `aGroup('chain')` | equals that branch builder's output | unit (schema) |
+| rules | slot builder | `aSlot()` | `slotSchema` accepts | unit (schema) |
+| rules | fingerprint builder | `aFingerprint()` | `fingerprintSchema` accepts | unit (schema) |
+| rules | id builder | `anId('a-b')` | `'a-b'` | unit (schema) |
+| rules | revision builder | `aRevision('r2')` | `'r2'` | unit (schema) |
+| rules | hash builder | `aHash('h2')` | `'h2'` | unit (schema) |
+| rules | format-version builder | `aFormatVersion(2)` | `2` | unit (schema) |
 | rules | layout builder | `aLayout()` | `freeGroupSchema` accepts | unit (schema) |
 | rules | design builder | `aDesign()` | `designSchema` accepts | unit (schema) |
 | rules | routing file builder | `aRoutingFile()` | `routingFileSchema` accepts | unit (schema) |

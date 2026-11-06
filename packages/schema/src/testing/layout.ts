@@ -1,5 +1,9 @@
-import type { ChainGroup, FreeGroup, Group } from '../types'
+import type { ChainGroup, FreeGroup, Group, Slot } from '../types'
 import { anId } from './id'
+
+export function aSlot({ id = anId('slot') }: Partial<Slot> = {}): Slot {
+  return { id }
+}
 
 export function aFreeGroup({
   id = anId('free-group'),

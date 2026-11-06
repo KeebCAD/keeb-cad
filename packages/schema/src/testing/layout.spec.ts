@@ -1,8 +1,14 @@
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
-import { chainGroupSchema, freeGroupSchema } from '../layout'
-import { aChainGroup, aFreeGroup, aGroup, aLayout } from './layout'
+import { chainGroupSchema, freeGroupSchema, slotSchema } from '../layout'
+import { aChainGroup, aFreeGroup, aGroup, aLayout, aSlot } from './layout'
+
+describe('aSlot', () => {
+  it('builds a value its schema accepts', () => {
+    expect(v.safeParse(slotSchema, aSlot()).issues).toBeUndefined()
+  })
+})
 
 describe('aFreeGroup', () => {
   it('builds a value its schema accepts', () => {
