@@ -1,6 +1,6 @@
-export { aForm } from './form'
+export { aForm, aSplitForm, aUnibodyForm } from './form'
 export { aMeta } from './meta'
-export { aLayout } from './layout'
+export { aChainGroup, aFreeGroup, aGroup, aLayout } from './layout'
 export { aDesign } from './design'
 export { aRoutingFile } from './routing-file'
 export { aFingerprintsFile } from './fingerprints-file'

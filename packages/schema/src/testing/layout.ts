@@ -1,12 +1,40 @@
 import * as v from 'valibot'
 
 import { idSchema } from '../id'
-import type { FreeGroup } from '../types'
+import type { ChainGroup, FreeGroup, Group } from '../types'
 
-export function aLayout({
-  id = v.parse(idSchema, 'root'),
+export function aFreeGroup({
+  id = v.parse(idSchema, 'free-group'),
   arrangement = 'free',
   children = [],
 }: Partial<FreeGroup> = {}): FreeGroup {
   return { id, arrangement, children }
+}
+
+export function aChainGroup({
+  id = v.parse(idSchema, 'chain-group'),
+  arrangement = 'chain',
+  axis = 'x',
+  children = [],
+}: Partial<ChainGroup> = {}): ChainGroup {
+  return { id, arrangement, axis, children }
+}
+
+// A record, not ts-pattern's match: indexing a mapped type with T keeps the branch's return type without a cast.
+const groupBuilders: { [T in Group['arrangement']]: () => Extract<Group, { arrangement: T }> } = {
+  free: aFreeGroup,
+  chain: aChainGroup,
+}
+
+export function aGroup<T extends Group['arrangement']>(
+  arrangement: T,
+): Extract<Group, { arrangement: T }> {
+  return groupBuilders[arrangement]()
+}
+
+export function aLayout({
+  id = v.parse(idSchema, 'root'),
+  ...fields
+}: Partial<FreeGroup> = {}): FreeGroup {
+  return aFreeGroup({ id, ...fields })
 }
