@@ -33,6 +33,7 @@ context:
 - A builder's file in `testing/` takes its schema file's name (`testing/meta.ts` holds `aMeta`, beside `src/meta.ts`), not the builder's name (`a-meta.ts`, as `result`'s `expect-ok.ts`), because the builders then line up with the schemas they build, and a concept's later builders (`aChainGroup` beside `aLayout`) share its file.
 - (after build) A variant schema gets a builder per branch and one common builder taking only the discriminator, which returns that branch's builder output: `aSplitForm`, `aUnibodyForm`, `aForm(type)`; `aFreeGroup`, `aChainGroup`, `aGroup(arrangement)`; `aLayout` stays the design's root, built on `aFreeGroup` with id `root`. Not one builder fixed to one branch, because a test then reads a branch's fields (`aForm('split').board`) without narrowing. The rule is in the spine's Test builders row (6df7480).
 - (after build) The common builder picks the branch through a record keyed by the discriminator, not ts-pattern's `match`, because indexing a mapped type with `T` keeps the branch's return type with no cast (checked: `match` over a generic `T` returns the union, TS2322), and overloads with `match` leave the body loosely checked against its signatures.
+- (after build) Every branded concept gets a builder: `anId`, `aRevision`, `aHash`, `aFormatVersion` take their raw value as an optional argument and parse it; `aFingerprint` takes fields. Not only `Id` and `Revision`, because the spine's Test builders row has each schema concept ship one. Builders and specs then hold no `v.parse` of a branded schema; `mintId` and `revisionOf` keep theirs (production).
 - read-bundle's input KDL texts stay written out, not built with design-file's writers, because a writer bug and a mirrored reader bug would cancel out; its routing and fingerprints revisions stay distinct (`r1`, `r2`).
 
 ## Boundaries & Constraints
@@ -90,6 +91,7 @@ context:
 ## Implementation Notes
 
 - After build (Sergii's variant rule): `aSplitForm`, `aUnibodyForm`, `aForm(type)`, `aFreeGroup`, `aChainGroup`, `aGroup(arrangement)` added; `aMeta`'s default form is `aSplitForm()`; `aLayout` is `aFreeGroup` with id `root`, its id taken with a destructuring default so `aLayout({ id: undefined })` keeps `root`. Each branch builder's test parses through its schema; `aForm` and `aGroup` have one `it.each` row per branch, expecting the branch builder's output. Decision: branch builders' default ids are `free-group` and `chain-group`, not `root`, because `root` is `aLayout`'s. The implementer's `aForm` returning `Form` is superseded.
+- After build (branded builders): defaults `id`, `r1`, `h1`, `1`, not unique per call, because each caller passes the text that matters; a malformed value throwing is not tested, not a second test per builder, because the spine gives each builder one test and the throw is `v.parse`'s. Call sites moved: `aMeta`, the group builders, both derived-file builders, read-bundle and write-bundle (`aRevision('r2')`), design's `empty-derived-files.spec.ts`.
 - Stryker (migrate-bundle, read-bundle, write-bundle): 29 of 29 killed, score 100; 23.3's three equivalents did not show this run. Re-run by the orchestrator after implementation: same result.
 - Toggled bug: dropping the testing folder from the fence's importer exemption turned the testing-folder test red; narrowing the target to result/testing turned the violation row red; restored, green.
 - Implementer's decisions: migrate-bundle's `it.each` rows carry a thunk, not an object, so no builder runs at collection time; the fence's folder regex is the constant `TESTING_FOLDER`, not inlined twice, because both sides use it; `aForm` returns `Form`, not the split variant, because `Meta.form` takes `Form` and the variant would need a new alias in `types.ts`; design-patcher's spec uses `aDesign()`, not `v.parse(designSchema, aDesign())`, because the builder already returns a `Design`; design-store's overrides use `aDesign({ meta: aMeta({ … }) })`, not spreads.
@@ -152,7 +154,7 @@ Three reviewer passes (Sonnet, context-free); 0 findings dropped, every quote ve
 - Pass 3: hand-written fixtures prove the subpath rules (resolved folder import) -- fixed (row added); undefined override untested -- fixed (decision).
 - Pass 3: `X, not Y, because Z` (GRAPH) -- fixed.
 - After checkpoint (Sergii): builder file names follow the schema files -- recorded in the frozen block; no reviewer has read it.
-- After build: the variant builders (frozen block) -- no reviewer has read them.
+- After build: the variant builders and the branded-value builders (frozen block) -- no reviewer has read them.
 - Pass 3: fresh objects per call -- fixed (Always line); `it.each` rows built at collection -- fixed.
 
 ## Verification

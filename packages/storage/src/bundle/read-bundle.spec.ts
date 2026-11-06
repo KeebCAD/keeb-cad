@@ -1,7 +1,5 @@
 import { expectOk } from '@keeb-cad/result/testing'
-import { revisionSchema } from '@keeb-cad/schema'
-import { aDesign, aFingerprintsFile, aRoutingFile } from '@keeb-cad/schema/testing'
-import * as v from 'valibot'
+import { aDesign, aFingerprintsFile, aRevision, aRoutingFile } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { readBundle } from './read-bundle'
@@ -21,7 +19,7 @@ describe('readBundle', () => {
     expect(result.value).toEqual({
       design: aDesign(),
       routing: aRoutingFile(),
-      fingerprints: aFingerprintsFile({ revision: v.parse(revisionSchema, 'r2') }),
+      fingerprints: aFingerprintsFile({ revision: aRevision('r2') }),
       unreadable: [],
     })
   })

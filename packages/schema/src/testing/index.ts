@@ -1,3 +1,8 @@
+export { anId } from './id'
+export { aRevision } from './revision'
+export { aHash } from './hash'
+export { aFormatVersion } from './format-version'
+export { aFingerprint } from './fingerprint'
 export { aForm, aSplitForm, aUnibodyForm } from './form'
 export { aMeta } from './meta'
 export { aChainGroup, aFreeGroup, aGroup, aLayout } from './layout'

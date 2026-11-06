@@ -1,7 +1,5 @@
 import { writeDesignFile, writeFingerprintsFile, writeRoutingFile } from '@keeb-cad/design-file'
-import { revisionSchema } from '@keeb-cad/schema'
-import { aDesign, aFingerprintsFile, aRoutingFile } from '@keeb-cad/schema/testing'
-import * as v from 'valibot'
+import { aDesign, aFingerprintsFile, aRevision, aRoutingFile } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { writeBundle } from './write-bundle'
@@ -11,7 +9,7 @@ describe('writeBundle', () => {
     const bundle = {
       design: aDesign(),
       routing: aRoutingFile(),
-      fingerprints: aFingerprintsFile({ revision: v.parse(revisionSchema, 'r2') }),
+      fingerprints: aFingerprintsFile({ revision: aRevision('r2') }),
     }
 
     expect(writeBundle(bundle)).toEqual({

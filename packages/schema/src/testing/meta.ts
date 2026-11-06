@@ -1,11 +1,9 @@
-import * as v from 'valibot'
-
-import { idSchema } from '../id'
 import type { Meta } from '../types'
 import { aSplitForm } from './form'
+import { anId } from './id'
 
 export function aMeta({
-  id = v.parse(idSchema, 'corne'),
+  id = anId('corne'),
   name = 'Corne',
   form = aSplitForm(),
 }: Partial<Meta> = {}): Meta {

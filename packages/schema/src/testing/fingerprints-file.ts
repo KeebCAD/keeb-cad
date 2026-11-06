@@ -1,10 +1,8 @@
-import * as v from 'valibot'
-
-import { revisionSchema } from '../revision'
 import type { FingerprintsFile } from '../types'
+import { aRevision } from './revision'
 
 export function aFingerprintsFile({
-  revision = v.parse(revisionSchema, 'r1'),
+  revision = aRevision(),
   fingerprints = [],
 }: Partial<FingerprintsFile> = {}): FingerprintsFile {
   return { revision, fingerprints }

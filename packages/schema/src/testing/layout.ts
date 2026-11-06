@@ -1,10 +1,8 @@
-import * as v from 'valibot'
-
-import { idSchema } from '../id'
 import type { ChainGroup, FreeGroup, Group } from '../types'
+import { anId } from './id'
 
 export function aFreeGroup({
-  id = v.parse(idSchema, 'free-group'),
+  id = anId('free-group'),
   arrangement = 'free',
   children = [],
 }: Partial<FreeGroup> = {}): FreeGroup {
@@ -12,7 +10,7 @@ export function aFreeGroup({
 }
 
 export function aChainGroup({
-  id = v.parse(idSchema, 'chain-group'),
+  id = anId('chain-group'),
   arrangement = 'chain',
   axis = 'x',
   children = [],
@@ -32,9 +30,6 @@ export function aGroup<T extends Group['arrangement']>(
   return groupBuilders[arrangement]()
 }
 
-export function aLayout({
-  id = v.parse(idSchema, 'root'),
-  ...fields
-}: Partial<FreeGroup> = {}): FreeGroup {
+export function aLayout({ id = anId('root'), ...fields }: Partial<FreeGroup> = {}): FreeGroup {
   return aFreeGroup({ id, ...fields })
 }
