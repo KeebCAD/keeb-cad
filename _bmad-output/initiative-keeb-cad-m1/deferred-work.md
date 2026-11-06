@@ -73,3 +73,7 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-specs-build-schema-values-with-test-builders-plan.md`
   summary: No check proves `only-tests-import-testing` catches a bare `@keeb-cad/<pkg>/testing` import after dependency-cruiser resolves it to `packages/<pkg>/src/testing/index.ts`; the violation tree has no node_modules, so its bare imports stay unresolved.
   evidence: 23.17 review finding 5; `tooling/ad10/rules.spec.ts` notes the tree's bare imports stay unresolved; the gap predates 23.17 for result/testing, and a real-repo cruise like the editor's Vue check would close it.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-tests-and-lint-close-the-silent-green-shortcuts-plan.md`
+  summary: `tooling/ad10/rules.spec.ts`'s `gives every non-kernel row di, reactive and result, and no kernel any` asserts only plates and four kernels, so its name claims more than its expects.
+  evidence: precedent line `expect(allowedTargets('plates')).toEqual(expect.arrayContaining(['di', 'reactive', 'result']))`; rule `Make a test's name and its expects claim the same thing.` (23.18 conformance review)
