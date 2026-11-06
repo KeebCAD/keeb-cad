@@ -1,0 +1,175 @@
+---
+title: 'Specs build schema values with test builders'
+type: 'refactor'
+ticket: '17'
+created: '2026-11-06'
+status: 'built'
+baseline_revision: 'edd63fd460f4bfd3e0baf4be452be0cab503bde6'
+route: 'full'
+route_source: 'auto'
+risk: 'low'
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
+review_loop_iteration: 0
+context:
+  - '{project-root}/AGENTS.md'
+---
+
+<frozen-after-approval reason="human-owned intent — do not modify unless human renegotiates">
+
+## Intent
+
+**Problem:** Specs copy whole meta, layout and derived-file literals they never read (storage's read-bundle and write-bundle, design-file's migrate-bundle, design's `emptyLayoutDesign`, schema's own specs), so every new required field means editing each of them. The spine's Test builders row settles the fix: hand-written builders in `schema/testing`, imported only by tests.
+
+**Approach:** Add `schema/testing` with `aMeta`, `aForm`, `aLayout`, `aDesign`, `aRoutingFile` and `aFingerprintsFile`, each returning a valid value whose fields a test overrides one by one; fence every package's `testing` folder to tests with one dependency-cruiser rule and violation fixtures; move the specs onto the builders. No behaviour change.
+
+**Decisions (Sergii, 2026-11-06):** these supersede ticket 23.17's description and verify lines where they differ.
+- commands' `new-design.spec.ts` stays as written, not moved onto builders, because its expected bundle is NewDesign's output with every field asserted: data the test is about.
+- design's `emptyLayoutDesign()` is replaced by the builders at every call site and deleted in this PR, not deferred, because two default designs would both change with every new field.
+- schema's own `meta.spec.ts` and `layout.spec.ts` move onto `aLayout()` and `aMeta()`, not left as written; each keeps the section it is about written out.
+- One rule fences every package's `testing` folder (imported only by spec files and by other `testing` folders), not a second copy of result's rule, because a package's own test helpers (`design/src/testing`, a later `aBundle()`) must be able to build on schema's builders, and `design/src/testing` is unfenced today. result's rule is replaced by it.
+- `aRoutingFile` and `aFingerprintsFile` are added, not left as copied literals, because write-bundle and read-bundle copy both files without reading them.
+- A builder's file in `testing/` takes its schema file's name (`testing/meta.ts` holds `aMeta`, beside `src/meta.ts`), not the builder's name (`a-meta.ts`, as `result`'s `expect-ok.ts`), because the builders then line up with the schemas they build, and a concept's later builders (`aChainGroup` beside `aLayout`) share its file.
+- read-bundle's input KDL texts stay written out, not built with design-file's writers, because a writer bug and a mirrored reader bug would cancel out; its routing and fingerprints revisions stay distinct (`r1`, `r2`).
+
+## Boundaries & Constraints
+
+**Always:** Every builder call returns new objects; no default lives in a shared module-level constant (design's specs freeze builder output). Builders are hand-written defaults, never generated from the Valibot schemas (spine Test builders row). Each builder has one test: its output parses through its schema. Data a test is about stays written out: design-file's KDL texts in read-kdl, round-trip, write-design-file and migrate-bundle, and storage's read-bundle texts.
+
+**Never:** No production code change. No new design-file field, schema or shared kind. No snapshot. No cast or `@ts-expect-error` to build an invalid value.
+
+## I/O & Edge-Case Matrix
+
+| Scenario | Input / State | Expected Output / Behavior | Error Handling |
+|----------|--------------|---------------------------|----------------|
+| Defaults | `aDesign()` | a `Design` that `designSchema` accepts | none |
+| Fence | a production file imports a package's `testing` subpath or folder | dependency-cruiser reports `only-tests-import-testing` | lint fails |
+| Fence | a spec, or another `testing` folder, imports one | no violation | none |
+
+</frozen-after-approval>
+
+## Code Map
+
+- `packages/schema/src/` -- `meta.ts`, `form.ts` (`v.variant('type', …)`), `layout.ts` (`freeGroupSchema`), `design.ts`, `routing-file.ts`, `fingerprints-file.ts`, `id.ts`, `revision.ts` (branded); types `Meta`, `Form`, `FreeGroup`, `Design`, `RoutingFile`, `FingerprintsFile` in `types.ts`. `package.json` exports only `.`. `tsconfig.lib.json` excludes only `*.spec.ts`, so `src/testing/` is type-checked as library code.
+- `packages/result/` -- the subpath precedent: `"./testing": "./src/testing/index.ts"`, one helper per file, `index.ts` re-exports only.
+- `.dependency-cruiser.mts` L368 `only-specs-import-result-testing` -- replaced by the general rule (`TEST_FILE` at L155).
+- Spine (`architecture-keeb-cad-layout-model.md`) L333 (schema package line: `only spec files import it`), L1012 (Test builders row: `imported only by spec files`), L1085 (seed: `(aMeta, aLayout, aDesign); spec files only`) -- now out of date with Sergii's fence and builder decisions.
+- `tooling/ad10/violations/packages/storage/src/index.ts` (imports `@keeb-cad/result/testing`) and `x.spec.ts` -- add `@keeb-cad/schema/testing` to both. `tooling/ad10/rules.spec.ts` L217 (violation row) and L267 (`allows a storage test to import result/testing`) -- rename to the new rule, add schema rows.
+- `packages/storage/src/bundle/read-bundle.spec.ts`, `write-bundle.spec.ts` -- storage's test is which text goes to which file; design-file owns the texts.
+- `packages/design-file/src/migrate-bundle.spec.ts` L15 `const design`, and `{ revision: 'r1' }` / `{ revision: 'r1', fingerprints: [] }` expected values -- read from the hand-written texts.
+- `packages/design/src/testing/empty-layout-design.ts` + re-export -- delete. Call sites: `store/design-store.spec.ts` (L110–L695; L565's spread override; L695–696 mutates `meta.id = 'Corne'` for an invalid design), `patching/design-patcher.spec.ts` L14, L44, `patching/deep-freeze.spec.ts` L8. `replaceDesign` takes `MigratedBundle`, whose `design` is `unknown`.
+- `packages/schema/src/meta.spec.ts` (copies `layout`), `layout.spec.ts` L6 module-level `const meta`.
+- `packages/commands/src/design/new-design.spec.ts` -- do not change.
+- tsconfig: `strict`, no `exactOptionalPropertyTypes`, so `Partial<T>` admits `undefined` values.
+
+## Tasks & Acceptance
+
+**Execution:**
+- [x] `packages/schema/src/testing/` -- `meta.ts` (`aMeta`), `form.ts` (`aForm`), `layout.ts` (`aLayout`), `design.ts` (`aDesign`), `routing-file.ts` (`aRoutingFile`), `fingerprints-file.ts` (`aFingerprintsFile`), each named for its schema file in `src/`; `index.ts` re-exports only.
+- [x] `packages/schema/src/testing/<schema file>.spec.ts` (`meta.spec.ts`, …) -- one test per builder: `expect(v.safeParse(<its schema>, aX()).issues).toBeUndefined()`; `aLayout` against `freeGroupSchema`.
+- [x] `packages/schema/package.json` -- `"./testing": "./src/testing/index.ts"`.
+- [x] `.dependency-cruiser.mts` -- replace `only-specs-import-result-testing` by `only-tests-import-testing`: `from.pathNot: [TEST_FILE, '^packages/[^/]+/src/testing/']`, `to.path: ['^packages/[^/]+/src/testing/', '^@keeb-cad/[^/]+/testing$']`.
+- [x] `tooling/ad10/violations/packages/storage/src/index.ts`, `x.spec.ts`, `tooling/ad10/rules.spec.ts` -- the renamed result row, a schema/testing violation row, and the allowed-spec test covering both subpaths. New fixture `tooling/ad10/violations/packages/design/src/testing/bundle.ts` importing `@keeb-cad/schema/testing`, with a test that it reports nothing and the edge was cruised; `tooling/ad10/violations/packages/design/src/index.ts` imports `./testing/bundle` (a resolved folder import) as a violation row.
+- [x] `packages/storage/src/bundle/read-bundle.spec.ts` -- KDL texts stay written out (`revision "r1"`, `revision "r2"`); expected `aDesign()`, `aRoutingFile()`, `aFingerprintsFile({ revision: v.parse(revisionSchema, 'r2') })`, built inside each test.
+- [x] `packages/storage/src/bundle/write-bundle.spec.ts` -- `{ design: aDesign(), routing: aRoutingFile(), fingerprints: aFingerprintsFile() }`.
+- [x] `packages/design-file/src/migrate-bundle.spec.ts` -- module-level `const design` removed; each test's expected value calls `aDesign()`, `aRoutingFile()`, `aFingerprintsFile()`; the `it.each` rows carry only the derived part and the test body adds `design: aDesign()`, so no builder runs at collection time; KDL texts unchanged.
+- [x] `packages/design/src/` -- every `emptyLayoutDesign()` → `aDesign()` (overrides through `aMeta`); the invalid-id test builds `{ ...aDesign(), meta: { ...aMeta(), id: 'Corne' } }`; delete `testing/empty-layout-design.ts` and its re-export.
+- [x] `packages/schema/src/meta.spec.ts`, `layout.spec.ts` -- `{ meta: { ...aMeta(), key: { id: 'k1' } }, layout: aLayout() }`; `meta: aMeta()` inside each test in place of the module-level `const meta`; builders from `./testing`.
+- [x] Spine, docs-only commit straight to main before the PR (done in edd63fd460f4bfd3e0baf4be452be0cab503bde6) -- L333 and L1012: imported only by spec files and other packages' `testing` folders; L1085: `(aMeta, aForm, aLayout, aDesign, aRoutingFile, aFingerprintsFile); tests and testing folders only`.
+- [x] Stryker on `migrate-bundle.ts`, `read-bundle.ts`, `write-bundle.ts`; a verdict per new survivor.
+
+**Acceptance Criteria:**
+- Given the six builders, when each one's spec runs, then its output parses through its schema.
+- Given the storage production fixture importing `@keeb-cad/result/testing` and `@keeb-cad/schema/testing`, when `rules.spec.ts` runs, then each import reports `only-tests-import-testing` and `x.spec.ts` reports none.
+- Given read-bundle, write-bundle, migrate-bundle, design's specs and schema's meta and layout specs, when read, then none holds a meta, layout, routing or fingerprints object literal it does not assert on, none holds one at module level, and `emptyLayoutDesign` no longer exists.
+- Given the workspace, when `pnpm check` and `pnpm test` run, then both pass.
+
+## Implementation Notes
+
+- Stryker (migrate-bundle, read-bundle, write-bundle): 29 of 29 killed, score 100; 23.3's three equivalents did not show this run. Re-run by the orchestrator after implementation: same result.
+- Toggled bug: dropping the testing folder from the fence's importer exemption turned the testing-folder test red; narrowing the target to result/testing turned the violation row red; restored, green.
+- Implementer's decisions: migrate-bundle's `it.each` rows carry a thunk, not an object, so no builder runs at collection time; the fence's folder regex is the constant `TESTING_FOLDER`, not inlined twice, because both sides use it; `aForm` returns `Form`, not the split variant, because `Meta.form` takes `Form` and the variant would need a new alias in `types.ts`; design-patcher's spec uses `aDesign()`, not `v.parse(designSchema, aDesign())`, because the builder already returns a `Design`; design-store's overrides use `aDesign({ meta: aMeta({ … }) })`, not spreads.
+
+## Plan Change Log
+
+## Review Triage Log
+
+Pass 1 (quick, test-reviewer): high 0, medium 0, low 6, false 1, maybe-false 0; no quote dropped.
+
+| # | Finding | Verdict | Route | Evidence |
+|---|---------|---------|-------|----------|
+| 1 | write-bundle's routing and fingerprints share revision `r1` (both lenses) | low | patch | Real: the old arrange had r1/r2; a writer swapping revisions now passes. Fingerprints overridden to `r2`. |
+| 2 | design-store's "deep-freezes the derived files it keeps" copies routing/fingerprints literals it doesn't assert on | low | patch | Real: the test checks only frozenness; AC3. Built with `aRoutingFile()`/`aFingerprintsFile()`. |
+| 3 | rules.spec.ts restates the allowed-edge assertion in two separate tests | low | patch | Real: the `it.each` "Each allowed edge reports nothing and was really cruised" already holds it; AGENTS.md "Write a shared assertion once". Moved to rows. |
+| 4 | Fence misses nested `src/<x>/testing/` and `app/src/testing/`; `$` anchor misses deeper specifiers | low | reject | No such folder exists or is sanctioned (spine: the `testing` subpath of the owning package); a deeper `@keeb-cad/x/testing/foo` cannot resolve, since `exports` lists only `./testing`. Widening adds regex for no reachable case. |
+| 5 | No fixture proves a bare `@keeb-cad/*/testing` resolved to `packages/*/src/testing/index.ts` is caught | low | defer | Pre-existing for result/testing; the relative fixture proves `TESTING_FOLDER` on the resolved path shape, the resolution itself is dependency-cruiser's. |
+| 6 | Stryker ticked with no recorded run or verdict | false | reject | The run happened (29/29 killed, re-run by the orchestrator); the fix edits this build's plan. Recorded in Implementation Notes. |
+
+## Design Notes
+
+**Decision (plan): builders return the schema's output type**, not its input type, because specs hand them to typed functions (`writeBundle`, `writeDesignFile`) and a `v.parse` at each call site is what builders remove. Ids and revisions are branded by `v.parse(idSchema, 'corne')` / `v.parse(revisionSchema, 'r1')` inside the builder, never a cast.
+
+**Decision (plan): signatures** are `aMeta(fields: Partial<Meta> = {}): Meta`, `aForm(fields: Partial<Extract<Form, { type: 'split' }>> = {})`, `aLayout(fields: Partial<FreeGroup> = {}): FreeGroup`, `aDesign(fields: Partial<Design> = {}): Design`, `aRoutingFile(fields: Partial<RoutingFile> = {})`, `aFingerprintsFile(fields: Partial<FingerprintsFile> = {})`. `aForm` builds the split form and `aLayout` a free group, not a union-typed override, because `Partial` over a variant lets a test mix two variants' fields; a test wanting unibody or a chain writes it out.
+
+**Decision (plan): fields are taken with destructuring defaults**, not a spread over the defaults, because a spread lets `aDesign({ meta: undefined })` drop the default (no `exactOptionalPropertyTypes`). Overrides are per field, not a deep merge, because each nested value has its own builder.
+
+```ts
+export function aDesign({ meta = aMeta(), layout = aLayout() }: Partial<Design> = {}): Design {
+  return { meta, layout }
+}
+```
+
+**Decision (plan): defaults are today's copied literals** (`corne`, `Corne`, split reversible, a free root `root` with no children; revision `r1` in both derived files, fingerprints `[]`), not new values, because migrate-bundle's hand-written KDL must keep reading as the builders' output.
+
+**Decision (plan): migrate-bundle's expected values are the builders' output**, not written-out objects, because the tests are about the format-version node and the derived files, not the sections (the ticket's call). Trade-off: changing a default means changing migrate-bundle's KDL texts with it; a new required field changes them anyway, since that KDL is written out.
+
+**Decision (plan): the fence is a hand-written rule beside `GRAPH`**, not a `GRAPH` row as the ticket says, because `GRAPH` generates one imports-only rule per package from its drawn edges, and this fence is about file kind across all packages.
+
+**Decision (plan): `aDesign({ meta: undefined })` falling back to the default is not tested**, not given a second builder test, because the spine gives each builder one test; destructuring defaults make it hold by construction.
+
+**Decision (plan): the invalid-id test spreads the builders into a plain object** with `id: 'Corne'`, not a mutation of a typed value, because `replaceDesign`'s design is `unknown`: the types accept it without a cast.
+
+**Decision (plan): builder tests assert `issues` is `undefined`**, not `toEqual([])`, because that is what `v.safeParse` returns on success.
+
+## Conformance Log
+
+Three reviewer passes (Sonnet, context-free); 0 findings dropped, every quote verified. Final-pass fixes no reviewer has read: all lines marked pass 3.
+
+- `Give every decision its rejected alternative` (builder signatures, override typing, issues assertion) -- fixed.
+- `Each builder has one test of its own: its output parses through its schema` (`aLayout` vs `groupSchema`) -- fixed (`freeGroupSchema`).
+- `Keep no mutable state at module level in a spec` (precedent: migrate-bundle.spec.ts `const design = {`, layout.spec.ts `const meta`) -- fixed.
+- `Use @ts-expect-error only in a type-only test` (precedent: design-store.spec.ts `design.meta.id = 'Corne'`) -- fixed (plain spread object).
+- `Build schema values the test doesn't read with the concept's test builder` (write-bundle's routing and fingerprints) -- asked (aRoutingFile, aFingerprintsFile).
+- `Data a test is about stays written out` (migrate-bundle expected design) -- fixed (trade-off recorded as a decision).
+- Ticket and plan disagree (new-design, GRAPH, extra specs) -- fixed (frozen block supersedes the ticket).
+- Pass 3: `no expected value computed the way production computes it` (read-bundle via writers) -- asked (texts stay written out).
+- Pass 3: `Assert what a function returns` (read-bundle's distinct revisions) -- fixed (`r2` override).
+- Pass 3: spine `only spec files import it` -- fixed (spine docs task).
+- Pass 3: hand-written fixtures prove the subpath rules (resolved folder import) -- fixed (row added); undefined override untested -- fixed (decision).
+- Pass 3: `X, not Y, because Z` (GRAPH) -- fixed.
+- After checkpoint (Sergii): builder file names follow the schema files -- recorded in the frozen block; no reviewer has read it.
+- Pass 3: fresh objects per call -- fixed (Always line); `it.each` rows built at collection -- fixed.
+
+## Verification
+
+**Commands:**
+- `pnpm check` -- expected: passes (types, lint, depcruise).
+- `pnpm test` -- expected: whole suite green.
+- `pnpm test:mutation --mutate packages/design-file/src/migrate-bundle.ts,packages/storage/src/bundle/read-bundle.ts,packages/storage/src/bundle/write-bundle.ts` -- expected: no survivor beyond 23.3's three equivalents.
+
+## Boundary Table
+
+| Group | Boundary | Input | Expected | Level |
+|-------|----------|-------|----------|-------|
+| rules | meta builder | `aMeta()` | `metaSchema` accepts | unit (schema) |
+| rules | form builder | `aForm()` | `formSchema` accepts | unit (schema) |
+| rules | layout builder | `aLayout()` | `freeGroupSchema` accepts | unit (schema) |
+| rules | design builder | `aDesign()` | `designSchema` accepts | unit (schema) |
+| rules | routing file builder | `aRoutingFile()` | `routingFileSchema` accepts | unit (schema) |
+| rules | fingerprints file builder | `aFingerprintsFile()` | `fingerprintsFileSchema` accepts | unit (schema) |
+| module boundaries | fence, production importer | storage `src/index.ts` imports `@keeb-cad/schema/testing` | `only-tests-import-testing` | unit (tooling) |
+| module boundaries | fence, production importer | storage `src/index.ts` imports `@keeb-cad/result/testing` | `only-tests-import-testing` | unit (tooling) |
+| module boundaries | fence, spec importer | storage `src/x.spec.ts` imports both | no violation | unit (tooling) |
+| module boundaries | fence, resolved folder import | `tooling/ad10/violations/packages/design/src/index.ts` imports `./testing/bundle` | `only-tests-import-testing` | unit (tooling) |
+| module boundaries | fence, testing-folder importer | `tooling/ad10/violations/packages/design/src/testing/bundle.ts` imports `@keeb-cad/schema/testing` | no violation | unit (tooling) |

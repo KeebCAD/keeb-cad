@@ -1,9 +1,9 @@
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
-import { type Design, designSchema, type Mutable, type Rejection } from '@keeb-cad/schema'
-import * as v from 'valibot'
+import { type Design, type Mutable, type Rejection } from '@keeb-cad/schema'
+import { aDesign } from '@keeb-cad/schema/testing'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 
-import { expectDeeplyFrozen, emptyLayoutDesign } from '../testing'
+import { expectDeeplyFrozen } from '../testing'
 import { deepFreeze } from './deep-freeze'
 import { DesignPatcher } from './design-patcher'
 import type { Writable } from './types'
@@ -11,7 +11,7 @@ import type { Writable } from './types'
 function arrange() {
   return {
     patcher: new DesignPatcher(),
-    design: deepFreeze(v.parse(designSchema, emptyLayoutDesign())),
+    design: deepFreeze(aDesign()),
   }
 }
 
@@ -41,7 +41,7 @@ describe('DesignPatcher', () => {
 
     expectErr(changed)
     expect(changed.error).toBe(rejection)
-    expect(design).toEqual(v.parse(designSchema, emptyLayoutDesign()))
+    expect(design).toEqual(aDesign())
   })
 
   it('replays patches into the same design, deeply frozen', () => {

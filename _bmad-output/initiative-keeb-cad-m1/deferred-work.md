@@ -69,3 +69,7 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/party-mode` (party session 2026-11-05, test builders and deferred work)
   summary: The guard checks paths only on Edit, Write and MultiEdit (`EDIT_TOOLS` in `tooling/hooks/guard-decision.ts`), so a Bash edit (`sed -i`, a heredoc, `cat >`) to a runner, mutation, lint or dependency-cruiser config, or a snapshot, never reaches `ASKED_PATHS` or `DENIED_PATHS`.
   evidence: `guardDecision` returns only `DENIED_COMMANDS` for Bash; agent instructions allow small edits through Bash. Closing it means recognising writes to a path inside a shell command, which a regex can only approximate.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-specs-build-schema-values-with-test-builders-plan.md`
+  summary: No check proves `only-tests-import-testing` catches a bare `@keeb-cad/<pkg>/testing` import after dependency-cruiser resolves it to `packages/<pkg>/src/testing/index.ts`; the violation tree has no node_modules, so its bare imports stay unresolved.
+  evidence: 23.17 review finding 5; `tooling/ad10/rules.spec.ts` notes the tree's bare imports stay unresolved; the gap predates 23.17 for result/testing, and a real-repo cruise like the editor's Vue check would close it.

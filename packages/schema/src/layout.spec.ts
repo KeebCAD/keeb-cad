@@ -2,8 +2,7 @@ import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
 import { designSchema } from './design'
-
-const meta = { id: 'corne', name: 'Corne', form: { type: 'split', board: 'reversible' } }
+import { aMeta } from './testing'
 
 function issuePaths(value: unknown): unknown[][] {
   const result = v.safeParse(designSchema, value)
@@ -26,13 +25,13 @@ describe('the layout tree', () => {
       ],
     }
 
-    expect(issuePaths({ meta, layout })).toEqual([])
+    expect(issuePaths({ meta: aMeta(), layout })).toEqual([])
   })
 
   it('refuses a chain group without an axis, at the axis', () => {
     const layout = { id: 'root', arrangement: 'chain', children: [] }
 
-    expect(issuePaths({ meta, layout })).toEqual([['layout', 'axis']])
+    expect(issuePaths({ meta: aMeta(), layout })).toEqual([['layout', 'axis']])
   })
 
   it('refuses a child group without children, at its children', () => {
@@ -42,6 +41,6 @@ describe('the layout tree', () => {
       children: [{ id: 'thumbs', arrangement: 'free' }],
     }
 
-    expect(issuePaths({ meta, layout })).toEqual([['layout', 'children', 0, 'children']])
+    expect(issuePaths({ meta: aMeta(), layout })).toEqual([['layout', 'children', 0, 'children']])
   })
 })

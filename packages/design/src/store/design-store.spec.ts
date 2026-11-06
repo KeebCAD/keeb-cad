@@ -10,6 +10,7 @@ import {
   type Frozen,
   type Rejection,
 } from '@keeb-cad/schema'
+import { aDesign, aFingerprintsFile, aMeta, aRoutingFile } from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
@@ -18,7 +19,7 @@ import { registerAction } from '../entries/register-action'
 import { registerCommand } from '../entries/register-command'
 import type { Action, ActionHandle, Command, CommandHandle } from '../entries/types'
 import type { Writable } from '../patching/types'
-import { expectDeeplyFrozen, expectNothingFrozen, emptyLayoutDesign } from '../testing'
+import { expectDeeplyFrozen, expectNothingFrozen } from '../testing'
 import { DesignStore } from './design-store'
 import { DuplicateCommandIdError } from './duplicate-command-id-error'
 import type { Committed, CommitEvent } from './types'
@@ -107,8 +108,7 @@ async function arrange(arrangement: Arrangement = {}): Promise<DesignStore> {
 }
 
 function unibodyDesign() {
-  const design = emptyLayoutDesign()
-  return { ...design, meta: { ...design.meta, form: { type: 'unibody' } } }
+  return aDesign({ meta: aMeta({ form: { type: 'unibody' } }) })
 }
 
 // The derived files a design starts with, written out as the requirement states them.
@@ -140,7 +140,7 @@ function expectNothingCommitted(
 describe('DesignStore', () => {
   describe('run, for a command', () => {
     it('commits a command: a frozen design, the next seq, its revision and its patches', async () => {
-      const store = await arrange({ commands: [RenameDesign], design: emptyLayoutDesign() })
+      const store = await arrange({ commands: [RenameDesign], design: aDesign() })
       const before = committed(store)
       const events = recordCommits(store)
 
@@ -164,7 +164,7 @@ describe('DesignStore', () => {
       ['a plain object', () => ({ form: { type: 'unibody' as const } })],
       ['a Vue reactive object', () => reactive({ form: { type: 'unibody' as const } })],
     ])('stores %s as plain data and never freezes it', async (_name, makeInput) => {
-      const store = await arrange({ commands: [SetForm], design: emptyLayoutDesign() })
+      const store = await arrange({ commands: [SetForm], design: aDesign() })
       const before = committed(store)
       const input = makeInput()
 
@@ -204,7 +204,7 @@ describe('DesignStore', () => {
           return rejection
         }
       }
-      const store = await arrange({ commands: [RejectRename], design: emptyLayoutDesign() })
+      const store = await arrange({ commands: [RejectRename], design: aDesign() })
       const before = store.current
       const events = recordCommits(store)
 
@@ -217,7 +217,7 @@ describe('DesignStore', () => {
     })
 
     it('refuses input the schema refuses, with plain issue paths', async () => {
-      const store = await arrange({ commands: [RenameDesign], design: emptyLayoutDesign() })
+      const store = await arrange({ commands: [RenameDesign], design: aDesign() })
       const before = store.current
       const events = recordCommits(store)
 
@@ -269,7 +269,7 @@ describe('DesignStore', () => {
     })
 
     it('keeps the derived files, by reference, through a command', async () => {
-      const store = await arrange({ commands: [RenameDesign], design: emptyLayoutDesign() })
+      const store = await arrange({ commands: [RenameDesign], design: aDesign() })
       const before = committed(store)
 
       expectOk(store.run(RenameDesign, { name: 'Corne v2' }))
@@ -294,7 +294,7 @@ describe('DesignStore', () => {
     })
 
     it('lets a throwing listener escape after the commit', async () => {
-      const store = await arrange({ commands: [RenameDesign], design: emptyLayoutDesign() })
+      const store = await arrange({ commands: [RenameDesign], design: aDesign() })
       const before = committed(store)
       store.events.on('commit', () => {
         throw new Error('listener failed')
@@ -316,7 +316,7 @@ describe('DesignStore', () => {
     it('runs with no design loaded and commits what it hands to replaceDesign', async () => {
       const store = await arrange({ actions: [LoadDesign] })
       const events = recordCommits(store)
-      const value = emptyLayoutDesign()
+      const value = aDesign()
 
       expectOk(await store.run(LoadDesign, { design: value }))
 
@@ -409,7 +409,7 @@ describe('DesignStore', () => {
     it('throws on an action that is not registered', async () => {
       const store = await arrange()
 
-      expect(() => store.run(LoadDesign, { design: emptyLayoutDesign() })).toThrow(
+      expect(() => store.run(LoadDesign, { design: aDesign() })).toThrow(
         new InvariantError('Action "file.loadDesign" is not registered.'),
       )
     })
@@ -443,7 +443,7 @@ describe('DesignStore', () => {
           draft.meta.name = input.name
         }
       }
-      const store = await arrange({ commands: [NameDesign], design: emptyLayoutDesign() })
+      const store = await arrange({ commands: [NameDesign], design: aDesign() })
 
       for (const input of inputs) store.run(NameDesign, input)
 
@@ -544,7 +544,7 @@ describe('DesignStore', () => {
   describe('replaceDesign', () => {
     it("commits the design deeply frozen at the first seq with its revision, never freezing the caller's value", async () => {
       const store = await arrange()
-      const design = emptyLayoutDesign()
+      const design = aDesign()
 
       expectOk(store.replaceDesign({ design, unreadable: [] }))
 
@@ -559,12 +559,9 @@ describe('DesignStore', () => {
     })
 
     it('advances the seq from the design it replaces', async () => {
-      const store = await arrange({ design: emptyLayoutDesign() })
+      const store = await arrange({ design: aDesign() })
       const before = committed(store)
-      const design = {
-        ...emptyLayoutDesign(),
-        meta: { ...emptyLayoutDesign().meta, name: 'Corne v2' },
-      }
+      const design = aDesign({ meta: aMeta({ name: 'Corne v2' }) })
 
       expectOk(store.replaceDesign({ design, unreadable: [] }))
 
@@ -580,7 +577,7 @@ describe('DesignStore', () => {
       const store = await arrange()
       const events = recordCommits(store)
 
-      expectOk(store.replaceDesign({ design: emptyLayoutDesign(), unreadable: [] }))
+      expectOk(store.replaceDesign({ design: aDesign(), unreadable: [] }))
 
       expect(events).toEqual([{ kind: 'whole', committed: committed(store) }])
     })
@@ -594,7 +591,7 @@ describe('DesignStore', () => {
       }
 
       const result = store.replaceDesign({
-        design: emptyLayoutDesign(),
+        design: aDesign(),
         routing,
         fingerprints,
         unreadable: [],
@@ -603,22 +600,20 @@ describe('DesignStore', () => {
       expectOk(result)
       expect(result.value).toEqual({ emptied: [] })
       expect(committed(store)).toEqual({
-        design: emptyLayoutDesign(),
+        design: aDesign(),
         routing,
         fingerprints,
         seq: 1,
-        revision: hash(emptyLayoutDesign()),
+        revision: hash(aDesign()),
       })
     })
 
     it("deep-freezes the derived files it keeps, never the caller's", async () => {
       const store = await arrange()
-      const routing = { revision: 'older' }
-      const fingerprints = { revision: 'older', fingerprints: [] }
+      const routing = aRoutingFile()
+      const fingerprints = aFingerprintsFile()
 
-      expectOk(
-        store.replaceDesign({ design: emptyLayoutDesign(), routing, fingerprints, unreadable: [] }),
-      )
+      expectOk(store.replaceDesign({ design: aDesign(), routing, fingerprints, unreadable: [] }))
 
       expectDeeplyFrozen(committed(store).routing)
       expectDeeplyFrozen(committed(store).fingerprints)
@@ -673,7 +668,7 @@ describe('DesignStore', () => {
       'empties %s at the new revision, saying which and why',
       async (_role, files, expectedEmptied, expectedFiles) => {
         const store = await arrange()
-        const design = emptyLayoutDesign()
+        const design = aDesign()
 
         const result = store.replaceDesign({ design, unreadable: [], ...files })
 
@@ -692,8 +687,7 @@ describe('DesignStore', () => {
       const store = await arrange()
       const before = store.current
       const events = recordCommits(store)
-      const design = emptyLayoutDesign()
-      design.meta.id = 'Corne'
+      const design = { ...aDesign(), meta: { ...aMeta(), id: 'Corne' } }
 
       const result = store.replaceDesign({ design, unreadable: [] })
 

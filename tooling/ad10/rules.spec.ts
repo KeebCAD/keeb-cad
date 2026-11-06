@@ -215,10 +215,12 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
           '@vue/reactivity',
         ),
         v(
-          'only-specs-import-result-testing',
-          'packages/storage/src/index.ts',
-          '@keeb-cad/result/testing',
+          'only-tests-import-testing',
+          'packages/design/src/index.ts',
+          'packages/design/src/testing/bundle.ts',
         ),
+        v('only-tests-import-testing', 'packages/storage/src/index.ts', '@keeb-cad/result/testing'),
+        v('only-tests-import-testing', 'packages/storage/src/index.ts', '@keeb-cad/schema/testing'),
         v('only-ui-imports-reka-and-zag', 'packages/editor/src/index.ts', '@zag-js/hotkeys'),
         v('only-ui-imports-reka-and-zag', 'packages/editor/src/index.ts', 'reka-ui'),
         v(
@@ -262,11 +264,6 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
   it('allows a model test to import fixtures', () => {
     expect(violations.filter((v) => v.from === 'packages/model/src/x.spec.ts')).toEqual([])
     expect(edgesOf(result, 'packages/model/src/x.spec.ts')).toContain('@keeb-cad/fixtures')
-  })
-
-  it('allows a storage test to import result/testing', () => {
-    expect(violations.filter((v) => v.from === 'packages/storage/src/x.spec.ts')).toEqual([])
-    expect(edgesOf(result, 'packages/storage/src/x.spec.ts')).toContain('@keeb-cad/result/testing')
   })
 
   // Each allowed edge reports nothing and was really cruised, not silently dropped.
@@ -325,6 +322,18 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
       'the bridge',
       'packages/di/src/vue/vue.spec.ts',
       ['packages/di/src/vue/index.ts'],
+    ],
+    [
+      'a storage test',
+      'result/testing and schema/testing',
+      'packages/storage/src/x.spec.ts',
+      ['@keeb-cad/result/testing', '@keeb-cad/schema/testing'],
+    ],
+    [
+      'a testing folder',
+      'schema/testing',
+      'packages/design/src/testing/bundle.ts',
+      ['@keeb-cad/schema/testing'],
     ],
     ['geometry', 'makerjs', 'packages/geometry/src/index.ts', ['makerjs']],
     ['reactive', '@vue/reactivity', 'packages/reactive/src/index.ts', ['@vue/reactivity']],

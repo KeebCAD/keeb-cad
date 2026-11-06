@@ -2,18 +2,11 @@ import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
 import { designSchema } from './design'
+import { aLayout, aMeta } from './testing'
 
 describe('metaSchema', () => {
   it('refuses a field it does not define, at that field', () => {
-    const value = {
-      meta: {
-        id: 'corne',
-        name: 'Corne',
-        form: { type: 'split', board: 'reversible' },
-        key: { id: 'k1' },
-      },
-      layout: { id: 'root', arrangement: 'free', children: [] },
-    }
+    const value = { meta: { ...aMeta(), key: { id: 'k1' } }, layout: aLayout() }
 
     const result = v.safeParse(designSchema, value)
 

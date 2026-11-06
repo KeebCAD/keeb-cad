@@ -153,6 +153,7 @@ export const VUE_REACTIVITY = npm('@vue/reactivity')
 
 const ANY_WORKSPACE_TARGET = '^(packages/[^/]+/|app/|@keeb-cad/[^/]+(/|$))'
 const TEST_FILE = String.raw`\.(spec|test)\.ts$`
+const TESTING_FOLDER = '^packages/[^/]+/src/testing/'
 
 const MAIN_ENTRY = String.raw`^app/src/main\.ts$`
 const MODEL_WORKER_ENTRY = String.raw`^app/src/model\.worker\.ts$`
@@ -366,12 +367,12 @@ const config: IConfiguration = {
       },
     },
     {
-      name: 'only-specs-import-result-testing',
-      comment: 'Only spec files, and the testing folder itself, import result/testing.',
+      name: 'only-tests-import-testing',
+      comment: "Only spec files and other testing folders import a package's testing folder.",
       severity: 'error',
-      from: { pathNot: [TEST_FILE, '^packages/result/src/testing/'] },
+      from: { pathNot: [TEST_FILE, TESTING_FOLDER] },
       // The whole folder, so a resolved import of one helper file is fenced too.
-      to: { path: ['^packages/result/src/testing/', '^@keeb-cad/result/testing$'] },
+      to: { path: [TESTING_FOLDER, '^@keeb-cad/[^/]+/testing$'] },
     },
     {
       name: 'fixtures-only-in-tests',
