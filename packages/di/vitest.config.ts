@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 import { playwright } from '@vitest/browser-playwright'
 
 // The Vue bridge's specs touch the DOM, so they run in real browsers (AD-26, Verification
@@ -12,7 +12,9 @@ export default defineConfig({
     root: fileURLToPath(new URL('./', import.meta.url)),
     // A config file of its own inherits nothing from the root, so it shuffles again here.
     sequence: { shuffle: true },
+    expect: { requireAssertions: true },
     include: ['src/vue/**/*.spec.ts'],
+    exclude: [...configDefaults.exclude, '**/*.types.spec.ts'],
     browser: {
       enabled: true,
       provider: playwright(),

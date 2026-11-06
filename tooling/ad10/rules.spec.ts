@@ -121,13 +121,18 @@ describe('AD-10 graph rules, generated from GRAPH', async () => {
     ])
   })
 
-  it.each(ROWS)('%s: every drawn import reports nothing', (row) => {
-    for (const [from, targets] of allowedProbes(row)) {
-      expect(violations.filter((v) => v.from === from)).toEqual([])
+  // A row drawn to nothing has no allowed probe, so there is nothing to cruise.
+  it.each(ROWS.filter((row) => allowedTargets(row).length > 0))(
+    '%s: every drawn import reports nothing',
+    (row) => {
+      const probes = [...allowedProbes(row).keys()]
+      expect(violations.filter((v) => probes.includes(v.from))).toEqual([])
       // The allowed edges were really cruised, not silently dropped.
-      expect(edgesOf(result, from)).toEqual(expect.arrayContaining(targets))
-    }
-  })
+      expect(probes.flatMap((from) => edgesOf(result, from) ?? [])).toEqual(
+        expect.arrayContaining(allowedTargets(row).map((target) => specifier(row, target))),
+      )
+    },
+  )
 
   it('gives every non-kernel row di, reactive and result, and no kernel any', () => {
     expect(allowedTargets('plates')).toEqual(expect.arrayContaining(['di', 'reactive', 'result']))
@@ -259,6 +264,14 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
     const reported = new Set([...violations, ...violationsOf(await generated)].map((v) => v.rule))
     const configured = new Set((config.forbidden ?? []).map((r) => r.name))
     expect(reported).toEqual(configured)
+  })
+
+  // vitest is a root devDependency, so this edge resolves into node_modules, unlike the tree's
+  // other bare imports.
+  it("allows result's testing folder to import vitest", () => {
+    const from = 'packages/result/src/testing/expect-ok.ts'
+    expect(violations.filter((v) => v.from === from)).toEqual([])
+    expect(edgesOf(result, from)).toEqual([expect.stringMatching(/\/node_modules\/vitest\//)])
   })
 
   it('allows a model test to import fixtures', () => {

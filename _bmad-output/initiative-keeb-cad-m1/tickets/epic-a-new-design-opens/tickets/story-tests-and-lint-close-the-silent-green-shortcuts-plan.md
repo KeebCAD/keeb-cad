@@ -3,14 +3,14 @@ title: 'Tests and lint close the silent-green shortcuts'
 type: 'chore'
 ticket: '18'
 created: '2026-11-06'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: 'fc8c6d14471f9fce3eba3fc0e1d0162ec60caeae'
 route: 'full'
 route_source: 'auto'
 risk: 'low'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context: []
 ---
@@ -64,23 +64,23 @@ context: []
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `packages/schema/src/frozen.spec.ts` → `frozen.types.spec.ts`; `packages/design/src/entries/register-command.spec.ts`, `register-action.spec.ts`, `packages/design/src/store/design-store-run.spec.ts` → `*.types.spec.ts` (git mv, no edit) -- type-only files.
-- [ ] `packages/result/src/{result,option,async-result,attempt}.types.spec.ts`, `packages/design/src/patching/design-patcher.types.spec.ts` -- move each type-only test out of its runtime spec into the sibling, under the same describe path and name, unchanged -- runtime specs keep only tests that assert at run time.
-- [ ] `vitest.config.ts` -- root `test.expect: { requireAssertions: true }`; root `test.exclude: [...configDefaults.exclude, TYPE_SPECS]` with `TYPE_SPECS = '**/*.types.spec.ts'`; add `TYPE_SPECS` to the inline `di` and `tooling` excludes (both replace the root's); comment why the types specs leave the runtime projects.
-- [ ] `packages/di/vitest.config.ts`, `packages/editor/vitest.config.ts` -- `expect: { requireAssertions: true }` and `exclude: [...configDefaults.exclude, '**/*.types.spec.ts']`.
-- [ ] `tooling/types-specs-have-a-types-project.spec.ts` -- new: globs every `*.types.spec.ts` outside `node_modules` and asserts the list of those whose package has no `tsconfig.vitest.json` is `[]` (R19).
-- [ ] `tooling/ad10/rules.spec.ts` -- the drawn-import test runs over rows with at least one allowed target, and asserts whole values without the loop: the violations from the row's probe files `toEqual([])`, and the row's cruised edges (all its probe files' edges, flattened) `toEqual(expect.arrayContaining(allowedTargets(row).map((t) => specifier(row, t))))`.
-- [ ] `eslint.config.ts` -- `linterOptions: { noInlineConfig: true }`; `no-warning-comments: ['error', { terms: ['eslint-disable', 'eslint-enable', 'eslint'], location: 'start' }]` on all linted files; `vue/comment-directive: 'off'` for `**/*.vue`; file overrides `keeb-cad/reactive-keeps-workers-off-vue` (`vue/prefer-import-from-vue` off in `packages/reactive/src/index.ts`) and `keeb-cad/async-result-is-thenable` (`unicorn/no-thenable`, `unicorn/prefer-await` off in `packages/result/src/async-result.ts`), each with its reason as a comment; a `keeb-cad/type-specs` block for `**/*.types.spec.ts`: `no-restricted-imports` of `expect` from `vitest` (message exported as `TYPE_SPEC_MESSAGE`) and `vitest/expect-expect` with `assertFunctionNames: ['expectTypeOf']`; drop `expectTypeOf` from the `**/*.spec.ts` block's `vitest/expect-expect` list, so a runtime spec asserting only types fails lint too; `TEST_ID_MESSAGE` names a file override in eslint.config.ts with a comment giving the reason.
-- [ ] `eslint.config.ts` Playwright block -- `'playwright/expect-expect': 'error'` beside the four rules it raises.
-- [ ] `tooling/lint/e2e-test-rules.spec.ts` -- rows R20, R24.
-- [ ] `packages/reactive/src/index.ts`, `packages/result/src/async-result.ts` -- drop the disable comments (and async-result's reason line, now on the override).
-- [ ] `tooling/lint/no-inline-config.spec.ts` -- new: boundary rows R1–R7 and R15–R18 through `lintResult`.
-- [ ] `tooling/lint/type-specs.spec.ts` -- new: rows R8, R9, R21–R23. The `keeb-cad/type-specs` block sits after the `**/*.spec.ts` Vitest block, since that glob also matches `*.types.spec.ts` and the later block's options win.
-- [ ] `tooling/lint/no-test-ids.spec.ts` -- replace the disable-comment test with `still rejects a test id behind a disable comment` (R10).
-- [ ] `tooling/hooks/lint-decision.spec.ts` -- the warnings-only test builds its own `ESLint` with `overrideConfig: { rules: { 'no-console': 'warn' } }` and lints `console.log(1)`, instead of a disable comment; it keeps its arrange check (`errorCount: 0, warningCount: 1`).
-- [ ] `tooling/hooks/guard-decision.ts` -- a second `ASKED_PATHS` rule for `(^|\/)(eslint\.config\.[cm]?[jt]s|\.dependency-cruiser\.[cm]?[jt]s)$`, reason: lint and import rules change only as infrastructure work, a lint error is fixed in the code.
-- [ ] `tooling/hooks/guard-decision.spec.ts` -- rows R11–R13.
-- [ ] `AGENTS.md` -- Tests line: `getByTestId` and `data-testid` are a last resort, behind a file override in `eslint.config.ts` whose comment gives the reason; and a line that type-only tests live in `*.types.spec.ts`, which only the types projects run.
+- [x] `packages/schema/src/frozen.spec.ts` → `frozen.types.spec.ts`; `packages/design/src/entries/register-command.spec.ts`, `register-action.spec.ts`, `packages/design/src/store/design-store-run.spec.ts` → `*.types.spec.ts` (git mv, no edit) -- type-only files.
+- [x] `packages/result/src/{result,option,async-result,attempt}.types.spec.ts`, `packages/design/src/patching/design-patcher.types.spec.ts` -- move each type-only test out of its runtime spec into the sibling, under the same describe path and name, unchanged -- runtime specs keep only tests that assert at run time.
+- [x] `vitest.config.ts` -- root `test.expect: { requireAssertions: true }`; root `test.exclude: [...configDefaults.exclude, TYPE_SPECS]` with `TYPE_SPECS = '**/*.types.spec.ts'`; add `TYPE_SPECS` to the inline `di` and `tooling` excludes (both replace the root's); comment why the types specs leave the runtime projects.
+- [x] `packages/di/vitest.config.ts`, `packages/editor/vitest.config.ts` -- `expect: { requireAssertions: true }` and `exclude: [...configDefaults.exclude, '**/*.types.spec.ts']`.
+- [x] `tooling/types-specs-have-a-types-project.spec.ts` -- new: globs every `*.types.spec.ts` outside `node_modules` and asserts the list of those whose package has no `tsconfig.vitest.json` is `[]` (R19).
+- [x] `tooling/ad10/rules.spec.ts` -- the drawn-import test runs over rows with at least one allowed target, and asserts whole values without the loop: the violations from the row's probe files `toEqual([])`, and the row's cruised edges (all its probe files' edges, flattened) `toEqual(expect.arrayContaining(allowedTargets(row).map((t) => specifier(row, t))))`.
+- [x] `eslint.config.ts` -- `linterOptions: { noInlineConfig: true }`; `no-warning-comments: ['error', { terms: ['eslint-disable', 'eslint-enable', 'eslint'], location: 'start' }]` on all linted files; `vue/comment-directive: 'off'` for `**/*.vue`; file overrides `keeb-cad/reactive-keeps-workers-off-vue` (`vue/prefer-import-from-vue` off in `packages/reactive/src/index.ts`) and `keeb-cad/async-result-is-thenable` (`unicorn/no-thenable`, `unicorn/prefer-await` off in `packages/result/src/async-result.ts`), each with its reason as a comment; a `keeb-cad/type-specs` block for `**/*.types.spec.ts`: `no-restricted-imports` of `expect` from `vitest` (message exported as `TYPE_SPEC_MESSAGE`) and `vitest/expect-expect` with `assertFunctionNames: ['expectTypeOf']`; drop `expectTypeOf` from the `**/*.spec.ts` block's `vitest/expect-expect` list, so a runtime spec asserting only types fails lint too; `TEST_ID_MESSAGE` names a file override in eslint.config.ts with a comment giving the reason.
+- [x] `eslint.config.ts` Playwright block -- `'playwright/expect-expect': 'error'` beside the four rules it raises.
+- [x] `tooling/lint/e2e-test-rules.spec.ts` -- rows R20, R24.
+- [x] `packages/reactive/src/index.ts`, `packages/result/src/async-result.ts` -- drop the disable comments (and async-result's reason line, now on the override).
+- [x] `tooling/lint/no-inline-config.spec.ts` -- new: boundary rows R1–R7 and R15–R18 through `lintResult`.
+- [x] `tooling/lint/type-specs.spec.ts` -- new: rows R8, R9, R21–R23. The `keeb-cad/type-specs` block sits after the `**/*.spec.ts` Vitest block, since that glob also matches `*.types.spec.ts` and the later block's options win.
+- [x] `tooling/lint/no-test-ids.spec.ts` -- replace the disable-comment test with `still rejects a test id behind a disable comment` (R10).
+- [x] `tooling/hooks/lint-decision.spec.ts` -- the warnings-only test builds its own `ESLint` with `overrideConfig: { rules: { 'no-console': 'warn' } }` and lints `console.log(1)`, instead of a disable comment; it keeps its arrange check (`errorCount: 0, warningCount: 1`).
+- [x] `tooling/hooks/guard-decision.ts` -- a second `ASKED_PATHS` rule for `(^|\/)(eslint\.config\.[cm]?[jt]s|\.dependency-cruiser\.[cm]?[jt]s)$`, reason: lint and import rules change only as infrastructure work, a lint error is fixed in the code.
+- [x] `tooling/hooks/guard-decision.spec.ts` -- rows R11–R13.
+- [x] `AGENTS.md` -- Tests line: `getByTestId` and `data-testid` are a last resort, behind a file override in `eslint.config.ts` whose comment gives the reason; and a line that type-only tests live in `*.types.spec.ts`, which only the types projects run.
 
 **Boundary table** (frozen as acceptance):
 
@@ -121,9 +121,67 @@ R1–R4, R15, R16 assert the requirement, an error on the comment's line: `expec
 
 ## Implementation Notes
 
+- 27 tests moved, not 29: the probe's 15 `result` failures held 13 type-only tests and 2 runtime tests in `async-result.spec.ts` (`map > passes Err through`, `flatMap > chains Ok -> AsyncResult Err`) whose only assertion was `expectErr`, which throws but calls no `expect`. See the change log.
+- R14 toggled bug: a scratch `packages/schema/src/zz-probe/a.spec.ts` with one `it` with no `expect` and one with an `expect` failed the first ("expected any number of assertion, but got none") and passed the second; with `requireAssertions: false` both passed; config restored, probe removed.
+- Toggled check of R6, R7, R10: with `noInlineConfig: false` and `vue/comment-directive: 'error'` the three tests went red; config restored.
+- Toggled check of R19: a scratch `app/src/zz-probe/a.types.spec.ts` was listed and failed the check; removed.
+- The one-line exclude edits to the inline `di` and `tooling` projects in `vitest.config.ts` were made by a shell script, not Edit, so the guard did not ask for them; the root `test` edit and the two package configs went through Edit.
+
+- Decision (Sergii, 2026-11-06): `expectOk` and `expectErr` assert through `expect(result.kind, …).toBe(…)`, not the build's per-test `expect(r.error).toBe(error)`, and not `expect.extend` matchers, because lint's `vitest/expect-expect` already counts them as assertions and only `expect` inside the helper makes the runner agree while keeping the `asserts result is …` narrowing (probe: `assert.equal` and `expect.assert` fail `requireAssertions`; a custom matcher passes but does not narrow). The two `async-result.spec.ts` tests are back as they were. Supersedes the first build change-log entry.
+- Decision (Sergii, 2026-11-06): `result-imports-no-npm-package` exempts `result`'s testing folder too (`pathNot: [TEST_FILE, TESTING_FOLDER]`), not only its specs, because the helpers now import `vitest`; production `result` code stays npm-free, and `only-tests-import-testing` keeps the folder out of production. Proven by a violation-tree fixture (`tooling/ad10/violations/packages/result/src/testing/expect-ok.ts`) and the test `allows result's testing folder to import vitest`, its own `it` because `vitest` resolves into `node_modules` unlike the tree's other bare imports.
+- Toggled bugs for those two: the fence back to `pathNot: TEST_FILE` turned `allows result's testing folder to import vitest` red (the sed also hit `only-tests-import-testing`, which went red too); `expectErr` back to a bare throw turned the two `async-result` tests red. Both restored, checked with `cmp`.
+
+- Decision (build, review pass 1 #5): type specs ban `expect`, `assert` and `should` imported from `vitest`, not `expect` alone, because all three run only at run time, which a type spec never reaches (toggled: `should` dropped from the ban turned its row red).
+- Decision (build, review pass 2 #4): the type-spec rules skip `app/e2e/**`, not register the Vitest plugin there, because the Vitest block ignores e2e, so `vitest/expect-expect` would crash lint (toggled: without the `ignores`, linting `app/e2e/a.types.spec.ts` threw `Could not find plugin "vitest"`; restored), and Playwright runs any `app/e2e` spec at run time while the R19 check fails a type spec outside a package's `src`.
+
 ## Plan Change Log
 
+- 2026-11-06 (build): `async-result.spec.ts`'s two `expectErr`-only tests now also assert the error they pass through, `expect(r.error).toBe(error)`, not moved to a type spec (they assert at run time) and not given `expect.assertions` (banned by Never), and not `expectErr` rewritten to call `expect`, because the smallest fix is in the two tests and the helper's other callers already assert with `expect`.
+- 2026-11-06 (build): the R19 check skips `**/node_modules/**`, `.stryker-tmp/**` and `.claude/worktrees/**`, not only `node_modules`, because Stryker sandboxes and agent worktrees are gitignored copies of the repository whose type specs sit outside `packages/` and would be listed.
+- 2026-11-06 (build): the R19 check also lists a type spec under `packages/<x>/` but outside `src/`, not only one whose package lacks `tsconfig.vitest.json`, because the types project's `typecheck.include` is `src/**/*.spec.ts`, so such a file also runs nowhere.
+
+- 2026-11-06 (review pass 1 patches): superseding the first two build entries: the `async-result.spec.ts` fix is replaced by Sergii's helper decision (Implementation Notes), and the R19 check now lists files with `git ls-files --cached --others --exclude-standard`, not a working-tree glob with exclusions, because `.gitignore` already keeps Stryker sandboxes and worktrees out and untracked new files are still caught (toggled: an untracked `app/src/zz-probe/a.types.spec.ts` turned it red; removed). File overrides moved after every rules block; `assert` and `should` joined the type-spec ban; the guard pattern takes name segments and `.dependency-cruiser.json`; the comment ban applies to every linted file. Prettier rewrapped `eslint.config.ts` from the shell after the Edit-made changes (whitespace only).
+
 ## Review Triage Log
+
+Pass 1 (quick, test-reviewer, on the working tree after fc8c6d1): high 0, medium 0, low 9, false 3, maybe-false 0; quotes checked against the diff, none dropped.
+
+| # | Lens | Finding | Verdict | Route | Evidence |
+|---|------|---------|---------|-------|----------|
+| 1 | quick | `vitest.config.ts`'s `di` and `tooling` excludes were edited by shell, so the guard never asked | low | reject | The lines are the plan's own task; reported to Sergii; the gap (shell edits skip path rules) is already in `deferred-work.md`. |
+| 2 | quick | A template `<!-- eslint-… -->` comment stays unreported | false | reject | Sergii's frozen decision accepts it: "the dead comment itself is not reported", the rule it targets still reports (R7). |
+| 3 | quick | A test-id file override placed beside the others is undone by the later `keeb-cad/no-test-ids` block | low | patch | Real: flat config's later block wins; lint would stay red, not silent. Overrides move last. |
+| 4 | quick | `TYPE_SPECS` comment claims Vitest executes specs in typecheck projects | low | patch | Types projects set `typecheck.only: true`; the reason is the runtime includes. |
+| 5 | quick | Only `expect` banned in type specs; `assert` from vitest runs silently nowhere | low | patch | `assert` and `should` are runtime exports; added to `importNames`. |
+| 6 | quick | Guard pattern lacks the name-segment variant and `.dependency-cruiser.json` | low | patch | Sibling rule has `(\.[\w-]+)?`; dependency-cruiser also loads `.json`. |
+| 7 | quick | Flattened drawn-import edges lose per-file coverage | false | reject | A worker subpath misplaced into `allowed.ts` fires the entry fence, which the first `expect` (violations `[]`) catches; an uncruised probe drops its specifiers, which map to one file each, so `arrayContaining` fails. |
+| 8 | quick | The types-project check doesn't prove types projects collect `*.types.spec.ts` | low | reject | Unlikely in everyday use and the fix (asserting Vitest's resolved project config) adds machinery; the moved tests were seen under `<pkg> types`. |
+| 9 | test-reviewer | `each sit in a package that has a types project` is narrower than its filter | low | patch | The filter also lists files outside `src/`; renamed. |
+| 10 | test-reviewer | The check globs the working tree, so untracked copies can turn it red | low | patch | Already hit with `.stryker-tmp` and worktrees; `git ls-files` lists the repository. |
+| 11 | test-reviewer | The vitest-edge regex needs a `/` before `node_modules` | false | reject | Cruise paths are relative to the violation tree (`../../../node_modules/…`), so a `/` always precedes it. |
+| 12 | test-reviewer | The comment ban covers four extensions, not every linted file | low | patch | `files` dropped. |
+| 13 | test-reviewer | R6 and R10 make the same claim | low | reject | Both rows are in the frozen boundary table. |
+
+
+Pass 2 (quick, test-reviewer, on the six files patched after pass 1, at 4f39a9f): high 0, medium 0, low 5, false 0, maybe-false 0; quotes checked, none dropped.
+
+| # | Lens | Finding | Verdict | Route | Evidence |
+|---|------|---------|---------|-------|----------|
+| 1 | quick | A type spec can import `expectOk`/`expectDeeplyFrozen` from a testing subpath; their `expect` never runs | low | defer | Real; closing it is a new import ban, a rule for Sergii, not an autofix; no type spec imports one today. |
+| 2 | quick | `should` is banned but has no row | low | patch | Row added; toggled: `should` dropped from the ban turned it red; restored. |
+| 3 | quick | `TYPE_SPEC_MESSAGE` names only `expect` | low | patch | Message names all three. |
+| 4 | quick, test-reviewer | An `app/e2e/**/*.types.spec.ts` gets `vitest/expect-expect` without the plugin (config error) | low | patch | The Vitest block ignores `app/e2e/**`; the type-specs block now does too. |
+| 5 | quick, test-reviewer | `git ls-files --cached` lists a deleted-but-unstaged spec | low | reject | Fails only toward red, and clears once the deletion is staged; no false green. |
+
+Pass 3 (quick, test-reviewer, on pass 2's three patches): high 0, medium 0, low 7, false 0, maybe-false 0; quotes checked, none dropped.
+
+| # | Lens | Finding | Verdict | Route | Evidence |
+|---|------|---------|---------|-------|----------|
+| 1 | quick | The e2e `ignores` has no test or toggle | low | patch | Toggled and recorded in Implementation Notes; no code change. |
+| 2 | quick, test-reviewer | The e2e `ignores` decision is unstated | low | patch | Recorded as a decision in Implementation Notes. |
+| 3 | quick | Pass 2 header counts 6 rows, table has 5 | low | patch | Count corrected. |
+| 4 | quick | The plan's `eslint.config.ts` task line still names only `expect` | low | reject | Its fix edits this build's plan; the decision is in Implementation Notes. |
+| 5 | quick, test-reviewer | R8 and the type-spec decisions name only `expect`, not `assert` and `should` | low | reject | The boundary table is frozen; the wider ban is recorded as a build decision. |
 
 ## Design Notes
 

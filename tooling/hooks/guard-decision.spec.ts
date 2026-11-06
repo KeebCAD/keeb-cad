@@ -85,6 +85,10 @@ describe('the guard hook', () => {
     ['the Stryker config', 'stryker.config.json'],
     ['a module Stryker config', 'stryker.config.mjs'],
     ['another Stryker config file', 'stryker-lax.json'],
+    ['the lint config', 'eslint.config.ts'],
+    ['the import rules', '/repo/.dependency-cruiser.mts'],
+    ['a named lint config', 'eslint.e2e.config.ts'],
+    ['a JSON import rules file', '.dependency-cruiser.json'],
   ])('asks before an edit to %s', (_, path) => {
     expect(edit(path)).toMatchObject({ permissionDecision: 'ask' })
   })
@@ -114,6 +118,8 @@ describe('the guard hook', () => {
   it.each([
     ['a spec', 'packages/x/src/a.spec.ts'],
     ['a file whose name holds config', 'packages/x/src/vitest-config.ts'],
+    ['a file whose name holds the lint config', 'packages/x/src/eslint-config.ts'],
+    ['a lint rule spec', 'tooling/lint/no-inline-config.spec.ts'],
     ['a ticket', '_bmad-output/x.md'],
   ])('allows an edit to %s', (_, path) => {
     expect(edit(path, 'const a = 1')).toBeUndefined()

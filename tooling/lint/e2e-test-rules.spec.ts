@@ -20,6 +20,7 @@ describe('end-to-end test rules', { timeout: COLD_CONFIG_TIMEOUT }, () => {
       'playwright/no-conditional-in-test',
       "test('a', async ({ page }) => {\n  if (page) {\n    await page.goto('/')\n  }\n  await expect(page).toHaveURL('/')\n})",
     ],
+    ['playwright/expect-expect', "test('a', async () => {})"],
     [
       'playwright/no-conditional-expect',
       "test('a', async ({ page }) => {\n  await page.goto('/').catch(async () => {\n    await expect(page).toHaveURL('/')\n  })\n})",
@@ -27,5 +28,11 @@ describe('end-to-end test rules', { timeout: COLD_CONFIG_TIMEOUT }, () => {
   ])('rejects what %s forbids as an error', async (ruleId, code) => {
     const { messages } = await lintResult(PRELUDE + code, E2E)
     expect(messages.filter((message) => message.ruleId === ruleId)).toMatchObject([{ severity: 2 }])
+  })
+
+  it('allows a test that asserts', async () => {
+    const code = "test('a', async ({ page }) => {\n  await expect(page).toHaveURL('/')\n})"
+    const { messages } = await lintResult(PRELUDE + code, E2E)
+    expect(messages.filter((message) => message.ruleId === 'playwright/expect-expect')).toEqual([])
   })
 })

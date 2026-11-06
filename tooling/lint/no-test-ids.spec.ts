@@ -38,11 +38,11 @@ describe('no test ids', { timeout: COLD_CONFIG_TIMEOUT }, () => {
     ).toEqual([])
   })
 
-  it('allows a test id behind a disable comment', async () => {
+  it('still rejects a test id behind a disable comment', async () => {
     const code =
       "// eslint-disable-next-line no-restricted-properties -- a canvas has no role\nscreen.getByTestId('a')"
     expect(
       await ruleMessages('no-restricted-properties', code, 'packages/x/src/a.spec.ts'),
-    ).toEqual([])
+    ).toEqual([expect.stringContaining(TEST_ID_MESSAGE)])
   })
 })

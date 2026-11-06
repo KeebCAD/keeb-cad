@@ -1,10 +1,6 @@
-import { describe, expect, expectTypeOf, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import type { None } from './none'
 import { Option } from './option'
-import type { Some } from './some'
-
-import type { Result } from './result'
 
 describe('Option', () => {
   describe('constructors', () => {
@@ -43,18 +39,6 @@ describe('Option', () => {
     it("Option.fromNullable preserves empty string as Some('')", () => {
       const opt = Option.fromNullable('')
       expect(opt.isSome() && opt.value).toBe('')
-    })
-  })
-
-  describe('type narrowing', () => {
-    it('isSome narrows to Some<T>', () => {
-      const opt: Option<number> = Option.some(1)
-      expectTypeOf([opt].filter((o) => o.isSome())).toEqualTypeOf<Some<number>[]>()
-    })
-
-    it('isNone narrows to None<T>', () => {
-      const opt: Option<number> = Option.none()
-      expectTypeOf([opt].filter((o) => o.isNone())).toEqualTypeOf<None<number>[]>()
     })
   })
 
@@ -181,11 +165,6 @@ describe('Option', () => {
       const r = Option.none<number>().okOrElse(() => new Error('computed'))
       expect(r.kind).toBe('err')
       expect(r.isErr() && r.error.message).toBe('computed')
-    })
-
-    it('okOr is typed Result<T, E>', () => {
-      const r = Option.some(5).okOr(new Error('x'))
-      expectTypeOf(r).toEqualTypeOf<Result<number, Error>>()
     })
   })
 })

@@ -1,11 +1,9 @@
-import { describe, expect, expectTypeOf, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { InvariantError } from './invariant-error'
 import { Option } from './option'
-import type { Err } from './err'
 import { Ok } from './ok'
 import { Result } from './result'
-import type { ErrYield } from './types'
 import { expectErr, expectOk } from './testing'
 
 class TestError extends Error {
@@ -31,18 +29,6 @@ describe('Result', () => {
 
     it('Result.ok with no argument wraps undefined as Ok', () => {
       expect(Result.ok()).toEqual(new Ok(undefined))
-    })
-
-    it('Result.ok with no argument is typed Result<void, never>', () => {
-      expectTypeOf(Result.ok()).toEqualTypeOf<Result<void, never>>()
-    })
-
-    it('Result.ok is typed Result<T, never>', () => {
-      expectTypeOf(Result.ok(5)).toEqualTypeOf<Result<number, never>>()
-    })
-
-    it('Result.err is typed Result<never, E>', () => {
-      expectTypeOf(Result.err(new TestError('x'))).toEqualTypeOf<Result<never, TestError>>()
     })
   })
 
@@ -101,18 +87,6 @@ describe('Result', () => {
         return new TestError('never')
       })
       expect(called).toBe(false)
-    })
-  })
-
-  describe('type narrowing', () => {
-    it('isOk narrows to Ok<T, E>', () => {
-      const r: Result<number, TestError> = Result.ok(1)
-      expectTypeOf([r].filter((x) => x.isOk())).toEqualTypeOf<Ok<number, TestError>[]>()
-    })
-
-    it('isErr narrows to Err<T, E>', () => {
-      const r: Result<number, TestError> = Result.err(new TestError('x'))
-      expectTypeOf([r].filter((x) => x.isErr())).toEqualTypeOf<Err<number, TestError>[]>()
     })
   })
 
@@ -236,15 +210,6 @@ describe('Result', () => {
       expectErr(out)
       expect(called).toBe(false)
     })
-
-    it('widens the error union on chain', () => {
-      class OtherError extends Error {
-        readonly kind = 'other' as const
-      }
-      const r: Result<number, TestError> = Result.ok(1)
-      const chained = r.flatMap((_n): Result<number, OtherError> => Result.err(new OtherError('o')))
-      expectTypeOf(chained).toEqualTypeOf<Result<number, TestError | OtherError>>()
-    })
   })
 
   describe('match', () => {
@@ -281,15 +246,6 @@ describe('Result', () => {
       const first = iter.next()
       expect(first.done).toBe(false)
       expect(first.value).toBe(r)
-    })
-
-    it('Err iterator yield type carries the error in a covariant slot', () => {
-      const r: Result<number, TestError> = Result.err(new TestError('x'))
-      const iter = r[Symbol.iterator]()
-      expectTypeOf(iter.next())
-        .extract<IteratorYieldResult<unknown>>()
-        .toHaveProperty('value')
-        .toEqualTypeOf<ErrYield<TestError>>()
     })
 
     it('Err iterator throws InvariantError if consumed past the yield', () => {

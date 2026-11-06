@@ -72,6 +72,12 @@ const ASKED_PATHS: GuardRule[] = [
     reason:
       'This edits a runner or mutation config. If a failing test is the reason, the fix belongs in the test. Confirm this is infrastructure work.',
   },
+  {
+    pattern:
+      /(^|\/)(eslint(\.[\w-]+)?\.config\.[cm]?[jt]s|\.dependency-cruiser(\.[\w-]+)?\.(json|[cm]?[jt]s))$/,
+    reason:
+      'This edits the lint or import rules, which change only as infrastructure work. If a lint error is the reason, the fix belongs in the code. Confirm this is infrastructure work.',
+  },
 ]
 
 const ASKED_TEXT: GuardRule[] = [

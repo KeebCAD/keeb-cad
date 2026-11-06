@@ -358,9 +358,10 @@ const config: IConfiguration = {
     ),
     {
       name: 'result-imports-no-npm-package',
-      comment: 'result imports no npm package; its specs may import vitest (AD-10, AD-24).',
+      comment:
+        'result imports no npm package; its specs and testing folder may import vitest (AD-10, AD-24).',
       severity: 'error',
-      from: { path: '^packages/result/', pathNot: TEST_FILE },
+      from: { path: '^packages/result/', pathNot: [TEST_FILE, TESTING_FOLDER] },
       to: {
         path: '(^|/)node_modules/|^[^./]',
         pathNot: [ANY_WORKSPACE_TARGET, FIXTURES],

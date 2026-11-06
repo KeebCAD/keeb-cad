@@ -129,8 +129,14 @@ export const TRY_IN_TEST = {
   message: 'No try in a test; assert a throw as `expect(() => fn()).toThrow(…)`.',
 }
 
+// Inline config is ignored, so an exception is a file override here, where its reason is reviewed
+// with the rest of the config.
 export const TEST_ID_MESSAGE =
-  'Find elements by role, then label, then text. A test id is a last resort, behind `eslint-disable-next-line … -- <reason>`.'
+  'Find elements by role, then label, then text. A test id is a last resort, behind a file override in eslint.config.ts whose comment gives the reason.'
+
+// A runtime project skips a type spec, so a runtime assertion there would never run.
+export const TYPE_SPEC_MESSAGE =
+  'A *.types.spec.ts runs only in its types project, where `expect`, `assert` and `should` never run; assert with expectTypeOf, or move the test to a runtime spec.'
 
 export default defineConfigWithVueTs(
   {
@@ -140,10 +146,38 @@ export default defineConfigWithVueTs(
 
   globalIgnores(IGNORED),
 
+  {
+    // A comment can't silence a rule, so lint can't go green without checking anything; an
+    // exception is a file override below, whose comment gives the reason.
+    name: 'keeb-cad/no-inline-config',
+    linterOptions: { noInlineConfig: true },
+  },
+
   js.configs.recommended,
   ...pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
   pluginUnicorn.configs.unopinionated,
+
+  {
+    // noInlineConfig leaves the comment in place, so it would still read as if it silenced a rule.
+    name: 'keeb-cad/no-eslint-comments',
+    rules: {
+      'no-warning-comments': [
+        'error',
+        { terms: ['eslint-disable', 'eslint-enable', 'eslint'], location: 'start' },
+      ],
+    },
+  },
+
+  {
+    // The Vue plugin applies a template's `<!-- eslint-disable -->` itself, ignoring
+    // noInlineConfig.
+    name: 'keeb-cad/no-vue-template-directives',
+    files: ['**/*.vue'],
+    rules: {
+      'vue/comment-directive': 'off',
+    },
+  },
 
   {
     name: 'keeb-cad/node-files',
@@ -167,6 +201,7 @@ export default defineConfigWithVueTs(
       'playwright/no-focused-test': 'error',
       'playwright/no-conditional-in-test': 'error',
       'playwright/no-conditional-expect': 'error',
+      'playwright/expect-expect': 'error',
     },
   },
 
@@ -190,7 +225,6 @@ export default defineConfigWithVueTs(
         {
           assertFunctionNames: [
             'expect',
-            'expectTypeOf',
             'expectOk',
             'expectErr',
             'expectDeeplyFrozen',
@@ -198,6 +232,29 @@ export default defineConfigWithVueTs(
           ],
         },
       ],
+    },
+  },
+
+  {
+    // After the block above: `**/*.spec.ts` matches type specs too, and the later options win.
+    name: 'keeb-cad/type-specs',
+    files: ['**/*.types.spec.ts'],
+    // The Vitest plugin is registered only outside app/e2e.
+    ignores: ['app/e2e/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'vitest',
+              importNames: ['expect', 'assert', 'should'],
+              message: TYPE_SPEC_MESSAGE,
+            },
+          ],
+        },
+      ],
+      'vitest/expect-expect': ['error', { assertFunctionNames: ['expectTypeOf'] }],
     },
   },
 
@@ -256,6 +313,26 @@ export default defineConfigWithVueTs(
         { key: 'data-testid', message: TEST_ID_MESSAGE },
       ],
       'vue/no-restricted-v-bind': ['error', { argument: 'data-testid', message: TEST_ID_MESSAGE }],
+    },
+  },
+
+  // File overrides go last, after every rules block, so they win.
+  {
+    // reactive is the one wrapper of @vue/reactivity, so workers never load Vue.
+    name: 'keeb-cad/reactive-keeps-workers-off-vue',
+    files: ['packages/reactive/src/index.ts'],
+    rules: {
+      'vue/prefer-import-from-vue': 'off',
+    },
+  },
+
+  {
+    // AsyncResult wraps a promise and is awaited like one, so it chains with `then` throughout.
+    name: 'keeb-cad/async-result-is-thenable',
+    files: ['packages/result/src/async-result.ts'],
+    rules: {
+      'unicorn/no-thenable': 'off',
+      'unicorn/prefer-await': 'off',
     },
   },
 

@@ -1,12 +1,11 @@
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
-import { type Design, type Mutable, type Rejection } from '@keeb-cad/schema'
+import { type Rejection } from '@keeb-cad/schema'
 import { aDesign } from '@keeb-cad/schema/testing'
-import { describe, expect, expectTypeOf, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { expectDeeplyFrozen } from '../testing'
 import { deepFreeze } from './deep-freeze'
 import { DesignPatcher } from './design-patcher'
-import type { Writable } from './types'
 
 function arrange() {
   return {
@@ -66,11 +65,5 @@ describe('DesignPatcher', () => {
     expectOk(changed)
 
     expectDeeplyFrozen(changed.value.design)
-  })
-})
-
-describe('Writable', () => {
-  it('is assignable to Mutable', () => {
-    expectTypeOf<Writable<Design>>().toExtend<Mutable<Design>>()
   })
 })
