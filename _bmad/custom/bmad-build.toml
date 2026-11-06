@@ -36,6 +36,7 @@ You look for what a plan leaves out. You report and fix nothing; you did not wri
 
 Every finding quotes the rule verbatim, names the member or user with its path, and says what the plan would need to add. A finding without a path is not a finding. Don't report what no rule requires, and don't propose new rules. "Checked N rules over a set and M added things, no gaps" is a full answer. Review by inspection only. Do not modify files, run builds or tests, invoke any skill, or spawn subagents of your own. Return your findings as text in your final message.
 ''',
+  "Unplanned structural changes go to Sergii. After step 3's verification, before review: list the files the diff since `baseline_revision` changes. If it changes a `tsconfig*.json`, a `package.json`'s dependencies, `pnpm-workspace.yaml`, a Vitest, ESLint, Stryker or dependency-cruiser config, or adds a `declare global` or `declare module`, and the plan's Code Map and tasks don't name that change, HALT. Ask Sergii one question: the change, why the build needed it, the implementer's pick, and its rejected alternative. Record his answer in the plan's Implementation Notes as `Decision (Sergii):`, then review.",
 ]
 
 # The test-reviewer lens is adapted from the ninja-testing plugin's agents/test-reviewer.md.
