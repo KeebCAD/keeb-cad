@@ -3,14 +3,14 @@ title: 'run copies its input and checks every produced design'
 type: 'feature'
 ticket: '16'
 created: '2026-11-06'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '56e9a854d3efedb5d745bc854ce3c985f37aea4c'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context: []
 ---
@@ -58,9 +58,9 @@ context: []
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `packages/design/src/store/design-store.ts` -- `run` keeps its `match` on kind. `#runCommand` and `#runAction` each start with their existing `#ensureRegistered`, then `const copied = this.#copyInput(input)` (a private `#copyInput(input: unknown): unknown` returning `structuredClone(toRaw(input))`), then their existing steps over `copied`. In `#runCommand`, the step after `change` is one `.flatMap((changed) => …)`: empty `changed.patches` → `Result.ok()` with no write; otherwise `this.#ensureValidDesign(changed.design, handle.id)` as a statement, then `checkStructure(changed.design).map(() => …write and emit as today…)`. `#copyInput` and `#ensureValidDesign` sit beside `#ensureRegistered`, below the public API.
-- [ ] `packages/design/src/parsing/format-issue-paths.ts` (+ `format-issue-paths.spec.ts`) -- `formatIssuePaths(issues: readonly SchemaIssue[]): string`, the message's `<paths>` part, beside `to-schema-issue.ts`. `#ensureValidDesign` builds the message with it. Its spec holds the path-format rows below; the store's spec tests only that the message carries the command id and the formatted paths.
-- [ ] `packages/design/src/store/design-store.spec.ts` -- one test per boundary row below, in the existing `describe`s. Test commands are declared inside their test, as `RejectRename` is. A new shared `class` is added at module level only when two tests use it.
+- [x] `packages/design/src/store/design-store.ts` -- `run` keeps its `match` on kind. `#runCommand` and `#runAction` each start with their existing `#ensureRegistered`, then `const copied = this.#copyInput(input)` (a private `#copyInput(input: unknown): unknown` returning `structuredClone(toRaw(input))`), then their existing steps over `copied`. In `#runCommand`, the step after `change` is one `.flatMap((changed) => …)`: empty `changed.patches` → `Result.ok()` with no write; otherwise `this.#ensureValidDesign(changed.design, handle.id)` as a statement, then `checkStructure(changed.design).map(() => …write and emit as today…)`. `#copyInput` and `#ensureValidDesign` sit beside `#ensureRegistered`, below the public API.
+- [x] `packages/design/src/parsing/format-issue-paths.ts` (+ `format-issue-paths.spec.ts`) -- `formatIssuePaths(issues: readonly SchemaIssue[]): string`, the message's `<paths>` part, beside `to-schema-issue.ts`. `#ensureValidDesign` builds the message with it. Its spec holds the path-format rows below; the store's spec tests only that the message carries the command id and the formatted paths.
+- [x] `packages/design/src/store/design-store.spec.ts` -- one test per boundary row below, in the existing `describe`s. Test commands are declared inside their test, as `RejectRename` is. A new shared `class` is added at module level only when two tests use it.
 
 **Acceptance Criteria:**
 - Given each boundary row, when its test runs, then it passes. With the matching line of `design-store.ts` removed (the copy, the no-op check, the schema check), at least one row goes red. Say so in the PR.
@@ -89,9 +89,27 @@ context: []
 
 ## Implementation Notes
 
+**Decision (build): `structuredClone` is typed by one `declare global` in `store/types.ts`,** not by adding the `WebWorker` or `DOM` lib to `design`'s (and `commands`', which compiles `design`'s source) tsconfig, because the store runs on main and in the model worker, and each lib would also declare globals one of them lacks. The plan's Code Map said only that it is global at runtime.
+
+**Decision (build): `formatIssuePaths` sorts by code unit order,** not `localeCompare`, because the message is the store's own rule and must not vary with the runtime's locale (same comparator as `hashing`'s canonical encoding).
+
+Toggled bugs, each run against `design-store.spec.ts`: copy removed (7 rows red), `toRaw` removed (both reactive rows red), copy moved after `available` (unavailable-command row red), copy moved before registration (unregistered row red), no-op check removed (no-op row red), schema check removed (extra-keys row red). Restored each time.
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+Pass 1 (quick, test-reviewer; 0 findings dropped on quote check). Verdicts: high 0, medium 0, low 9, false 0, maybe-false 0.
+
+- low, patch -- `RecordInput` declared twice (both lenses): identical class in two action tests; moved to a module-level factory over a per-test recorder (no module-level mutable state).
+- low, patch -- `NotifyRename` names nothing it does: renamed `LooseRename`.
+- low, patch -- extra-keys-0 test used `toMatchObject`, tolerating the extra keys its name rules out: `toEqual` on the design.
+- low, patch -- `formatIssuePaths` had no empty-input or root-path row though the plan decides the root renders as `''`: rows added.
+- low, patch -- pass-through command tests never asserted the committed design deeply frozen (matrix Reactive input row): `expectDeeplyFrozen` added.
+- low, patch -- action pass-through test's `expectNothingFrozen` cannot fail (actions never reach Immer): expect and name clause dropped.
+- medium, patch -- the package-wide `declare global { structuredClone }` sat in `store/types.ts`, where a reader of `design` would not look for an ambient affecting `commands` too: moved to `src/types.ts`, then reverted: nothing imports a root `types.ts`, so `commands` lost the declaration and the move needed a side-effect `import '../types'` in `design-store.ts`, worse than the original. It stays in `store/types.ts`, which `design-store.ts` imports, so the ambient reaches every program compiling the store; downgraded to low, kept. The lens's claim that `T` is the wrong return type is false: lib.dom declares the same `structuredClone<T>(value: T): T` shape.
+- low, rejected -- duplicate paths kept (`meta.form, meta.form` when two checks fail on one field): only a bug message's wording, rare, and deduping adds a step no requirement asks for.
+- low, rejected -- uncloneable command test has no apply recorder: the clone throws before `available` (pinned by the unavailable-command row), so apply cannot run first; a recorder adds a fake for no new claim.
 
 ## Design Notes
 

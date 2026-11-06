@@ -1,12 +1,14 @@
 import { inject, InjectorToken } from '@keeb-cad/di'
 import { checkStructure } from '@keeb-cad/model/main'
-import { shallowRef } from '@keeb-cad/reactive'
+import { shallowRef, toRaw } from '@keeb-cad/reactive'
 import { AsyncResult, InvariantError, Option, Result } from '@keeb-cad/result'
 import {
+  type Design,
   type DesignInvalid,
   designSchema,
   type Emptied,
   fingerprintsFileSchema,
+  type Frozen,
   type MigratedBundle,
   type Rejection,
   routingFileSchema,
@@ -17,6 +19,7 @@ import type * as v from 'valibot'
 
 import { actions, commands } from '../entries/tokens'
 import type { ActionError, ActionHandle, CommandHandle } from '../entries/types'
+import { formatIssuePaths } from '../parsing/format-issue-paths'
 import { parse } from '../parsing/parse'
 import { deepFreeze } from '../patching/deep-freeze'
 import { DesignPatcher } from '../patching/design-patcher'
@@ -96,31 +99,36 @@ export class DesignStore {
 
   #runCommand(handle: CommandHandle, input: unknown): Result<void, Rejection> {
     this.#ensureRegistered(this.#commands, handle)
+    const copied = this.#copyInput(input)
     const current = this.#committed()
     const { design } = current
     const command = this.#injector.resolve(handle)
     if (!command.available(design))
       return Result.err<Rejection>({ kind: 'unavailable', command: handle.id })
-    return parse(handle.input, input)
+    return parse(handle.input, copied)
       .mapErr((issues): Rejection => ({ kind: 'input-invalid', command: handle.id, issues }))
       .flatMap((parsed) => this.#patcher.change(design, (draft) => command.apply(draft, parsed)))
-      .flatMap((changed) => checkStructure(changed.design).map(() => changed))
-      .map(({ design: next, patches }) => {
-        const { seq, revision } = this.#write({
-          ...current,
-          design: next,
-          revision: revisionOf(next),
+      .flatMap(({ design: next, patches }): Result<void, Rejection> => {
+        if (patches.length === 0) return Result.ok()
+        this.#ensureValidDesign(next, handle.id)
+        return checkStructure(next).map(() => {
+          const { seq, revision } = this.#write({
+            ...current,
+            design: next,
+            revision: revisionOf(next),
+          })
+          this.#emitter.emit('commit', { kind: 'patches', patches, seq, revision })
         })
-        this.#emitter.emit('commit', { kind: 'patches', patches, seq, revision })
       })
   }
 
   #runAction(handle: ActionHandle, input: unknown): AsyncResult<void, unknown> {
     this.#ensureRegistered(this.#actions, handle)
+    const copied = this.#copyInput(input)
     const action = this.#injector.resolve(handle)
     if (!action.available(this.current))
       return AsyncResult.err<Rejection>({ kind: 'unavailable', command: handle.id })
-    return parse(handle.input, input).match<AsyncResult<void, unknown>>({
+    return parse(handle.input, copied).match<AsyncResult<void, unknown>>({
       ok: (parsed) => action.apply(parsed),
       err: (issues) =>
         AsyncResult.err<Rejection>({ kind: 'input-invalid', command: handle.id, issues }),
@@ -134,6 +142,23 @@ export class DesignStore {
     if (registered.includes(handle)) return
     const kind = handle.kind === 'command' ? 'Command' : 'Action'
     throw new InvariantError(`${kind} "${handle.id}" is not registered.`)
+  }
+
+  // A schema that passes a value through would otherwise hand the caller's object to Immer, which
+  // freezes it, or carry a Vue proxy into the design.
+  #copyInput(input: unknown): unknown {
+    return structuredClone(toRaw(input))
+  }
+
+  #ensureValidDesign(design: Frozen<Design>, commandId: string): void {
+    parse(designSchema, design).match({
+      ok: () => {},
+      err: (issues) => {
+        throw new InvariantError(
+          `Command "${commandId}" produced a design the design schema refuses at ${formatIssuePaths(issues)}.`,
+        )
+      },
+    })
   }
 
   #committed(): Committed {
