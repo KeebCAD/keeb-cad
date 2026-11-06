@@ -89,7 +89,7 @@ context: []
 
 ## Implementation Notes
 
-**Decision (build): `structuredClone` is typed by one `declare global` in `store/types.ts`,** not by adding the `WebWorker` or `DOM` lib to `design`'s (and `commands`', which compiles `design`'s source) tsconfig, because the store runs on main and in the model worker, and each lib would also declare globals one of them lacks. The plan's Code Map said only that it is global at runtime.
+(Superseded after PR #23 opened: see the WebWorker lib entry below.) **Decision (build): `structuredClone` is typed by one `declare global` in `store/types.ts`,** not by adding the `WebWorker` or `DOM` lib to `design`'s (and `commands`', which compiles `design`'s source) tsconfig, because the store runs on main and in the model worker, and each lib would also declare globals one of them lacks. The plan's Code Map said only that it is global at runtime.
 
 **Decision (build): `formatIssuePaths` sorts by code unit order,** not `localeCompare`, because the message is the store's own rule and must not vary with the runtime's locale (same comparator as `hashing`'s canonical encoding).
 
@@ -109,9 +109,17 @@ Pass 1 (quick, test-reviewer; 0 findings dropped on quote check). Verdicts: high
 - low, patch -- `formatIssuePaths` had no empty-input or root-path row though the plan decides the root renders as `''`: rows added.
 - low, patch -- pass-through command tests never asserted the committed design deeply frozen (matrix Reactive input row): `expectDeeplyFrozen` added.
 - low, patch -- action pass-through test's `expectNothingFrozen` cannot fail (actions never reach Immer): expect and name clause dropped.
-- medium, patch -- the package-wide `declare global { structuredClone }` sat in `store/types.ts`, where a reader of `design` would not look for an ambient affecting `commands` too: moved to `src/types.ts`, then reverted: nothing imports a root `types.ts`, so `commands` lost the declaration and the move needed a side-effect `import '../types'` in `design-store.ts`, worse than the original. It stays in `store/types.ts`, which `design-store.ts` imports, so the ambient reaches every program compiling the store; downgraded to low, kept. The lens's claim that `T` is the wrong return type is false: lib.dom declares the same `structuredClone<T>(value: T): T` shape.
+- medium, patch -- the package-wide `declare global { structuredClone }` sat in `store/types.ts`, where a reader of `design` would not look for an ambient affecting `commands` too: moved to `src/types.ts`, then reverted: nothing imports a root `types.ts`, so `commands` lost the declaration and the move needed a side-effect `import '../types'` in `design-store.ts`, worse than the original. It stays in `store/types.ts`, which `design-store.ts` imports, so the ambient reaches every program compiling the store; downgraded to low, kept (later replaced by the WebWorker lib, pass 2). The lens's claim that `T` is the wrong return type is false: lib.dom declares the same `structuredClone<T>(value: T): T` shape.
 - low, rejected -- duplicate paths kept (`meta.form, meta.form` when two checks fail on one field): only a bug message's wording, rare, and deduping adds a step no requirement asks for.
 - low, rejected -- uncloneable command test has no apply recorder: the clone throws before `available` (pinned by the unavailable-command row), so apply cannot run first; a recorder adds a fake for no new claim.
+
+Pass 2 (quick, on `db42237..6d39bd9`, the WebWorker lib switch; 0 dropped). Verdicts: high 0, medium 0, low 5, false 0, maybe-false 0.
+
+- low, rejected -- `commands` gets worker-only globals though it runs on main: the trade-off Sergii approved (DOM would break commands' no-DOM fence; nothing uses those globals today, grep-checked by the lens).
+- low, patch -- `design`'s tsconfig comment claimed the main thread has every WebWorker global the store uses, which nothing enforces: reworded to name the worker-only globals that type-check but don't exist on main (1be9181).
+- low, rejected -- the specs' `tsconfig.vitest.json` inherit WebWorker though they run on Node: the lib was never Node-faithful (`types: []`, no Node lib), and Node has `structuredClone`.
+- low, patch -- the build's `declare global` decision was not marked superseded: annotated.
+- low, patch -- no pass-2 triage entry: this entry.
 
 ## Design Notes
 
