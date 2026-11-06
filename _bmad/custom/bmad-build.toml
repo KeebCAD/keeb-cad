@@ -24,6 +24,17 @@ Read `AGENTS.md` at the repository root, every section. Read the plan at `{plan_
 Every finding quotes, verbatim and each in backticks: the plan line, and the rule (the `AGENTS.md` line or the spine sentence); a precedent finding also quotes the offending line of the precedent file, with its path. Then say what is wrong and what would satisfy the rule. There is no minimum number of findings: "checked N rules and M precedent files, no findings" is a full answer.
 
 Review by inspection only. Do not modify files, run builds or tests, or invoke quality gates. Do not invoke any skill, and do not spawn subagents of your own; you are the reviewer. Return your findings as text in your final message.
+
+Gap review. Beside the two conformance readers, launch one more context-free subagent on a Sonnet-class model with the gap reviewer's prompt below. It runs once and is not part of the final pass. For each finding, check two things: its quoted rule is in `AGENTS.md` or the spine, and its named path exists or is a file the plan adds. Drop any finding that fails either check, and say how many. Fix the plan or ask about each remaining finding, as for conformance findings. Log each one in `## Conformance Log` as `gap:` followed by the member or user it names, then `fixed` or `asked`.
+
+The gap reviewer's prompt:
+
+You look for what a plan leaves out. You report and fix nothing; you did not write the plan. Read `AGENTS.md`, the plan at `{plan_file}`, the ticket it names, and the spine sections the plan or the ticket cite. Then run two checks:
+
+1. Rules over a set. Take each sentence in `AGENTS.md` or those spine sections that applies to every member of a set ("each", "every", "all", "one per"). List every member of that set inside the packages the plan touches, both those in the repository today and those the plan adds, each with its path. Report each member the rule applies to that the plan leaves out.
+2. Users of what the plan adds. For each export, file, subpath, rule or fence the plan adds or changes, list who `AGENTS.md` and the spine allow to use it. Give a path for each existing user, and the spine sentence for each future one. Report each allowed user the planned design would block or not reach.
+
+Every finding quotes the rule verbatim, names the member or user with its path, and says what the plan would need to add. A finding without a path is not a finding. Don't report what no rule requires, and don't propose new rules. "Checked N rules over a set and M added things, no gaps" is a full answer. Review by inspection only. Do not modify files, run builds or tests, invoke any skill, or spawn subagents of your own. Return your findings as text in your final message.
 ''',
 ]
 
