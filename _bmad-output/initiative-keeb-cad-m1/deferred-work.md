@@ -81,3 +81,23 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-tests-and-lint-close-the-silent-green-shortcuts-plan.md`
   summary: Decide whether a `*.types.spec.ts` may import assertion helpers (`expectOk`, `expectErr`, `expectDeeplyFrozen`, `expectNothingFrozen`) from a `testing` subpath, since their `expect` never runs there and a test with `expectTypeOf` beside one passes lint and the suite.
   evidence: 23.18 review pass 2; `keeb-cad/type-specs` bans only `expect`, `assert` and `should` from `vitest`; banning the helpers is a new rule, so it goes to Sergii.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-ui-foundation-renders-in-the-workbench-plan.md`
+  summary: `packages/editor/vitest.config.ts` carries a comment with an AD reference that restates a rule.
+  evidence: precedent line `// DOM tests run in real browsers, never a simulation (AD-26, Verification layer 2).`; rule `Write a comment only for a why the code can't say. No AD-n or ticket references` (23.6 conformance review).
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-ui-foundation-renders-in-the-workbench-plan.md`
+  summary: `.dependency-cruiser.mts` rule comments and code comments carry AD-n references.
+  evidence: precedent lines `// @vue/reactivity is not Vue for this rule: it belongs to \`reactive\` alone (AD-10).` and `'Only design imports immer: its register and design/worker (AD-2).'`; rule `No AD-n or ticket references` (23.6 conformance review).
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-ui-foundation-renders-in-the-workbench-plan.md`
+  summary: `eslint.config.ts` carries a comment with an AD reference.
+  evidence: precedent line `// Deliberate AD-10 violations, cruised by tooling/ad10/rules.spec.ts.`; rule `No AD-n or ticket references` (23.6 conformance review).
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-ui-foundation-renders-in-the-workbench-plan.md`
+  summary: `tooling/lint/no-test-ids.spec.ts` takes its expected message from the config's own exported constant and mixes `stringContaining` with exact matches, so rewording the message fails no test.
+  evidence: precedent lines `import { TEST_ID_MESSAGE } from '../../eslint.config'` and `toEqual([expect.stringContaining(TEST_ID_MESSAGE)])`; rule `Take expected values from the requirement (the ticket, the plan's boundary table), never from running the code.` (23.6 conformance review).
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-ui-foundation-renders-in-the-workbench-plan.md`
+  summary: `tooling/lint/rule-messages.ts` holds a module-level `ESLint` instance its two helpers reach for, and its doc comments restate the signatures.
+  evidence: precedent lines `const eslint = new ESLint({ cwd: fileURLToPath(new URL('../..', import.meta.url)) })` and `/** The messages \`ruleId\` reports under the real config for \`code\` at \`filePath\`. */`; rules `Hold state in \`di\` services, never in a module-level singleton that functions reach for.` and `Write a comment only for a why the code can't say. … no restating a signature` (23.6 final conformance pass).

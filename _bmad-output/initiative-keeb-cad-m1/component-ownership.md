@@ -4,7 +4,7 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 
 | Component (DESIGN.md › Components) | Owning slice | Story |
 | --- | --- | --- |
-| Primitives: Button, Kbd (and the Tabs and Tree wrappers) | a new design opens (23), Tree wrapper by see Corney's keys (13) | 23.6 (Tree wrapper 13.7) |
+| Primitives: Button, Kbd, Tooltip (2026-11-06: Button's disabled reason) (and the Tabs and Tree wrappers) | a new design opens (23), Tree wrapper by see Corney's keys (13) | 23.6 (Tree wrapper 13.7) |
 | Chip | outline follows the keys (17) | to plan |
 | Top bar, Workspace tabs, Status strip | a new design opens (23), cursor and zoom by see Corney's keys (13) | 23.8 (cursor and zoom 13.7; undo and redo buttons 16.4, 2026-11-05) |
 | Status strip running-stage entry (stage name, elapsed time, Restart; 2026-11-02) | a new design opens (23) | 23.8 |
