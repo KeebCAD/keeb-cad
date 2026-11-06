@@ -15,7 +15,7 @@ colors:
   fill-on: '#51576d'             # Surface1: chip in the on state
   text: '#c6d0f5'                # Text
   text-muted: '#a5adce'          # Subtext0: labels, evaluated suffix, section headers
-  text-faint: '#737994'          # Overlay0: non-text marks only (below AA as text)
+  text-faint: '#737994'          # Overlay0: non-text marks, and a disabled control's label (below AA as text)
   # --- semantic ---
   selection: '#ca9ee6'           # Mauve
   focus: '#ca9ee6'               # Mauve
@@ -375,7 +375,7 @@ Avoid: Peach or Red for selection (Peach collided with F.Cu and error Red, so Ma
 | border-interactive / panel · chrome | 3.65 · 4.09 | 3.49 · 3.25 |
 | Green · Blue as text / panel | — | 2.96 · 4.34 (glyph/ring only) |
 
-Overlay0 (2.87:1) never carries text. Muted text never sits on a selected or active row; those rows use Text.
+Overlay0 (2.87:1) carries no text except a disabled control's label, which WCAG 1.4.3 exempts as an inactive component (decided 2026-11-06). Muted text never sits on a selected or active row; those rows use Text.
 
 **Open notes.**
 
@@ -409,7 +409,7 @@ Small, tool-like radii (decided 2026-10-30): `{rounded.sm}` fields and badges, `
 
 ## Components
 
-General states: hover fills `{colors.hover}` (no Mauve bar); pressed/on fills `{colors.fill-on}`; disabled items render in `{colors.text-muted}` with no hover and keep a visible reason where one exists. Selected rows (`row-selected`) use `{colors.hover}`, a Mauve left bar and Text.
+General states: hover fills `{colors.hover}` (no Mauve bar); pressed/on fills `{colors.fill-on}`; disabled items render their label in `{colors.text-faint}` and their edge in `{colors.border}` (not `{colors.border-interactive}`), with no hover, and keep a visible reason where one exists (decided 2026-11-06: text-muted alone was indistinguishable from enabled). Selected rows (`row-selected`) use `{colors.hover}`, a Mauve left bar and Text.
 
 ### Primitives
 
