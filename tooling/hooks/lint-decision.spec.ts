@@ -37,11 +37,16 @@ describe('the lint-on-edit hook', { timeout: COLD_CONFIG_TIMEOUT }, () => {
   })
 
   it('passes a file with warnings only', async () => {
+    const warning = new ESLint({
+      cache: false,
+      cwd: root,
+      overrideConfig: { rules: { 'no-console': 'warn' } },
+    })
     const filePath = 'packages/x/src/a.ts'
-    const code = '// eslint-disable-next-line no-console\nexport const a = 1\n'
-    expect(await eslint.lintText(code, { filePath })).toMatchObject([
+    const code = 'console.log(1)\n'
+    expect(await warning.lintText(code, { filePath })).toMatchObject([
       { errorCount: 0, warningCount: 1 },
     ])
-    expect(await lintDecision(eslint, root, filePath, code)).toEqual({ exitCode: 0, output: '' })
+    expect(await lintDecision(warning, root, filePath, code)).toEqual({ exitCode: 0, output: '' })
   })
 })

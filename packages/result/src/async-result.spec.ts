@@ -1,9 +1,7 @@
-import { describe, expect, expectTypeOf, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { AsyncResult } from './async-result'
 import { InvariantError } from './invariant-error'
-import type { Err } from './err'
-import type { Ok } from './ok'
 import { Result } from './result'
 import { expectErr, expectOk } from './testing'
 
@@ -61,13 +59,6 @@ describe('AsyncResult', () => {
       const r = await ar
       expectErr(r)
       expect(r.error.message).toBe('boom')
-    })
-  })
-
-  describe('thenable contract', () => {
-    it('is awaitable and yields the inner Result', async () => {
-      const r = await AsyncResult.ok(1)
-      expectTypeOf(r).toEqualTypeOf<Ok<number, never> | Err<number, never>>()
     })
   })
 

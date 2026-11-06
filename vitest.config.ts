@@ -40,11 +40,19 @@ const typeProjects = globSync('packages/*/tsconfig.vitest.json', { cwd: root })
     },
   }))
 
+// The runtime projects' includes would collect a type-only test, and requireAssertions fails it
+// there, since it reaches no runtime `expect`. Type-only tests live in these files, which every
+// runtime project skips and only the types projects run.
+const TYPE_SPECS = '**/*.types.spec.ts'
+
 // One workspace-wide run. Projects are listed explicitly so nothing outside them
 // (notably spikes/) is ever collected.
 export default defineConfig({
   test: {
     passWithNoTests: true,
+    // A test that reaches no `expect` fails instead of passing without checking anything.
+    expect: { requireAssertions: true },
+    exclude: [...configDefaults.exclude, TYPE_SPECS],
     // Random order exposes tests that lean on one another. Every project takes this config's seed,
     // which Vitest prints, so `--sequence.seed` replays a run; a project with a config file of its
     // own sets shuffle again.
@@ -61,7 +69,7 @@ export default defineConfig({
           root: 'packages/di',
           environment: 'node',
           include: ['src/**/*.spec.ts'],
-          exclude: [...configDefaults.exclude, 'src/vue/**'],
+          exclude: [...configDefaults.exclude, TYPE_SPECS, 'src/vue/**'],
         },
       },
       {
@@ -79,7 +87,7 @@ export default defineConfig({
           environment: 'node',
           include: ['tooling/**/*.spec.ts'],
           // The AD-10 violation tree holds a deliberate *.spec.ts fixture, not a test.
-          exclude: [...configDefaults.exclude, 'tooling/**/violations/**'],
+          exclude: [...configDefaults.exclude, TYPE_SPECS, 'tooling/**/violations/**'],
         },
       },
     ],

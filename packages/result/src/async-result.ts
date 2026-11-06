@@ -1,5 +1,3 @@
-// AsyncResult wraps a promise and is awaited like one, so it chains with `then` throughout.
-/* eslint-disable unicorn/no-thenable, unicorn/prefer-await */
 import { Err } from './err'
 import { InvariantError } from './invariant-error'
 import { Ok } from './ok'
