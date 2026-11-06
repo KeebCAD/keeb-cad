@@ -1,11 +1,12 @@
 import { Container, inject } from '@keeb-cad/di'
 import { hash } from '@keeb-cad/hashing'
-import { reactive } from '@keeb-cad/reactive'
+import { isProxy, reactive } from '@keeb-cad/reactive'
 import { AsyncResult, InvariantError, Option } from '@keeb-cad/result'
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
 import {
   type Design,
   type DesignInvalid,
+  type Form,
   formSchema,
   type Frozen,
   type Rejection,
@@ -62,6 +63,64 @@ class SetForm implements Command<SetFormInput> {
   }
 }
 
+const spreadRenameInputSchema = v.object({ name: v.string(), note: v.optional(v.string()) })
+type SpreadRenameInput = v.InferOutput<typeof spreadRenameInputSchema>
+
+// Spreads its whole input into meta, so a key the design schema refuses reaches the design.
+class SpreadRename implements Command<SpreadRenameInput> {
+  static readonly kind = 'command'
+  static readonly id = 'meta.spreadRename'
+  static readonly label = 'Spread rename'
+  static readonly input = spreadRenameInputSchema
+
+  available(_design: Frozen<Design>): boolean {
+    return true
+  }
+
+  apply(draft: Writable<Design>, input: SpreadRenameInput): void {
+    draft.meta = { ...draft.meta, ...input }
+  }
+}
+
+// Passes its form through unrebuilt, so only the store's copy keeps the caller's object out.
+const storeFormInputSchema = v.object({
+  form: v.custom<Form>((value) => v.is(formSchema, value)),
+})
+type StoreFormInput = v.InferOutput<typeof storeFormInputSchema>
+
+class StoreForm implements Command<StoreFormInput> {
+  static readonly kind = 'command'
+  static readonly id = 'meta.storeForm'
+  static readonly label = 'Store form'
+  static readonly input = storeFormInputSchema
+
+  available(_design: Frozen<Design>): boolean {
+    return true
+  }
+
+  apply(draft: Writable<Design>, input: StoreFormInput): void {
+    draft.meta.form = input.form
+  }
+}
+
+const looseRenameInputSchema = v.looseObject({ name: v.string() })
+type LooseRenameInput = v.InferOutput<typeof looseRenameInputSchema>
+
+class LooseRename implements Command<LooseRenameInput> {
+  static readonly kind = 'command'
+  static readonly id = 'meta.looseRename'
+  static readonly label = 'Loose rename'
+  static readonly input = looseRenameInputSchema
+
+  available(_design: Frozen<Design>): boolean {
+    return true
+  }
+
+  apply(draft: Writable<Design>, input: LooseRenameInput): void {
+    draft.meta.name = input.name
+  }
+}
+
 const loadDesignInputSchema = v.object({
   design: v.pipe(
     v.unknown(),
@@ -87,6 +146,28 @@ class LoadDesign implements Action<LoadDesignInput, DesignInvalid> {
   }
 
   readonly #store = inject(DesignStore)
+}
+
+const recordInputInputSchema = v.unknown()
+type RecordInputInput = v.InferOutput<typeof recordInputInputSchema>
+
+// Passes any input through and records what apply receives into the test's own list.
+function recordInputAction(received: unknown[]) {
+  return class RecordInput implements Action<RecordInputInput, never> {
+    static readonly kind = 'action'
+    static readonly id = 'file.recordInput'
+    static readonly label = 'Record input'
+    static readonly input = recordInputInputSchema
+
+    available(_current: Option<Committed>): boolean {
+      return true
+    }
+
+    apply(input: RecordInputInput): AsyncResult<void, never> {
+      received.push(input)
+      return AsyncResult.ok()
+    }
+  }
 }
 
 interface Arrangement {
@@ -182,6 +263,128 @@ describe('DesignStore', () => {
       })
       expectDeeplyFrozen(committed(store).design)
       expectNothingFrozen(input)
+    })
+
+    it('commits nothing for a command that changes nothing', async () => {
+      const store = await arrange({ commands: [RenameDesign], design: aDesign() })
+      const before = store.current
+      const events = recordCommits(store)
+
+      expectOk(store.run(RenameDesign, { name: committed(store).design.meta.name }))
+
+      expectNothingCommitted(store, before, events)
+    })
+
+    it('commits a design whose spread input carries no key the design schema refuses', async () => {
+      const store = await arrange({ commands: [SpreadRename], design: aDesign() })
+      const before = committed(store)
+
+      expectOk(store.run(SpreadRename, { name: 'Corne v2' }))
+
+      expect(committed(store).design).toEqual({
+        ...before.design,
+        meta: { ...before.design.meta, name: 'Corne v2' },
+      })
+      expect(committed(store).seq).toBe(before.seq + 1)
+    })
+
+    it('throws on a produced design the design schema refuses, naming the command and the path, committing nothing', async () => {
+      const store = await arrange({ commands: [SpreadRename], design: aDesign() })
+      const before = store.current
+      const events = recordCommits(store)
+
+      expect(() => store.run(SpreadRename, { name: 'Corne v2', note: 'draft' })).toThrow(
+        new InvariantError(
+          'Command "meta.spreadRename" produced a design the design schema refuses at meta.note.',
+        ),
+      )
+
+      expectNothingCommitted(store, before, events)
+    })
+
+    it("stores a copy of input its schema passes through, never freezing the caller's", async () => {
+      const store = await arrange({ commands: [StoreForm], design: aDesign() })
+      const input = { form: { type: 'unibody' as const } }
+
+      expectOk(store.run(StoreForm, input))
+
+      const stored = committed(store).design.meta.form
+      expect(stored).toEqual(input.form)
+      expect(stored).not.toBe(input.form)
+      expectDeeplyFrozen(committed(store).design)
+      expectNothingFrozen(input)
+    })
+
+    it("stores reactive input its schema passes through as plain data, never freezing the caller's", async () => {
+      const store = await arrange({ commands: [StoreForm], design: aDesign() })
+      const form = { type: 'unibody' as const }
+      const input = reactive({ form })
+
+      expectOk(store.run(StoreForm, input))
+
+      const stored = committed(store).design.meta.form
+      expect(stored).toEqual(form)
+      expect(isProxy(stored)).toBe(false)
+      expectDeeplyFrozen(committed(store).design)
+      expectNothingFrozen(input)
+    })
+
+    it('throws on a reactive value nested in plain input, committing nothing', async () => {
+      const store = await arrange({ commands: [StoreForm], design: aDesign() })
+      const before = store.current
+      const events = recordCommits(store)
+      const state = reactive({ form: { type: 'unibody' as const } })
+
+      expect(() => store.run(StoreForm, { form: state.form })).toThrow(
+        expect.objectContaining({ name: 'DataCloneError' }),
+      )
+
+      expectNothingCommitted(store, before, events)
+    })
+
+    it('throws on input it cannot copy, committing nothing', async () => {
+      const store = await arrange({ commands: [LooseRename], design: aDesign() })
+      const before = store.current
+      const events = recordCommits(store)
+
+      expect(() => store.run(LooseRename, { name: 'x', onDone: () => {} })).toThrow(
+        expect.objectContaining({ name: 'DataCloneError' }),
+      )
+
+      expectNothingCommitted(store, before, events)
+    })
+
+    it('throws on input it cannot copy before asking whether the command is available', async () => {
+      const lockedRenameInputSchema = v.looseObject({ name: v.string() })
+      type LockedRenameInput = v.InferOutput<typeof lockedRenameInputSchema>
+
+      class LockedRename implements Command<LockedRenameInput> {
+        static readonly kind = 'command'
+        static readonly id = 'meta.lockedRename'
+        static readonly label = 'Locked rename'
+        static readonly input = lockedRenameInputSchema
+
+        available(_design: Frozen<Design>): boolean {
+          return false
+        }
+
+        apply(draft: Writable<Design>, input: LockedRenameInput): void {
+          draft.meta.name = input.name
+        }
+      }
+      const store = await arrange({ commands: [LockedRename], design: aDesign() })
+
+      expect(() => store.run(LockedRename, { name: 'x', onDone: () => {} })).toThrow(
+        expect.objectContaining({ name: 'DataCloneError' }),
+      )
+    })
+
+    it('throws that a command is not registered before trying to copy its input', async () => {
+      const store = await arrange()
+
+      expect(() => store.run(LooseRename, { name: 'x', onDone: () => {} })).toThrow(
+        new InvariantError('Command "meta.looseRename" is not registered.'),
+      )
     })
 
     it('refuses with the rejection the apply step returns and discards its draft', async () => {
@@ -404,6 +607,29 @@ describe('DesignStore', () => {
       expectOk(await store.run(StartDesign, {}))
 
       expect(seen).toEqual([Option.none()])
+    })
+
+    it('hands apply a copy of input its schema passes through', async () => {
+      const received: unknown[] = []
+      const RecordInput = recordInputAction(received)
+      const store = await arrange({ actions: [RecordInput] })
+      const input = { design: aDesign() }
+
+      expectOk(await store.run(RecordInput, input))
+
+      expect(received).toEqual([input])
+      expect(received[0]).not.toBe(input)
+    })
+
+    it('throws on action input it cannot copy, without applying', async () => {
+      const received: unknown[] = []
+      const RecordInput = recordInputAction(received)
+      const store = await arrange({ actions: [RecordInput] })
+
+      expect(() => store.run(RecordInput, { name: 'x', onDone: () => {} })).toThrow(
+        expect.objectContaining({ name: 'DataCloneError' }),
+      )
+      expect(received).toEqual([])
     })
 
     it('throws on an action that is not registered', async () => {
