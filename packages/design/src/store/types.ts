@@ -33,9 +33,3 @@ export interface TypedEmitter<E extends Listeners<E>> {
 export interface Subscribable<E extends Listeners<E>> {
   on<K extends keyof E & string>(event: K, listener: E[K]): () => void
 }
-
-declare global {
-  // design runs on main and design/worker in the model worker; both have structuredClone, but the
-  // DOM and WebWorker libs would each also declare globals one of the two lacks.
-  function structuredClone<T>(value: T): T
-}

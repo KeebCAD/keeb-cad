@@ -95,6 +95,8 @@ context: []
 
 Toggled bugs, each run against `design-store.spec.ts`: copy removed (7 rows red), `toRaw` removed (both reactive rows red), copy moved after `available` (unavailable-command row red), copy moved before registration (unregistered row red), no-op check removed (no-op row red), schema check removed (extra-keys row red). Restored each time.
 
+- After PR #23 opened (Sergii, 2026-11-06): `structuredClone`'s type comes from the `WebWorker` lib in `design` and `commands` (`tsconfig.lib.json`), not a hand-written `declare global` in `store/types.ts`, because the lib's own declaration is faithful to design/worker and keeps both packages DOM-free; `commands` needs it because it type-checks design's store source. Checked clean with `tsc` before applying.
+
 ## Plan Change Log
 
 ## Review Triage Log
