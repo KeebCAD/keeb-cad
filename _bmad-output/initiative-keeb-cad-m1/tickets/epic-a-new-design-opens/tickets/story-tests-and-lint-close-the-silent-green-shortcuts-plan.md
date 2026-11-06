@@ -131,6 +131,9 @@ R1–R4, R15, R16 assert the requirement, an error on the comment's line: `expec
 - Decision (Sergii, 2026-11-06): `result-imports-no-npm-package` exempts `result`'s testing folder too (`pathNot: [TEST_FILE, TESTING_FOLDER]`), not only its specs, because the helpers now import `vitest`; production `result` code stays npm-free, and `only-tests-import-testing` keeps the folder out of production. Proven by a violation-tree fixture (`tooling/ad10/violations/packages/result/src/testing/expect-ok.ts`) and the test `allows result's testing folder to import vitest`, its own `it` because `vitest` resolves into `node_modules` unlike the tree's other bare imports.
 - Toggled bugs for those two: the fence back to `pathNot: TEST_FILE` turned `allows result's testing folder to import vitest` red (the sed also hit `only-tests-import-testing`, which went red too); `expectErr` back to a bare throw turned the two `async-result` tests red. Both restored, checked with `cmp`.
 
+- Decision (build, review pass 1 #5): type specs ban `expect`, `assert` and `should` imported from `vitest`, not `expect` alone, because all three run only at run time, which a type spec never reaches (toggled: `should` dropped from the ban turned its row red).
+- Decision (build, review pass 2 #4): the type-spec rules skip `app/e2e/**`, not register the Vitest plugin there, because the Vitest block ignores e2e, so `vitest/expect-expect` would crash lint (toggled: without the `ignores`, linting `app/e2e/a.types.spec.ts` threw `Could not find plugin "vitest"`; restored), and Playwright runs any `app/e2e` spec at run time while the R19 check fails a type spec outside a package's `src`.
+
 ## Plan Change Log
 
 - 2026-11-06 (build): `async-result.spec.ts`'s two `expectErr`-only tests now also assert the error they pass through, `expect(r.error).toBe(error)`, not moved to a type spec (they assert at run time) and not given `expect.assertions` (banned by Never), and not `expectErr` rewritten to call `expect`, because the smallest fix is in the two tests and the helper's other callers already assert with `expect`.
@@ -159,6 +162,26 @@ Pass 1 (quick, test-reviewer, on the working tree after fc8c6d1): high 0, medium
 | 12 | test-reviewer | The comment ban covers four extensions, not every linted file | low | patch | `files` dropped. |
 | 13 | test-reviewer | R6 and R10 make the same claim | low | reject | Both rows are in the frozen boundary table. |
 
+
+Pass 2 (quick, test-reviewer, on the six files patched after pass 1, at 4f39a9f): high 0, medium 0, low 5, false 0, maybe-false 0; quotes checked, none dropped.
+
+| # | Lens | Finding | Verdict | Route | Evidence |
+|---|------|---------|---------|-------|----------|
+| 1 | quick | A type spec can import `expectOk`/`expectDeeplyFrozen` from a testing subpath; their `expect` never runs | low | defer | Real; closing it is a new import ban, a rule for Sergii, not an autofix; no type spec imports one today. |
+| 2 | quick | `should` is banned but has no row | low | patch | Row added; toggled: `should` dropped from the ban turned it red; restored. |
+| 3 | quick | `TYPE_SPEC_MESSAGE` names only `expect` | low | patch | Message names all three. |
+| 4 | quick, test-reviewer | An `app/e2e/**/*.types.spec.ts` gets `vitest/expect-expect` without the plugin (config error) | low | patch | The Vitest block ignores `app/e2e/**`; the type-specs block now does too. |
+| 5 | quick, test-reviewer | `git ls-files --cached` lists a deleted-but-unstaged spec | low | reject | Fails only toward red, and clears once the deletion is staged; no false green. |
+
+Pass 3 (quick, test-reviewer, on pass 2's three patches): high 0, medium 0, low 7, false 0, maybe-false 0; quotes checked, none dropped.
+
+| # | Lens | Finding | Verdict | Route | Evidence |
+|---|------|---------|---------|-------|----------|
+| 1 | quick | The e2e `ignores` has no test or toggle | low | patch | Toggled and recorded in Implementation Notes; no code change. |
+| 2 | quick, test-reviewer | The e2e `ignores` decision is unstated | low | patch | Recorded as a decision in Implementation Notes. |
+| 3 | quick | Pass 2 header counts 6 rows, table has 5 | low | patch | Count corrected. |
+| 4 | quick | The plan's `eslint.config.ts` task line still names only `expect` | low | reject | Its fix edits this build's plan; the decision is in Implementation Notes. |
+| 5 | quick, test-reviewer | R8 and the type-spec decisions name only `expect`, not `assert` and `should` | low | reject | The boundary table is frozen; the wider ban is recorded as a build decision. |
 
 ## Design Notes
 

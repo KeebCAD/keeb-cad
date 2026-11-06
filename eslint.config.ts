@@ -134,9 +134,9 @@ export const TRY_IN_TEST = {
 export const TEST_ID_MESSAGE =
   'Find elements by role, then label, then text. A test id is a last resort, behind a file override in eslint.config.ts whose comment gives the reason.'
 
-// A runtime project skips a type spec, so an `expect` there would never run.
+// A runtime project skips a type spec, so a runtime assertion there would never run.
 export const TYPE_SPEC_MESSAGE =
-  'A *.types.spec.ts runs only in its types project, where `expect` never runs; assert with expectTypeOf, or move the test to a runtime spec.'
+  'A *.types.spec.ts runs only in its types project, where `expect`, `assert` and `should` never run; assert with expectTypeOf, or move the test to a runtime spec.'
 
 export default defineConfigWithVueTs(
   {
@@ -239,6 +239,8 @@ export default defineConfigWithVueTs(
     // After the block above: `**/*.spec.ts` matches type specs too, and the later options win.
     name: 'keeb-cad/type-specs',
     files: ['**/*.types.spec.ts'],
+    // The Vitest plugin is registered only outside app/e2e.
+    ignores: ['app/e2e/**'],
     rules: {
       'no-restricted-imports': [
         'error',

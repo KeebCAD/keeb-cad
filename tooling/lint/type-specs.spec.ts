@@ -15,7 +15,7 @@ const expectExpect = async (code: string, filePath: string) =>
   )
 
 describe('type specs', { timeout: COLD_CONFIG_TIMEOUT }, () => {
-  it.each(['expect', 'assert'])('rejects importing %s into a type spec', async (name) => {
+  it.each(['expect', 'assert', 'should'])('rejects importing %s into a type spec', async (name) => {
     expect(
       await ruleMessages('no-restricted-imports', `import { ${name} } from 'vitest'\n`, TYPE_SPEC),
     ).toEqual([expect.stringContaining(TYPE_SPEC_MESSAGE)])
