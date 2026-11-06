@@ -7,7 +7,7 @@ Browser CAD for split keyboards: layout to plates, PCB, case and firmware, all c
 
 ## Policy
 
-- Commit docs-only changes straight to main; put any code change on a branch and open a PR.
+- Commit docs-only changes straight to main; put any code change on a branch and open a PR. Customization of BMad skills and agents (`_bmad/custom/`) also goes straight to main, once the skill still renders (`_bmad/scripts/render_skill.py` for a workflow, `resolve_customization.py` for an agent); hooks, `.claude/settings.json` and `tooling/` stay on a branch.
 - Before merging a PR, review every change under `packages/`, `app/`, `fixtures/` or `tooling/` made after its last review pass: run `bmad-build`'s review lenses (quick, plus test-reviewer when a spec changed) on the diff since that pass, and record the triage in the plan's Review Triage Log. A change that touches only docs, or a rebase, needs no pass.
 - Add or change a design-file field, schema or shared kind only after the spine's Data Schema section defines it; if it doesn't, stop and ask.
 - Give every decision its rejected alternative: "X, not Y, because Z". This covers a plan's `Decision (plan):` entries, a spine sentence that chooses between options, and the decisions you list at the end of a task. A choice no requirement made is a decision and is labelled as one. When a decision builds by hand the main job of a dependency in the spine's Stack table, that dependency is its Y.
