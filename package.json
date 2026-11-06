@@ -17,9 +17,10 @@
     "test": "vitest run",
     "test:mutation": "stryker run",
     "build": "pnpm --filter @keeb-cad/app build",
+    "build:workbench": "pnpm --filter @keeb-cad/ui build:workbench",
     "smoke": "pnpm --filter @keeb-cad/app test:e2e",
     "check:fast": "pnpm lint && pnpm format:check && pnpm depcruise",
-    "check": "pnpm typecheck && pnpm check:fast && pnpm test && pnpm build && pnpm smoke"
+    "check": "pnpm typecheck && pnpm check:fast && pnpm test && pnpm build && pnpm build:workbench && pnpm smoke"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -32,12 +33,14 @@
     "@vue/eslint-config-typescript": "^14.9.0",
     "dependency-cruiser": "18.7.0",
     "eslint": "^10.10.0",
+    "eslint-plugin-better-tailwindcss": "4.10.0",
     "eslint-plugin-playwright": "^2.12.0",
     "eslint-plugin-unicorn": "79.0.0",
     "eslint-plugin-vue": "~10.11.0",
     "jiti": "^2.7.0",
     "lefthook": "2.2.2",
     "prettier": "3.9.10",
+    "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "vue-eslint-parser": "^10.4.1",

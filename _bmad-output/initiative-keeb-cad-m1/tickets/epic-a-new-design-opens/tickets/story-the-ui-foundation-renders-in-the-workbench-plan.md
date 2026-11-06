@@ -3,14 +3,14 @@ title: 'The ui foundation renders in the workbench'
 type: 'feature'
 ticket: '6'
 created: '2026-11-06'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '903962dd0b59cca5c50010b0919127e833b1a514'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md'
@@ -281,9 +281,59 @@ A workbench Vite entry renders every component state in both themes. Its state f
 
 ## Implementation Notes
 
+- zag's `validateHotkey('mod+')` returns `valid: true` with a warning only, so H4 and K10 could not hold on its errors alone. `assertValidHotkey` (`hotkeys/assert-valid-hotkey.ts`) throws on errors or warnings.
+- `useColorMode`'s plain `storageKey` writes a stored `bogus` straight to `data-theme`, which breaks C1. `useThemeChoice` passes a `storageRef` instead: `useStorage(THEME_STORAGE_KEY, 'auto')` with a serializer that reads any non-choice as `auto`. It adds `emitAuto: true`, because C3 expects the mode to read `auto`.
+- eslint-plugin-better-tailwindcss turns its rules off with a console warning when it can't resolve `tailwindcss` from the root. Under `hoist: false` that is silent green, so the root devDependencies gain `tailwindcss: catalog:`.
+- The `tsconfig.vitest.json` copied from editor had `"lib": []`, so the types projects failed on `document`, `matchMedia` and `PointerEvent`. ui's and editor's now use `["ES2023", "DOM", "DOM.Iterable"]`, because browser-mode specs run in a page.
+- The components are `UiButton`, `UiIcon`, `UiKbd`, `UiTabs`, `UiTooltip` and `UiWorkbench`, so `vue/multi-word-component-names` passes with no override. Folders, `types.ts` names and describe names are unchanged.
+- `UiTooltip` is plain Reka and portals its content to `<body>` with `side-offset="4"`.
+- The workbench's `index.html` shows two iframes of `frame.html?theme=dark|light`. `mountWorkbench` sets `<html data-theme>` from the query before it mounts, and each frame renders every state once. The Vite build takes both pages as inputs.
+- A disabled `UiButton` edges in `border` and writes in `text-faint`.
+- The `setColorScheme` command's type augmentation lives in `browser-commands.d.ts` in ui and editor, which only `tsconfig.vitest.json` includes.
+- After `setColorScheme`, the test frame's `matchMedia` updates a moment later, so C1–C3 polled for it. Without the poll they failed one run in three.
+- The D2 fixture is `packages/ui/src/button/Button.spec.ts`, as the boundary table names it, not the task list's `button.spec.ts`.
+
+- Decision (Sergii, 2026-11-06): the vitest tsconfigs (`packages/ui`, `packages/editor`) use `lib: ["ES2023", "DOM", "DOM.Iterable"]`, not `lib: []`, because browser-mode specs run in a real page and the types projects failed on `document` and `matchMedia` with `[]`.
+- Decision (Sergii, 2026-11-06): `browser-commands.d.ts` augments `vitest/browser` with `setColorScheme`, not untyped calls through a cast, because it is Vitest's documented way to type a custom command; only `tsconfig.vitest.json` includes it.
+- Decision (Sergii, 2026-11-06): the components are renamed to two words (`UiButton`, `UiIcon`, `UiKbd`, `UiTabs`, `UiTooltip`, `UiWorkbench`), not kept single-word behind a `vue/multi-word-component-names` override.
+- Decision (Sergii, 2026-11-06): the root `package.json` keeps `tailwindcss: catalog:` as a devDependency, not a hoist pattern, because better-tailwindcss resolves tailwindcss from the root and otherwise disables its rules with only a warning.
+- Decision (Sergii, 2026-11-06): Tooltip content portals to `<body>`, not inline, so an `overflow: hidden` panel can't clip it. The workbench renders each theme in its own iframe, each with `data-theme` on its own `<html>`. Rejected: copying the trigger's theme onto the portalled content, or a portal-target prop. Why: both put code in Tooltip that only the side-by-side workbench needs, while the app keeps one theme on `<html>` (Sergii: "is this how reka does it?").
+- Decision (Sergii, 2026-11-06): Tooltip `sideOffset` is 4px (DESIGN.md spacing `1`), not Reka's 0, so it clears the trigger's focus ring.
+- Decision (Sergii, 2026-11-06): a disabled Button uses the `border` edge and `text-faint` text, not only `text-muted` (preview: enabled and disabled looked alike). DESIGN.md gains an exception that lets `text-faint` mark disabled controls, which WCAG exempts from text contrast; on main.
+- Decision (Sergii, 2026-11-06): Button reuses its template through VueUse's `createReusableTemplate`, not always wrapping in Tooltip, so buttons without a reason mount no tooltip parts.
+- Decision (Sergii, 2026-11-06): `formatNumber` throws `RangeError`, not a plain `Error`, because a non-finite number is out of the range it formats.
+- Fix (review): `Kbd.spec.ts` finds the hint by text, not `querySelector('kbd')` (AGENTS: "Find elements by role, then label, then text").
+
+- Decision (Sergii, 2026-11-06): the workbench picks stand as built: the frame page reuses `main.ts`, not its own entry; a missing `?theme=` follows the OS, not dark; the iframe index page uses inline CSS, not Tailwind; and rows stay `bg-panel` on `bg-canvas`, not on `bg-chrome`, even though Latte draws both as #eff1f5.
+- Decision (Sergii, 2026-11-06, review): `UiButton` always mounts `UiTooltip`, disabled when there is no reason, not `createReusableTemplate` with `v-if`, because swapping the trees remounts `<button>` and drops focus when a focused button's reason changes. This replaces the earlier `createReusableTemplate` decision.
+
 ## Plan Change Log
 
+- 2026-11-06 (build): `useThemeChoice` uses `storageRef` + `emitAuto` instead of `storageKey` + `initialValue` (C1 `bogus`, C3 mode). The bad-hotkey check also counts zag's warnings (H4, K10 `mod+`). Neither changes intent or the boundary table.
+
 ## Review Triage Log
+
+### Pass 1 (quick, test-reviewer), 2026-11-06
+
+Verdicts: high 0, medium 7, low 7, false 1, maybe-false 0. Dropped for missing quotes: 0.
+
+| # | Lens | Finding | Verdict | Route | Evidence / action |
+|---|------|---------|---------|-------|-------------------|
+| 1 | quick | `UiButton.vue` is a fragment, so attrs (`class`, `aria-label`, listeners) never reach `<button>` | medium | patch | Two template roots (`DefineFace` and the `v-if` pair); AD-26 lets callers pass outer layout classes. Fix: `inheritAttrs: false`, with `v-bind="$attrs"` on `<button>`, plus a test that a passed class lands on it. |
+| 2 | quick | `UiButton` remounts `<button>` when `disabledReason` toggles, so focus is lost | medium | patch (Sergii) | `v-if`/`v-else` swaps the vnode trees. Decision (Sergii): always mount `UiTooltip`, disabled without a reason; `createReusableTemplate` goes. Test: focus survives a reason change. |
+| 3 | both | E1 sets the OS to dark without waiting for `matchMedia`, so it can pass with storage ignored | medium | patch | The plan notes say `matchMedia` lags, and `use-theme-choice.spec.ts` polls for it. Fix: the same poll before `mountEditor`. |
+| 4 | quick | `mount-editor.spec.ts` leaves the app and the theme watchers alive | medium | patch | Only the root div is removed. After `setColorScheme(null)` in `afterEach`, the watcher can set `data-theme` again in later shuffled tests. Fix in the test: unmount through `root.__vue_app__` and run `mountEditor` in an `effectScope` that the test stops. |
+| 5 | both | W1 state rows don't check role and name per state (Tabs: tablist only; Icon: no name) | medium | patch | The task says "Each state asserts its element by role and accessible name". Fix: Tabs asserts each tab by its item label; Icon asserts the labelled state by name and the decorative one as `aria-hidden`. |
+| 6 | quick | `UiTabs` triggers have no focus ring | medium | patch | DESIGN.md `focus-ring`; `UiButton` uses `focus-visible:outline-2 outline-offset-2 outline-focus`. Fix: the same classes on `TabsTrigger`. |
+| 7 | quick | Editor's `optimizeDeps.include` lacks ui's dependencies | medium | patch | The comment above it warns about mid-run re-bundles. Fix: add `reka-ui`, `@zag-js/hotkeys`, `@lucide/vue`, `@vueuse/core`. |
+| 8 | both | K10 starts from an empty layer, so it can't show that earlier entries survive a failed replace | low | patch | Direct correction: arrange `[R]`, replace with the bad list, assert R still fires. |
+| 9 | test | The Kbd `shows mod+K…` test repeats the `a letter chord` state row | low | patch | Direct deletion: the state row makes the same claim (C11). |
+| 10 | quick | The `NODE_FILES` comment omits ui | low | patch | Direct correction. |
+| 11 | quick | Comments restate code (`hotkey-layer.ts`, `mount-workbench.ts`, `css-rgb.ts`, first sentence of `formatNumber`'s JSDoc) | low | patch | AGENTS: "Write a comment only for a why … no restating a signature". Fix: delete them, and keep `formatNumber`'s `toFixed` why. |
+| 12 | test | The Tooltip C7 `699` row uses `?? null` in its expectation | low | reject | Not met in everyday use. The 700 and 701 rows prove the pointer path, so the row is not vacuous. |
+| 13 | test | The Kbd `F1` state passes even with the raw hotkey printed | low | reject | The formatter's own H3 pins `F1` → `F1`. A Kbd that printed raw text would fail the `mod+K` and `mod+shift+S` rows. |
+| 14 | test | The specs pin the error message text `Invalid hotkey "…"` | false | reject | Sergii's answer requires the throw to name the hotkey ("throw on a hotkey validateHotkey rejects, naming it"). The message is the requirement. |
+| 15 | test | E1 doesn't prove "over the OS one" (duplicate of 3) | medium | patch | Same root cause as 3; one fix. |
 
 ## Design Notes
 

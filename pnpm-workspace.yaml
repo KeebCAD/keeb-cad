@@ -21,6 +21,8 @@ catalog:
   '@vue/tsconfig': ^0.9.1
   nanoevents: ^10.0.0
   nanoid: ^6.0.2
+  tailwindcss: 4.3.3
+  '@tailwindcss/vite': 4.3.3
   ts-pattern: ^5.9.0
   typescript: ~6.0.0
   valibot: ^1.5.0

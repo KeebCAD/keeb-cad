@@ -5,6 +5,7 @@ import pluginVue from 'eslint-plugin-vue'
 import pluginPlaywright from 'eslint-plugin-playwright'
 import pluginVitest from '@vitest/eslint-plugin'
 import pluginUnicorn from 'eslint-plugin-unicorn'
+import pluginBetterTailwindcss from 'eslint-plugin-better-tailwindcss'
 import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
 
 // The one lint config for the whole workspace. Under `hoist: false` every plugin imported here
@@ -33,7 +34,7 @@ const IGNORED = [
   'fixtures/corney-island/ergogen/**',
 ]
 
-// Root, app, editor and di tool configs, tooling/ and the e2e specs run in Node.js.
+// Root, app, editor, di and ui tool configs, tooling/ and the e2e specs run in Node.js.
 const NODE_FILES = [
   '*.config.ts',
   '.dependency-cruiser.mts',
@@ -41,6 +42,8 @@ const NODE_FILES = [
   'app/*.config.ts',
   'packages/editor/*.config.ts',
   'packages/di/*.config.ts',
+  'packages/ui/*.config.ts',
+  'packages/ui/workbench/vite.config.ts',
   'app/e2e/**',
 ]
 
@@ -101,6 +104,13 @@ export const SHARED_SPEC_STATE = [
       'No empty array, object, Map, Set, WeakMap, WeakSet or Array at module level or in a describe callback; create recordings inside the test.',
   },
 ]
+
+// A class whose utility, after its variants, holds a bracket or parenthesis: `p-[7px]`,
+// `hover:bg-[#fff]`, `[mask:none]`, `p-(--x)`. A bracket inside a variant (`data-[state=active]:`)
+// sits before a top-level colon, so the variants part takes it and the class stays allowed.
+const BRACKETED = String.raw`\[[^\]]*\]|\([^)]*\)`
+const PLAIN = String.raw`[^:\[\]()]`
+const ARBITRARY_VALUE_PATTERN = `^(?:(?:${PLAIN}|${BRACKETED})*:)*${PLAIN}*(?:${BRACKETED})(?:${PLAIN}|${BRACKETED})*$`
 
 // Test-rule bans ported from the ninja-testing plugin's test-lint (MIT, Copyright (c) 2026 Illya
 // Klymov); the behaviours, not its code.
@@ -313,6 +323,27 @@ export default defineConfigWithVueTs(
         { key: 'data-testid', message: TEST_ID_MESSAGE },
       ],
       'vue/no-restricted-v-bind': ['error', { argument: 'data-testid', message: TEST_ID_MESSAGE }],
+    },
+  },
+
+  {
+    name: 'keeb-cad/no-arbitrary-values',
+    files: ['**/*.vue'],
+    plugins: { 'better-tailwindcss': pluginBetterTailwindcss },
+    settings: { 'better-tailwindcss': { entryPoint: 'packages/ui/src/theme/theme.css' } },
+    rules: {
+      'better-tailwindcss/no-restricted-classes': [
+        'error',
+        {
+          restrict: [
+            {
+              pattern: ARBITRARY_VALUE_PATTERN,
+              message:
+                "No arbitrary values: use a design token from ui's @theme, or add the token to DESIGN.md first.",
+            },
+          ],
+        },
+      ],
     },
   },
 
