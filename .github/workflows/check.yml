@@ -17,8 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     # Playwright's image carries Chromium, Firefox and their system packages, so the job installs
     # no browsers: `playwright install --with-deps` hung on the runner's apt mirror (4 of about 25
-    # runs on 2026-11-06). Vitest browser mode (packages/editor/vitest.config.ts) needs both
-    # browsers, the smoke test Chromium. The tag is the locked Playwright version, checked by
+    # runs on 2026-11-06). The browser-mode Vitest projects (packages/editor, packages/di) need
+    # both browsers, the smoke test Chromium. The tag is the locked Playwright version, checked by
     # tooling/playwright-image.spec.ts. User 1001 is the runner's, which owns the workspace.
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble

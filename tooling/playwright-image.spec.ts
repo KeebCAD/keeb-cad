@@ -12,7 +12,7 @@ const imageVersions = (workflow: string) =>
 
 /** Each distinct version of the `playwright` package the lockfile resolves. */
 const lockedVersions = (lockfile: string) => [
-  ...new Set([...lockfile.matchAll(/^ {2}playwright@([\d.]+):$/gm)].map((m) => m[1])),
+  ...new Set([...lockfile.matchAll(/^ {2}playwright@([^:(\s]+):$/gm)].map((m) => m[1])),
 ]
 
 describe("CI's Playwright image", () => {
@@ -32,5 +32,11 @@ describe("CI's Playwright image", () => {
     const lockfile = '  playwright@1.64.1:\n  playwright@1.65.0:\n'
 
     expect(lockedVersions(lockfile)).toEqual(['1.64.1', '1.65.0'])
+  })
+
+  it('names a pre-release version beside a release', () => {
+    const lockfile = '  playwright@1.64.1:\n  playwright@1.65.0-alpha-2026-11-01:\n'
+
+    expect(lockedVersions(lockfile)).toEqual(['1.64.1', '1.65.0-alpha-2026-11-01'])
   })
 })
