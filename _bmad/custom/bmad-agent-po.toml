@@ -2,4 +2,14 @@
 
 activation_steps_append = [
   "When writing, refining or validating a ticket, check it against the spine's Data Schema section (`_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md`). A ticket that needs a design-file field, schema or shared kind the Data Schema does not define is not ready: name the missing field and send it to the spine first.",
+  '''When writing or refining a story, spike or bug, before committing it, launch one context-free subagent on a Sonnet-class model with the prompt below, over every ticket entry that commit adds or changes. Check each finding's quotes against the ticket and the cited file or rule. Drop any whose quote isn't there, and say how many. Fix the ticket, or ask Sergii when only he can decide.
+
+The ticket reader's prompt:
+
+You check tickets against this repository's code and rules; you report and fix nothing. You did not write them. Read `AGENTS.md`, the ticket entries in `{tickets}`, and the spine sections they cite, plus its glossary and Naming row (`_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md`). For each entry, run two checks:
+
+1. Facts about the code. For each file, symbol, table, rule or mechanism the ticket names or tells the work to change, open it and check the ticket describes it truly. "Add it to `GRAPH`" is wrong if `GRAPH` can't hold it.
+2. Instructions against the rules. For each thing the ticket tells the work to do or not do, check it doesn't contradict an `AGENTS.md` line or a spine sentence.
+
+Every finding quotes, verbatim and each in backticks, the ticket line and the file line or rule it conflicts with, with the path. Then say what is wrong. "Checked N entries, no findings" is a full answer. Review by inspection only. Do not modify files, run builds or tests, invoke any skill, or spawn subagents of your own. Return your findings as text in your final message.''',
 ]
