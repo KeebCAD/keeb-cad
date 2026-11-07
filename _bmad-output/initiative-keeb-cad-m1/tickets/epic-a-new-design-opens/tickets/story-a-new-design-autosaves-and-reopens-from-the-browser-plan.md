@@ -3,15 +3,15 @@ title: 'A new design autosaves and reopens from the browser'
 type: 'feature'
 ticket: '5'
 created: '2026-11-07'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '4e090884860f3c6672edbad91a46265996b00dee'
 route: 'full'
 route_source: 'auto'
 risk: 'high'
-review: ''
-review_source: ''
-lenses_ran: []
-review_loop_iteration: 0
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
+review_loop_iteration: 1
 context:
   - '{project-root}/AGENTS.md'
 ---
@@ -48,6 +48,8 @@ context:
 - Decision (Sergii, 2026-11-07): autosave is built in `app` as AD-13 places it, not moved to `commands` nor read through a token now, because nothing in 23.5 reads its failure state; how `editor`'s banner reaches it goes to 16.x's spine pass (`deferred-work.md`).
 - Decision (Sergii, 2026-11-07): last saved and `savedAt` are epoch milliseconds from `Date.now()`, not ISO strings, because the time is only shown, so the UI formats a plain number and never parses one back.
 
+- Decision (Sergii, 2026-11-07, review Q1): a quota prune drops only the saving design's `autosave`s, oldest first, and never that design's newest version, not the oldest `autosave` across designs nor every one of the design's own, because a design must never lose its last stored copy (spine 8dbe213).
+- Decision (Sergii, 2026-11-07, review Q3): a load whose design file fails its schema saves no `reset` point and returns `DesignInvalid`, checked first by `design`'s pure `checkDesign(bundle)`, not one more `reset` point per failed retry, because nothing is replaced (spine 8dbe213).
 ## I/O & Edge-Case Matrix
 
 | Scenario | Input / State | Expected Output / Behavior | Error Handling |
@@ -114,9 +116,58 @@ context:
 
 ## Implementation Notes
 
+- Decision (Sergii, 2026-11-07): accept the unplanned config the storage Vitest config needed (`packages/storage/tsconfig.node.json` and its reference, devDeps `@tsconfig/node26`, `@types/node`, `@vitest/browser-playwright`, `packages/storage/*.config.ts` in `eslint.config.ts`'s `NODE_FILES`, a comment line in `packages/commands/tsconfig.lib.json`), not inline browser projects in the root config, because AD-13 runs `storage/src/browser/` "through `storage`'s own Vitest config" and `packages/workers` already has the same files.
+- Decision (Sergii, 2026-11-07, J1): storage saves and loads full `BundleTexts`, not `Partial<BundleTexts>`, because only File Open (16.x) can produce a bundle with a missing derived file and autosave always writes all three. The load flow's missing case is tested with a bundle without routing handed to the flow (a `DesignStorage` subclass overriding `load`, registered with `override(DesignStorage).useClass`), and the ticket's verify follows via `deferred-work.md`.
+- Decision (Sergii, 2026-11-07, J2): `LoadedBundle` carries the loaded version's `label` (id, name, revision), not a second `listDesigns()` read in the load flow, because the stored version already holds them and the extra read adds a `not-found` branch; spine Data Schema comment updated (822f89b).
+- Decision (Sergii, 2026-11-07, J3): `MemoryBackend`'s capacity is fixed at construction, not a mutable public field; rows that need a refusal after arranging arrange with a capacity that fits.
+- Decision (Sergii, 2026-11-07, J4): saves wait on `Promise.allSettled([previous])`, not `await previous`, because one rejected save must not stop every later autosave.
+- Decision (Sergii, 2026-11-07, J5): no browser quota test: `quota.spec.ts` and the `storage/quota` project go, not a Chromium-only `cdp()` test, because the mapping's Node rows cover the error shapes and the memory backend the prune and retry (spine AD-13, 822f89b). The boundary row "real quota" is withdrawn by this decision.
+- Decision (Sergii, 2026-11-07): the row "refused twice, 2 autosaves left" runs on a spec-local backend that refuses the next two writes for space, not dropped, because a fixed capacity frees a slot with each prune, so only scripted refusals keep the retry-until-success loop tested on Node.
+- Stryker (plan's command, after the loop-1 fixes): 97.89%, three survivors, each awaiting Sergii's call on a point-wise exclusion: `storage-module.ts:13` and `:14` (the `BrowserStorageAccess` and `StorageDatabase` registrations: browser-only wiring, proven by a toggled bug that fails 25 browser tests); `storage-backend.ts:5` (the token's name mutated to `""`: equivalent, the name only labels `di`'s error messages).
+- Pass-2 patches (P1–P5, T4) changed code after the last review pass; AGENTS.md wants a review-lens pass on them before merge.
+- Decision (plan, review P6): the load flow runs `checkDesign` before the `reset` save and `replaceDesign` parses again, not `replaceDesign` taking an already-parsed design, because AD-1's `replaceDesign` "takes the migrated bundle"; both run `parseDesign`, so they cannot drift.
+- Implementer: `acceptDerivedFiles` takes `Frozen<DerivedFiles>` and `issues` returns `Frozen<Violation[]>`, not the plan's mutable types, because the `derived-files` and `issues` posts are `Frozen` and readonly arrays don't assign to mutable ones (tsc).
+- Implementer: the backend's `versions()` returns `VersionEntry` (the summary plus `name`) so `load` can fill `LoadedBundle.label`; `listVersions` strips `name`. Not `read` returning the whole stored version, because AD-13: "`read(versionId)` returns one version's texts".
+
 ## Plan Change Log
 
+- 2026-11-07, loop 1. Trigger: review Q1 (quota prune could delete every autosave of the saving design and still fail) and Q3 (a `DesignInvalid` load still saved a `reset` point). Amended: two Sergii decisions in the frozen block; boundary rows below; the `retention` and `load` tasks read with them. Known-bad state avoided: a design with no stored copy after a refused save; one permanent `reset` point per failed launch. Reverted: nothing: Sergii chose a targeted fix on the current code over the workflow's revert and re-derive (2026-11-07). KEEP: everything else as built: storage layers, contract, browser backend, accept event, workers hand-off, autosave, the J1–J5 decisions.
+
 ## Review Triage Log
+
+Pass 1 (loop 0), lenses quick and test-reviewer. 15 findings; test-reviewer quotes all found, none dropped. Verdicts: high 1, medium 2, low 10, false 2.
+
+| # | Finding | Verdict | Route | Evidence |
+| --- | --- | --- | --- | --- |
+| Q1 | Quota prune takes candidates only from the saving design and can delete all its autosaves, then still return `quota-exceeded` | high | pending Sergii (intent) | `design-storage.ts` `#saveNow`: `pruneCandidate(versions.value)` over `versions(label.id)`; each refused retry deletes one more of this design's autosaves; the spine's "no rolling version is left" reads globally; the backend has no all-versions listing |
+| Q2 | `delete` never updates the `designs` entry, so a design whose last version was pruned stays listed and loads `not-found` | medium | with Q1 | `browser-backend.ts`/`memory-backend.ts` `delete` touch `versions` only; reachable through Q1's loop |
+| Q3 | A load whose design fails its schema still saves a `reset` point, one more per retry, never pruned | medium | pending Sergii (intent) | `load-flow.ts`: `#keepResetPoint` runs before `replaceDesign`, which can return `DesignInvalid`; named points survive pruning |
+| Q4 | Ticket's Chromium quota verify sentence has no test | false | reject | Withdrawn by J5; the ticket change is in `deferred-work.md` (822f89b, on main) |
+| Q5 | No Stryker verdicts recorded | low | reject (plan edit) | Implementer reported 3 survivors with verdicts; they go to Implementation Notes and the hand-off for Sergii's exclusion call |
+| Q6 | `VersionEntry` and "entry" comments break the plan's naming decision | low | patch | `backend/types.ts`; glossary **entry** is a build item |
+| Q7 | Contract checks only a successful write's end state, not atomicity on failure | low | reject | Atomicity is Dexie's one transaction and the memory backend's single step; a partial-failure row needs fault injection the fix would add |
+| Q8 | Contract asserts `revision: 'r1'` from `aRevision()`'s hidden default, with `toHaveLength` + `arrayContaining` | low | patch | `backend-contract.ts` arranges no revision yet asserts `'r1'` |
+| Q9 | `design-storage.spec.ts`'s `autosave()` loops over `save()`, which calls `expectOk` | low | patch | AGENTS.md: "No `if` or loop around `expect`"; `memory-backend.spec.ts` arranges with match-and-throw |
+| Q10 | `reset-survives-autosave.spec.ts` narrows with `find` and `?? -1` | low | patch | the earlier whole-value assertion fixes the order, so index the reset directly |
+| Q11a | `acceptDerivedFiles` takes `Frozen<DerivedFiles>`, `issues` returns `Frozen<Violation[]>`, unlike the plan | low | reject (plan edit) | Implementer's evidence: the post's `Frozen` readonly arrays don't assign to mutable ones; recorded in Implementation Notes |
+| Q11b | storage's browser project has no name | low | patch | `packages/storage/vitest.config.ts`; the plan names it `storage/browser` |
+| Q11c | depcruise rule message cites AD-13 | false | reject | Precedent: `only-design-imports-immer` message ends "(AD-2)."; rule messages are not code comments |
+| T1 | Prune `delete` failing returns `storage-unavailable`, dropping the quota refusal | low | decision recorded | The request failure is the newer, actionable error; listed in the hand-off decisions |
+| T2 | `save` maps a failed versions read through quota-aware `toStorageError` | low | patch | reads map through `toStorageUnavailable` everywhere else (`load`, lists) |
+| T3 | `replaces the open design with a stored bundle, emptying nothing` also asserts no reset version | low | patch | rename to claim both |
+
+Pass 2 (loop 1), lenses quick and test-reviewer on the delta since pass 1 (`diff-23-5-pass2-delta.patch`, 16 files). 8 findings; test-reviewer quotes all found, none dropped. Verdicts: low 8. Quick confirmed Q1, Q3, Q6, Q9, Q10, Q11b, T2, T3 fixed and Q2 unreachable.
+
+| # | Finding | Verdict | Route | Evidence |
+| --- | --- | --- | --- | --- |
+| P1 | load-flow's invalid-design test writes the design file as a copied KDL literal | low | patch | AGENTS.md: "never a copied literal"; `check-design.spec.ts` builds the same value from `aDesign()`/`aMeta()` |
+| P2 | contract still asserts `name`, `reason`, `designId`/`id` from `aStoredVersion`'s defaults | low | patch | Q8's fix covered only `revision` |
+| P3 | `#saveNow`'s comment states the old "quota-exceeded means none is left" | low | patch | spine 8dbe213: "no rolling version left but its newest" |
+| P4 | "leaves another design's autosaves untouched" also asserts the refusal and not corne's kept `r1` | low | patch | AGENTS.md: name and expects claim the same thing |
+| P5 | `check-design.ts` holds `checkDesign` and `parseDesign`, named for one | low | patch | AGENTS.md: helpers over one concept share a file named for it |
+| P6 | the load flow parses the design twice (`checkDesign`, then `replaceDesign`) | low | decision recorded | Implementation Notes: check first, not `replaceDesign` taking a parsed design, because AD-1's `replaceDesign` takes the migrated bundle |
+| T4 | load-flow's invalid-design test re-asserts `checkDesign`'s issue path | low | patch | AGENTS.md: "Test a rule where it is defined"; `check-design.spec.ts` owns the path |
+| T5 | `design-storage.spec.ts`'s `save` helper hand-rolls `expectOk` with match-and-throw | low | reject | carried Q9: `expectOk` there put an expect inside `autosave()`'s loop (AGENTS.md "No `if` or loop around `expect`"); match-and-throw is arrange, not an assertion |
 
 ## Design Notes
 
@@ -188,13 +239,13 @@ Three readers in the first pass (two conformance, one gap; Sonnet, context-free)
 | production bugs | reset beside autosave | `reset` then `autosave` at r | both kept | unit (storage) |
 | production bugs | two named points | two `reset` at r | both kept | unit (storage) |
 | production bugs | quota prune | refused, 2 autosaves left | the older deleted, retry succeeds | unit (storage) |
-| production bugs | quota prune | refused, 1 autosave left | it is deleted, retry succeeds | unit (storage) |
+| production bugs | quota prune | refused, 1 autosave left, its design's newest (review Q1) | kept, `quota-exceeded` | unit (storage) |
 | production bugs | quota prune | refused, 0 autosaves, a `reset` kept | `quota-exceeded`, the `reset` kept | unit (storage) |
 | production bugs | memory capacity | capacity − 1 / capacity / + 1 versions | write ok / ok / `QuotaExceededError` | unit (storage) |
 | production bugs | reset save fails | 0 autosaves, refused | stored bundle unchanged, `replaceDesign` not run, `quota-exceeded` | unit (commands) |
 | production bugs | reset save fails | backend request fails | `storage-unavailable`, `replaceDesign` not run | unit (commands) |
-| production bugs | reset save, autosave remains | `reset` save refused, 1 autosave left | the autosave dropped, `reset` saved | unit (storage) |
-| production bugs | quota retry | refused twice, 2 autosaves left | both dropped in turn, the third try succeeds | unit (storage) |
+| production bugs | reset save, autosave remains | `reset` save refused, 2 autosaves left (review Q1: the newest is kept) | the older autosave dropped, `reset` saved | unit (storage) |
+| production bugs | quota retry | refused twice, 3 autosaves left (review Q1: the newest is kept) | the two older dropped in turn, the third try succeeds | unit (storage) |
 | production bugs | serial saves | two saves at one revision started together | one `autosave` version at that revision | unit (storage) |
 | production bugs | reset saved | `reset` save succeeds | `replaceDesign` runs | unit (commands) |
 | rules | order | two saves at one fake time | `listVersions` newest by save order | unit (storage) |
@@ -219,3 +270,8 @@ Three readers in the first pass (two conformance, one gap; Sonnet, context-free)
 | glue | accept autosave | derived files at the latest seq | replaces that revision's version | integration (app) |
 | glue | failure state | refused save, then a success | `quota-exceeded`, then empty | integration (app) |
 | glue | worker stopped | lifecycle not started | autosave completes | integration (app) |
+| production bugs | quota prune keeps newest | refused, the design's only version is an autosave | `quota-exceeded`, that autosave kept | unit (storage) |
+| production bugs | quota prune keeps newest | refused, 2 autosaves of this design | the older dropped, the newest kept | unit (storage) |
+| production bugs | quota prune per design | refused, another design holds autosaves | that design's versions untouched | unit (storage) |
+| rules | checkDesign | a design that fails its schema / parses | `DesignInvalid` / ok | unit (design) |
+| rules | invalid design load | design fails its schema, routing unreadable | `DesignInvalid`, no `reset` version | unit (commands) |

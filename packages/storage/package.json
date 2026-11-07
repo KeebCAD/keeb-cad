@@ -4,14 +4,20 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./testing": "./src/testing/index.ts"
   },
   "dependencies": {
     "@keeb-cad/design-file": "workspace:*",
+    "@keeb-cad/di": "workspace:*",
     "@keeb-cad/result": "workspace:*",
-    "@keeb-cad/schema": "workspace:*"
+    "@keeb-cad/schema": "workspace:*",
+    "dexie": "catalog:"
   },
   "devDependencies": {
+    "@tsconfig/node26": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
     "typescript": "catalog:",
     "valibot": "catalog:",
     "vite": "catalog:",

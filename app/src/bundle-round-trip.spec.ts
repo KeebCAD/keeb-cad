@@ -3,6 +3,7 @@ import { DesignStore } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
 import { expectOk } from '@keeb-cad/result/testing'
 import { readBundle, writeBundle } from '@keeb-cad/storage'
+import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
 import { describe, expect, it } from 'vitest'
 
 import { mainModules } from './main-modules'
@@ -10,6 +11,7 @@ import { mainModules } from './main-modules'
 async function arrange(): Promise<DesignStore> {
   const container = new Container()
   for (const module of mainModules) container.addModule(module)
+  container.override(storageBackend).useValue(new MemoryBackend())
   await container.autoLoad()
   return container.resolve(DesignStore)
 }

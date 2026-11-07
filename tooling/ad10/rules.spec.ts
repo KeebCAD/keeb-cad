@@ -195,6 +195,7 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
           '@keeb-cad/blueprint',
         ),
         v('only-design-imports-immer', 'packages/model/src/index.ts', 'immer'),
+        v('only-storage-browser-imports-dexie', 'packages/storage/src/index.ts', 'dexie'),
         v('di-root-reaches-no-vue', 'packages/di/src/index.ts', 'packages/di/src/vue/index.ts'),
         v('di-root-reaches-no-vue', 'packages/di/src/wiring.ts', 'packages/di/src/vue/index.ts'),
         v('di-root-reaches-no-vue', 'packages/di/src/index.ts', '@keeb-cad/di/vue'),
@@ -365,6 +366,7 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
       ['@keeb-cad/schema/testing'],
     ],
     ['geometry', 'makerjs', 'packages/geometry/src/index.ts', ['makerjs']],
+    ["storage's browser backend", 'dexie', 'packages/storage/src/browser/x.ts', ['dexie']],
     ['reactive', '@vue/reactivity', 'packages/reactive/src/index.ts', ['@vue/reactivity']],
     [
       'ui',

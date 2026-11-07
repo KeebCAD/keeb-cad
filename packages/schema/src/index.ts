@@ -53,6 +53,8 @@ export type {
   SchemaIssue,
   Slot,
   StageId,
+  StorageError,
+  VersionReason,
   Violation,
   ViolationKind,
   Workspace,

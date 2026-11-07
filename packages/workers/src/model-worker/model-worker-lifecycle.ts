@@ -4,13 +4,18 @@ import { Dispatcher } from '@keeb-cad/messaging'
 import type { FromModelWorker, ToModelWorker } from '@keeb-cad/protocol'
 import { shallowRef } from '@keeb-cad/reactive'
 import { InvariantError } from '@keeb-cad/result'
-import type { Workspace } from '@keeb-cad/schema'
+import type { Frozen, Violation, Workspace } from '@keeb-cad/schema'
 
 import type { ModelWorkerStatus, Running, Spawn, SpawnedWorker } from './types'
 
 export class ModelWorkerLifecycle {
   get status(): ModelWorkerStatus {
     return this.#status.value
+  }
+
+  // The whole list at the latest seq the gate accepted.
+  get issues(): Frozen<Violation[]> {
+    return this.#issues.value
   }
 
   start(spawn: Spawn, workspace: Workspace = 'layout'): void {
@@ -45,6 +50,7 @@ export class ModelWorkerLifecycle {
 
   readonly #store = inject(DesignStore)
   readonly #status = shallowRef<ModelWorkerStatus>('idle')
+  readonly #issues = shallowRef<Frozen<Violation[]>>([])
   readonly #dispatcher = inject(Dispatcher)
   #spawn: Spawn | undefined
   #workspace: Workspace = 'layout'
@@ -107,13 +113,19 @@ export class ModelWorkerLifecycle {
 
   // Returns the call that stops watching the worker and terminates it.
   #watch(worker: SpawnedWorker): () => void {
-    const accept = () => {
+    const resetCrashes = () => {
       this.#crashes = 0
     }
     const stopListening = this.#dispatcher.listen<FromModelWorker>(worker, {
-      issues: accept,
-      'stage-started': accept,
-      'derived-files': accept,
+      issues: ({ violations }) => {
+        resetCrashes()
+        this.#issues.value = violations
+      },
+      'stage-started': resetCrashes,
+      'derived-files': ({ routing, fingerprints, seq }) => {
+        resetCrashes()
+        this.#store.acceptDerivedFiles({ routing, fingerprints }, seq)
+      },
     })
     const onError = (event: Event) => {
       // Uncancelled, a worker's error is also reported as uncaught in main's global scope.

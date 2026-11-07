@@ -14,7 +14,9 @@
     "packages/storage/src/**/*.ts",
     "!packages/*/src/**/*.spec.ts",
     "!packages/*/src/**/types.ts",
-    "!packages/*/src/**/index.ts"
+    "!packages/*/src/**/index.ts",
+    "!packages/storage/src/browser/**",
+    "!packages/storage/src/testing/backend-contract.ts"
   ],
   "thresholds": { "high": 90, "low": 80, "break": 90 },
   "reporters": ["clear-text", "progress", "html", "json"],

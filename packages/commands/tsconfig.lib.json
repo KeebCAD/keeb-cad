@@ -5,7 +5,8 @@
   "exclude": ["src/**/*.spec.ts"],
   "compilerOptions": {
     // Symbol.dispose and Symbol.asyncDispose, which di's container calls on dispose().
-    // WebWorker because this program type-checks design's store source, which calls structuredClone.
+    // WebWorker because this program type-checks design's store source, which calls structuredClone,
+    // and storage's browser backend, which reads indexedDB.
     "lib": ["ES2023", "ESNext.Disposable", "WebWorker"],
     "noEmit": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo"

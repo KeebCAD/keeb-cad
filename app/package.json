@@ -15,6 +15,7 @@
     "@keeb-cad/di": "workspace:*",
     "@keeb-cad/editor": "workspace:*",
     "@keeb-cad/pipeline": "workspace:*",
+    "@keeb-cad/reactive": "workspace:*",
     "@keeb-cad/result": "workspace:*",
     "@keeb-cad/schema": "workspace:*",
     "@keeb-cad/storage": "workspace:*",

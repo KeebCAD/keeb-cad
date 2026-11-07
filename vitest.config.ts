@@ -74,6 +74,17 @@ export default defineConfig({
         },
       },
       {
+        // storage's rules and its memory backend run on Node, where Stryker mutates them; its
+        // vitest.config.ts runs only the browser backend's specs, in browsers.
+        test: {
+          name: 'storage',
+          root: 'packages/storage',
+          environment: 'node',
+          include: ['src/**/*.spec.ts'],
+          exclude: [...configDefaults.exclude, TYPE_SPECS, 'src/browser/**'],
+        },
+      },
+      {
         test: {
           name: 'tooling',
           environment: 'node',

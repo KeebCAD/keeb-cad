@@ -11,3 +11,5 @@ import '@vue/reactivity'
 // only-tests-import-testing.
 import '@keeb-cad/result/testing'
 import '@keeb-cad/schema/testing'
+// only-storage-browser-imports-dexie: outside the browser backend.
+import 'dexie'

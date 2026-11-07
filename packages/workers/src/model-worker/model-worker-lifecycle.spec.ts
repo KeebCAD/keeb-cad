@@ -10,7 +10,15 @@ import { Container } from '@keeb-cad/di'
 import { InvariantError } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
 import type { Design, Workspace } from '@keeb-cad/schema'
-import { aDesign, aMeta, aStageId, aWorkspace } from '@keeb-cad/schema/testing'
+import {
+  aDesign,
+  aFingerprintsFile,
+  aMeta,
+  aRevision,
+  aRoutingFile,
+  aStageId,
+  aWorkspace,
+} from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
@@ -84,8 +92,24 @@ function startMessages(current: Committed, epoch: number, workspace: Workspace =
   ]
 }
 
-function issuesAt(epoch: number, seq: number) {
-  return { kind: 'issues', epoch, seq, violations: [] }
+function issuesAt(epoch: number, seq: number, violations: unknown[] = []) {
+  return { kind: 'issues', epoch, seq, violations }
+}
+
+function derivedFilesAt(epoch: number, seq: number, revision: string) {
+  return {
+    kind: 'derived-files',
+    epoch,
+    seq,
+    routing: aRoutingFile({ revision: aRevision('accepted') }),
+    fingerprints: aFingerprintsFile({ revision: aRevision('accepted') }),
+    revision,
+  }
+}
+
+// No violation kind exists yet; the lifecycle only holds what the worker posts.
+function aViolation(message: string) {
+  return { kind: 'test-kind', severity: 'warning', ids: [], message, fixes: [] }
 }
 
 describe('ModelWorkerLifecycle', () => {
@@ -398,6 +422,64 @@ describe('ModelWorkerLifecycle', () => {
       const { lifecycle } = await arrange()
 
       expect(() => lifecycle.restart()).toThrow(InvariantError)
+    })
+  })
+  describe('derived files', () => {
+    it("hands derived files at the latest seq to the store's accept", async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+      const before = committed(store)
+
+      latest(spawned).post(derivedFilesAt(1, before.seq, before.revision))
+
+      expect(committed(store)).toEqual({
+        ...before,
+        routing: aRoutingFile({ revision: aRevision('accepted') }),
+        fingerprints: aFingerprintsFile({ revision: aRevision('accepted') }),
+      })
+    })
+
+    it('drops derived files below the latest seq', async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+      const before = committed(store)
+      expectOk(store.run(RenameDesign, { name: 'Corne v2' }))
+      const renamed = committed(store)
+
+      latest(spawned).post(derivedFilesAt(1, before.seq, before.revision))
+
+      expect(committed(store)).toBe(renamed)
+    })
+  })
+
+  describe('issues', () => {
+    it('holds no issues before the first post', async () => {
+      const { lifecycle } = await arrange({ loaded: true })
+
+      expect(lifecycle.issues).toEqual([])
+    })
+
+    it("replaces its issues with each accepted post's whole list", async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+      const { seq } = committed(store)
+      latest(spawned).post(issuesAt(1, seq, [aViolation('first'), aViolation('second')]))
+
+      latest(spawned).post(issuesAt(1, seq, [aViolation('third')]))
+
+      expect(lifecycle.issues).toEqual([aViolation('third')])
+    })
+
+    it('keeps its issues on a post below the latest seq', async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+      const { seq } = committed(store)
+      latest(spawned).post(issuesAt(1, seq, [aViolation('first')]))
+      expectOk(store.run(RenameDesign, { name: 'Corne v2' }))
+
+      latest(spawned).post(issuesAt(1, seq, [aViolation('stale')]))
+
+      expect(lifecycle.issues).toEqual([aViolation('first')])
     })
   })
 })

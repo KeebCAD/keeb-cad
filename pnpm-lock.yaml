@@ -191,6 +191,9 @@ catalogs:
     '@vue/tsconfig':
       specifier: ^0.9.1
       version: 0.9.1
+    dexie:
+      specifier: ^4.4.7
+      version: 4.4.7
     nanoevents:
       specifier: ^10.0.0
       version: 10.0.0
@@ -313,6 +316,9 @@ importers:
       '@keeb-cad/pipeline':
         specifier: workspace:*
         version: link:../packages/pipeline
+      '@keeb-cad/reactive':
+        specifier: workspace:*
+        version: link:../packages/reactive
       '@keeb-cad/result':
         specifier: workspace:*
         version: link:../packages/result
@@ -397,6 +403,9 @@ importers:
       '@keeb-cad/schema':
         specifier: workspace:*
         version: link:../schema
+      '@keeb-cad/storage':
+        specifier: workspace:*
+        version: link:../storage
       valibot:
         specifier: 'catalog:'
         version: 1.5.0(typescript@6.0.3)
@@ -728,13 +737,28 @@ importers:
       '@keeb-cad/design-file':
         specifier: workspace:*
         version: link:../design-file
+      '@keeb-cad/di':
+        specifier: workspace:*
+        version: link:../di
       '@keeb-cad/result':
         specifier: workspace:*
         version: link:../result
       '@keeb-cad/schema':
         specifier: workspace:*
         version: link:../schema
+      dexie:
+        specifier: 'catalog:'
+        version: 4.4.7
     devDependencies:
+      '@tsconfig/node26':
+        specifier: 'catalog:'
+        version: 26.0.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      '@vitest/browser-playwright':
+        specifier: 'catalog:'
+        version: 5.0.5(playwright@1.64.1)(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))(vitest@5.0.5)
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -2352,6 +2376,9 @@ packages:
 
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
+
+  dexie@4.4.7:
+    resolution: {integrity: sha512-wemFiCl3DTCnfzyqepUTX1ugbYbkTrw3aEZOG7YjAOUoEQB5g5PrEywPzk5JpbX/SxqQ9IvjUpxCDIEjoOWEfA==}
 
   diff-match-patch@1.0.5:
     resolution: {integrity: sha512-IayShXAgj/QMXgB0IWmKx+rOPuGMhqm5w6jvFxmVenXKIzRqTAAsbBPT3kWQeGANj3jGgvcvv4yK6SxqYmikgw==}
@@ -5655,6 +5682,8 @@ snapshots:
   devlop@1.1.0:
     dependencies:
       dequal: 2.0.3
+
+  dexie@4.4.7: {}
 
   diff-match-patch@1.0.5: {}
 
