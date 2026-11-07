@@ -8,7 +8,7 @@
 
   "compilerOptions": {
     // Browser mode runs the specs in a real page, so they see the DOM.
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "lib": ["ES2023", "ESNext.Disposable", "DOM", "DOM.Iterable"],
     "types": ["node", "vitest-browser-vue"],
 
     // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.

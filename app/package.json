@@ -20,6 +20,7 @@
     "@keeb-cad/schema": "workspace:*",
     "@keeb-cad/storage": "workspace:*",
     "@keeb-cad/workers": "workspace:*",
+    "valibot": "catalog:",
     "vue": "catalog:"
   },
   "devDependencies": {

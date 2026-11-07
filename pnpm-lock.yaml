@@ -331,6 +331,9 @@ importers:
       '@keeb-cad/workers':
         specifier: workspace:*
         version: link:../packages/workers
+      valibot:
+        specifier: 'catalog:'
+        version: 1.5.0(typescript@6.0.3)
       vue:
         specifier: 'catalog:'
         version: 3.5.44(typescript@6.0.3)
@@ -523,9 +526,21 @@ importers:
 
   packages/editor:
     dependencies:
+      '@keeb-cad/design':
+        specifier: workspace:*
+        version: link:../design
+      '@keeb-cad/di':
+        specifier: workspace:*
+        version: link:../di
+      '@keeb-cad/schema':
+        specifier: workspace:*
+        version: link:../schema
       '@keeb-cad/ui':
         specifier: workspace:*
         version: link:../ui
+      valibot:
+        specifier: 'catalog:'
+        version: 1.5.0(typescript@6.0.3)
       vue:
         specifier: 'catalog:'
         version: 3.5.44(typescript@6.0.3)
@@ -533,6 +548,9 @@ importers:
         specifier: 5.4.0
         version: 5.4.0(@vue/compiler-sfc@3.5.44)(pinia@4.1.0(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.44(typescript@6.0.3)))(rolldown@1.2.15)(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))(vue@3.5.44(typescript@6.0.3))
     devDependencies:
+      '@keeb-cad/result':
+        specifier: workspace:*
+        version: link:../result
       '@tailwindcss/vite':
         specifier: 'catalog:'
         version: 4.3.3(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))

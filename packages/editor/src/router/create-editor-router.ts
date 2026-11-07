@@ -1,16 +1,17 @@
-import { createRouter, createWebHistory, type Router } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 
-import HomeView from '../views/HomeView.vue'
+import type { DesignLocation } from '../types'
+import DesignCanvas from '../views/DesignCanvas.vue'
+import { resolveWorkspace } from './resolve-workspace'
 
-export function createEditorRouter(): Router {
-  return createRouter({
-    history: createWebHistory(import.meta.env.BASE_URL),
+export function createEditorRouter(): DesignLocation {
+  const router = createRouter({
+    history: createWebHashHistory(),
     routes: [
-      {
-        path: '/',
-        name: 'home',
-        component: HomeView,
-      },
+      { path: '/', component: DesignCanvas },
+      { path: '/design/:id/:workspace?', name: 'design', component: DesignCanvas },
     ],
   })
+  router.beforeEach(resolveWorkspace)
+  return router
 }
