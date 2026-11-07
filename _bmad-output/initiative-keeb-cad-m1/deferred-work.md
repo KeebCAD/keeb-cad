@@ -168,3 +168,6 @@
 - source_plan: none
   summary: Folded into the ticket tree on 2026-11-07 (Sofia's replan after 23.7's split): the two 23.7 split-offs (now 23.19 and 23.20), 23.7's failure-state rewording, 23.5's cdp() quota and missing-routing rewording, and 23.5's keep-the-newest prune rewording. These entries above need no further action.
   evidence: epic-a-new-design-opens.md Notes, Decision 2026-11-07 (replan after 23.7's build split).
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-uiactions-and-the-shortcut-registry-run-every-hotkey-plan.md`
+  summary: A handle has no way to keep its hotkey on inside a focused field; `ui`'s `HotkeyLayer` registers every entry with `enableOnFormTags: false`, while EXPERIENCE.md › Shortcuts keeps "Ctrl+K, Ctrl+S, Ctrl+Shift+S, Ctrl+O and Ctrl+Z / Ctrl+Shift+Z" global with a field focused.
+  evidence: Found at 23.19's plan checkpoint (2026-11-07); no 23.19 entry needs it, 16.4's mod+Z is the first. Sergii approved leaving it out of 23.19.
