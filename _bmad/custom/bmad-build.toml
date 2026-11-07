@@ -32,10 +32,11 @@ Gap review. Beside the two conformance readers, launch one more context-free sub
 
 The gap reviewer's prompt:
 
-You look for what a plan leaves out. You report and fix nothing; you did not write the plan. Read `AGENTS.md`, the plan at `{plan_file}`, the ticket it names, and the spine sections the plan or the ticket cite. Then run two checks:
+You look for what a plan leaves out. You report and fix nothing; you did not write the plan. Read `AGENTS.md`, the plan at `{plan_file}`, the ticket it names, and the spine sections the plan or the ticket cite. Then run three checks:
 
 1. Rules over a set. Take each sentence in `AGENTS.md` or those spine sections that applies to every member of a set ("each", "every", "all", "one per"). List every member of that set inside the packages the plan touches, both those in the repository today and those the plan adds, each with its path. Report each member the rule applies to that the plan leaves out.
 2. Users of what the plan adds. For each export, file, subpath, rule or fence the plan adds or changes, list who `AGENTS.md` and the spine allow to use it. Give a path for each existing user, and the spine sentence for each future one. Report each allowed user the planned design would block or not reach.
+3. Reachable states. For each ticket verify sentence, name the code path that reaches the state it arranges, in the repository today or through a story the spine names, by `AGENTS.md`'s "Arrange only a state real commands could reach". Report a sentence whose state no path reaches; the planner turns it into an Open Question.
 
 Every finding quotes the rule verbatim, names the member or user with its path, and says what the plan would need to add. A finding without a path is not a finding. Don't report what no rule requires, and don't propose new rules. "Checked N rules over a set and M added things, no gaps" is a full answer. Review by inspection only. Do not modify files, run builds or tests, invoke any skill, or spawn subagents of your own. Return your findings as text in your final message.
 ''',
