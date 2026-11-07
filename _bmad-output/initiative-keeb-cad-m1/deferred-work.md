@@ -165,3 +165,6 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-app-opens-the-last-design-plan.md`
   summary: `packages/commands/src/design/new-design.spec.ts` registers a fake `DesignStore` and asserts `expect(handed).toEqual([…])`, what the fake was handed, against AGENTS.md's "Assert what a function returns or a visible effect; use `toHaveBeenCalled*` only when the call is the behaviour"; the real store's `current` is the visible effect.
   evidence: 23.7's final conformance pass (precedent check), 2026-11-07; 23.7's OpenStoredDesign spec asserts on `current`.
+- source_plan: none
+  summary: Folded into the ticket tree on 2026-11-07 (Sofia's replan after 23.7's split): the two 23.7 split-offs (now 23.19 and 23.20), 23.7's failure-state rewording, 23.5's cdp() quota and missing-routing rewording, and 23.5's keep-the-newest prune rewording. These entries above need no further action.
+  evidence: epic-a-new-design-opens.md Notes, Decision 2026-11-07 (replan after 23.7's build split).

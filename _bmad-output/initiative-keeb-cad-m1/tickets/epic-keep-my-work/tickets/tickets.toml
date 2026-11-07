@@ -19,10 +19,10 @@ unknown = "Open question (left to UX by the spine, 2026-11-07; Sally, EXPERIENCE
 id = 4
 type = "story"
 title = "Undo and redo from the keys and the top bar"
-description = "The editor's undo and redo (EXPERIENCE.md › Global chrome and Toast): mod+Z undoes and mod+Shift+Z redoes through 23.7's shortcut registry, the top bar's undo and redo buttons do the same, each disabled while the store's undo or redo is unavailable, and each shows 16.1's toast 'Undid: <command label>' or 'Redid: <command label>' with the label 14.1's entry carries (the first command's for a coalesced session). Undo and redo are the store's (14.1); this story only invokes them."
-verify = "In the locally served build, in Chromium and Firefox: after a test command, mod+Z restores the design and shows 'Undid: <its label>', and mod+Shift+Z re-applies it and shows 'Redid: <its label>'; the top bar's buttons do the same; on an empty stack both are disabled and the keys change nothing; a coalesced field session undoes as one step labelled by its first command."
+description = "The editor's undo and redo (EXPERIENCE.md › Global chrome and Toast): mod+Z undoes and mod+Shift+Z redoes through 23.19's shortcut registry, the top bar's undo and redo buttons do the same, each disabled while the store's undo or redo is unavailable, and each shows 16.1's toast 'Undid: <command label>' or 'Redid: <command label>' with the label 14.1's entry carries (the first command's for a coalesced session). Undo and redo are the store's (14.1); this story only invokes them, on 23.8's top bar. Assumption (Sofia, 2026-11-07): the redo toast reads 'Redid: <command label>', mirroring EXPERIENCE.md's 'Undid: <command label>', which names no redo text."
+verify = "In Vitest browser mode in Chromium and Firefox (AGENTS.md's end-to-end bar: undo is reversible and crosses no boundary a lower level can't fake): after a test command, mod+Z restores the design and shows 'Undid: <its label>', and mod+Shift+Z re-applies it and shows 'Redid: <its label>'; the top bar's buttons do the same; on an empty stack both are disabled and the keys change nothing; a coalesced field session undoes as one step labelled by its first command."
 covers = ["R2"]
-after = [1, "14.1"]
+after = [1, "14.1", "23.19", "23.8"]
 hitl = false
 risk = "low"
 
