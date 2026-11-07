@@ -23,12 +23,19 @@ import { formatIssuePaths } from '../parsing/format-issue-paths'
 import { parse } from '../parsing/parse'
 import { deepFreeze } from '../patching/deep-freeze'
 import { DesignPatcher } from '../patching/design-patcher'
+import { parseDesign } from './parse-design'
 import { DuplicateCommandIdError } from './duplicate-command-id-error'
 import { emptyDerivedFiles } from './empty-derived-files'
 import { findDuplicateIds } from './find-duplicate-ids'
 import { readDerivedFile } from './read-derived-file'
 import { revisionOf } from './revision-of'
-import type { Committed, DesignStoreEvents, Subscribable, TypedEmitter } from './types'
+import type {
+  Committed,
+  DerivedFiles,
+  DesignStoreEvents,
+  Subscribable,
+  TypedEmitter,
+} from './types'
 
 export class DesignStore {
   readonly events: Subscribable<DesignStoreEvents>
@@ -66,28 +73,43 @@ export class DesignStore {
   }
 
   replaceDesign(bundle: MigratedBundle): Result<{ emptied: Emptied[] }, DesignInvalid> {
-    return parse(designSchema, bundle.design)
-      .mapErr((issues): DesignInvalid => ({ kind: 'design-invalid', issues }))
-      .map((parsed) => {
-        const design = deepFreeze(parsed)
-        const revision = revisionOf(design)
-        const empty = emptyDerivedFiles(revision)
-        const routing = readDerivedFile(routingFileSchema, 'routing', bundle)
-        const fingerprints = readDerivedFile(fingerprintsFileSchema, 'fingerprints', bundle)
-        const committed = this.#write({
-          design,
-          routing: deepFreeze(routing.match({ ok: (file) => file, err: () => empty.routing })),
-          fingerprints: deepFreeze(
-            fingerprints.match({ ok: (file) => file, err: () => empty.fingerprints }),
-          ),
-          revision,
-        })
-        const emptied = [routing, fingerprints].flatMap((read) =>
-          read.match({ ok: (): Emptied[] => [], err: (reason) => [reason] }),
-        )
-        this.#emitter.emit('commit', { kind: 'whole', committed })
-        return { emptied }
+    return parseDesign(bundle).map((parsed) => {
+      const design = deepFreeze(parsed)
+      const revision = revisionOf(design)
+      const empty = emptyDerivedFiles(revision)
+      const routing = readDerivedFile(routingFileSchema, 'routing', bundle)
+      const fingerprints = readDerivedFile(fingerprintsFileSchema, 'fingerprints', bundle)
+      const committed = this.#write({
+        design,
+        routing: deepFreeze(routing.match({ ok: (file) => file, err: () => empty.routing })),
+        fingerprints: deepFreeze(
+          fingerprints.match({ ok: (file) => file, err: () => empty.fingerprints }),
+        ),
+        revision,
       })
+      const emptied = [routing, fingerprints].flatMap((read) =>
+        read.match({ ok: (): Emptied[] => [], err: (reason) => [reason] }),
+      )
+      this.#emitter.emit('commit', { kind: 'whole', committed })
+      return { emptied }
+    })
+  }
+
+  // Files for another seq than the current belong to another revision, so they are dropped.
+  acceptDerivedFiles(files: Frozen<DerivedFiles>, seq: number): void {
+    const current = this.#current.value
+    // No worker runs before the first Committed, so nothing can post derived files yet.
+    if (current === undefined) {
+      throw new InvariantError('Derived files were accepted before any design was loaded.')
+    }
+    if (seq !== current.seq) return
+    const committed: Committed = {
+      ...current,
+      routing: deepFreeze(files.routing),
+      fingerprints: deepFreeze(files.fingerprints),
+    }
+    this.#current.value = committed
+    this.#emitter.emit('accept', committed)
   }
 
   readonly #patcher = inject(DesignPatcher)

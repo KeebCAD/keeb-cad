@@ -44,6 +44,7 @@ const NODE_FILES = [
   'packages/di/*.config.ts',
   'packages/messaging/*.config.ts',
   'packages/workers/*.config.ts',
+  'packages/storage/*.config.ts',
   'packages/pipeline/*.config.ts',
   'packages/ui/*.config.ts',
   'packages/ui/workbench/vite.config.ts',

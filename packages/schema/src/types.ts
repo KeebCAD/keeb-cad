@@ -51,6 +51,13 @@ export type LoadError =
   | { kind: 'migration-failed'; from: FormatVersion; message: string }
   | { kind: 'file-unreadable'; file: BundleFile; message: string }
 
+export type StorageError =
+  | { kind: 'not-found'; id: Id }
+  | { kind: 'storage-unavailable'; message: string }
+  | { kind: 'quota-exceeded' }
+
+export type VersionReason = 'autosave' | 'reset'
+
 // Current-format values not yet parsed: replaceDesign parses them.
 export interface MigratedBundle {
   design: unknown

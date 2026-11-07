@@ -26,6 +26,7 @@ export type CommitEvent =
 
 export type DesignStoreEvents = {
   commit: (event: CommitEvent) => void
+  accept: (committed: Committed) => void
 }
 
 type Listeners<E> = { [K in keyof E]: (...arguments_: never[]) => void }

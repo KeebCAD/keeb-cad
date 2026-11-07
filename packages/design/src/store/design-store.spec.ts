@@ -11,7 +11,13 @@ import {
   type Frozen,
   type Rejection,
 } from '@keeb-cad/schema'
-import { aDesign, aFingerprintsFile, aMeta, aRoutingFile } from '@keeb-cad/schema/testing'
+import {
+  aDesign,
+  aFingerprintsFile,
+  aMeta,
+  aRevision,
+  aRoutingFile,
+} from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
@@ -201,6 +207,20 @@ function recordCommits(store: DesignStore): CommitEvent[] {
   const events: CommitEvent[] = []
   store.events.on('commit', (event) => events.push(event))
   return events
+}
+
+function recordAccepts(store: DesignStore): Committed[] {
+  const accepted: Committed[] = []
+  store.events.on('accept', (event) => accepted.push(event))
+  return accepted
+}
+
+// Derived files at another revision than the design's, so an accepted one shows.
+function acceptedFiles() {
+  return {
+    routing: aRoutingFile({ revision: aRevision('accepted') }),
+    fingerprints: aFingerprintsFile({ revision: aRevision('accepted') }),
+  }
 }
 
 function committed(store: DesignStore): Committed {
@@ -924,6 +944,55 @@ describe('DesignStore', () => {
       })
 
       expectNothingCommitted(store, before, events)
+    })
+  })
+  describe('acceptDerivedFiles', () => {
+    it('replaces the derived files at the current seq, frozen, keeping the seq and revision', async () => {
+      const store = await arrange({ design: aDesign() })
+      const before = committed(store)
+      const files = acceptedFiles()
+
+      store.acceptDerivedFiles(files, before.seq)
+
+      expect(committed(store)).toEqual({
+        design: before.design,
+        ...acceptedFiles(),
+        seq: before.seq,
+        revision: before.revision,
+      })
+      expectDeeplyFrozen(committed(store).routing)
+      expectDeeplyFrozen(committed(store).fingerprints)
+    })
+
+    it('emits one accept event carrying what it committed, and no commit event', async () => {
+      const store = await arrange({ design: aDesign() })
+      const commits = recordCommits(store)
+      const accepted = recordAccepts(store)
+
+      store.acceptDerivedFiles(acceptedFiles(), committed(store).seq)
+
+      expect({ accepted, commits }).toEqual({ accepted: [committed(store)], commits: [] })
+    })
+
+    it.each([
+      ['one below the current seq', -1],
+      ['one above the current seq', 1],
+    ])('drops files %s, emitting nothing', async (_role, offset) => {
+      const store = await arrange({ design: aDesign(), commands: [RenameDesign] })
+      expectOk(store.run(RenameDesign, { name: 'Corne v2' }))
+      const before = store.current
+      const accepted = recordAccepts(store)
+
+      store.acceptDerivedFiles(acceptedFiles(), committed(store).seq + offset)
+
+      expect(store.current.getOrUndefined()).toBe(before.getOrUndefined())
+      expect(accepted).toEqual([])
+    })
+
+    it('throws with nothing committed', async () => {
+      const store = await arrange()
+
+      expect(() => store.acceptDerivedFiles(acceptedFiles(), 1)).toThrow(InvariantError)
     })
   })
 })

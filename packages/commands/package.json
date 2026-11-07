@@ -12,6 +12,7 @@
     "@keeb-cad/model": "workspace:*",
     "@keeb-cad/result": "workspace:*",
     "@keeb-cad/schema": "workspace:*",
+    "@keeb-cad/storage": "workspace:*",
     "valibot": "catalog:"
   },
   "devDependencies": {

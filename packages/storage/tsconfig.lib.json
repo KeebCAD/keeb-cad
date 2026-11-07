@@ -1,9 +1,12 @@
 {
-  // Saving and loading the design bundle. No DOM lib until a backend needs one.
+  // Saving and loading the design bundle. No DOM lib: it reads no page, and the browser backend's
+  // indexedDB, IDBKeyRange and DOMException are web APIs both threads have.
   "extends": "../../tsconfig.base.json",
   "include": ["src/**/*"],
   "exclude": ["src/**/*.spec.ts"],
   "compilerOptions": {
+    // Symbol.dispose and Symbol.asyncDispose, which di's container calls on dispose().
+    "lib": ["ES2023", "ESNext.Disposable", "WebWorker"],
     "noEmit": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo"
   }

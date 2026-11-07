@@ -87,6 +87,7 @@ export const GRAPH: Readonly<Record<string, readonly string[]>> = {
     'workers',
     'storage',
     'schema',
+    'reactive',
     'pipeline',
     'model',
     'library',
@@ -343,6 +344,12 @@ const config: IConfiguration = {
       '^packages/geometry/',
       npm('makerjs'),
       'Only geometry imports makerjs.',
+    ),
+    onlyImports(
+      'only-storage-browser-imports-dexie',
+      '^packages/storage/src/browser/',
+      npm('dexie'),
+      "Only storage's browser backend imports dexie (AD-13).",
     ),
     onlyImports(
       'only-design-imports-immer',
