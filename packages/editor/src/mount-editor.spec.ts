@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, onTestFinished } from 'vitest'
 import { commands, page } from 'vitest/browser'
 import { effectScope, type App } from 'vue'
 
+import { editorModule } from './editor-module'
 import { mountEditor } from './mount-editor'
 
 afterEach(async () => {
@@ -18,7 +19,7 @@ afterEach(async () => {
 })
 
 async function arrange(design?: Design) {
-  const container = new Container().addModule(designModule)
+  const container = new Container().addModule(designModule).addModule(editorModule)
   await container.autoLoad()
   if (design !== undefined) {
     expectOk(container.resolve(DesignStore).replaceDesign({ design, unreadable: [] }))

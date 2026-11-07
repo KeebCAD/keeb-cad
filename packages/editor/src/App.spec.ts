@@ -8,11 +8,12 @@ import { render } from 'vitest-browser-vue'
 import type { App as VueApp } from 'vue'
 
 import App from './App.vue'
+import { editorModule } from './editor-module'
 import { createEditorRouter } from './router'
 
 describe('App', () => {
   it('renders the editor shell', async () => {
-    const container = new Container().addModule(designModule)
+    const container = new Container().addModule(designModule).addModule(editorModule)
     await container.autoLoad()
     expectOk(container.resolve(DesignStore).replaceDesign({ design: aDesign(), unreadable: [] }))
     const injector = container.resolve(InjectorToken)

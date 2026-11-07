@@ -23,6 +23,7 @@ export interface CommandHandle {
   readonly id: string
   readonly label: string
   readonly input: v.GenericSchema
+  readonly hotkeys?: readonly string[]
   new (): Command<unknown>
 }
 
@@ -31,6 +32,7 @@ export interface ActionHandle {
   readonly id: string
   readonly label: string
   readonly input: v.GenericSchema
+  readonly hotkeys?: readonly string[]
   new (): Action<unknown, unknown>
 }
 
