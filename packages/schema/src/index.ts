@@ -17,6 +17,9 @@ export { designSchema } from './design'
 export { fingerprintSchema } from './fingerprint'
 export { routingFileSchema } from './routing-file'
 export { fingerprintsFileSchema } from './fingerprints-file'
+export { workspaceSchema } from './workspace'
+export { stageIdSchema } from './stage-id'
+export { fixSchema } from './fix'
 
 export type {
   BundleFile,
@@ -25,8 +28,10 @@ export type {
   Design,
   DesignFile,
   DesignInvalid,
+  DesignPatch,
   Emptied,
   Fingerprint,
+  Fix,
   FingerprintsFile,
   Form,
   FormatVersion,
@@ -47,4 +52,8 @@ export type {
   RoutingFile,
   SchemaIssue,
   Slot,
+  StageId,
+  Violation,
+  ViolationKind,
+  Workspace,
 } from './types'

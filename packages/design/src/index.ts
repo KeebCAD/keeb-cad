@@ -11,7 +11,7 @@ export type {
 } from './store/types'
 
 export { DesignPatcher } from './patching/design-patcher'
-export type { Changed, DesignPatch, Edit, Writable } from './patching/types'
+export type { Changed, Edit, Writable } from './patching/types'
 
 export { registerCommand } from './entries/register-command'
 export { registerAction } from './entries/register-action'

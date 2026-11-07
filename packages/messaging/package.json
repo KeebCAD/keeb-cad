@@ -5,5 +5,12 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@tsconfig/node26": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

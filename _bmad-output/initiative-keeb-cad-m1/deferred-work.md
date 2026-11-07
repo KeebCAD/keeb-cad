@@ -101,3 +101,35 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-ui-foundation-renders-in-the-workbench-plan.md`
   summary: `tooling/lint/rule-messages.ts` holds a module-level `ESLint` instance its two helpers reach for, and its doc comments restate the signatures.
   evidence: precedent lines `const eslint = new ESLint({ cwd: fileURLToPath(new URL('../..', import.meta.url)) })` and `/** The messages \`ruleId\` reports under the real config for \`code\` at \`filePath\`. */`; rules `Hold state in \`di\` services, never in a module-level singleton that functions reach for.` and `Write a comment only for a why the code can't say. … no restating a signature` (23.6 final conformance pass).
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
+  summary: Build `messaging`'s request side (pending requests, the typed `stale` reply to a request dropped as stale, reject all pending on a worker restart) with the first story that adds a request kind, and update 23.4's ticket wording ("stale rejection").
+  evidence: Sergii's 23.4 decision (2026-11-07): no request kind exists yet, and how a pending caller receives `stale` (no `Result` crosses; `messaging` can't import `result`) needs a consumer to settle.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
+  summary: `tooling/ad10/rules.spec.ts` keeps mutable state at module level (the generated temp tree and its cruise promise) and computes expected values the way the config does (`forbiddenTarget(row)`, `expect(reported).toEqual(configured)`).
+  evidence: precedent lines `const generatedDir = mkdtempSync(path.join(tmpdir(), 'keeb-cad-ad10-'))` and `const generated = cruiseWithConfig(['packages', 'app', 'fixtures'], generatedDir)`; rules `Keep no mutable state at module level in a spec` and `no expected value computed the way production computes it` (23.4 conformance review).
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
+  summary: Root `vitest.config.ts` and `packages/di/vitest.config.ts` carry comments with AD-n or Verification-layer references.
+  evidence: precedent lines `// The AD-10 violation tree holds a deliberate *.spec.ts fixture, not a test.` and `// di's root specs touch no DOM, so they run on Node (Verification layer 2)`; rule `No AD-n or ticket references` (23.4 conformance review).
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
+  summary: The spine still names the stale reply as built and tested in `messaging` (AD-11 "a typed `stale` rejection reply …", "each needs a `messaging` test"; Structural Seed "stale rejection"); fold in Sergii's 23.4 deferral of the request side (bmad-architecture).
+  evidence: 23.4 final conformance pass, finding 13; Sergii's decision 2026-11-07.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
+  summary: `packages/design/src/store/design-store.spec.ts` asserts a rejection by identity where the requirement is only its value.
+  evidence: precedent line `expect(result.error).toBe(rejection)` in `refuses with the rejection the apply step returns and discards its draft`; rule `Assert whole values (toEqual, toMatchObject)` (23.4 final conformance pass, low confidence).
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
+  summary: The browser Vitest configs for `messaging`, `workers`, `pipeline` and `app` don't pre-bundle their dependencies (`optimizeDeps.include`), which `packages/di/vitest.config.ts` does to avoid a mid-run re-bundle.
+  evidence: unverified (would be medium): 23.4's whole-suite log shows no re-optimization; a cold-cache run with `node_modules/.vite` cleared, watching for "new dependencies optimized", would settle it; `app`'s entry spec polls 10 s for the worker's first transform.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
+  summary: `app/src/start-model-worker.ts` attaches its listener only after `await container.autoLoad()`, so a truly async eager binding could let main's first `design` arrive with no listener and be lost.
+  evidence: unverified (would be medium): AD-25 prescribes this order and it works today; settled by checking whether Chromium and Firefox queue a module worker's messages until its top-level evaluation finishes.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
+  summary: When 23.7 first calls `ModelWorkerLifecycle.start(spawn)` from `start-main.ts`, `app/vite.config.ts` must set `worker: { format: 'es' }`, not Vite's default `'iife'`, because `app/src/start-model-worker.ts` awaits `autoLoad()` at top level, which an `iife` worker bundle can't hold.
+  evidence: 23.4 sets `worker.format: 'es'` only in `app/vitest.config.ts` (its final conformance pass dropped the `vite.config.ts` change as unused until a production spawn exists); 23.7's ticket doesn't mention it; Vite docs: `worker.format` default `'iife'`.

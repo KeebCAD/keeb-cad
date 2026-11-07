@@ -1,6 +1,11 @@
-import type { Design, FingerprintsFile, Frozen, Revision, RoutingFile } from '@keeb-cad/schema'
-
-import type { DesignPatch } from '../patching/types'
+import type {
+  Design,
+  DesignPatch,
+  FingerprintsFile,
+  Frozen,
+  Revision,
+  RoutingFile,
+} from '@keeb-cad/schema'
 
 export interface DerivedFiles {
   routing: RoutingFile

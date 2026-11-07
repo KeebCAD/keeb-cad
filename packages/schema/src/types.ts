@@ -1,6 +1,7 @@
 import type * as v from 'valibot'
 
 import type { designSchema } from './design'
+import type { fixSchema } from './fix'
 import type { fingerprintSchema } from './fingerprint'
 import type { fingerprintsFileSchema } from './fingerprints-file'
 import type { formSchema } from './form'
@@ -11,6 +12,8 @@ import type { chainGroupFieldsSchema, freeGroupFieldsSchema, slotSchema } from '
 import type { metaSchema } from './meta'
 import type { revisionSchema } from './revision'
 import type { routingFileSchema } from './routing-file'
+import type { stageIdSchema } from './stage-id'
+import type { workspaceSchema } from './workspace'
 
 export type Id = v.InferOutput<typeof idSchema>
 export type Revision = v.InferOutput<typeof revisionSchema>
@@ -59,6 +62,16 @@ export interface MigratedBundle {
 
 export type ItemId = Id
 
+// Hand-declared: the crossing's channel has no validation yet.
+export interface DesignPatch {
+  op: 'replace' | 'remove' | 'add'
+  path: (string | number)[]
+  value?: unknown
+}
+
+export type Workspace = v.InferOutput<typeof workspaceSchema>
+export type StageId = v.InferOutput<typeof stageIdSchema>
+
 // Object keys and array indexes, [] for a root issue: a plain copy, so callers never see Valibot's
 // issue type.
 export interface SchemaIssue {
@@ -75,6 +88,19 @@ export type Rejection =
   | { kind: 'unavailable'; command: string }
   | { kind: 'stale'; seq: number; latest: number }
   | { kind: ModelRejectionKind; ids: ItemId[]; message: string }
+
+// Each member is added by the story that first reports it.
+export type ViolationKind = never
+
+export type Fix = v.InferOutput<typeof fixSchema>
+
+export interface Violation {
+  kind: ViolationKind
+  severity: 'error' | 'warning'
+  ids: ItemId[]
+  message: string
+  fixes: Fix[]
+}
 
 export interface DesignInvalid {
   kind: 'design-invalid'

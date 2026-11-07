@@ -1,13 +1,7 @@
-import type { Design, Frozen, Rejection } from '@keeb-cad/schema'
+import type { Design, DesignPatch, Frozen, Rejection } from '@keeb-cad/schema'
 import type { Draft } from 'immer'
 
 export type Writable<T> = Draft<T>
-
-export interface DesignPatch {
-  op: 'replace' | 'remove' | 'add'
-  path: (string | number)[]
-  value?: unknown
-}
 
 export interface Changed {
   design: Frozen<Design>

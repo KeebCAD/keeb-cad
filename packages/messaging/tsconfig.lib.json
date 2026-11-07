@@ -1,0 +1,11 @@
+{
+  // The crossing's generic machine. No DOM lib: it runs on main and in every worker.
+  "extends": "../../tsconfig.base.json",
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.spec.ts"],
+  "compilerOptions": {
+    "lib": ["ES2023", "WebWorker"],
+    "noEmit": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo"
+  }
+}

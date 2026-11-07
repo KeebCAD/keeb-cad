@@ -59,6 +59,7 @@ export default defineConfig({
     sequence: { shuffle: true },
     projects: [
       'packages/*/vitest.config.ts',
+      'app/vitest.config.ts',
       ...configlessProjects,
       ...typeProjects,
       {
@@ -70,15 +71,6 @@ export default defineConfig({
           environment: 'node',
           include: ['src/**/*.spec.ts'],
           exclude: [...configDefaults.exclude, TYPE_SPECS, 'src/vue/**'],
-        },
-      },
-      {
-        // app's specs wire the main container on Node; its end-to-end specs run under Playwright.
-        test: {
-          name: '@keeb-cad/app',
-          root: 'app',
-          environment: 'node',
-          include: ['src/**/*.spec.ts'],
         },
       },
       {

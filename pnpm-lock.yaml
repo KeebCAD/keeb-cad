@@ -310,6 +310,9 @@ importers:
       '@keeb-cad/editor':
         specifier: workspace:*
         version: link:../packages/editor
+      '@keeb-cad/pipeline':
+        specifier: workspace:*
+        version: link:../packages/pipeline
       '@keeb-cad/result':
         specifier: workspace:*
         version: link:../packages/result
@@ -319,6 +322,9 @@ importers:
       '@keeb-cad/storage':
         specifier: workspace:*
         version: link:../packages/storage
+      '@keeb-cad/workers':
+        specifier: workspace:*
+        version: link:../packages/workers
       vue:
         specifier: 'catalog:'
         version: 3.5.44(typescript@6.0.3)
@@ -338,6 +344,9 @@ importers:
       '@vitejs/plugin-vue':
         specifier: 'catalog:'
         version: 6.0.10(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))(vue@3.5.44(typescript@6.0.3))
+      '@vitest/browser-playwright':
+        specifier: 'catalog:'
+        version: 5.0.5(playwright@1.64.1)(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))(vitest@5.0.5)
       '@vue/tsconfig':
         specifier: 'catalog:'
         version: 0.9.1(typescript@6.0.3)(vue@3.5.44(typescript@6.0.3))
@@ -575,7 +584,23 @@ importers:
 
   packages/library: {}
 
-  packages/messaging: {}
+  packages/messaging:
+    devDependencies:
+      '@tsconfig/node26':
+        specifier: 'catalog:'
+        version: 26.0.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      '@vitest/browser-playwright':
+        specifier: 'catalog:'
+        version: 5.0.5(playwright@1.64.1)(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))(vitest@5.0.5)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-playwright@5.0.5)(@vitest/ui@5.0.5)(jsdom@30.1.3(@noble/hashes@2.4.0))(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/model:
     dependencies:
@@ -604,11 +629,63 @@ importers:
 
   packages/pcb: {}
 
-  packages/pipeline: {}
+  packages/pipeline:
+    dependencies:
+      '@keeb-cad/design':
+        specifier: workspace:*
+        version: link:../design
+      '@keeb-cad/di':
+        specifier: workspace:*
+        version: link:../di
+      '@keeb-cad/messaging':
+        specifier: workspace:*
+        version: link:../messaging
+      '@keeb-cad/protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      '@keeb-cad/reactive':
+        specifier: workspace:*
+        version: link:../reactive
+      '@keeb-cad/result':
+        specifier: workspace:*
+        version: link:../result
+      '@keeb-cad/schema':
+        specifier: workspace:*
+        version: link:../schema
+    devDependencies:
+      '@tsconfig/node26':
+        specifier: 'catalog:'
+        version: 26.0.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      '@vitest/browser-playwright':
+        specifier: 'catalog:'
+        version: 5.0.5(playwright@1.64.1)(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))(vitest@5.0.5)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-playwright@5.0.5)(@vitest/ui@5.0.5)(jsdom@30.1.3(@noble/hashes@2.4.0))(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/plates: {}
 
-  packages/protocol: {}
+  packages/protocol:
+    dependencies:
+      '@keeb-cad/messaging':
+        specifier: workspace:*
+        version: link:../messaging
+      '@keeb-cad/schema':
+        specifier: workspace:*
+        version: link:../schema
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-playwright@5.0.5)(@vitest/ui@5.0.5)(jsdom@30.1.3(@noble/hashes@2.4.0))(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/reactive:
     dependencies:
@@ -731,7 +808,48 @@ importers:
 
   packages/viewer3d: {}
 
-  packages/workers: {}
+  packages/workers:
+    dependencies:
+      '@keeb-cad/design':
+        specifier: workspace:*
+        version: link:../design
+      '@keeb-cad/di':
+        specifier: workspace:*
+        version: link:../di
+      '@keeb-cad/messaging':
+        specifier: workspace:*
+        version: link:../messaging
+      '@keeb-cad/protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      '@keeb-cad/reactive':
+        specifier: workspace:*
+        version: link:../reactive
+      '@keeb-cad/result':
+        specifier: workspace:*
+        version: link:../result
+      '@keeb-cad/schema':
+        specifier: workspace:*
+        version: link:../schema
+    devDependencies:
+      '@tsconfig/node26':
+        specifier: 'catalog:'
+        version: 26.0.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      '@vitest/browser-playwright':
+        specifier: 'catalog:'
+        version: 5.0.5(playwright@1.64.1)(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))(vitest@5.0.5)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      valibot:
+        specifier: 'catalog:'
+        version: 1.5.0(typescript@6.0.3)
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-playwright@5.0.5)(@vitest/ui@5.0.5)(jsdom@30.1.3(@noble/hashes@2.4.0))(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
 
 packages:
 

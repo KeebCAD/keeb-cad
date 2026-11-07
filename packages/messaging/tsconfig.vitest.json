@@ -1,0 +1,9 @@
+{
+  // The specs, which run in Vitest browser mode, Chromium and Firefox.
+  "extends": "./tsconfig.lib.json",
+  "include": ["src/**/*.spec.ts"],
+  "exclude": [],
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo"
+  }
+}

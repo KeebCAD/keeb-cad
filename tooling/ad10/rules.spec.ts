@@ -298,6 +298,12 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
       ['@keeb-cad/model/worker', '@keeb-cad/design/worker', '@keeb-cad/library/worker'],
     ],
     [
+      "the model worker's start file",
+      'its worker subpaths',
+      'app/src/start-model-worker.ts',
+      ['@keeb-cad/model/worker', '@keeb-cad/design/worker', '@keeb-cad/library/worker'],
+    ],
+    [
       'the case worker entry',
       'library/worker',
       'app/src/case.worker.ts',
