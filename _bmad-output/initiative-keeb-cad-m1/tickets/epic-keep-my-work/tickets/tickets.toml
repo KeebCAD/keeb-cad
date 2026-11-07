@@ -25,6 +25,7 @@ covers = ["R2"]
 after = [1, "14.1", "23.19", "23.8"]
 hitl = false
 risk = "low"
+unknown = "Undo and redo are the design store's methods, not entries, and 23.19's shortcut registry binds only handles, while AD-2 says hotkeys, clicks and undo use handles; the store also has no availability query, and the UI reads availability only through the invoke path's available(handle) (23.21). Each way to give undo a handle needs a spine change first: an Undo and Redo UiAction (the glossary's UiAction changes only UI state and is never undoable), an Undo and Redo action (AD-2's actions never edit authored sections), or a handle kind of their own. The answer also says how the buttons learn they are disabled. Raised at the 23.20 replan (2026-11-07); Sergii left it for this story's planning."
 
 [[entry]]
 id = 2
