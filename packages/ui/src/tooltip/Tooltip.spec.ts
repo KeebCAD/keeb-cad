@@ -1,5 +1,5 @@
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
-import { page } from 'vitest/browser'
+import { page, userEvent } from 'vitest/browser'
 import { render } from 'vitest-browser-vue'
 import { h } from 'vue'
 
@@ -25,7 +25,9 @@ describe('Tooltip', () => {
   it('shows its content once the trigger is focused', async () => {
     const screen = await arrange()
 
-    screen.getByRole('button', { name: 'Close' }).element().focus()
+    const trigger = screen.getByRole('button', { name: 'Close' })
+    await userEvent.tab()
+    await expect.element(trigger).toHaveFocus()
 
     const tooltip = page.getByRole('tooltip')
     await expect.element(tooltip).toBeVisible()
@@ -56,7 +58,9 @@ describe('Tooltip', () => {
   it('portals its content out of the rendered component', async () => {
     const screen = await arrange()
 
-    screen.getByRole('button', { name: 'Close' }).element().focus()
+    const trigger = screen.getByRole('button', { name: 'Close' })
+    await userEvent.tab()
+    await expect.element(trigger).toHaveFocus()
 
     const tooltip = page.getByRole('tooltip')
     await expect.element(tooltip).toBeVisible()
