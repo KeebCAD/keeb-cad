@@ -66,6 +66,11 @@ describe('the stop hook', () => {
     ['pnpm test through mise', 'mise exec -- pnpm test'],
     ['pnpm test piped to tail', 'pnpm test 2>&1 | tail -20'],
     ['pnpm test after another command', 'pnpm lint && pnpm test'],
+    [
+      'pnpm test last in a subshell redirected to a log',
+      '(pnpm typecheck && pnpm test) > /tmp/verify.log 2>&1; echo "exit $?"',
+    ],
+    ['pnpm check alone in a subshell', '(pnpm check)'],
   ])('passes when %s ran after the change', (_, command) => {
     expect(
       stopDecision([edited('/repo/packages/x/src/a.ts'), ran(command)], PROJECT, false, []),
@@ -76,6 +81,7 @@ describe('the stop hook', () => {
     ['a run of one file', 'pnpm test packages/x/src/a.spec.ts'],
     ['a run of one project', 'pnpm vitest run --project tooling'],
     ['another script', 'pnpm test:mutation'],
+    ['a scoped run in a subshell', '(pnpm test packages/x/src/a.spec.ts)'],
   ])('blocks when only %s followed the change', (_, command) => {
     expect(
       stopDecision([edited('/repo/packages/x/src/a.ts'), ran(command)], PROJECT, false, []),

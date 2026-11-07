@@ -21,6 +21,8 @@ const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit'])
 const FULL_RUN = /^(mise exec -- )?pnpm (run )?(test|check)$/
 const SEGMENT_SEPARATOR = /\n|&&|\|\||;|\|/
 const REDIRECT = /\s+\d*>>?\s*&?\S+/g
+// A subshell's parentheses stay on its first and last segment after the split.
+const SUBSHELL = /^\(+|\)+$/g
 
 /**
  * Blocks the stop when a spec or source file under packages/, app/, fixtures/ or tooling/ changed
@@ -77,7 +79,9 @@ function isToolUse(item: unknown): item is TranscriptToolUse {
 function isFullRun(command: string): boolean {
   return command
     .split(SEGMENT_SEPARATOR)
-    .some((segment) => FULL_RUN.test(segment.replaceAll(REDIRECT, '').trim()))
+    .some((segment) =>
+      FULL_RUN.test(segment.replaceAll(REDIRECT, '').trim().replaceAll(SUBSHELL, '').trim()),
+    )
 }
 
 /** The path relative to the project, or '' when it lies outside it. */
