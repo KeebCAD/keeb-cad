@@ -154,6 +154,16 @@ Pass 2 (loop 1; quick, test-reviewer): high 0, medium 1, low 9, false 2, maybe-f
 | 22 | Plan text still describes the pre-loop `listen`/`Gate` and a one-argument `Dispatcher` | low | reject | The fix edits this build's plan; the orchestrator strikes the stale lines as housekeeping. |
 | 23 | Start file listens after `await autoLoad()` | maybe-false | defer | carried: row 7, code unchanged. |
 
+Pass 3 (pre-merge, AGENTS.md: the pass-2 patches; quick, test-reviewer): high 0, medium 0, low 1, false 1, maybe-false 0; plus 4 rejected on fix route; no quote dropped.
+
+| # | Finding | Verdict | Route | Evidence |
+|---|---------|---------|-------|----------|
+| 24 | `cancels a crash error, so main reports it nowhere else` claims more than `expect(notCancelled).toBe(false)`; the variable reads inverted | low | patch | Real: `FakeWorker` can't observe main's reporting. Renamed `cancels the worker's error event`, asserting `defaultPrevented` true. |
+| 25 | `toHaveLength(2)` after the poll is dead | false | reject | `postsAt` is `arrayContaining`, so the poll passes with extras; the length check is what catches a late reply. |
+| 26 | Poll plus length is two partial assertions, not one whole value | low | reject | Deliberate: post order within a seq is unasserted (plan decision); together the two are exact. |
+| 27 | No boundary rows for the crash-cancel test and the array-property row | low | reject | The fix edits this build's plan; both behaviours are recorded as triage rows 13 and 14. |
+| 28 | Array non-index properties not stated as a plan decision | low | reject | The fix edits this build's plan; row 14 records it. |
+
 ## Design Notes
 
 **`Dispatcher`** (Sergii, 2026-11-07: one injectable service per side). A plain class in `messaging` (no `di` import), constructed with the design kinds and registered by each side's module through `useFactory`; `Pipeline` and `ModelWorkerLifecycle` `inject(Dispatcher)`. It owns that side's design-seq gate (epoch, latest design seq). `send<M>(endpoint, message, transfer?)`: plain check, post; a sent design kind advances the latest to its seq. `listen<M>(endpoint, handlers)`: a message whose kind has no handler is dropped before the gate (so main, with no design handlers, never advances on a received post); then the gate: no epoch yet → adopt the epoch of the first `wholeKind` message (loop 1 decision), else another epoch is dropped; design kinds pass above latest and advance it, others at ≥ latest; `start()`; returns the stop call. `restart(epoch)`: sets the epoch, latest 0. Message types are named per call (`dispatcher.listen<ToModelWorker>(…)`), since a class token isn't generic per side.

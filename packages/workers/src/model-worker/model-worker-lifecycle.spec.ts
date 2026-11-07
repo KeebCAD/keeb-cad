@@ -223,13 +223,13 @@ describe('ModelWorkerLifecycle', () => {
       expect(spawned[0]?.terminated).toBe(true)
     })
 
-    it('cancels a crash error, so main reports it nowhere else', async () => {
+    it("cancels the worker's error event", async () => {
       const { lifecycle, spawn, spawned } = await arrange({ loaded: true })
       lifecycle.start(spawn)
 
-      const notCancelled = latest(spawned).crash()
+      const defaultPrevented = !latest(spawned).crash()
 
-      expect(notCancelled).toBe(false)
+      expect(defaultPrevented).toBe(true)
     })
 
     it('restarts with the focused workspace', async () => {
