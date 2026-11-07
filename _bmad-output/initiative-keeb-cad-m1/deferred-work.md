@@ -150,3 +150,18 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-a-new-design-autosaves-and-reopens-from-the-browser-plan.md`
   summary: Reword 23.5's verify "a reset save refused for space while an autosave version remains drops the oldest autosave version and succeeds" to "while two autosave versions remain … drops the older", since a quota prune never drops a design's newest version.
   evidence: Sergii, 2026-11-07, 23.5 review Q1 (spine 8dbe213): a design must never lose its last stored copy. The build never writes a ticket file, so the PO folds this in.
+- source_plan: none
+  summary: Split from 23.7, its own story after it: editor's UiAction mechanism (UiAction classes, registerUiAction, the uiActions multi token), design's CommandHandle and ActionHandle gaining an optional static hotkeys, editor's one shortcut registry feeding the hotkey layer, and the one invoke path with per-entry input builders, with 23.7's two hotkey verify sentences.
+  evidence: Sergii chose Split at 23.7's multi-goal check (2026-11-07): it can be reviewed and merged as its own PR once 23.7 hands the container to editor. The build never writes a ticket file, so the PO slices it.
+- source_plan: none
+  summary: Split from 23.7, its own story after it: the idempotent dev-only devtools.ts with a build check that the production bundle holds none of it, and the lint rule rejecting a component that imports a service as a value, with 23.7's two verify sentences for them.
+  evidence: Sergii chose Split at 23.7's multi-goal check (2026-11-07): neither is needed for launch to open a design. The build never writes a ticket file, so the PO slices it.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-app-opens-the-last-design-plan.md`
+  summary: `app/src/autosave/autosave.spec.ts`'s `arrange` resolves `store`, `storage`, `autosave`, `lifecycle` and `flow` for every test (`return { store: container.resolve(DesignStore), storage: …, autosave: …, lifecycle: …, flow: … }`), against AGENTS.md's "Arrange only what the test uses, passed as arguments to an `arrange` helper"; 23.7's new `reportFailure` test arranges only what it uses.
+  evidence: 23.7's plan conformance reader (precedent check), 2026-11-07.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-app-opens-the-last-design-plan.md`
+  summary: Reword 23.7's "When load or listDesigns returns storage-unavailable, launch opens a new, unsaved design and sets autosave's failure state to that error" to "… launch opens a new design, whose failed autosave sets autosave's failure state", and its verify to match.
+  evidence: Sergii, 2026-11-07, 23.7's plan (gap reader, reachable states): the new design's own failed save sets the same state, so a launch-side setter is unobservable. The build never writes a ticket file, so the PO folds this in.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-app-opens-the-last-design-plan.md`
+  summary: `packages/commands/src/design/new-design.spec.ts` registers a fake `DesignStore` and asserts `expect(handed).toEqual([…])`, what the fake was handed, against AGENTS.md's "Assert what a function returns or a visible effect; use `toHaveBeenCalled*` only when the call is the behaviour"; the real store's `current` is the visible effect.
+  evidence: 23.7's final conformance pass (precedent check), 2026-11-07; 23.7's OpenStoredDesign spec asserts on `current`.
