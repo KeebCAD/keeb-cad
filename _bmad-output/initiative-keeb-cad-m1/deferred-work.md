@@ -141,3 +141,6 @@
 - source_plan: `_bmad-output/architecture-keeb-cad-layout-model/reviews/review-reconcile-tickets-2026-11-07-batch.md`
   summary: The first story that declares a blueprint input of kind `quantity` codes model/main's `checkInputs` check of its unit and literal against the pinned `DeclaredInput.unit` and its `range` (not below 0 is `range.min`; `negative-length` never reaches inputs), with rows just below, on and just above a range bound.
   evidence: spine gate M7 (2026-11-07) and the Data Schema's `InputValue` comment; 13.4's choc-key `size` input is an option, so no M1 ticket names a quantity input yet.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-a-new-design-autosaves-and-reopens-from-the-browser-plan.md`
+  summary: Settle in the spine how editor's banner (16.x) reads autosave's failure state, since autosave lives in app and AD-10 says nothing imports app (move autosave to commands, or a token row in AD-25).
+  evidence: 23.5's gap reader, 2026-11-07; Sergii chose to defer it to 16.x's spine pass, since nothing in 23.5 reads the state.
