@@ -10,7 +10,9 @@ export const storageModule: Module = {
   register(container) {
     container.register(DesignStorage).useClass(DesignStorage)
     container.register(storageBackend).useClass(BrowserBackend)
+    // Stryker disable next-line CallExpression: browser-only wiring, killed by the browser specs Stryker can't run
     container.register(BrowserStorageAccess).useClass(BrowserStorageAccess)
+    // Stryker disable next-line CallExpression: browser-only wiring, killed by the browser specs Stryker can't run
     container.register(StorageDatabase).useClass(StorageDatabase)
   },
 }
