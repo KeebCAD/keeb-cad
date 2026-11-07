@@ -1,0 +1,9 @@
+{
+  // The specs, which are type-only.
+  "extends": "./tsconfig.lib.json",
+  "include": ["src/**/*.spec.ts"],
+  "exclude": [],
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo"
+  }
+}

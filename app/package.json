@@ -14,9 +14,11 @@
     "@keeb-cad/design": "workspace:*",
     "@keeb-cad/di": "workspace:*",
     "@keeb-cad/editor": "workspace:*",
+    "@keeb-cad/pipeline": "workspace:*",
     "@keeb-cad/result": "workspace:*",
     "@keeb-cad/schema": "workspace:*",
     "@keeb-cad/storage": "workspace:*",
+    "@keeb-cad/workers": "workspace:*",
     "vue": "catalog:"
   },
   "devDependencies": {
@@ -25,6 +27,7 @@
     "@tsconfig/node26": "catalog:",
     "@types/node": "catalog:",
     "@vitejs/plugin-vue": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
     "@vue/tsconfig": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",

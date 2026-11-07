@@ -4,6 +4,24 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./testing": "./src/testing/index.ts"
+  },
+  "dependencies": {
+    "@keeb-cad/design": "workspace:*",
+    "@keeb-cad/di": "workspace:*",
+    "@keeb-cad/messaging": "workspace:*",
+    "@keeb-cad/protocol": "workspace:*",
+    "@keeb-cad/reactive": "workspace:*",
+    "@keeb-cad/result": "workspace:*",
+    "@keeb-cad/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@tsconfig/node26": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "typescript": "catalog:",
+    "valibot": "catalog:",
+    "vitest": "catalog:"
   }
 }

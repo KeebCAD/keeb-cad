@@ -1,8 +1,8 @@
 import { Option, Result } from '@keeb-cad/result'
-import type { Design, Frozen, Rejection } from '@keeb-cad/schema'
+import type { Design, DesignPatch, Frozen, Rejection } from '@keeb-cad/schema'
 import { enablePatches, Immer } from 'immer'
 
-import type { Changed, DesignPatch, Edit } from './types'
+import type { Changed, Edit } from './types'
 
 export class DesignPatcher {
   constructor() {

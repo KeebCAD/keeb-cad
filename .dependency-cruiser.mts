@@ -156,7 +156,7 @@ const TEST_FILE = String.raw`\.(spec|test)\.ts$`
 const TESTING_FOLDER = '^packages/[^/]+/src/testing/'
 
 const MAIN_ENTRY = String.raw`^app/src/main\.ts$`
-const MODEL_WORKER_ENTRY = String.raw`^app/src/model\.worker\.ts$`
+const MODEL_WORKER_ENTRY = String.raw`^app/src/(model\.worker|start-model-worker)\.ts$`
 const CASE_WORKER_ENTRY = String.raw`^app/src/case\.worker\.ts$`
 const WORKER_ENTRIES = String.raw`^app/src/(model|case|routing)\.worker\.ts$`
 const STAGES = ['plates', 'pcb', 'firmware', 'case', 'routing', 'exports']
@@ -250,21 +250,21 @@ const config: IConfiguration = {
       'model',
       'worker',
       [MODEL_WORKER_ENTRY],
-      "Only the model worker's entry imports model/worker: one reactive graph (AD-25).",
+      "Only the model worker's entry and its start file import model/worker: one reactive graph.",
     ),
     onlyOwnersImportEntry(
       'only-model-worker-entry-and-pipeline-import-design-worker',
       'design',
       'worker',
       [MODEL_WORKER_ENTRY, sourcePath('pipeline')],
-      "Only the model worker's entry and pipeline import design/worker (AD-2, AD-25).",
+      "Only the model worker's entry, its start file and pipeline import design/worker.",
     ),
     onlyOwnersImportEntry(
       'only-worker-entries-import-library-worker',
       'library',
       'worker',
       [MODEL_WORKER_ENTRY, CASE_WORKER_ENTRY],
-      'Only the model and case worker entries import library/worker (AD-10).',
+      "Only the model and case worker entries and the model worker's start file import library/worker.",
     ),
     onlyOwnersImportEntry(
       'only-editor-imports-di-vue',

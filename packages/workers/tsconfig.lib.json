@@ -1,0 +1,13 @@
+{
+  // Main's side of the workers. No DOM lib: it reads no page, and the APIs it calls (Worker,
+  // postMessage) are ones both threads have.
+  "extends": "../../tsconfig.base.json",
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.spec.ts"],
+  "compilerOptions": {
+    // Symbol.dispose and Symbol.asyncDispose, which di's container calls on dispose().
+    "lib": ["ES2023", "ESNext.Disposable", "WebWorker"],
+    "noEmit": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo"
+  }
+}
