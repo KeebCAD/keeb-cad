@@ -5,6 +5,7 @@ import { storageModule } from '@keeb-cad/storage'
 import { workersModule } from '@keeb-cad/workers'
 
 import { autosaveModule } from './autosave/autosave-module'
+import { launchModule } from './launch/launch-module'
 
 export const mainModules: readonly Module[] = [
   designModule,
@@ -13,4 +14,5 @@ export const mainModules: readonly Module[] = [
   storageModule,
   loadModule,
   autosaveModule,
+  launchModule,
 ]

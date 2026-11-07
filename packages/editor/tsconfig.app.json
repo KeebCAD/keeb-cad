@@ -5,7 +5,7 @@
   "exclude": ["src/**/*.spec.ts"],
   "compilerOptions": {
     // Restore what tsconfig.base.json overrides from @vue/tsconfig/tsconfig.dom.json.
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "lib": ["ES2023", "ESNext.Disposable", "DOM", "DOM.Iterable"],
     "types": [],
 
     // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.

@@ -3,14 +3,14 @@ title: 'The app opens the last design'
 type: 'feature'
 ticket: '7'
 created: '2026-11-07'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '9a20a761859931736f4c7a7014ac839008f7ec7a'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/AGENTS.md'
@@ -79,36 +79,36 @@ context:
 ## Tasks & Acceptance
 
 **Execution:** two phases, with `pnpm test` green after each: (1) commands and editor, (2) app.
-- [ ] `packages/commands/src/load/{open-stored-design.ts,open-stored-design-input-schema.ts,types.ts,load-module.ts}` + `open-stored-design.spec.ts`, `packages/commands/src/index.ts`:
+- [x] `packages/commands/src/load/{open-stored-design.ts,open-stored-design-input-schema.ts,types.ts,load-module.ts}` + `open-stored-design.spec.ts`, `packages/commands/src/index.ts`:
   - `OpenStoredDesign` (service, action): id `load.openStoredDesign`, label `Open stored design`, input `{ id }` through `openStoredDesignInputSchema` (`v.object({ id: idSchema })`). It is always available.
   - `apply` runs `LoadFlow.load(id)` and passes its error through. Its spec asserts on the real store's `current`, not on what a fake store was handed (`new-design.spec.ts` does the latter; `deferred-work.md`).
   - `OpenStoredDesignInput` goes in `types.ts`, and `loadModule` gains `registerAction(container, OpenStoredDesign)`.
-- [ ] `packages/editor/src/router/{create-editor-router.ts,resolve-workspace.ts}` + `create-editor-router.spec.ts`, `packages/editor/src/{types.ts,index.ts}`:
+- [x] `packages/editor/src/router/{create-editor-router.ts,resolve-workspace.ts}` + `create-editor-router.spec.ts`, `packages/editor/src/{types.ts,index.ts}`:
   - `createWebHashHistory()`. Route `design` at `/design/:id/:workspace?` renders `DesignCanvas`; `/` renders `DesignCanvas` too.
   - `resolveWorkspace` (function, a global `beforeEach`): for `to.name === 'design'`, when `v.is(workspaceSchema, to.params.workspace)` fails, it returns `{ name: 'design', params: { id, workspace: 'layout' }, replace: true }`.
   - `types.ts`: `type DesignLocation = Router` (vue-router's), exported from editor's `index.ts`, so `app` names the router without importing vue-router.
-- [ ] `packages/editor/src/views/{DesignCanvas.vue}`, delete `HomeView.vue`, `packages/editor/src/App.spec.ts`:
+- [x] `packages/editor/src/views/{DesignCanvas.vue}`, delete `HomeView.vue`, `packages/editor/src/App.spec.ts`:
   - `DesignCanvas` shows the open design's name and id as plain text, read through `useService(DesignStore)` (the store's `current` is a `shallowRef`, so it updates), and nothing while none is committed; 23.8 replaces the text with the frame.
   - `DesignCanvas.spec.ts` (browser): rendered with an injector whose store holds a design, it shows that design's name and id.
   - App.spec provides an injector with an empty store (`DesignCanvas` resolves `DesignStore`) and asserts the shell's `main` and `h1` only.
-- [ ] `packages/editor/src/mount-editor.ts` + spec, `packages/editor/package.json` (`@keeb-cad/di`, `@keeb-cad/design` and `@keeb-cad/schema` as `workspace:*`, `valibot` as `catalog:`):
+- [x] `packages/editor/src/mount-editor.ts` + spec, `packages/editor/package.json` (`@keeb-cad/di`, `@keeb-cad/design` and `@keeb-cad/schema` as `workspace:*`, `valibot` as `catalog:`):
   - `mountEditor(selector, injector): DesignLocation` calls `provideInjectorOnApp(app, injector)` and returns the router it installed.
-- [ ] `app/src/launch/{launch.ts,launch-module.ts}`, `app/src/main-modules.ts`, `app/package.json` (`valibot: catalog:`):
+- [x] `app/src/launch/{launch.ts,launch-module.ts}`, `app/src/main-modules.ts`, `app/package.json` (`valibot: catalog:`):
   - `Launch` (service): `run(selector: string, spawn: Spawn): Promise<void>`.
   - Step 1: mount with `inject(InjectorToken)`, `await router.isReady()`, then read the route's `id` (parsed by `idSchema`; one that fails to parse counts as no id) and its `workspace` (`layout` on any route but `design`).
   - Step 2: open the requested design, else `listDesigns()[0]` when its id differs from the requested one, else `NewDesign`, each through `store.run`.
   - Step 3: on any `storage-unavailable` (from `listDesigns` or from the action) or `quota-exceeded`, go straight to `NewDesign`.
   - Step 4: `router.replace({ name: 'design', params: { id: opened id, workspace } })`, then `lifecycle.start(spawn, workspace)`.
-- [ ] `app/src/start-main.ts` -- `await container.resolve(Launch).run('#app', () => new Worker(new URL('./model.worker.ts', import.meta.url), { type: 'module' }))`.
-- [ ] `app/vite.config.ts` -- `worker: { format: 'es' }` with `app/vitest.config.ts`'s comment.
-- [ ] `app/src/launch/launch.spec.ts` (browser, Chromium and Firefox):
+- [x] `app/src/start-main.ts` -- `await container.resolve(Launch).run('#app', () => new Worker(new URL('./model.worker.ts', import.meta.url), { type: 'module' }))`.
+- [x] `app/vite.config.ts` -- `worker: { format: 'es' }` with `app/vitest.config.ts`'s comment.
+- [x] `app/src/launch/launch.spec.ts` (browser, Chromium and Firefox):
   - Each row of the boundary table at level `integration (app)` runs on the real container.
   - Storage is a `MemoryBackend` through `override(storageBackend)` (capacity 2 for the reset row: two one-version designs fill it), or a database of its own per test through `BrowserStorageAccess` for the reload and storage-unavailable rows.
   - `spawn` returns a `FakeWorker` (`workers/testing`), so no row starts a real worker.
   - Every row sets `location.hash` in arrange, `''` for a row with no id (the config shuffles); each test mounts on a `div` of its own and unmounts it through `__vue_app__` (typed `{ unmount(): void }`, since `app` imports no Vue), as `mount-editor.spec.ts` does; an `afterEach` clears `localStorage` and `data-theme`, as that spec does, since `mountEditor` applies the theme.
   - The reload row polls until `listDesigns` holds the first launch's id (as `autosave-round-trip.spec.ts` polls `storage.load(id)`), before the second launch.
   - Stored designs are written with `DesignStorage.save(label, texts, 'autosave')` over `writeBundle(aDesign…)`. The broken texts are the design file with a field its schema rejects, text that isn't KDL, and `format-version 2`.
-- [ ] `app/e2e/vue.spec.ts` -- the smoke test asserts `getByRole('heading', { level: 1 })` and a URL matching `/#/design/<id>/layout`, in place of "No design open.", which this story removes.
+- [x] `app/e2e/vue.spec.ts` -- the smoke test asserts `getByRole('heading', { level: 1 })` and a URL matching `/#/design/<id>/layout`, in place of "No design open.", which this story removes.
 
 **Acceptance Criteria:**
 - Given each boundary-table row, when `pnpm test` runs, then a test named for it passes at its level.
@@ -123,9 +123,35 @@ context:
 
 ## Implementation Notes
 
+- `app/vitest.config.ts` gains `plugins: [vue(), tailwindcss()]` and an `optimizeDeps.include` of the editor's deps (the `>` form, as `packages/editor/vitest.config.ts` has it), because `mainModules` now reaches `App.vue` through `Launch`, and every app spec failed to import without the Vue plugin. Decision (build): the plugin in app's Vitest config, not `Launch` kept out of `mainModules`, because the plan puts `launchModule` there and `launch.spec.ts` imports `Launch` anyway.
+- Decision (Sergii, 2026-11-07): accept `app/vitest.config.ts`'s Vue and Tailwind plugins and its `optimizeDeps.include` of editor's deps, not `Launch` registered only in `start-main.ts`, because the plan puts `launchModule` in `mainModules` and `launch.spec.ts` needs the plugin either way; `packages/editor/vitest.config.ts` has the same setup.
+- `packages/editor/tsconfig.{app,vitest}.json` gain `ESNext.Disposable` in `lib`, as `app/tsconfig.app.json` has it, because editor now type-checks `di`'s `Symbol.dispose` source.
+- Decision (Sergii, 2026-11-07): accept `ESNext.Disposable` in editor's `tsconfig.app.json` and `tsconfig.vitest.json`, not the whole `ESNext` lib, because without it `vue-tsc -p packages/editor/tsconfig.app.json` fails with `packages/di/src/disposal.ts(24,46): error TS2550: Property 'dispose' does not exist on type 'SymbolConstructor'`, and `app/tsconfig.app.json` and `packages/workers/tsconfig.lib.json` add only that lib.
+- Decision (Sergii, 2026-11-07): accept `@keeb-cad/result` as an editor devDependency, not specs checking `isOk()` with a plain `expect`, because editor's specs use `result/testing`'s `expectOk` and AGENTS.md: "Write a shared assertion once"; under `hoist: false` the import resolves only when editor declares it.
+- `launch.spec.ts` sets the URL with `history.replaceState(null, '', hash)`, not `location.hash = hash`. Decision (build): because Firefox delivers a hash write's `popstate` a task later, after the router (created on microtasks only, over `MemoryBackend`) listens, and that late pop navigation overwrote launch's `replace` (seed `1794068493811` reproduced it). `replaceState` fires no event.
+- The start file's worker URL is `new URL('model.worker.ts', import.meta.url)`, not `'./model.worker.ts'`, because `unicorn/relative-url-style` refuses the `./` prefix; it resolves the same.
+- `Launch` reads the workspace with `v.parse(workspaceSchema, …)` on the `design` route, not `v.is` with a `layout` fallback. Decision (build): because the router's guard already replaced a bad one, so a parse failure there is a removed guard, which should throw, not hide.
+- Decision (Sergii, 2026-11-07): `Launch` throws on a workspace that fails `workspaceSchema`, not `v.is` with a `layout` fallback, because only a removed or broken `resolveWorkspace` guard can leave one, and that should fail loudly at launch.
+- Decision (Sergii, 2026-11-07): editor's router specs set `router.listening = false` when each test finishes, not leaving routers listening, because every test in a file shares one page under `sequence.shuffle`, so a leftover router would answer a later test's URL change; five shuffled runs without it passed (22/22, Chromium and Firefox), so it guards a hazard, as the Firefox hash race in `launch.spec.ts` showed one.
+- `Launch` reads the opened id from the store's `current` after each open, not from the action's input, so the URL carries the id of the design actually open.
+- `mount-editor.spec.ts` asserts the provided container through the page (design name and id); no row asserts the returned router on its own, since a hash push proves nothing about which router it was. `Launch`'s rows use it (`isReady`, `replace`).
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+- 2026-11-07, pass 1 (lenses: quick, test-reviewer; quotes checked against the diff, none dropped). Verdicts: high 0, medium 1, low 6, false 2, maybe-false 0; 2 notes not findings.
+  - medium, patch -- `packages/editor/src/App.spec.ts`: `getByRole('main')` went from `toBeVisible()` to `toBeInTheDocument()` with no recorded cause (both lenses). Real: an empty `DesignCanvas` leaves `main` with no content, so the shell's visible check was weakened, against "Never … weaken a failing test". Fix: arrange a design so `main` holds the canvas text and keep `toBeVisible()`.
+  - low, patch -- `app/src/launch/launch.spec.ts`: `aNewDesign = { name: 'Untitled design' }` takes its expected value from `NewDesign`'s code, not the requirement, and a stored design of that name would pass. Fix: assert the opened id is none of the arranged stored ids.
+  - low, patch -- `launch.spec.ts` "starts the model worker on the URL's workspace": `toMatchObject([{ kind: 'design' }, { kind: 'focus', … }])` pins the whole message sequence where the row asks only for the focus. Fix: `toContainEqual(expect.objectContaining({ kind: 'focus', workspace: 'pcb' }))`.
+  - low, patch -- `launch.spec.ts` `keptTexts`: `expectOk(read)` inside `versions.value.map`, against "No `if` or loop around `expect`". Fix: return the reads and assert the whole list with `toEqual`.
+  - low, patch -- `packages/commands/src/load/open-stored-design.spec.ts`: `store.current.getOrUndefined()?.design` narrows, against "assert whole values". Fix: `toMatchObject({ design: corne })` on the unwrapped `current`.
+  - low, patch -- comments restating code in `app/src/launch/launch.ts` (class header, `#open`) and `packages/editor/src/router/resolve-workspace.ts`, against "Write a comment only for a why the code can't say". Fix: delete them; `types.ts`'s line says why the router is named `DesignLocation`, so it stays.
+  - low, reject -- the editor specs' `history.replaceState` reset is an undocumented decision; its only fix edits this plan, which triage rejects. It is listed in the build's decisions.
+  - false -- `launch.spec.ts` `arrange` resolving `autosave` for every test: `autosaveModule` registers `Autosave` `.eager()`, so `autoLoad()` already built it; resolving returns that instance and builds nothing.
+  - false -- an empty Review Triage Log: this entry is that log, written in this pass.
+  - notes -- the reload row is sound (`mintId` gives a fresh id, so a failed reopen fails); the smoke test's id pattern duplicates `idSchema`'s shape (low, rejected: unlikely to bite, and the e2e can't share the schema without a new import).
+
 
 ## Design Notes
 
@@ -176,6 +202,11 @@ First pass: two conformance readers and one gap reader (Sonnet, context-free); t
 **Commands:**
 - `pnpm test` -- expected: all projects green, `app`'s in Chromium and Firefox.
 - `pnpm check` -- expected: typecheck, lint, format, depcruise, build and smoke pass.
+
+**Results (2026-11-07):**
+- `pnpm check` -- exit 0: 239 test files, 1999 tests, no type errors; build, workbench build and smoke pass.
+- Toggled bugs, each red then green once restored (`launch.spec.ts`, Chromium): skipping the newest fallback (5 rows red); falling back to the newest on `quota-exceeded` (reset row red); autosave's `err` branch not recording (both storage-unavailable rows red); `router.replace` skipped (4 rows red); `start(spawn, 'layout')` (worker workspace row red); the guard removed (`create-editor-router.spec.ts`, 4 rows red in each browser).
+- `pnpm build` without `worker.format`: fails with `[UNSUPPORTED_FEATURE] Top-level await is currently not supported with the 'iife' output format` at `start-model-worker.ts`'s `await container.autoLoad()`; passes once restored.
 
 ## Boundary Table
 

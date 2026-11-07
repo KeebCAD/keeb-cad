@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
-test('shows the empty editor shell', async ({ page }) => {
+test('opens a design in the editor shell at layout', async ({ page }) => {
   await page.goto('/')
-  await expect(page.locator('h1')).toHaveText('keeb-cad')
-  await expect(page.getByText('No design open.', { exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('keeb-cad')
+  await expect(page).toHaveURL(/\/#\/design\/[a-z0-9]+(?:-[a-z0-9]+)*\/layout$/)
 })

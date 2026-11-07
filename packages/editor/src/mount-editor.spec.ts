@@ -1,6 +1,11 @@
+import { DesignStore, designModule } from '@keeb-cad/design'
+import { Container, InjectorToken } from '@keeb-cad/di'
+import { expectOk } from '@keeb-cad/result/testing'
+import type { Design } from '@keeb-cad/schema'
+import { aDesign, aMeta, anId } from '@keeb-cad/schema/testing'
 import { THEME_STORAGE_KEY } from '@keeb-cad/ui'
 import { afterEach, describe, expect, it, onTestFinished } from 'vitest'
-import { commands } from 'vitest/browser'
+import { commands, page } from 'vitest/browser'
 import { effectScope, type App } from 'vue'
 
 import { mountEditor } from './mount-editor'
@@ -8,8 +13,28 @@ import { mountEditor } from './mount-editor'
 afterEach(async () => {
   localStorage.clear()
   delete document.documentElement.dataset.theme
+  history.replaceState(null, '', location.pathname + location.search)
   await commands.setColorScheme(null)
 })
+
+async function arrange(design?: Design) {
+  const container = new Container().addModule(designModule)
+  await container.autoLoad()
+  if (design !== undefined) {
+    expectOk(container.resolve(DesignStore).replaceDesign({ design, unreadable: [] }))
+  }
+  const root = document.createElement('div')
+  root.id = 'editor-root'
+  document.body.append(root)
+  const scope = effectScope()
+  onTestFinished(() => {
+    ;(root as HTMLElement & { __vue_app__?: App }).__vue_app__?.unmount()
+    scope.stop()
+    root.remove()
+  })
+  const injector = container.resolve(InjectorToken)
+  return { mount: () => scope.run(() => mountEditor('#editor-root', injector)) }
+}
 
 describe('mountEditor', () => {
   it('applies the stored theme over the OS one before it returns', async () => {
@@ -17,18 +42,21 @@ describe('mountEditor', () => {
     // The emulated scheme reaches the test frame's media queries a moment later.
     await expect.poll(() => matchMedia('(prefers-color-scheme: dark)').matches).toBe(true)
     localStorage.setItem(THEME_STORAGE_KEY, 'light')
-    const root = document.createElement('div')
-    root.id = 'editor-root'
-    document.body.append(root)
-    const scope = effectScope()
-    onTestFinished(() => {
-      ;(root as HTMLElement & { __vue_app__?: App }).__vue_app__?.unmount()
-      scope.stop()
-      root.remove()
-    })
+    const { mount } = await arrange()
 
-    scope.run(() => mountEditor('#editor-root'))
+    mount()
 
     expect(document.documentElement.dataset.theme).toBe('light')
+  })
+
+  it("provides the container, so the page shows its store's design", async () => {
+    const { mount } = await arrange(
+      aDesign({ meta: aMeta({ id: anId('lily-58'), name: 'Lily58' }) }),
+    )
+
+    mount()
+
+    await expect.element(page.getByText('Lily58', { exact: true })).toBeVisible()
+    await expect.element(page.getByText('lily-58', { exact: true })).toBeVisible()
   })
 })
