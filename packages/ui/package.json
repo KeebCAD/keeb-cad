@@ -4,6 +4,37 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./theme.css": "./src/theme/theme.css"
+  },
+  "scripts": {
+    "test:unit": "vitest",
+    "workbench": "vite --config workbench/vite.config.ts",
+    "build:workbench": "vite build --config workbench/vite.config.ts"
+  },
+  "dependencies": {
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "@lucide/vue": "1.65.0",
+    "@vueuse/core": "14.4.0",
+    "@zag-js/hotkeys": "1.47.0",
+    "reka-ui": "2.11.0",
+    "tailwindcss": "catalog:",
+    "vue": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
+    "@tsconfig/node26": "catalog:",
+    "@types/node": "catalog:",
+    "@vitejs/plugin-vue": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "@vue/tsconfig": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:",
+    "vitest-browser-vue": "catalog:",
+    "vue-tsc": "catalog:"
+  },
+  "engines": {
+    "node": ">=26"
   }
 }

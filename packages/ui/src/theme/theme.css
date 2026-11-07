@@ -1,0 +1,284 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/jetbrains-mono';
+
+@source '..';
+
+/* Every variable is emitted, used by a class or not, because the SVG canvas reads them through
+   var(--…) too. */
+@theme static {
+  --color-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --font-*: initial;
+  --shadow-*: initial;
+
+  --color-chrome: #292c3c;
+  --color-panel: #303446;
+  --color-border: #51576d;
+  --color-border-interactive: #838ba7;
+  --color-hover: #414559;
+  --color-fill-on: #51576d;
+  --color-text: #c6d0f5;
+  --color-text-muted: #a5adce;
+  --color-text-faint: #737994;
+  --color-selection: #ca9ee6;
+  --color-focus: #ca9ee6;
+  --color-warning: #e5c890;
+  --color-error: #e78284;
+  --color-ok: #a6d189;
+  --color-progress: #8caaee;
+  --color-stale: #737994;
+  --color-override: #e5c890;
+  --color-canvas: #414559;
+  --color-canvas-grid: #51576d;
+  --color-key-body: #626880;
+  --color-key-edge: #949cbb;
+  --color-key-top-face: #949cbb;
+  --color-key-legend: #232634;
+  --color-key-outline-faint: #949cbb;
+  --color-group-frame: #949cbb;
+  --color-anchor-link: #81c8be;
+  --color-rotation-handle: #ca9ee6;
+  --color-outline-context: #b5bfe2;
+  --color-overlap-fill: #e7828440;
+  --color-overlap-warning-fill: #e5c89040;
+  --color-overlap-warning-stroke: #e5c890;
+  --color-cycle-path: #e78284;
+  --color-outline-shape: #b5bfe2;
+  --color-vertex: #eebebe;
+  --color-construction-point: #99d1db;
+  --color-plate-fill: #949cbb;
+  --color-plate-cutout: #414559;
+  --color-edge: #b5bfe2;
+  --color-component-outline: #a5adce;
+  --color-f-cu: #ef9f76;
+  --color-b-cu: #8caaee;
+  --color-ratsnest: #a5adce;
+  --color-stale-hatch: #949cbb;
+  --color-led-chain: #81c8be;
+  --color-combo-link: #949cbb;
+  --color-body-case: #949cbb;
+  --color-body-plate: #a5adce;
+  --color-body-pcb: #babbf1;
+  --color-mirror-axis: #949cbb;
+  --color-pick-point: #ca9ee6;
+  --color-via: #c6d0f5;
+  --color-via-hole: #232634;
+
+  --spacing: 4px;
+  --spacing-row: 30px;
+  --spacing-field-height: 28px;
+  --spacing-pad: 12px;
+  --spacing-top-bar: 42px;
+  --spacing-banner: 36px;
+  --spacing-status-strip: 30px;
+  --spacing-left-rail: 44px;
+  --spacing-inspector-width: 320px;
+  --spacing-slide-out-width: 260px;
+  --spacing-target-min: 24px;
+  --spacing-canvas-hit-radius: 8px;
+  --spacing-focus-offset: 2px;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+
+  --text-ui: 14px;
+  --text-ui--line-height: 1.3;
+  --text-ui--font-weight: 400;
+  --text-ui-strong: 14px;
+  --text-ui-strong--line-height: 1.3;
+  --text-ui-strong--font-weight: 600;
+  --text-section-label: 11px;
+  --text-section-label--line-height: 1.3;
+  --text-section-label--font-weight: 600;
+  --text-section-label--letter-spacing: 0.07em;
+  --text-mono: 13px;
+  --text-mono--line-height: 1.3;
+  --text-mono--font-weight: 400;
+  --text-mono-small: 12px;
+  --text-mono-small--line-height: 1.3;
+  --text-mono-small--font-weight: 400;
+  --text-canvas-label: 11px;
+  --text-canvas-label--line-height: 1.2;
+  --text-canvas-label--font-weight: 400;
+
+  --font-mono: 'JetBrains Mono Variable', monospace;
+  --font-ui: system-ui, sans-serif;
+  --default-font-family: var(--font-ui);
+  --default-mono-font-family: var(--font-mono);
+
+  --shadow-overlay: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+/* Themes swap values on any element, so the workbench can show both side by side. */
+@layer base {
+  [data-theme='dark'] {
+    --color-chrome: #292c3c;
+    --color-panel: #303446;
+    --color-border: #51576d;
+    --color-border-interactive: #838ba7;
+    --color-hover: #414559;
+    --color-fill-on: #51576d;
+    --color-text: #c6d0f5;
+    --color-text-muted: #a5adce;
+    --color-text-faint: #737994;
+    --color-selection: #ca9ee6;
+    --color-focus: #ca9ee6;
+    --color-warning: #e5c890;
+    --color-error: #e78284;
+    --color-ok: #a6d189;
+    --color-progress: #8caaee;
+    --color-stale: #737994;
+    --color-override: #e5c890;
+    --color-canvas: #414559;
+    --color-canvas-grid: #51576d;
+    --color-key-body: #626880;
+    --color-key-edge: #949cbb;
+    --color-key-top-face: #949cbb;
+    --color-key-legend: #232634;
+    --color-key-outline-faint: #949cbb;
+    --color-group-frame: #949cbb;
+    --color-anchor-link: #81c8be;
+    --color-rotation-handle: #ca9ee6;
+    --color-outline-context: #b5bfe2;
+    --color-overlap-fill: #e7828440;
+    --color-overlap-warning-fill: #e5c89040;
+    --color-overlap-warning-stroke: #e5c890;
+    --color-cycle-path: #e78284;
+    --color-outline-shape: #b5bfe2;
+    --color-vertex: #eebebe;
+    --color-construction-point: #99d1db;
+    --color-plate-fill: #949cbb;
+    --color-plate-cutout: #414559;
+    --color-edge: #b5bfe2;
+    --color-component-outline: #a5adce;
+    --color-f-cu: #ef9f76;
+    --color-b-cu: #8caaee;
+    --color-ratsnest: #a5adce;
+    --color-stale-hatch: #949cbb;
+    --color-led-chain: #81c8be;
+    --color-combo-link: #949cbb;
+    --color-body-case: #949cbb;
+    --color-body-plate: #a5adce;
+    --color-body-pcb: #babbf1;
+    --color-mirror-axis: #949cbb;
+    --color-pick-point: #ca9ee6;
+    --color-via: #c6d0f5;
+    --color-via-hole: #232634;
+  }
+
+  [data-theme='light'] {
+    --color-chrome: #e6e9ef;
+    --color-panel: #eff1f5;
+    --color-border: #bcc0cc;
+    --color-border-interactive: #7c7f93;
+    --color-hover: #dce0e8;
+    --color-fill-on: #dce0e8;
+    --color-text: #4c4f69;
+    --color-text-muted: #5c5f77;
+    --color-text-faint: #9ca0b0;
+    --color-selection: #8839ef;
+    --color-focus: #8839ef;
+    --color-warning: #df8e1d;
+    --color-error: #d20f39;
+    --color-ok: #40a02b;
+    --color-progress: #1e66f5;
+    --color-stale: #9ca0b0;
+    --color-override: #df8e1d;
+    --color-canvas: #eff1f5;
+    --color-canvas-grid: #ccd0da;
+    --color-key-body: #ccd0da;
+    --color-key-edge: #7c7f93;
+    --color-key-top-face: #dce0e8;
+    --color-key-legend: #4c4f69;
+    --color-key-outline-faint: #7c7f93;
+    --color-group-frame: #6c6f85;
+    --color-anchor-link: #0f6f75;
+    --color-rotation-handle: #8839ef;
+    --color-outline-context: #5c5f77;
+    --color-overlap-fill: #d20f3940;
+    --color-overlap-warning-fill: #df8e1d40;
+    --color-overlap-warning-stroke: #4c4f69;
+    --color-cycle-path: #d20f39;
+    --color-outline-shape: #5c5f77;
+    --color-vertex: #dd7878;
+    --color-construction-point: #04a5e5;
+    --color-plate-fill: #7c7f93;
+    --color-plate-cutout: #eff1f5;
+    --color-edge: #5c5f77;
+    --color-component-outline: #6c6f85;
+    --color-f-cu: #c4500a;
+    --color-b-cu: #1e66f5;
+    --color-ratsnest: #6c6f85;
+    --color-stale-hatch: #7c7f93;
+    --color-led-chain: #0f6f75;
+    --color-combo-link: #7c7f93;
+    --color-body-case: #7c7f93;
+    --color-body-plate: #6c6f85;
+    --color-body-pcb: #7287fd;
+    --color-mirror-axis: #7c7f93;
+    --color-pick-point: #8839ef;
+    --color-via: #4c4f69;
+    --color-via-hole: #eff1f5;
+  }
+
+  /* Before mount no data-theme is set yet, so the OS preference picks the values. */
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme]) {
+      --color-chrome: #e6e9ef;
+      --color-panel: #eff1f5;
+      --color-border: #bcc0cc;
+      --color-border-interactive: #7c7f93;
+      --color-hover: #dce0e8;
+      --color-fill-on: #dce0e8;
+      --color-text: #4c4f69;
+      --color-text-muted: #5c5f77;
+      --color-text-faint: #9ca0b0;
+      --color-selection: #8839ef;
+      --color-focus: #8839ef;
+      --color-warning: #df8e1d;
+      --color-error: #d20f39;
+      --color-ok: #40a02b;
+      --color-progress: #1e66f5;
+      --color-stale: #9ca0b0;
+      --color-override: #df8e1d;
+      --color-canvas: #eff1f5;
+      --color-canvas-grid: #ccd0da;
+      --color-key-body: #ccd0da;
+      --color-key-edge: #7c7f93;
+      --color-key-top-face: #dce0e8;
+      --color-key-legend: #4c4f69;
+      --color-key-outline-faint: #7c7f93;
+      --color-group-frame: #6c6f85;
+      --color-anchor-link: #0f6f75;
+      --color-rotation-handle: #8839ef;
+      --color-outline-context: #5c5f77;
+      --color-overlap-fill: #d20f3940;
+      --color-overlap-warning-fill: #df8e1d40;
+      --color-overlap-warning-stroke: #4c4f69;
+      --color-cycle-path: #d20f39;
+      --color-outline-shape: #5c5f77;
+      --color-vertex: #dd7878;
+      --color-construction-point: #04a5e5;
+      --color-plate-fill: #7c7f93;
+      --color-plate-cutout: #eff1f5;
+      --color-edge: #5c5f77;
+      --color-component-outline: #6c6f85;
+      --color-f-cu: #c4500a;
+      --color-b-cu: #1e66f5;
+      --color-ratsnest: #6c6f85;
+      --color-stale-hatch: #7c7f93;
+      --color-led-chain: #0f6f75;
+      --color-combo-link: #7c7f93;
+      --color-body-case: #7c7f93;
+      --color-body-plate: #6c6f85;
+      --color-body-pcb: #7287fd;
+      --color-mirror-axis: #7c7f93;
+      --color-pick-point: #8839ef;
+      --color-via: #4c4f69;
+      --color-via-hole: #eff1f5;
+    }
+  }
+}

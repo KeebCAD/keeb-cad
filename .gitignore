@@ -13,6 +13,8 @@ dist/
 *.tsbuildinfo
 coverage/
 test-results/
+# Vitest browser mode writes a screenshot of every failing test here.
+.vitest/
 playwright-report/
 
 # Stryker's reports and sandboxes

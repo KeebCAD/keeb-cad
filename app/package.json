@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
+    "@tailwindcss/vite": "catalog:",
     "@tsconfig/node26": "catalog:",
     "@types/node": "catalog:",
     "@vitejs/plugin-vue": "catalog:",

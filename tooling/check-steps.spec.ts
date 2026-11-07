@@ -11,10 +11,16 @@ const read = (name: string) => readFileSync(new URL(name, root), 'utf8')
 const runLines = (yaml: string) => [...yaml.matchAll(/^\s*-?\s*run: (.+)$/gm)].map((m) => m[1])
 
 describe('the check steps', () => {
-  it('pnpm check runs the typecheck, the fast checks, the tests, the build and the smoke test', () => {
+  it('pnpm check runs the typecheck, the fast checks, the tests, the build, the workbench build and the smoke test', () => {
+    const { scripts } = JSON.parse(read('package.json')) as { scripts: Record<string, string> }
+    expect(scripts.check).toBe(
+      'pnpm typecheck && pnpm check:fast && pnpm test && pnpm build && pnpm build:workbench && pnpm smoke',
+    )
+  })
+
+  it('pins check:fast, typecheck, lint, format:check, depcruise, test, test:mutation, build, build:workbench and smoke', () => {
     const { scripts } = JSON.parse(read('package.json')) as { scripts: Record<string, string> }
     expect(scripts).toMatchObject({
-      check: 'pnpm typecheck && pnpm check:fast && pnpm test && pnpm build && pnpm smoke',
       'check:fast': 'pnpm lint && pnpm format:check && pnpm depcruise',
       typecheck: 'vue-tsc --build',
       lint: 'eslint . --cache --cache-location node_modules/.cache/eslint/',
@@ -23,6 +29,7 @@ describe('the check steps', () => {
       test: 'vitest run',
       'test:mutation': 'stryker run',
       build: 'pnpm --filter @keeb-cad/app build',
+      'build:workbench': 'pnpm --filter @keeb-cad/ui build:workbench',
       smoke: 'pnpm --filter @keeb-cad/app test:e2e',
     })
   })

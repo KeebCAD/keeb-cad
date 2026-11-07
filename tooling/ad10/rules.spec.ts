@@ -226,8 +226,18 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
         ),
         v('only-tests-import-testing', 'packages/storage/src/index.ts', '@keeb-cad/result/testing'),
         v('only-tests-import-testing', 'packages/storage/src/index.ts', '@keeb-cad/schema/testing'),
-        v('only-ui-imports-reka-and-zag', 'packages/editor/src/index.ts', '@zag-js/hotkeys'),
-        v('only-ui-imports-reka-and-zag', 'packages/editor/src/index.ts', 'reka-ui'),
+        v('only-ui-imports-its-widget-libraries', 'packages/editor/src/index.ts', '@lucide/vue'),
+        v(
+          'only-ui-imports-its-widget-libraries',
+          'packages/editor/src/index.ts',
+          '@zag-js/hotkeys',
+        ),
+        v('only-ui-imports-its-widget-libraries', 'packages/editor/src/index.ts', 'reka-ui'),
+        v(
+          'only-ui-imports-the-workbench',
+          'packages/editor/src/workbench-import.ts',
+          'packages/ui/workbench/states/button-states.ts',
+        ),
         v(
           'only-worker-entries-import-library-worker',
           'app/src/autosave.ts',
@@ -352,9 +362,21 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
     ['reactive', '@vue/reactivity', 'packages/reactive/src/index.ts', ['@vue/reactivity']],
     [
       'ui',
-      'vue, @vueuse/core, reka-ui and @zag-js/hotkeys',
+      'vue, @vueuse/core, reka-ui, @zag-js/hotkeys and @lucide/vue',
       'packages/ui/src/index.ts',
-      ['vue', '@vueuse/core', 'reka-ui', '@zag-js/hotkeys'],
+      ['vue', '@vueuse/core', 'reka-ui', '@zag-js/hotkeys', '@lucide/vue'],
+    ],
+    [
+      'a ui spec',
+      'the workbench',
+      'packages/ui/src/button/Button.spec.ts',
+      ['packages/ui/workbench/states/button-states.ts'],
+    ],
+    [
+      'editor',
+      "ui's stylesheet subpath",
+      'packages/editor/src/theme-import.ts',
+      ['@keeb-cad/ui/theme.css'],
     ],
   ])('allows %s to import %s', (_who, _what, from, targets) => {
     const reported = violations.filter((v) => v.from === from).map((v) => v.to)

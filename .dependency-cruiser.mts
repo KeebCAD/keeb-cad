@@ -351,10 +351,20 @@ const config: IConfiguration = {
       'Only design imports immer: its register and design/worker (AD-2).',
     ),
     onlyImports(
-      'only-ui-imports-reka-and-zag',
+      'only-ui-imports-its-widget-libraries',
       '^packages/ui/',
-      npm('reka-ui|@zag-js/hotkeys'),
-      'Only ui imports reka-ui and @zag-js/hotkeys.',
+      npm('reka-ui|@zag-js/hotkeys|@lucide/vue'),
+      'Only ui imports reka-ui, @zag-js/hotkeys and @lucide/vue.',
+    ),
+    onlyImports(
+      'only-ui-imports-the-workbench',
+      [
+        '^packages/ui/workbench/',
+        String.raw`^packages/ui/src/.+\.spec\.ts$`,
+        '^packages/ui/src/testing/',
+      ],
+      '^(packages/ui/workbench/|@keeb-cad/ui/workbench)',
+      "Only the workbench itself and ui's tests import the workbench; the app never does.",
     ),
     {
       name: 'result-imports-no-npm-package',
