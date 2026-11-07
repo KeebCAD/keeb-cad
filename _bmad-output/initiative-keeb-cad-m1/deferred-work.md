@@ -174,3 +174,6 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-uiactions-and-the-shortcut-registry-run-every-hotkey-plan.md`
   summary: `packages/editor/src/App.vue`'s `.editor-shell__bar` sets `border-bottom: 1px solid #ccc;`, a literal colour, against AD-26's design tokens; 23.19 touches `App.vue` only to call `useShortcuts()` and leaves it.
   evidence: 23.19's plan conformance reader (precedent check), 2026-11-07.
+- source_plan: none
+  summary: `packages/ui/src/tooltip/Tooltip.spec.ts`'s two focus tests ("shows its content once the trigger is focused", "portals its content out of the rendered component") fail intermittently in CI's Firefox only; `element().focus()` never shows `getByRole('tooltip')` within 15 s.
+  evidence: CI runs 42348232952, 42362055241, 42396210542 (main) and 42402077826 (PR #31) on 2026-11-07, seeds 1794033853063, 1794045694625, 1794072393500, 1794076616865; seed 1794076616865 passes locally (ui Firefox project once, full suite three times). Not order or non-determinism; a CI headless-Firefox timing race between focus and Reka's tooltip open, or state the file's fake-timer pointer tests leave, is unconfirmed and left to Sergii (flaky-triage step 6). No timeout, retry or test change made. Owner: whoever next touches ui's tooltip.
