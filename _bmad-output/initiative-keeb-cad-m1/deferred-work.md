@@ -144,3 +144,6 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-a-new-design-autosaves-and-reopens-from-the-browser-plan.md`
   summary: Settle in the spine how editor's banner (16.x) reads autosave's failure state, since autosave lives in app and AD-10 says nothing imports app (move autosave to commands, or a token row in AD-25).
   evidence: 23.5's gap reader, 2026-11-07; Sergii chose to defer it to 16.x's spine pass, since nothing in 23.5 reads the state.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-a-new-design-autosaves-and-reopens-from-the-browser-plan.md`
+  summary: Drop from 23.5's verify the sentence "in Chromium a write refused under a quota lowered with cdp()'s Storage.overrideQuotaForOrigin returns quota-exceeded (…)", and reword "a load with a missing routing file saves no reset version" to the unit level (a bundle without routing handed to the load flow), since storage holds all three files.
+  evidence: Sergii, 2026-11-07, during 23.5's build (J1, J5): storage keeps full BundleTexts; the quota browser test is dropped because the mapping's Node rows and the memory backend cover it (spine AD-13 updated). The build never writes a ticket file, so the PO folds this in.
