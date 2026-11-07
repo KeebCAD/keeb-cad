@@ -5,6 +5,7 @@ activation_steps_append = [
 ]
 
 persistent_facts = [
+  "Service or function in every plan: each class or function a plan adds is tagged `(service)` or `(function)` in its Code Map or task entry, by AD-25's split: code that does I/O or holds state is a `di` service; pure logic is a plain function. A tag that follows the split needs no decision line; a departure from it gets a `Decision (plan):` in the X, not Y, because Z form.",
   "Plan size in this project: the SCOPE STANDARD target is up to 3000 tokens, superseding the 900–1600 range in the workflow and the plan template's 'Target: 900–1300 / above 1600' comment. Step-02's token-count gate fires only above 3000 tokens.",
   "Every plan carries a boundary table: for each threshold the work introduces or relies on, one row just below, one on and one just above it, each with its input and expected output taken from the requirement. Rows are sorted into four groups (production bugs, rules, module boundaries, glue), and every row has a level column naming where its test runs (unit in the owning package, integration in `pipeline` or `app`, or end to end). The table is frozen as acceptance when the plan is approved: implementation adds tests for its rows and changes no row. Its rows do not count toward the 3000-token plan cap.",
   '''
@@ -20,6 +21,7 @@ Read `AGENTS.md` at the repository root, every section. Read the plan at `{plan_
 2. Precedent. Open every existing file the plan names as a pattern, an example, or something to copy, follow or extend, and check that file against the same rules. A precedent that breaks a rule is a finding even when the plan copies it faithfully: the rule wins over the precedent. For a precedent that is a spec or test file, also run checks 1 to 8 of the `test-reviewer` lens in `_bmad/custom/bmad-build.toml` on each of its tests.
 3. Sketches. Every code sketch in the plan is code the implementer will copy. Check its names, file layout, types and tests against the rules.
 4. Names. Check every new name the plan introduces against the spine's glossary and Naming row.
+5. Service or function. Every class or function the plan adds carries a `(service)` or `(function)` tag in its Code Map or task entry. Report one with no tag, and a tag that contradicts AD-25's split for what the thing does (I/O or state tagged `(function)`, pure logic tagged `(service)`) unless a `Decision (plan):` gives that departure.
 
 Every finding quotes, verbatim and each in backticks: the plan line, and the rule (the `AGENTS.md` line or the spine sentence); a precedent finding also quotes the offending line of the precedent file, with its path. Then say what is wrong and what would satisfy the rule. There is no minimum number of findings: "checked N rules and M precedent files, no findings" is a full answer.
 
