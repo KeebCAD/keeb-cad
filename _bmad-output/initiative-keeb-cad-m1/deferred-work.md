@@ -171,3 +171,6 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-uiactions-and-the-shortcut-registry-run-every-hotkey-plan.md`
   summary: A handle has no way to keep its hotkey on inside a focused field; `ui`'s `HotkeyLayer` registers every entry with `enableOnFormTags: false`, while EXPERIENCE.md › Shortcuts keeps "Ctrl+K, Ctrl+S, Ctrl+Shift+S, Ctrl+O and Ctrl+Z / Ctrl+Shift+Z" global with a field focused.
   evidence: Found at 23.19's plan checkpoint (2026-11-07); no 23.19 entry needs it, 16.4's mod+Z is the first. Sergii approved leaving it out of 23.19.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-uiactions-and-the-shortcut-registry-run-every-hotkey-plan.md`
+  summary: `packages/editor/src/App.vue`'s `.editor-shell__bar` sets `border-bottom: 1px solid #ccc;`, a literal colour, against AD-26's design tokens; 23.19 touches `App.vue` only to call `useShortcuts()` and leaves it.
+  evidence: 23.19's plan conformance reader (precedent check), 2026-11-07.

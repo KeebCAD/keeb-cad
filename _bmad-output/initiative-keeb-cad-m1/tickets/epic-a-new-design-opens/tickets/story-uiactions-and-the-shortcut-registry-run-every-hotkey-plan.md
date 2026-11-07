@@ -3,14 +3,14 @@ title: 'UiActions and the shortcut registry run every hotkey'
 type: 'feature'
 ticket: '19'
 created: '2026-11-07'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '01707a61e820a2eba0f31815ef19a0b2bc8c0c55'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/AGENTS.md'
@@ -85,26 +85,26 @@ context:
 ## Tasks & Acceptance
 
 **Execution:** one phase; `pnpm test` green at the end.
-- [ ] `packages/design/src/entries/types.ts`, `index.ts` -- `hotkeys?` on both handles; export `InputCheck`, `InputMismatch`, `findDuplicateIds`, `parse`. Both `register-*.types.spec.ts` gain rows: `hotkeys: ['A']` registers, `hotkeys: 'A'` does not compile.
-- [ ] `packages/ui/src/index.ts` -- export `assertValidHotkey`.
-- [ ] `packages/editor/src/ui-actions/{types.ts,tokens.ts,register-ui-action.ts}` + `register-ui-action.types.spec.ts`:
+- [x] `packages/design/src/entries/types.ts`, `index.ts` -- `hotkeys?` on both handles; export `InputCheck`, `InputMismatch`, `findDuplicateIds`, `parse`. Both `register-*.types.spec.ts` gain rows: `hotkeys: ['A']` registers, `hotkeys: 'A'` does not compile.
+- [x] `packages/ui/src/index.ts` -- export `assertValidHotkey`.
+- [x] `packages/editor/src/ui-actions/{types.ts,tokens.ts,register-ui-action.ts}` + `register-ui-action.types.spec.ts`:
   - `UiAction<Input>` (`available(): boolean`, `apply(input: Input): void`), `UiActionHandle` (statics `kind: 'ui-action'`, `id`, `label`, `input`, `hotkeys?`; `new (): UiAction<unknown>`), `UiActionInput<H>`.
   - `uiActions = createMultiToken<UiActionHandle>('uiActions')`.
   - `registerUiAction(container, handle)` (function): the class as its own singleton, added to `uiActions`; refuses to compile through `InputCheck`.
   - A real UiAction takes AGENTS.md's three files (class, input schema, `types.ts` type), or `emptyInputSchema`/`EmptyInput`; spec-declared test ones may inline their schema.
-- [ ] `packages/editor/src/invoke/{types.ts,tokens.ts,register-input-builder.ts,duplicate-input-builder-error.ts,invoke.ts}` + `invoke.spec.ts`, `register-input-builder.types.spec.ts`:
+- [x] `packages/editor/src/invoke/{types.ts,tokens.ts,register-input-builder.ts,duplicate-input-builder-error.ts,invoke.ts}` + `invoke.spec.ts`, `register-input-builder.types.spec.ts`:
   - `InputBuilder<Input>` (`input(): Input`); `BuilderInputCheck<Input, Schema>`/`BuilderInputMismatch` (`types.ts`) check it against `v.InferInput`, with their own message.
   - `registerInputBuilder(container, Handle, Builder)` (function): the builder as its own singleton, `{ handle, builder }` added to `inputBuilders`.
   - `DuplicateInputBuilderError` (error class, its file) naming the handle ids.
   - `Invoke` (service): its constructor throws `DuplicateInputBuilderError` when two entries of `inputBuilders` share a handle (`findDuplicateIds` on handle ids). `invoke(handle)` has three overloads, each returning an `AsyncResult`: a command `AsyncResult<void, Rejection>`, an action `AsyncResult<void, ActionError<H> | Rejection>` (as `run`'s), a UiAction `AsyncResult<void, Rejection>`. Input = the handle's builder's `input()`, else `{}`. Command → `unavailable` while `store.current` is none, else `AsyncResult.fromResult(store.run(…))`; action → `store.run(…)`; UiAction → `unavailable` when `available()` is false, `input-invalid` with `parse`'s issues, else `apply(parsed)`.
-- [ ] `packages/editor/src/shortcuts/{shortcut-registry.ts,duplicate-handle-id-error.ts,use-shortcuts.ts}` + `shortcut-registry.spec.ts` (browser):
+- [x] `packages/editor/src/shortcuts/{shortcut-registry.ts,duplicate-handle-id-error.ts,use-shortcuts.ts}` + `shortcut-registry.spec.ts` (browser):
   - `DuplicateHandleIdError` (error class, its file), naming the ids.
   - `ShortcutRegistry` (service, eager): injects `commands`, `actions`, `uiActions`, `Invoke`. Its constructor throws `DuplicateHandleIdError` on ids shared across the three tokens (`findDuplicateIds`), then calls `assertValidHotkey` on every declared hotkey. `listen(target)` throws `InvariantError` while a layer exists, else builds one `HotkeyLayer` and hands it one entry per declared hotkey, id `<handle id>#<index>`, mapped back to its handle, and invokes it, dropping the result. `stop()` destroys the layer (no-op when none); `[Symbol.dispose]` calls `stop()`.
   - `useShortcuts()` (function, composable): `listen(document)` on mount, `stop()` before unmount; `App.vue` calls it.
   - `use-shortcuts.spec.ts` (browser) holds the mount and unmount rows, mounting through `mountEditor` on a real container.
-- [ ] `packages/editor/src/{editor-module.ts,index.ts}` -- `editorModule` registers `Invoke`, and `ShortcutRegistry` with `.eager()`; `index.ts` re-exports `editorModule`, `registerUiAction`, `registerInputBuilder`, `uiActions`, `inputBuilders`, the two errors and the types. `App.spec.ts` and `mount-editor.spec.ts` add `editorModule`.
-- [ ] `app/src/main-modules.ts` -- add `editorModule`.
-- [ ] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` -- `App.vue`'s `border-bottom: 1px solid #ccc` against AD-26's tokens.
+- [x] `packages/editor/src/{editor-module.ts,index.ts}` -- `editorModule` registers `Invoke`, and `ShortcutRegistry` with `.eager()`; `index.ts` re-exports `editorModule`, `registerUiAction`, `registerInputBuilder`, `uiActions`, `inputBuilders`, the two errors and the types. `App.spec.ts` and `mount-editor.spec.ts` add `editorModule`.
+- [x] `app/src/main-modules.ts` -- add `editorModule`.
+- [x] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` -- `App.vue`'s `border-bottom: 1px solid #ccc` against AD-26's tokens.
 
 **Acceptance Criteria:**
 - Given each boundary-table row, when `pnpm test` runs, then a test named for it passes at its level, in Chromium and Firefox for the browser rows.
@@ -112,9 +112,31 @@ context:
 
 ## Implementation Notes
 
+- **Decision (build): `Invoke` dispatches with ts-pattern `match`, not an `if` chain on `kind`,** because the store's `run` does and the repo uses `match` going forward; `ts-pattern` joins editor's dependencies (catalog).
+- **Decision (build): `listen`'s target type is `ShortcutTarget = ConstructorParameters<typeof HotkeyLayer>[0]` in `shortcuts/types.ts`, not a new `HotkeyTarget` export from `ui` or `Document`,** because the plan changes `ui`'s index only to export `assertValidHotkey`, and the layer takes what zag takes.
+- **Decision (build): the registry builds one `{ handle, invoke }` list per token, not one list of `EntryHandle`s,** because `invoke` has one overload per kind and a union handle matches none.
+- **Decision (build): a named union `EntryHandle = CommandHandle | ActionHandle | UiActionHandle` in `invoke/types.ts`, not the union written out at each use,** because `registerInputBuilder`, `InputBuilderRegistration` and `Invoke` all take it.
+- **Decision (build): spec helpers `press` (a synthetic keydown/keyup on `document`, as `ui`'s `hotkey-layer.spec.ts` does) and `Recorder` live in `packages/editor/src/testing/`, not copied into each spec,** because three specs use them.
+- Decision (Sergii, 2026-11-07): accept `ts-pattern` (catalog) in editor's dependencies, not a `switch` on `kind` with a `never` check, because `Invoke` dispatches like `DesignStore.run` (`match(handle)…exhaustive()`) and the repo uses ts-pattern's `match` going forward.
+- After review: `Invoke` asks a builder only after the no-design guard (command) and `available()` (UiAction), proven by a new row whose toggled bug (input built first) went red in both browsers; `Recorder.applied` renamed `recorded`, since that row records a builder call. `pnpm check` exit 0 (250 files, 2078 tests).
+- Decision (Sergii, 2026-11-07): `ShortcutRegistry` keeps one map, layer id to `{ hotkey, invoke }`, and derives the layer's entries from it in `listen`, not a `HotkeyEntry[]` beside an id-to-shortcut map, because both held the same ids from the same loop. `pnpm check` exit 0 (2078 tests); the every-hotkey-under-the-handle's-id bug still turns 2 rows red.
+- Toggled bugs, each red then green once restored: registry skipping `uiActions` (16 tests), invoke ignoring the builder (4), no `stop()` on unmount (2), every hotkey under the handle's id (2), and, beyond the plan, the no-design guard removed (2).
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+- 2026-11-07, pass 1 (lenses: quick, test-reviewer; quotes checked against the diff, none dropped). Verdicts: high 0, medium 1, low 6, false 3, maybe-false 0.
+  - medium, patch -- `packages/editor/src/invoke/invoke.ts`: `#inputFor(handle)` runs before the command's no-design guard and a UiAction's `available()` (both lenses). Real: a builder that reads the design (23.8, 16.4) would throw out of the keydown handler with no design, against the frozen "No design yet … nothing throws" row. Fix: build the input after those checks; a row proves the builder is not asked.
+  - low, patch -- `shortcut-registry.spec.ts` "refuses a malformed hotkey, naming it" asserts `'"mod+"'`, `ui`'s quoting (both lenses), against the row "the message is `ui`'s". Fix: assert the rejection only.
+  - low, patch -- `shortcut-registry.spec.ts` it.each `runs a handle with %s once per pressed hotkey of its own` names a run its `[]` rows deny (test-reviewer check 1). Fix: rename.
+  - low, patch -- both `register-*.types.spec.ts` "refuses a handle that declares its hotkey as a bare string" asserts `not.toExtend<…Handle>`, not a refusal by the register function. Fix: rename.
+  - low, patch -- `packages/editor/src/testing/{press,recorder}.ts` JSDoc restates the code, against "Write a comment only for a why the code can't say". Fix: delete.
+  - low, reject -- `packages/editor/src/invoke/register-input-builder.ts` registers the builder class as a single token, so one class registered twice throws `DuplicateRegistrationError` at registration (naming the builder), not `DuplicateInputBuilderError` at `autoLoad` (naming the handle), and a class can't serve two handles. Real, but it still fails loudly at startup, two different classes for one handle (the decision's case) reach `DuplicateInputBuilderError`, and the glossary's input builder is "registered for one handle"; the fix needs a container `has()` the `di` kernel lacks. Listed among the build's decisions for Sergii.
+  - low, reject -- `packages/editor/src/invoke/types.ts` copies design's private `Same<A, B>` (one line), against "Put code in the package that owns the concept". Real, but no caller diverges from a one-line type identity, and the fix adds a public export to `design`.
+  - false -- `#invokeUiAction` doesn't copy its input as the store does: the store copies so Immer never freezes a caller's object and no Vue proxy enters the design (`design-store.ts`'s `#copyInput` comment); a UiAction's input enters neither Immer nor the design.
+  - false -- `#run`'s `InvariantError` for an unknown layer id: the layer reports only ids the registry built from its own map, so the branch is unreachable; a loud failure on an unreachable state is correct.
+  - false -- the undocumented-decision note on `#run` is the same unreachable branch.
 
 ## Design Notes
 
