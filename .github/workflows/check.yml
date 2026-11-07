@@ -35,6 +35,16 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      # Browser-mode tests save a screenshot of the page when they fail; without this they are
+      # deleted with the runner. `.vitest/` is hidden, so hidden files must be included.
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: failure-screenshots
+          path: '**/.vitest/attachments/'
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14
 
   # Stryker mutates the priority packages' pure files and fails below the break threshold in
   # stryker.config.json. Its tests run on Node only, so no browsers are installed.
