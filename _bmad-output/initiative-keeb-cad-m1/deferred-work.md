@@ -133,3 +133,11 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
   summary: When 23.7 first calls `ModelWorkerLifecycle.start(spawn)` from `start-main.ts`, `app/vite.config.ts` must set `worker: { format: 'es' }`, not Vite's default `'iife'`, because `app/src/start-model-worker.ts` awaits `autoLoad()` at top level, which an `iife` worker bundle can't hold.
   evidence: 23.4 sets `worker.format: 'es'` only in `app/vitest.config.ts` (its final conformance pass dropped the `vite.config.ts` change as unused until a production spawn exists); 23.7's ticket doesn't mention it; Vite docs: `worker.format` default `'iife'`.
+
+- source_plan: `_bmad-output/architecture-keeb-cad-layout-model/reviews/review-adversary-2026-11-07-batch.md`
+  summary: The story that fills the case worker (OCCT/replicad glue, quickjs-wasi's WASM) builds and starts it under `worker.format: 'es'`, which 23.7 sets for every worker; 23.7 checks only the model worker, the one it spawns.
+  evidence: adversary gate L6 (`worker.format 'es'` is global to Vite's worker build); `app/src/case.worker.ts` is a stub today.
+
+- source_plan: `_bmad-output/architecture-keeb-cad-layout-model/reviews/review-reconcile-tickets-2026-11-07-batch.md`
+  summary: The first story that declares a blueprint input of kind `quantity` codes model/main's `checkInputs` check of its unit and literal against the pinned `DeclaredInput.unit` and its `range` (not below 0 is `range.min`; `negative-length` never reaches inputs), with rows just below, on and just above a range bound.
+  evidence: spine gate M7 (2026-11-07) and the Data Schema's `InputValue` comment; 13.4's choc-key `size` input is an option, so no M1 ticket names a quantity input yet.
