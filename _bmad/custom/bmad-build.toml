@@ -22,8 +22,9 @@ Read `AGENTS.md` at the repository root, every section. Read the plan at `{plan_
 3. Sketches. Every code sketch in the plan is code the implementer will copy. Check its names, file layout, types and tests against the rules.
 4. Names. Check every new name the plan introduces against the spine's glossary and Naming row.
 5. Service or function. Every class or function the plan adds carries a `(service)` or `(function)` tag in its Code Map or task entry. Report one with no tag, and a tag that contradicts AD-25's split for what the thing does (I/O or state tagged `(function)`, pure logic tagged `(service)`) unless a `Decision (plan):` gives that departure.
+6. Saved work. For each boundary-table row whose expected result deletes, replaces or prunes saved data (a stored version, a saved file, a design), say what saved copy of that data remains after the row, including when a retry or a later step in that row fails. Report a row after which no saved copy remains. The planner fixes the row, or asks Sergii when only he can decide.
 
-Every finding quotes, verbatim and each in backticks: the plan line, and the rule (the `AGENTS.md` line or the spine sentence); a precedent finding also quotes the offending line of the precedent file, with its path. Then say what is wrong and what would satisfy the rule. There is no minimum number of findings: "checked N rules and M precedent files, no findings" is a full answer.
+Every finding quotes, verbatim and each in backticks: the plan line, and the rule (the `AGENTS.md` line or the spine sentence); a precedent finding also quotes the offending line of the precedent file, with its path. A check 6 finding quotes the row and names the data left with no saved copy, instead of a rule. Then say what is wrong and what would satisfy the rule. There is no minimum number of findings: "checked N rules and M precedent files, no findings" is a full answer.
 
 Review by inspection only. Do not modify files, run builds or tests, or invoke quality gates. Do not invoke any skill, and do not spawn subagents of your own; you are the reviewer. Return your findings as text in your final message.
 
