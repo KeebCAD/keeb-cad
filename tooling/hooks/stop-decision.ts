@@ -20,9 +20,10 @@ const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit'])
 // A run counts only unscoped: `pnpm test <file>` or `--project x` proves the files it ran.
 const FULL_RUN = /^(mise exec -- )?pnpm (run )?(test|check)$/
 const SEGMENT_SEPARATOR = /\n|&&|\|\||;|\|/
-const REDIRECT = /\s+\d*>>?\s*&?\S+/g
-// A subshell's parentheses stay on its first and last segment after the split.
-const SUBSHELL = /^\(+|\)+$/g
+const REDIRECT = /\s*\d*>>?\s*&?\S+/g
+// A subshell's parentheses stay on its first and last segment after the split. One pair only:
+// `((…))` is arithmetic, not a subshell.
+const SUBSHELL = /^\(|\)$/g
 
 /**
  * Blocks the stop when a spec or source file under packages/, app/, fixtures/ or tooling/ changed

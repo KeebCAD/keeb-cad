@@ -67,10 +67,15 @@ describe('the stop hook', () => {
     ['pnpm test piped to tail', 'pnpm test 2>&1 | tail -20'],
     ['pnpm test after another command', 'pnpm lint && pnpm test'],
     [
-      'pnpm test last in a subshell redirected to a log',
+      'pnpm test in a subshell redirected to a log',
       '(pnpm typecheck && pnpm test) > /tmp/verify.log 2>&1; echo "exit $?"',
     ],
     ['pnpm check alone in a subshell', '(pnpm check)'],
+    ['pnpm test in a subshell with inner spaces', '( pnpm test )'],
+    [
+      'pnpm test in a subshell redirected with no space',
+      '(pnpm typecheck && pnpm test)>/tmp/verify.log 2>&1',
+    ],
   ])('passes when %s ran after the change', (_, command) => {
     expect(
       stopDecision([edited('/repo/packages/x/src/a.ts'), ran(command)], PROJECT, false, []),
@@ -81,7 +86,11 @@ describe('the stop hook', () => {
     ['a run of one file', 'pnpm test packages/x/src/a.spec.ts'],
     ['a run of one project', 'pnpm vitest run --project tooling'],
     ['another script', 'pnpm test:mutation'],
-    ['a scoped run in a subshell', '(pnpm test packages/x/src/a.spec.ts)'],
+    [
+      'a scoped run in a subshell, which stripping does not widen',
+      '(pnpm test packages/x/src/a.spec.ts)',
+    ],
+    ['an arithmetic expression, a pair of parentheses too many', '((pnpm test))'],
   ])('blocks when only %s followed the change', (_, command) => {
     expect(
       stopDecision([edited('/repo/packages/x/src/a.ts'), ran(command)], PROJECT, false, []),
