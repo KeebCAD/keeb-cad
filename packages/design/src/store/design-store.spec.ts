@@ -176,6 +176,44 @@ function recordInputAction(received: unknown[]) {
   }
 }
 
+// Test entries whose availability check is the test's own, so a row can make it say no.
+function renameWith(available: (design: Frozen<Design>) => boolean) {
+  return class RenameWith implements Command<RenameDesignInput> {
+    static readonly kind = 'command'
+    static readonly id = 'meta.renameWith'
+    static readonly label = 'Rename with'
+    static readonly input = renameDesignInputSchema
+
+    available(design: Frozen<Design>): boolean {
+      return available(design)
+    }
+
+    apply(draft: Writable<Design>, input: RenameDesignInput): void {
+      draft.meta.name = input.name
+    }
+  }
+}
+
+const saveWithInputSchema = v.object({})
+type SaveWithInput = v.InferOutput<typeof saveWithInputSchema>
+
+function saveWith(available: (current: Option<Committed>) => boolean) {
+  return class SaveWith implements Action<SaveWithInput, never> {
+    static readonly kind = 'action'
+    static readonly id = 'file.saveWith'
+    static readonly label = 'Save with'
+    static readonly input = saveWithInputSchema
+
+    available(current: Option<Committed>): boolean {
+      return available(current)
+    }
+
+    apply(_input: SaveWithInput): AsyncResult<void, never> {
+      return AsyncResult.ok()
+    }
+  }
+}
+
 interface Arrangement {
   commands?: CommandHandle[]
   actions?: ActionHandle[]
@@ -657,6 +695,53 @@ describe('DesignStore', () => {
 
       expect(() => store.run(LoadDesign, { design: aDesign() })).toThrow(
         new InvariantError('Action "file.loadDesign" is not registered.'),
+      )
+    })
+  })
+
+  describe('available', () => {
+    it('says a command is unavailable before any design is loaded', async () => {
+      const RenameWith = renameWith(() => true)
+      const store = await arrange({ commands: [RenameWith] })
+
+      expect(store.available(RenameWith)).toBe(false)
+    })
+
+    it.each([
+      ['unavailable when its check says no', false, false],
+      ['available when its check says yes', true, true],
+    ])('says a command with a design loaded is %s', async (_name, checkSays, expected) => {
+      const RenameWith = renameWith(() => checkSays)
+      const store = await arrange({ commands: [RenameWith], design: aDesign() })
+
+      expect(store.available(RenameWith)).toBe(expected)
+    })
+
+    it.each([
+      ['unavailable when its check says no', false, false],
+      ['available when its check says yes', true, true],
+    ])('says an action with no design loaded is %s', async (_name, checkSays, expected) => {
+      const SaveWith = saveWith(() => checkSays)
+      const store = await arrange({ actions: [SaveWith] })
+
+      expect(store.available(SaveWith)).toBe(expected)
+    })
+
+    it("gives an action's check the design once one is loaded", async () => {
+      const SaveWith = saveWith((current) => current.isSome())
+      const store = await arrange({ actions: [SaveWith] })
+      const before = store.available(SaveWith)
+
+      expectOk(store.replaceDesign({ design: aDesign(), unreadable: [] }))
+
+      expect([before, store.available(SaveWith)]).toEqual([false, true])
+    })
+
+    it('throws on a command that is not registered', async () => {
+      const store = await arrange()
+
+      expect(() => store.available(RenameDesign)).toThrow(
+        new InvariantError('Command "meta.renameDesign" is not registered.'),
       )
     })
   })
