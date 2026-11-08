@@ -11,5 +11,6 @@ const decision = stopDecision(
   projectDir,
   input.stop_hook_active ?? false,
   readChangedFiles(projectDir),
+  input.background_tasks,
 )
 if (decision) process.stdout.write(JSON.stringify(decision))

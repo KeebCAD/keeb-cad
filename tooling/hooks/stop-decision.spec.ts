@@ -20,12 +20,17 @@ const RUN_AT = '2026-11-05T10:00:00.000Z'
 const BEFORE_RUN = Date.parse('2026-11-05T09:59:59.000Z')
 const AFTER_RUN = Date.parse('2026-11-05T10:00:01.000Z')
 
-const expectedBlock = { decision: 'block', reason: expect.stringContaining('`pnpm test`') }
+const expectedRequest = {
+  hookSpecificOutput: {
+    hookEventName: 'Stop',
+    additionalContext: expect.stringContaining('`pnpm test`'),
+  },
+}
 
 describe('the stop hook', () => {
-  it('blocks when a spec changed and no full run followed', () => {
+  it('asks for a full run when a spec changed and no full run followed', () => {
     expect(stopDecision([edited('/repo/packages/x/src/a.spec.ts')], PROJECT, false, [])).toEqual(
-      expectedBlock,
+      expectedRequest,
     )
   })
 
@@ -41,13 +46,13 @@ describe('the stop hook', () => {
     ['a reference-designs module', '/repo/reference-designs/src/a.ts'],
     ['a tooling script', '/repo/tooling/hooks/guard.ts'],
     ['a path given relative to the project', 'packages/x/src/a.ts'],
-  ])('blocks when %s changed', (_, path) => {
-    expect(stopDecision([edited(path)], PROJECT, false, [])).toEqual(expectedBlock)
+  ])('asks for a full run when %s changed', (_, path) => {
+    expect(stopDecision([edited(path)], PROJECT, false, [])).toEqual(expectedRequest)
   })
 
-  it('names the changed file in the reason', () => {
+  it('names the changed file in the request', () => {
     expect(stopDecision([edited('/repo/packages/x/src/a.ts')], PROJECT, false, [])).toMatchObject({
-      reason: expect.stringContaining('packages/x/src/a.ts'),
+      hookSpecificOutput: { additionalContext: expect.stringContaining('packages/x/src/a.ts') },
     })
   })
 
@@ -65,6 +70,8 @@ describe('the stop hook', () => {
     ['pnpm check', 'pnpm check'],
     ['pnpm test through mise', 'mise exec -- pnpm test'],
     ['pnpm test piped to tail', 'pnpm test 2>&1 | tail -20'],
+    ['pnpm test under a timeout', 'timeout 500 pnpm test'],
+    ['pnpm test under a timeout in minutes', 'timeout 10m pnpm test'],
     ['pnpm test after another command', 'pnpm lint && pnpm test'],
     [
       'pnpm test in a subshell redirected to a log',
@@ -86,21 +93,23 @@ describe('the stop hook', () => {
     ['a run of one file', 'pnpm test packages/x/src/a.spec.ts'],
     ['a run of one project', 'pnpm vitest run --project tooling'],
     ['another script', 'pnpm test:mutation'],
+    ['a timeout with no duration', 'timeout pnpm test'],
+    ['a scoped run under a timeout', 'timeout 500 pnpm test --project tooling'],
     [
       'a scoped run in a subshell, which stripping does not widen',
       '(pnpm test packages/x/src/a.spec.ts)',
     ],
     ['an arithmetic expression, a pair of parentheses too many', '((pnpm test))'],
-  ])('blocks when only %s followed the change', (_, command) => {
+  ])('asks for a full run when only %s followed the change', (_, command) => {
     expect(
       stopDecision([edited('/repo/packages/x/src/a.ts'), ran(command)], PROJECT, false, []),
-    ).toEqual(expectedBlock)
+    ).toEqual(expectedRequest)
   })
 
-  it('blocks when a change followed the last full run', () => {
+  it('asks for a full run when a change followed the last full run', () => {
     expect(
       stopDecision([ran('pnpm test'), edited('/repo/packages/x/src/a.ts')], PROJECT, false, []),
-    ).toEqual(expectedBlock)
+    ).toEqual(expectedRequest)
   })
 
   it('reads tool uses from Write and MultiEdit too', () => {
@@ -114,7 +123,9 @@ describe('the stop hook', () => {
         false,
         [],
       ),
-    ).toMatchObject({ reason: expect.stringMatching(/a\.ts.*b\.ts/) })
+    ).toMatchObject({
+      hookSpecificOutput: { additionalContext: expect.stringMatching(/a\.ts.*b\.ts/) },
+    })
   })
 
   it('ignores tool uses that are not the assistant’s', () => {
@@ -127,16 +138,28 @@ describe('the stop hook', () => {
     expect(stopDecision([userEntry], PROJECT, false, [])).toBeUndefined()
   })
 
+  it('passes while a background task is in flight', () => {
+    expect(
+      stopDecision([edited('/repo/packages/x/src/a.ts')], PROJECT, false, [], [{ id: 'a1' }]),
+    ).toBeUndefined()
+  })
+
+  it('asks for a full run when no background task is in flight', () => {
+    expect(stopDecision([edited('/repo/packages/x/src/a.ts')], PROJECT, false, [], [])).toEqual(
+      expectedRequest,
+    )
+  })
+
   it('passes an empty transcript', () => {
     expect(stopDecision([], PROJECT, false, [])).toBeUndefined()
   })
 
-  it('blocks when a file changed through Bash after the last full run', () => {
+  it('asks for a full run when a file changed through Bash after the last full run', () => {
     expect(
       stopDecision([ranAt('pnpm test', RUN_AT)], PROJECT, false, [
         { path: 'packages/x/src/a.ts', mtimeMs: AFTER_RUN },
       ]),
-    ).toEqual(expectedBlock)
+    ).toEqual(expectedRequest)
   })
 
   it('passes when a file changed through Bash before the last full run', () => {
@@ -147,10 +170,10 @@ describe('the stop hook', () => {
     ).toBeUndefined()
   })
 
-  it('blocks when a file changed through Bash and no full run happened', () => {
+  it('asks for a full run when a file changed through Bash and no full run happened', () => {
     expect(
       stopDecision([], PROJECT, false, [{ path: 'packages/x/src/a.ts', mtimeMs: BEFORE_RUN }]),
-    ).toEqual(expectedBlock)
+    ).toEqual(expectedRequest)
   })
 
   it('passes when only a docs file changed through Bash', () => {
