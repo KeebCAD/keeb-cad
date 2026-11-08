@@ -1,5 +1,6 @@
 import {
   type Command,
+  type CommandHandle,
   type Committed,
   DesignStore,
   designModule,
@@ -130,11 +131,16 @@ function anOpenInspectable(open: { value: boolean }): Inspectable {
 async function arrange({
   entries = [],
   design,
-}: { entries?: readonly Inspectable[]; design?: Design } = {}) {
+  commands = [],
+}: {
+  entries?: readonly Inspectable[]
+  design?: Design
+  commands?: readonly CommandHandle[]
+} = {}) {
   const container = new Container().addModule(designModule)
   container.register(Invoke).useClass(Invoke)
   container.register(DevtoolsPlugin).useClass(DevtoolsPlugin)
-  registerCommand(container, RenameDesign)
+  for (const command of commands) registerCommand(container, command)
   for (const entry of entries) container.register(inspectables).useValue(entry)
   onTestFinished(() => container.dispose())
   await container.autoLoad()
@@ -222,7 +228,10 @@ describe('DevtoolsPlugin', () => {
 
     it('adds no event and sends no state once disposed', async () => {
       const open = shallowRef(false)
-      const { plugin, store, invoke } = await arrange({ entries: [anOpenInspectable(open)] })
+      const { plugin, store, invoke } = await arrange({
+        entries: [anOpenInspectable(open)],
+        commands: [RenameDesign],
+      })
       const fake = fakeHost()
       plugin.setup(fake.host)
       useFakeTimers()
@@ -238,7 +247,10 @@ describe('DevtoolsPlugin', () => {
     })
 
     it('adds one invocations event and one commits event for a command that changes the design', async () => {
-      const { plugin, invoke, store } = await arrange({ design: aDesign() })
+      const { plugin, invoke, store } = await arrange({
+        design: aDesign(),
+        commands: [RenameDesign],
+      })
       const fake = fakeHost()
       plugin.setup(fake.host)
 

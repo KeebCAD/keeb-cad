@@ -1,5 +1,5 @@
 {
-  // The container and its Vue bridge. No DOM lib: di's root runs on every thread (AD-25).
+  // The container and its Vue bridge. No DOM lib: di's root runs on every thread.
   "extends": "../../tsconfig.base.json",
   "include": ["src/**/*"],
   "exclude": ["src/**/*.spec.ts"],

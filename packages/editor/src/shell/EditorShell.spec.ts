@@ -1,11 +1,9 @@
 import { aDesign, aMeta, anId } from '@keeb-cad/schema/testing'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { page } from 'vitest/browser'
 
-import { emulateColorScheme, resetColorScheme } from '../testing/color-scheme'
+import { emulateColorScheme } from '../testing/color-scheme'
 import { mountShell } from '../testing/mount-shell'
-
-afterEach(resetColorScheme)
 
 function box(element: Element) {
   const { width, height } = element.getBoundingClientRect()
@@ -47,7 +45,7 @@ describe('the editor shell', () => {
     ['dark', 'rgb(41, 44, 60)', 'rgb(48, 52, 70)'],
     ['light', 'rgb(230, 233, 239)', 'rgb(239, 241, 245)'],
   ] as const)(
-    'at 1366x768 under the %s theme sizes and colours each box from the tokens',
+    'at the laptop floor under the %s theme sizes and colours each box from the tokens',
     async (scheme, chrome, panel) => {
       await emulateColorScheme(scheme)
       await mountShell({ path: '/design/corne/layout' })
@@ -68,7 +66,7 @@ describe('the editor shell', () => {
         rail: { width: 44, background: chrome },
         inspector: { width: 320, background: panel },
         strip: { height: 30, background: chrome },
-        canvas: { width: 1002, height: 696 },
+        canvas: { width: 1002, height: 624 },
       })
     },
   )

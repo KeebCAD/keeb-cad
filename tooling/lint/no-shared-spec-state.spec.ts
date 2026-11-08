@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { SHARED_SPEC_STATE } from '../../eslint.config'
 import { restrictedSyntax } from './restricted-syntax'
 import { COLD_CONFIG_TIMEOUT } from './cold-config-timeout'
 
-const [LET, SPY, EMPTY] = SHARED_SPEC_STATE.map((entry) => entry.message)
+const LET =
+  'No `let` or `var` at module level or in a describe callback; create state inside the test.'
+const SPY =
+  'No vi.fn or vi.spyOn at module level or in a describe callback; create spies inside the test.'
+const EMPTY =
+  'No empty array, object, Map, Set, WeakMap, WeakSet or Array at module level or in a describe callback; create recordings inside the test.'
 const SPEC = 'packages/x/src/foo.spec.ts'
 
 describe('no shared state in a spec', { timeout: COLD_CONFIG_TIMEOUT }, () => {

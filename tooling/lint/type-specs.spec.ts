@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 
-import { TYPE_SPEC_MESSAGE } from '../../eslint.config'
 import { COLD_CONFIG_TIMEOUT } from './cold-config-timeout'
 import { lintResult, ruleMessages } from './rule-messages'
 
@@ -8,6 +7,9 @@ const TYPE_SPEC = 'packages/x/src/a.types.spec.ts'
 const RUNTIME_SPEC = 'packages/x/src/a.spec.ts'
 const TYPES_ONLY_TEST =
   "import { expectTypeOf, it } from 'vitest'\n\nit('a', () => {\n  expectTypeOf(1).toEqualTypeOf<number>()\n})\n"
+
+const expectedMessage =
+  'A *.types.spec.ts runs only in its types project, where `expect`, `assert` and `should` never run; assert with expectTypeOf, or move the test to a runtime spec.'
 
 const expectExpect = async (code: string, filePath: string) =>
   (await lintResult(code, filePath)).messages.filter(
@@ -18,7 +20,7 @@ describe('type specs', { timeout: COLD_CONFIG_TIMEOUT }, () => {
   it.each(['expect', 'assert', 'should'])('rejects importing %s into a type spec', async (name) => {
     expect(
       await ruleMessages('no-restricted-imports', `import { ${name} } from 'vitest'\n`, TYPE_SPEC),
-    ).toEqual([expect.stringContaining(TYPE_SPEC_MESSAGE)])
+    ).toEqual([expect.stringContaining(expectedMessage)])
   })
 
   it('allows importing expectTypeOf into a type spec', async () => {

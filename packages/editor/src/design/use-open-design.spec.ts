@@ -1,7 +1,6 @@
 import { DesignStore, designModule } from '@keeb-cad/design'
 import { Container, InjectorToken } from '@keeb-cad/di'
 import { provideInjectorOnApp } from '@keeb-cad/di/vue'
-import { Option } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
 import type { Design } from '@keeb-cad/schema'
 import { aDesign, aMeta, anId } from '@keeb-cad/schema/testing'
@@ -21,12 +20,12 @@ async function arrange() {
 }
 
 describe('useOpenDesign', () => {
-  it('holds none while no design is open', async () => {
+  it('holds undefined while no design is open', async () => {
     const { app } = await arrange()
 
     const openDesign = app.runWithContext(() => useOpenDesign())
 
-    expect(openDesign.value).toEqual(Option.none())
+    expect(openDesign.value).toBeUndefined()
   })
 
   it('holds the committed design', async () => {
@@ -36,7 +35,7 @@ describe('useOpenDesign', () => {
 
     commit(design)
 
-    expect(openDesign.value).toEqual(Option.some(design))
+    expect(openDesign.value).toEqual(design)
   })
 
   it('moves from the first design to the later one on a second commit', async () => {
@@ -49,6 +48,6 @@ describe('useOpenDesign', () => {
 
     commit(second)
 
-    expect([before, openDesign.value]).toEqual([Option.some(first), Option.some(second)])
+    expect([before, openDesign.value]).toEqual([first, second])
   })
 })

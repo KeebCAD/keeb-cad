@@ -63,7 +63,7 @@ export default defineConfig({
       ...configlessProjects,
       ...typeProjects,
       {
-        // di's root specs touch no DOM, so they run on Node (Verification layer 2); its
+        // di's root specs touch no DOM, so they run on Node; its
         // vitest.config.ts runs only the Vue bridge's, in browsers.
         test: {
           name: 'di',
@@ -100,7 +100,7 @@ export default defineConfig({
           name: 'tooling',
           environment: 'node',
           include: ['tooling/**/*.spec.ts'],
-          // The AD-10 violation tree holds a deliberate *.spec.ts fixture, not a test.
+          // The dependency-rule violation tree holds a deliberate *.spec.ts fixture, not a test.
           exclude: [...configDefaults.exclude, TYPE_SPECS, 'tooling/**/violations/**'],
         },
       },

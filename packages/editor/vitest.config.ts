@@ -14,7 +14,6 @@ const setColorScheme: BrowserCommand<[scheme: 'light' | 'dark' | null]> = async 
   await page.emulateMedia({ colorScheme: scheme })
 }
 
-// DOM tests run in real browsers, never a simulation (AD-26, Verification layer 2).
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
   // Pre-bundle app deps up front: if Vite discovers them mid-run it re-bundles, and a browser
@@ -44,8 +43,8 @@ export default defineConfig({
       enabled: true,
       provider: playwright(),
       headless: true,
-      // EXPERIENCE.md's laptop floor; the shell's boxes are specified at it.
-      viewport: { width: 1366, height: 768 },
+      // DESIGN.md's laptop floor as the height inside the browser, which is the page a test renders.
+      viewport: { width: 1366, height: 696 },
       instances: browserInstances,
       commands: { setColorScheme },
     },

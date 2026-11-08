@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { MODULE_MOCK_MESSAGE } from '../../eslint.config'
 import { COLD_CONFIG_TIMEOUT } from './cold-config-timeout'
 import { ruleMessages } from './rule-messages'
 
 const SPEC = 'packages/x/src/a.spec.ts'
+const expectedMessage =
+  'Substitute through di: register a fake in the container instead of mocking a module.'
 const viMethods = (code: string) => ruleMessages('vitest/no-restricted-vi-methods', code, SPEC)
 
 describe('no module mocks in a spec', { timeout: COLD_CONFIG_TIMEOUT }, () => {
@@ -12,7 +13,7 @@ describe('no module mocks in a spec', { timeout: COLD_CONFIG_TIMEOUT }, () => {
     ['vi.mock', "vi.mock('./a')"],
     ['vi.doMock', "it('a', async () => {\n  vi.doMock('./a')\n  expect(1).toBe(1)\n})"],
   ])('rejects %s', async (_, code) => {
-    expect(await viMethods(code)).toEqual([MODULE_MOCK_MESSAGE])
+    expect(await viMethods(code)).toEqual([expectedMessage])
   })
 
   it.each([

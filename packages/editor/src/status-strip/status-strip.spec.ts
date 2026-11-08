@@ -2,15 +2,13 @@ import type { DesignStore } from '@keeb-cad/design'
 import { aDesign } from '@keeb-cad/schema/testing'
 import { RestartModelWorker } from '@keeb-cad/commands'
 import type { FakeWorker } from '@keeb-cad/workers/testing'
-import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { page } from 'vitest/browser'
 import { nextTick } from 'vue'
 
-import { emulateColorScheme, resetColorScheme } from '../testing/color-scheme'
+import { emulateColorScheme } from '../testing/color-scheme'
 import { mountShell } from '../testing/mount-shell'
 import type { ColorScheme } from '../testing/types'
-
-afterEach(resetColorScheme)
 
 function strip() {
   return page.getByRole('contentinfo', { name: 'Status strip' })

@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { TEST_ID_MESSAGE } from '../../eslint.config'
 import { COLD_CONFIG_TIMEOUT } from './cold-config-timeout'
 import { lintResult, ruleMessages } from './rule-messages'
 
 const FILE = 'packages/x/src/a.ts'
+
+const expectedTestIdMessage =
+  'Find elements by role, then label, then text. A test id is a last resort, behind a file override in eslint.config.ts whose comment gives the reason.'
 
 describe('no inline config', { timeout: COLD_CONFIG_TIMEOUT }, () => {
   it.each([
@@ -33,7 +35,7 @@ describe('no inline config', { timeout: COLD_CONFIG_TIMEOUT }, () => {
     const code = "// eslint-disable-next-line no-restricted-properties\nscreen.getByTestId('a')"
     expect(
       await ruleMessages('no-restricted-properties', code, 'packages/x/src/a.spec.ts'),
-    ).toEqual([expect.stringContaining(TEST_ID_MESSAGE)])
+    ).toEqual([expect.stringContaining(expectedTestIdMessage)])
   })
 
   it('still reports a rule a template disable comment names', async () => {
@@ -41,6 +43,6 @@ describe('no inline config', { timeout: COLD_CONFIG_TIMEOUT }, () => {
       '<template>\n  <!-- eslint-disable-next-line vue/no-restricted-static-attribute -->\n  <p data-testid="a">x</p>\n</template>\n'
     expect(
       await ruleMessages('vue/no-restricted-static-attribute', code, 'packages/x/src/A.vue'),
-    ).toEqual([TEST_ID_MESSAGE])
+    ).toEqual([expectedTestIdMessage])
   })
 })

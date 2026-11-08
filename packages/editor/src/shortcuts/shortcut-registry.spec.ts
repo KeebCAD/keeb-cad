@@ -116,6 +116,7 @@ interface Entries {
   uiActions?: readonly UiActionHandle[]
   builders?: readonly (readonly [EntryHandle, new () => InputBuilder<unknown>])[]
   design?: Design
+  recorder?: Recorder
 }
 
 async function arrange({
@@ -124,9 +125,10 @@ async function arrange({
   uiActions = [],
   builders = [],
   design,
+  recorder,
 }: Entries) {
   const container = new Container().addModule(designModule).addModule(editorModule)
-  container.register(Recorder).useClass(Recorder)
+  if (recorder !== undefined) container.register(Recorder).useValue(recorder)
   for (const handle of commands) registerCommand(container, handle)
   for (const handle of actions) registerAction(container, handle)
   for (const handle of uiActions) registerUiAction(container, handle)
@@ -135,11 +137,7 @@ async function arrange({
   await container.autoLoad()
   const store = container.resolve(DesignStore)
   if (design !== undefined) expectOk(store.replaceDesign({ design, unreadable: [] }))
-  return {
-    registry: container.resolve(ShortcutRegistry),
-    store,
-    recorder: container.resolve(Recorder),
-  }
+  return { registry: container.resolve(ShortcutRegistry), store }
 }
 
 describe('ShortcutRegistry', () => {
@@ -175,8 +173,10 @@ describe('ShortcutRegistry', () => {
     })
 
     it('runs an action', async () => {
-      const { registry, recorder } = await arrange({
+      const recorder = new Recorder()
+      const { registry } = await arrange({
         actions: [recordAction('test.record', ['B'])],
+        recorder,
       })
       registry.listen(document)
 
@@ -187,9 +187,11 @@ describe('ShortcutRegistry', () => {
 
     it("runs a UiAction with its input builder's input", async () => {
       const uiAction = recordUiAction('test.record', ['T'])
-      const { registry, recorder } = await arrange({
+      const recorder = new Recorder()
+      const { registry } = await arrange({
         uiActions: [uiAction],
         builders: [[uiAction, BuildNote]],
+        recorder,
       })
       registry.listen(document)
 
@@ -206,8 +208,10 @@ describe('ShortcutRegistry', () => {
     ])(
       'runs a handle with %s once per hotkey it declares, and not at all without one',
       async (_name, hotkeys, expected) => {
-        const { registry, recorder } = await arrange({
+        const recorder = new Recorder()
+        const { registry } = await arrange({
           uiActions: [recordUiAction('test.record', hotkeys)],
+          recorder,
         })
         registry.listen(document)
 
@@ -239,7 +243,7 @@ describe('ShortcutRegistry', () => {
         },
       ],
     ])('refuses a UiAction that shares its id with %s, naming it', async (_name, entries) => {
-      await expect(arrange(entries)).rejects.toThrow(
+      await expect(arrange({ ...entries, recorder: new Recorder() })).rejects.toThrow(
         new DuplicateHandleIdError(['meta.renameDesign']),
       )
     })
@@ -250,19 +254,23 @@ describe('ShortcutRegistry', () => {
           commands: [renameDesign()],
           actions: [recordAction('test.action')],
           uiActions: [recordUiAction('test.uiAction')],
+          recorder: new Recorder(),
         }),
       ).resolves.toMatchObject({ registry: expect.any(ShortcutRegistry) })
     })
 
     it('refuses a malformed hotkey', async () => {
       await expect(
-        arrange({ uiActions: [recordUiAction('test.record', ['mod+'])] }),
+        arrange({ uiActions: [recordUiAction('test.record', ['mod+'])], recorder: new Recorder() }),
       ).rejects.toThrow()
     })
 
     it('starts with a well-formed chord', async () => {
       await expect(
-        arrange({ uiActions: [recordUiAction('test.record', ['mod+K'])] }),
+        arrange({
+          uiActions: [recordUiAction('test.record', ['mod+K'])],
+          recorder: new Recorder(),
+        }),
       ).resolves.toMatchObject({ registry: expect.any(ShortcutRegistry) })
     })
   })
@@ -276,8 +284,10 @@ describe('ShortcutRegistry', () => {
     })
 
     it('listens again after stop', async () => {
-      const { registry, recorder } = await arrange({
+      const recorder = new Recorder()
+      const { registry } = await arrange({
         uiActions: [recordUiAction('test.record', ['T'])],
+        recorder,
       })
       registry.listen(document)
       registry.stop()

@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { ENTRY_RE_EXPORTS_ONLY, TYPES_OUTSIDE_TYPES_TS } from '../../eslint.config'
 import { restrictedSyntax } from './restricted-syntax'
 import { COLD_CONFIG_TIMEOUT } from './cold-config-timeout'
 
-const ENTRY = ENTRY_RE_EXPORTS_ONLY.message
+const ENTRY =
+  'A package entry file only re-exports (`export … from`, `export * from`, or the stub `export {}`); put code in a file named for what it does.'
+const TYPES =
+  "Declare types in this folder's types.ts. A type paired with a same-named value joins PAIRED_TYPES in eslint.config.ts."
 
 describe('package entry files only re-export', { timeout: COLD_CONFIG_TIMEOUT }, () => {
   it.each(['packages/x/src/index.ts', 'packages/x/src/main.ts', 'packages/x/src/worker.ts'])(
@@ -22,7 +24,7 @@ describe('package entry files only re-export', { timeout: COLD_CONFIG_TIMEOUT },
   it('still rejects a type declared in an entry file', async () => {
     expect(await restrictedSyntax('export type A = string', 'packages/x/src/index.ts')).toEqual([
       ENTRY,
-      TYPES_OUTSIDE_TYPES_TS.message,
+      TYPES,
     ])
   })
 

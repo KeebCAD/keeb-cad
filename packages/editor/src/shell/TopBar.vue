@@ -7,7 +7,7 @@ import WorkspaceTabs from '../workspace/WorkspaceTabs.vue'
 
 const root = useTemplateRef<HTMLElement>('root')
 const openDesign = useOpenDesign()
-const name = computed(() => openDesign.value.map((design) => design.meta.name).getOrUndefined())
+const name = computed(() => openDesign.value?.meta.name)
 useLandmark('top-bar', root)
 </script>
 

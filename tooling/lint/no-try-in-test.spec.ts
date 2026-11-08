@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { TRY_IN_TEST } from '../../eslint.config'
 import { restrictedSyntax } from './restricted-syntax'
 import { COLD_CONFIG_TIMEOUT } from './cold-config-timeout'
 
-const TRY = TRY_IN_TEST.message
+const TRY = 'No try in a test; assert a throw as `expect(() => fn()).toThrow(…)`.'
 const TRY_BLOCK = 'try {\n    f()\n  } catch {\n    expect(1).toBe(1)\n  }'
 
 describe('no try in a test body', { timeout: COLD_CONFIG_TIMEOUT }, () => {

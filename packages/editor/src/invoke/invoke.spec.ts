@@ -10,7 +10,7 @@ import {
   type Writable,
 } from '@keeb-cad/design'
 import { Container, inject } from '@keeb-cad/di'
-import { AsyncResult, Option } from '@keeb-cad/result'
+import { AsyncResult, Option, type Result } from '@keeb-cad/result'
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
 import type { Design, Rejection } from '@keeb-cad/schema'
 import { aDesign, aMeta } from '@keeb-cad/schema/testing'
@@ -149,15 +149,20 @@ interface Entries {
   design?: Design
 }
 
+interface Arrangement extends Entries {
+  recorder?: Recorder
+}
+
 async function arrange({
   commands = [],
   actions = [],
   uiActions = [],
   builders = [],
   design,
-}: Entries) {
+  recorder,
+}: Arrangement) {
   const container = new Container().addModule(designModule).addModule(editorModule)
-  container.register(Recorder).useClass(Recorder)
+  if (recorder !== undefined) container.register(Recorder).useValue(recorder)
   for (const handle of commands) registerCommand(container, handle)
   for (const handle of actions) registerAction(container, handle)
   for (const handle of uiActions) registerUiAction(container, handle)
@@ -166,11 +171,16 @@ async function arrange({
   await container.autoLoad()
   const store = container.resolve(DesignStore)
   if (design !== undefined) expectOk(store.replaceDesign({ design, unreadable: [] }))
-  return { invoke: container.resolve(Invoke), store, recorder: container.resolve(Recorder) }
+  return { invoke: container.resolve(Invoke), store }
 }
 
 function nameOf(store: DesignStore): Option<string> {
   return store.current.map((committed) => committed.design.meta.name)
+}
+
+function expectUnavailable(result: Result<unknown, unknown>, command: string): void {
+  expectErr(result)
+  expect(result.error).toEqual({ kind: 'unavailable', command })
 }
 
 describe('Invoke', () => {
@@ -182,16 +192,17 @@ describe('Invoke', () => {
       const result = await invoke.invoke(RenameDesign)
 
       expect(available).toBe(false)
-      expectErr(result)
-      expect(result.error).toEqual({ kind: 'unavailable', command: RenameDesign.id })
+      expectUnavailable(result, RenameDesign.id)
       expect(store.current).toEqual(Option.none())
     })
 
     it("runs a command with the caller's input without asking its builder", async () => {
-      const { invoke, store, recorder } = await arrange({
+      const recorder = new Recorder()
+      const { invoke, store } = await arrange({
         commands: [RenameDesign],
         builders: [[RenameDesign, RecordedBuildName]],
         design: aDesign(),
+        recorder,
       })
 
       expectOk(await invoke.invoke(RenameDesign, { name: 'Lily58' }))
@@ -217,37 +228,41 @@ describe('Invoke', () => {
 
     it('refuses an action its check says no to without asking its builder', async () => {
       const action = recordAction('test.recordAction', false)
-      const { invoke, recorder } = await arrange({
+      const recorder = new Recorder()
+      const { invoke } = await arrange({
         actions: [action],
         builders: [[action, RecordedBuildName]],
+        recorder,
       })
 
       const result = await invoke.invoke(action)
 
-      expectErr(result)
-      expect(result.error).toEqual({ kind: 'unavailable', command: 'test.recordAction' })
+      expectUnavailable(result, 'test.recordAction')
       expect(recorder.recorded).toEqual([])
     })
 
     it('refuses a UiAction its check says no to without asking its builder', async () => {
       const uiAction = recordName('test.recordName', false)
-      const { invoke, recorder } = await arrange({
+      const recorder = new Recorder()
+      const { invoke } = await arrange({
         uiActions: [uiAction],
         builders: [[uiAction, RecordedBuildName]],
+        recorder,
       })
 
       const result = await invoke.invoke(uiAction)
 
-      expectErr(result)
-      expect(result.error).toEqual({ kind: 'unavailable', command: 'test.recordName' })
+      expectUnavailable(result, 'test.recordName')
       expect(recorder.recorded).toEqual([])
     })
 
     it("runs an action with the caller's input without asking its builder", async () => {
       const action = recordAction('test.recordAction', true)
-      const { invoke, recorder } = await arrange({
+      const recorder = new Recorder()
+      const { invoke } = await arrange({
         actions: [action],
         builders: [[action, RecordedBuildName]],
+        recorder,
       })
 
       expectOk(await invoke.invoke(action, { name: 'Lily58' }))
@@ -257,9 +272,11 @@ describe('Invoke', () => {
 
     it("applies a UiAction with the caller's input without asking its builder", async () => {
       const uiAction = recordName('test.recordName', true)
-      const { invoke, recorder } = await arrange({
+      const recorder = new Recorder()
+      const { invoke } = await arrange({
         uiActions: [uiAction],
         builders: [[uiAction, RecordedBuildName]],
+        recorder,
       })
 
       expectOk(await invoke.invoke(uiAction, { name: 'Lily58' }))
@@ -269,9 +286,11 @@ describe('Invoke', () => {
 
     it("applies a UiAction with a caller's null input without asking its builder", async () => {
       const uiAction = recordNullableName()
-      const { invoke, recorder } = await arrange({
+      const recorder = new Recorder()
+      const { invoke } = await arrange({
         uiActions: [uiAction],
         builders: [[uiAction, RecordedBuildName]],
+        recorder,
       })
 
       expectOk(await invoke.invoke(uiAction, null))
@@ -281,7 +300,8 @@ describe('Invoke', () => {
 
     it("refuses a caller's UiAction input its schema refuses, without applying it", async () => {
       const uiAction = recordName('test.recordName', true)
-      const { invoke, recorder } = await arrange({ uiActions: [uiAction] })
+      const recorder = new Recorder()
+      const { invoke } = await arrange({ uiActions: [uiAction], recorder })
 
       const result = await invoke.invoke(uiAction, { name: '' })
 
@@ -295,23 +315,26 @@ describe('Invoke', () => {
     })
 
     it('refuses a command as unavailable before any design is committed without asking its builder for input', async () => {
-      const { invoke, recorder } = await arrange({
+      const recorder = new Recorder()
+      const { invoke } = await arrange({
         commands: [RenameDesign],
         builders: [[RenameDesign, RecordedBuildName]],
+        recorder,
       })
 
       const result = await invoke.invoke(RenameDesign)
 
-      expectErr(result)
-      expect(result.error).toEqual({ kind: 'unavailable', command: RenameDesign.id })
+      expectUnavailable(result, RenameDesign.id)
       expect(recorder.recorded).toEqual([])
     })
 
     it('refuses a UiAction input its schema refuses, with plain issue paths, without applying it', async () => {
       const uiAction = recordName('test.recordName', true)
-      const { invoke, recorder } = await arrange({
+      const recorder = new Recorder()
+      const { invoke } = await arrange({
         uiActions: [uiAction],
         builders: [[uiAction, buildName('')]],
+        recorder,
       })
 
       const result = await invoke.invoke(uiAction)
@@ -336,8 +359,7 @@ describe('Invoke', () => {
       const result = await invoke.invoke(command, { name: 'Lily58' })
 
       expect(available).toBe(false)
-      expectErr(result)
-      expect(result.error).toEqual({ kind: 'unavailable', command: command.id })
+      expectUnavailable(result, command.id)
       expect(store.current).toEqual(before)
     })
 
@@ -350,40 +372,40 @@ describe('Invoke', () => {
 
     it('says an action with no design is unavailable when its check says no, and refuses it as such', async () => {
       const action = recordAction('test.recordAction', false)
-      const { invoke, recorder } = await arrange({ actions: [action] })
+      const recorder = new Recorder()
+      const { invoke } = await arrange({ actions: [action], recorder })
 
       const available = invoke.available(action)
       const result = await invoke.invoke(action, { name: 'Lily58' })
 
       expect(available).toBe(false)
-      expectErr(result)
-      expect(result.error).toEqual({ kind: 'unavailable', command: 'test.recordAction' })
+      expectUnavailable(result, 'test.recordAction')
       expect(recorder.recorded).toEqual([])
     })
 
     it('says an action with no design is available when its check says yes', async () => {
       const action = recordAction('test.recordAction', true)
-      const { invoke } = await arrange({ actions: [action] })
+      const { invoke } = await arrange({ actions: [action], recorder: new Recorder() })
 
       expect(invoke.available(action)).toBe(true)
     })
 
     it('says a UiAction is unavailable when its check says no, and refuses it as such', async () => {
       const uiAction = recordName('test.recordName', false)
-      const { invoke, recorder } = await arrange({ uiActions: [uiAction] })
+      const recorder = new Recorder()
+      const { invoke } = await arrange({ uiActions: [uiAction], recorder })
 
       const available = invoke.available(uiAction)
       const result = await invoke.invoke(uiAction, { name: 'Lily58' })
 
       expect(available).toBe(false)
-      expectErr(result)
-      expect(result.error).toEqual({ kind: 'unavailable', command: 'test.recordName' })
+      expectUnavailable(result, 'test.recordName')
       expect(recorder.recorded).toEqual([])
     })
 
     it('says a UiAction is available when its check says yes', async () => {
       const uiAction = recordName('test.recordName', true)
-      const { invoke } = await arrange({ uiActions: [uiAction] })
+      const { invoke } = await arrange({ uiActions: [uiAction], recorder: new Recorder() })
 
       expect(invoke.available(uiAction)).toBe(true)
     })
@@ -413,6 +435,7 @@ describe('Invoke', () => {
             [RenameDesign, buildName('Corne')],
             [uiAction, buildName('Lily58')],
           ],
+          recorder: new Recorder(),
         }),
       ).resolves.toMatchObject({ invoke: expect.any(Invoke) })
     })

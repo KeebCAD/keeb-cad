@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { TYPES_OUTSIDE_TYPES_TS } from '../../eslint.config'
 import { restrictedSyntax } from './restricted-syntax'
 import { COLD_CONFIG_TIMEOUT } from './cold-config-timeout'
 
-const TYPES = TYPES_OUTSIDE_TYPES_TS.message
+const TYPES =
+  "Declare types in this folder's types.ts. A type paired with a same-named value joins PAIRED_TYPES in eslint.config.ts."
 
 describe('types live in types.ts', { timeout: COLD_CONFIG_TIMEOUT }, () => {
   it.each([

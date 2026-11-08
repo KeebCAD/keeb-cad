@@ -3,8 +3,7 @@ import { configDefaults, defineConfig } from 'vitest/config'
 import { playwright } from '@vitest/browser-playwright'
 import { browserInstances } from '../../tooling/vitest/browser-instances'
 
-// The Vue bridge's specs touch the DOM, so they run in real browsers (AD-26, Verification
-// layer 2). di's root specs run on Node, in the root config's `di` project.
+// The Vue bridge's specs touch the DOM, so they run in real browsers. di's root specs run on Node, in the root config's `di` project.
 export default defineConfig({
   // Pre-bundle up front: a mid-run re-bundle leaves the browser with two copies of the runner.
   optimizeDeps: { include: ['vue', 'ts-pattern'] },

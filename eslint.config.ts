@@ -27,7 +27,7 @@ const IGNORED = [
   // Stryker's sandboxes and reports.
   '.stryker-tmp/**',
   'reports/**',
-  // Deliberate AD-10 violations, cruised by tooling/ad10/rules.spec.ts.
+  // Deliberate dependency-rule violations, cruised by tooling/ad10/rules.spec.ts.
   'tooling/ad10/violations/**',
   // Ergogen's input and output, committed verbatim.
   'reference-designs/corney-island/source/**',
@@ -55,13 +55,13 @@ const NODE_FILES = [
 // only within one file.
 const PAIRED_TYPES = ['Result', 'Option']
 
-export const TYPES_OUTSIDE_TYPES_TS = {
+const TYPES_OUTSIDE_TYPES_TS = {
   selector: `:matches(TSTypeAliasDeclaration, TSInterfaceDeclaration):not([id.name=/^(${PAIRED_TYPES.join('|')})$/])`,
   message:
     "Declare types in this folder's types.ts. A type paired with a same-named value joins PAIRED_TYPES in eslint.config.ts.",
 }
 
-export const ENTRY_RE_EXPORTS_ONLY = {
+const ENTRY_RE_EXPORTS_ONLY = {
   selector:
     'Program > :not(ExportAllDeclaration, ExportNamedDeclaration[source], ExportNamedDeclaration[declaration=null][specifiers.length=0])',
   message:
@@ -81,7 +81,7 @@ const inSpecScope = (selector: string) =>
   `:matches(${SPEC_SCOPES.map((scope) => `${scope} > ${selector}`).join(', ')})`
 const EMPTY_CONTAINER =
   'ArrayExpression[elements.length=0], ObjectExpression[properties.length=0], NewExpression[callee.name=/^(Map|Set|WeakMap|WeakSet|Array)$/]'
-export const SHARED_SPEC_STATE = [
+const SHARED_SPEC_STATE = [
   {
     selector: inSpecScope('VariableDeclaration[kind=/^(let|var)$/]'),
     message:
@@ -118,7 +118,7 @@ const ARBITRARY_VALUE_PATTERN = `^(?:(?:${PLAIN}|${BRACKETED})*:)*${PLAIN}*(?:${
 
 // Test-rule bans ported from the ninja-testing plugin's test-lint (MIT, Copyright (c) 2026 Illya
 // Klymov); the behaviours, not its code.
-export const SNAPSHOT_MESSAGE = 'Assert data explicitly; snapshots are not used here.'
+const SNAPSHOT_MESSAGE = 'Assert data explicitly; snapshots are not used here.'
 const SNAPSHOT_MATCHERS = [
   'toMatchSnapshot',
   'toMatchInlineSnapshot',
@@ -134,10 +134,10 @@ const RESTRICTED_MATCHERS = Object.fromEntries(
   ),
 )
 
-export const MODULE_MOCK_MESSAGE =
+const MODULE_MOCK_MESSAGE =
   'Substitute through di: register a fake in the container instead of mocking a module.'
 
-export const TRY_IN_TEST = {
+const TRY_IN_TEST = {
   selector:
     'CallExpression:matches([callee.name=/^(it|test)$/], [callee.object.name=/^(it|test)$/], [callee.callee.object.name=/^(it|test)$/]) > :function TryStatement',
   message: 'No try in a test; assert a throw as `expect(() => fn()).toThrow(…)`.',
@@ -145,14 +145,14 @@ export const TRY_IN_TEST = {
 
 // Inline config is ignored, so an exception is a file override here, where its reason is reviewed
 // with the rest of the config.
-export const TEST_ID_MESSAGE =
+const TEST_ID_MESSAGE =
   'Find elements by role, then label, then text. A test id is a last resort, behind a file override in eslint.config.ts whose comment gives the reason.'
 
 // A runtime project skips a type spec, so a runtime assertion there would never run.
-export const TYPE_SPEC_MESSAGE =
+const TYPE_SPEC_MESSAGE =
   'A *.types.spec.ts runs only in its types project, where `expect`, `assert` and `should` never run; assert with expectTypeOf, or move the test to a runtime spec.'
 
-export const SERVICE_IMPORT_MESSAGE =
+const SERVICE_IMPORT_MESSAGE =
   "A component reaches services only through editor's composables; import a composable instead of di or di/vue."
 
 export default defineConfigWithVueTs(

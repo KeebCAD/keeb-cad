@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { SNAPSHOT_MESSAGE } from '../../eslint.config'
 import { COLD_CONFIG_TIMEOUT } from './cold-config-timeout'
 import { ruleMessages } from './rule-messages'
 
 const SPEC = 'packages/x/src/a.spec.ts'
+const expectedMessage = 'Assert data explicitly; snapshots are not used here.'
 const inTest = (assertion: string) => `it('a', async () => {\n  ${assertion}\n})`
 const snapshotMatchers = (code: string) => ruleMessages('vitest/no-restricted-matchers', code, SPEC)
 
@@ -19,7 +19,7 @@ describe('no snapshot matchers in a spec', { timeout: COLD_CONFIG_TIMEOUT }, () 
     ['a resolved snapshot', 'await expect(p).resolves.toMatchSnapshot()'],
     ['a rejected snapshot', 'await expect(p).rejects.toThrowErrorMatchingInlineSnapshot()'],
   ])('rejects %s', async (_, assertion) => {
-    expect(await snapshotMatchers(inTest(assertion))).toEqual([SNAPSHOT_MESSAGE])
+    expect(await snapshotMatchers(inTest(assertion))).toEqual([expectedMessage])
   })
 
   it.each([

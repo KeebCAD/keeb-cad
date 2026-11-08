@@ -37,6 +37,7 @@
 - source_plan: `AGENTS.md` (Tests: the priority packages)
   summary: When slicing the first story that puts logic into `pcb`, `plates`, `case` or `exports`, add to its `verify` "Sergii approves each test name in <package>'s first specs against its expects before merge.", as 23.3 (design-file) and 23.5 (storage) carry.
   evidence: 2026-11-04 testing-rules adoption; those four packages have no sliced story that adds logic yet (plates-to-dxf entry 3 builds the registry in pipeline; tray-case, own-case-operations, parts-and-pcb and nets-and-matrix are unsliced).
+  owner: the first story with logic in `pcb`, `plates`, `case` or `exports`.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-test-harness-enforces-agents-md-s-test-rules-plan.md`
   summary: Decide whether to ban loops, switch, ternaries and nested ifs around expect in specs, beyond vitest/no-conditional-in-test's top-level if.
   evidence: @vitest/eslint-plugin 1.6.28 index.mjs:2681 reports only an IfStatement whose grandparent's parent is the it/test call; AGENTS.md says no if or loop around expect. A wider selector is a new rule, so it goes to Sergii.
@@ -57,6 +58,7 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-a-new-design-writes-and-reads-back-byte-identical-plan.md`
   summary: Story 15's plan sketch of a test action declares its input schema inline and its input type by hand, against AGENTS.md's three-file entry shape.
   evidence: precedent `story-commands-and-actions-become-di-classes-plan.md`, line `static readonly input = v.object({ design: v.unknown() })`; rule `The class's static input points at the schema; implements and apply use the type.` (23.3 conformance review)
+  closed: 2026-11-08, stale: `git grep "static readonly input = v\."` finds nothing; no entry declares its input inline.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-a-new-design-writes-and-reads-back-byte-identical-plan.md`
   summary: Per-entry generic checks (caller's input not frozen, no proxy in the design, over every registered entry that writes the design) move to 13.2; decide there whether they live in `commands` (where the input schemas are) or `app`.
@@ -66,111 +68,142 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-a-new-design-writes-and-reads-back-byte-identical-plan.md`
   summary: Two replaceDesign tests in packages/design/src/store/design-store.spec.ts assert more than their names claim (the commit event, the caller's input unfrozen, nothing committed).
   evidence: precedent tests `loads a valid design deeply frozen, with the next seq and its revision` and `refuses an invalid design with its issue paths`; rule `Make a test's name and its expects claim the same thing.` 23.3 renames or splits them as they move (conformance pass 6).
+  closed: 2026-11-08, stale: the named tests no longer exist; the store spec's current `replaceDesign` test names claim what they assert.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/party-mode` (party session 2026-11-05, test builders and deferred work)
   summary: The guard checks paths only on Edit, Write and MultiEdit (`EDIT_TOOLS` in `tooling/hooks/guard-decision.ts`), so a Bash edit (`sed -i`, a heredoc, `cat >`) to a runner, mutation, lint or dependency-cruiser config, or a snapshot, never reaches `ASKED_PATHS` or `DENIED_PATHS`.
   evidence: `guardDecision` returns only `DENIED_COMMANDS` for Bash; agent instructions allow small edits through Bash. Closing it means recognising writes to a path inside a shell command, which a regex can only approximate.
+  closed: 2026-11-08, accepted (Sergii): the guard stays on the edit tools; AGENTS.md's ban on editing runner or mutation config covers the rest.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-specs-build-schema-values-with-test-builders-plan.md`
   summary: No check proves `only-tests-import-testing` catches a bare `@keeb-cad/<pkg>/testing` import after dependency-cruiser resolves it to `packages/<pkg>/src/testing/index.ts`; the violation tree has no node_modules, so its bare imports stay unresolved.
   evidence: 23.17 review finding 5; `tooling/ad10/rules.spec.ts` notes the tree's bare imports stay unresolved; the gap predates 23.17 for result/testing, and a real-repo cruise like the editor's Vue check would close it.
+  closed: 2026-11-08, settled by a run: `depcruise` of a temporary `packages/editor/src/zz-probe.ts` importing `@keeb-cad/result/testing` reported `only-tests-import-testing: packages/editor/src/zz-probe.ts → packages/result/src/testing/index.ts`.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-tests-and-lint-close-the-silent-green-shortcuts-plan.md`
   summary: `tooling/ad10/rules.spec.ts`'s `gives every non-kernel row di, reactive and result, and no kernel any` asserts only plates and four kernels, so its name claims more than its expects.
   evidence: precedent line `expect(allowedTargets('plates')).toEqual(expect.arrayContaining(['di', 'reactive', 'result']))`; rule `Make a test's name and its expects claim the same thing.` (23.18 conformance review)
+  closed: 2026-11-08, fixed by the refactor sweep: `it.each` rows cover the eight kernels and every other row.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-tests-and-lint-close-the-silent-green-shortcuts-plan.md`
   summary: Decide whether a `*.types.spec.ts` may import assertion helpers (`expectOk`, `expectErr`, `expectDeeplyFrozen`, `expectNothingFrozen`) from a `testing` subpath, since their `expect` never runs there and a test with `expectTypeOf` beside one passes lint and the suite.
   evidence: 23.18 review pass 2; `keeb-cad/type-specs` bans only `expect`, `assert` and `should` from `vitest`; banning the helpers is a new rule, so it goes to Sergii.
+  closed: 2026-11-08, accepted (Sergii): no lint ban on `testing` assertion helpers in type specs; AGENTS.md's `expectTypeOf only` stays the guard.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-ui-foundation-renders-in-the-workbench-plan.md`
   summary: `packages/editor/vitest.config.ts` carries a comment with an AD reference that restates a rule.
   evidence: precedent line `// DOM tests run in real browsers, never a simulation (AD-26, Verification layer 2).`; rule `Write a comment only for a why the code can't say. No AD-n or ticket references` (23.6 conformance review).
+  closed: 2026-11-08, fixed by the refactor sweep: AD reference removed.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-ui-foundation-renders-in-the-workbench-plan.md`
   summary: `.dependency-cruiser.mts` rule comments and code comments carry AD-n references.
   evidence: precedent lines `// @vue/reactivity is not Vue for this rule: it belongs to \`reactive\` alone (AD-10).` and `'Only design imports immer: its register and design/worker (AD-2).'`; rule `No AD-n or ticket references` (23.6 conformance review).
+  closed: 2026-11-08, fixed by the refactor sweep: AD-n references removed from comments and rule comments.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-ui-foundation-renders-in-the-workbench-plan.md`
   summary: `eslint.config.ts` carries a comment with an AD reference.
   evidence: precedent line `// Deliberate AD-10 violations, cruised by tooling/ad10/rules.spec.ts.`; rule `No AD-n or ticket references` (23.6 conformance review).
+  closed: 2026-11-08, fixed by the refactor sweep: AD reference removed.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-ui-foundation-renders-in-the-workbench-plan.md`
   summary: `tooling/lint/no-test-ids.spec.ts` takes its expected message from the config's own exported constant and mixes `stringContaining` with exact matches, so rewording the message fails no test.
   evidence: precedent lines `import { TEST_ID_MESSAGE } from '../../eslint.config'` and `toEqual([expect.stringContaining(TEST_ID_MESSAGE)])`; rule `Take expected values from the requirement (the ticket, the plan's boundary table), never from running the code.` (23.6 conformance review).
+  closed: 2026-11-08, fixed by the refactor sweep: the spec writes the message out; `eslint.config.ts` no longer exports it. `stringContaining` stays only where ESLint prefixes the configured message with its own text.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-ui-foundation-renders-in-the-workbench-plan.md`
   summary: `tooling/lint/rule-messages.ts` holds a module-level `ESLint` instance its two helpers reach for, and its doc comments restate the signatures.
   evidence: precedent lines `const eslint = new ESLint({ cwd: fileURLToPath(new URL('../..', import.meta.url)) })` and `/** The messages \`ruleId\` reports under the real config for \`code\` at \`filePath\`. */`; rules `Hold state in \`di\` services, never in a module-level singleton that functions reach for.` and `Write a comment only for a why the code can't say. … no restating a signature` (23.6 final conformance pass).
+  closed: 2026-11-08, fixed by the refactor sweep: `ESLint` is built inside `lintResult`; the doc comments are gone.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
   summary: Build `messaging`'s request side (pending requests, the typed `stale` reply to a request dropped as stale, reject all pending on a worker restart) with the first story that adds a request kind, and update 23.4's ticket wording ("stale rejection").
   evidence: Sergii's 23.4 decision (2026-11-07): no request kind exists yet, and how a pending caller receives `stale` (no `Result` crosses; `messaging` can't import `result`) needs a consumer to settle.
+  owner: the first story that adds a request kind.
+  note: since 2026-11-08 each kernel but `result` may import `result` (spine, `.dependency-cruiser.mts`), so the evidence's `messaging` can't import `result` no longer holds.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
   summary: `tooling/ad10/rules.spec.ts` keeps mutable state at module level (the generated temp tree and its cruise promise) and computes expected values the way the config does (`forbiddenTarget(row)`, `expect(reported).toEqual(configured)`).
   evidence: precedent lines `const generatedDir = mkdtempSync(path.join(tmpdir(), 'keeb-cad-ad10-'))` and `const generated = cruiseWithConfig(['packages', 'app', 'fixtures'], generatedDir)`; rules `Keep no mutable state at module level in a spec` and `no expected value computed the way production computes it` (23.4 conformance review).
+  closed: 2026-11-08, fixed and decided by the refactor sweep: the generated tree and its cruise are a `const` in an outer `describe`; the computed expected values stay, because AGENTS.md says rules.spec proves the rows from the `GRAPH` table (its plan's Decision), with literal kernel rows.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
   summary: Root `vitest.config.ts` and `packages/di/vitest.config.ts` carry comments with AD-n or Verification-layer references.
   evidence: precedent lines `// The AD-10 violation tree holds a deliberate *.spec.ts fixture, not a test.` and `// di's root specs touch no DOM, so they run on Node (Verification layer 2)`; rule `No AD-n or ticket references` (23.4 conformance review).
+  closed: 2026-11-08, fixed by the refactor sweep: AD-n and Verification-layer references removed.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
   summary: The spine still names the stale reply as built and tested in `messaging` (AD-11 "a typed `stale` rejection reply …", "each needs a `messaging` test"; Structural Seed "stale rejection"); fold in Sergii's 23.4 deferral of the request side (bmad-architecture).
   evidence: 23.4 final conformance pass, finding 13; Sergii's decision 2026-11-07.
+  owner: the first story that adds a request kind (with its bmad-architecture fold).
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
   summary: `packages/design/src/store/design-store.spec.ts` asserts a rejection by identity where the requirement is only its value.
   evidence: precedent line `expect(result.error).toBe(rejection)` in `refuses with the rejection the apply step returns and discards its draft`; rule `Assert whole values (toEqual, toMatchObject)` (23.4 final conformance pass, low confidence).
+  closed: 2026-11-08, fixed by the refactor sweep: `toEqual`.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
   summary: The browser Vitest configs for `messaging`, `workers`, `pipeline` and `app` don't pre-bundle their dependencies (`optimizeDeps.include`), which `packages/di/vitest.config.ts` does to avoid a mid-run re-bundle.
   evidence: unverified (would be medium): 23.4's whole-suite log shows no re-optimization; a cold-cache run with `node_modules/.vite` cleared, watching for "new dependencies optimized", would settle it; `app`'s entry spec polls 10 s for the worker's first transform.
+  closed: 2026-11-08, settled by a run: with every `.vite` cache cleared, `pnpm test` (298 files, 2719 tests) logged no `new dependencies optimized`; no config change.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
   summary: `app/src/start-model-worker.ts` attaches its listener only after `await container.autoLoad()`, so a truly async eager binding could let main's first `design` arrive with no listener and be lost.
   evidence: unverified (would be medium): AD-25 prescribes this order and it works today; settled by checking whether Chromium and Firefox queue a module worker's messages until its top-level evaluation finishes.
+  owner: the first story that adds an async eager binding to the worker container; today's `autoLoad` delay is one microtask.
+  note: settled 2026-11-08 by a scratch Playwright run: a module worker that awaited a 200 ms timer before listening lost the message main posted at once, in Chromium and Firefox; the same worker without the await received it. Browsers do not queue past top-level await.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-model-worker-mirrors-the-design-plan.md`
   summary: When 23.7 first calls `ModelWorkerLifecycle.start(spawn)` from `start-main.ts`, `app/vite.config.ts` must set `worker: { format: 'es' }`, not Vite's default `'iife'`, because `app/src/start-model-worker.ts` awaits `autoLoad()` at top level, which an `iife` worker bundle can't hold.
   evidence: 23.4 sets `worker.format: 'es'` only in `app/vitest.config.ts` (its final conformance pass dropped the `vite.config.ts` change as unused until a production spawn exists); 23.7's ticket doesn't mention it; Vite docs: `worker.format` default `'iife'`.
+  closed: 2026-11-08, stale: `app/vite.config.ts` sets `worker: { format: 'es' }`.
 
 - source_plan: `_bmad-output/architecture-keeb-cad-layout-model/reviews/review-adversary-2026-11-07-batch.md`
   summary: The story that fills the case worker (OCCT/replicad glue, quickjs-wasi's WASM) builds and starts it under `worker.format: 'es'`, which 23.7 sets for every worker; 23.7 checks only the model worker, the one it spawns.
   evidence: adversary gate L6 (`worker.format 'es'` is global to Vite's worker build); `app/src/case.worker.ts` is a stub today.
+  owner: the story that fills the case worker.
 
 - source_plan: `_bmad-output/architecture-keeb-cad-layout-model/reviews/review-reconcile-tickets-2026-11-07-batch.md`
   summary: The first story that declares a blueprint input of kind `quantity` codes model/main's `checkInputs` check of its unit and literal against the pinned `DeclaredInput.unit` and its `range` (not below 0 is `range.min`; `negative-length` never reaches inputs), with rows just below, on and just above a range bound.
   evidence: spine gate M7 (2026-11-07) and the Data Schema's `InputValue` comment; 13.4's choc-key `size` input is an option, so no M1 ticket names a quantity input yet.
+  owner: the first story that declares a quantity input.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-a-new-design-autosaves-and-reopens-from-the-browser-plan.md`
   summary: Settle in the spine how editor's banner (16.x) reads autosave's failure state, since autosave lives in app and AD-10 says nothing imports app (move autosave to commands, or a token row in AD-25).
   evidence: 23.5's gap reader, 2026-11-07; Sergii chose to defer it to 16.x's spine pass, since nothing in 23.5 reads the state.
+  owner: 16.x, at its spine pass.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-a-new-design-autosaves-and-reopens-from-the-browser-plan.md`
   summary: Drop from 23.5's verify the sentence "in Chromium a write refused under a quota lowered with cdp()'s Storage.overrideQuotaForOrigin returns quota-exceeded (…)", and reword "a load with a missing routing file saves no reset version" to the unit level (a bundle without routing handed to the load flow), since storage holds all three files.
   evidence: Sergii, 2026-11-07, during 23.5's build (J1, J5): storage keeps full BundleTexts; the quota browser test is dropped because the mapping's Node rows and the memory backend cover it (spine AD-13 updated). The build never writes a ticket file, so the PO folds this in.
+  closed: 2026-11-08, stale: folded into the ticket tree, per the 2026-11-07 fold entry.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-a-new-design-autosaves-and-reopens-from-the-browser-plan.md`
   summary: Reword 23.5's verify "a reset save refused for space while an autosave version remains drops the oldest autosave version and succeeds" to "while two autosave versions remain … drops the older", since a quota prune never drops a design's newest version.
   evidence: Sergii, 2026-11-07, 23.5 review Q1 (spine 8dbe213): a design must never lose its last stored copy. The build never writes a ticket file, so the PO folds this in.
+  closed: 2026-11-08, stale: folded into the ticket tree, per the 2026-11-07 fold entry.
 - source_plan: none
   summary: Split from 23.7, its own story after it: editor's UiAction mechanism (UiAction classes, registerUiAction, the uiActions multi token), design's CommandHandle and ActionHandle gaining an optional static hotkeys, editor's one shortcut registry feeding the hotkey layer, and the one invoke path with per-entry input builders, with 23.7's two hotkey verify sentences.
   evidence: Sergii chose Split at 23.7's multi-goal check (2026-11-07): it can be reviewed and merged as its own PR once 23.7 hands the container to editor. The build never writes a ticket file, so the PO slices it.
+  closed: 2026-11-08, stale: folded as 23.19, per the 2026-11-07 fold entry.
 - source_plan: none
   summary: Split from 23.7, its own story after it: the idempotent dev-only devtools.ts with a build check that the production bundle holds none of it, and the lint rule rejecting a component that imports a service as a value, with 23.7's two verify sentences for them.
   evidence: Sergii chose Split at 23.7's multi-goal check (2026-11-07): neither is needed for launch to open a design. The build never writes a ticket file, so the PO slices it.
+  closed: 2026-11-08, stale: folded as 23.20, per the 2026-11-07 fold entry.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-app-opens-the-last-design-plan.md`
   summary: `app/src/autosave/autosave.spec.ts`'s `arrange` resolves `store`, `storage`, `autosave`, `lifecycle` and `flow` for every test (`return { store: container.resolve(DesignStore), storage: …, autosave: …, lifecycle: …, flow: … }`), against AGENTS.md's "Arrange only what the test uses, passed as arguments to an `arrange` helper"; 23.7's new `reportFailure` test arranges only what it uses.
   evidence: 23.7's plan conformance reader (precedent check), 2026-11-07.
+  closed: 2026-11-08, fixed by the refactor sweep: `arrange` returns the container and each test resolves what it uses.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-app-opens-the-last-design-plan.md`
   summary: Reword 23.7's "When load or listDesigns returns storage-unavailable, launch opens a new, unsaved design and sets autosave's failure state to that error" to "… launch opens a new design, whose failed autosave sets autosave's failure state", and its verify to match.
   evidence: Sergii, 2026-11-07, 23.7's plan (gap reader, reachable states): the new design's own failed save sets the same state, so a launch-side setter is unobservable. The build never writes a ticket file, so the PO folds this in.
+  closed: 2026-11-08, stale: folded into the ticket tree, per the 2026-11-07 fold entry.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-app-opens-the-last-design-plan.md`
   summary: `packages/commands/src/design/new-design.spec.ts` registers a fake `DesignStore` and asserts `expect(handed).toEqual([…])`, what the fake was handed, against AGENTS.md's "Assert what a function returns or a visible effect; use `toHaveBeenCalled*` only when the call is the behaviour"; the real store's `current` is the visible effect.
   evidence: 23.7's final conformance pass (precedent check), 2026-11-07; 23.7's OpenStoredDesign spec asserts on `current`.
+  closed: 2026-11-08, fixed by the refactor sweep: the spec uses the real store and asserts `current`.
 - source_plan: none
   summary: Folded into the ticket tree on 2026-11-07 (Sofia's replan after 23.7's split): the two 23.7 split-offs (now 23.19 and 23.20), 23.7's failure-state rewording, 23.5's cdp() quota and missing-routing rewording, and 23.5's keep-the-newest prune rewording. These entries above need no further action.
   evidence: epic-a-new-design-opens.md Notes, Decision 2026-11-07 (replan after 23.7's build split).
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-uiactions-and-the-shortcut-registry-run-every-hotkey-plan.md`
   summary: A handle has no way to keep its hotkey on inside a focused field; `ui`'s `HotkeyLayer` registers every entry with `enableOnFormTags: false`, while EXPERIENCE.md › Shortcuts keeps "Ctrl+K, Ctrl+S, Ctrl+Shift+S, Ctrl+O and Ctrl+Z / Ctrl+Shift+Z" global with a field focused.
   evidence: Found at 23.19's plan checkpoint (2026-11-07); no 23.19 entry needs it, 16.4's mod+Z is the first. Sergii approved leaving it out of 23.19.
+  owner: 16.4.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-uiactions-and-the-shortcut-registry-run-every-hotkey-plan.md`
   summary: `packages/editor/src/App.vue`'s `.editor-shell__bar` sets `border-bottom: 1px solid #ccc;`, a literal colour, against AD-26's design tokens; 23.19 touches `App.vue` only to call `useShortcuts()` and leaves it.
   evidence: 23.19's plan conformance reader (precedent check), 2026-11-07.
@@ -190,42 +223,61 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-editor-frame-shows-the-design-plan.md`
   summary: Split from 23.8, its own story after it: the status strip's contents (error and warning counts from issues held with their seq, dimmed with ◌ while behind, 0 before the first; the running stage past 1000 ms with whole seconds and Restart; failed: <message> naming the stage) with the workers changes they read (issues with seq, the running stage with its arrival time, ModelWorkerStatus widened to WorkerFailed { message, stage? }, the ErrorEvent message or a fixed text, the crash count reset only by an issues post, never by stage-started or derived-files) and the RestartModelWorker action in commands, with 23.8's verify sentences for them.
   evidence: 23.8's plan was about 5,100 tokens without its boundary table, over the 3,000 cap; Sergii chose the split on 2026-11-08. 23.8 keeps the frame (top bar, tabs with URL and focus, rail and Tree slide-out, canvas hints, inspector region, F6 regions, the strip as an empty region). Tickets not done that name 23.8 or a split-off term: 13.7 (epic-see-corneys-keys/tickets/tickets.toml:129, after = ["23.8", 22]; "feeds the status strip's cursor coordinates … added to 23.8's" strip, and "the status strip showing updating"); epic-routing-and-fab's story 2 (epic-routing-and-fab/tickets/tickets.toml:16, "after the model worker's crash cap every model-worker stage counts as failed … until Restart"); epic-keep-my-work's undo/redo story (epic-keep-my-work/tickets/tickets.toml:22–25, after = [1, "14.1", "23.19", "23.8"], "on 23.8's top bar", the frame half, which stays in 23.8); 23.8's own entry (epic-a-new-design-opens/tickets/tickets.toml:238–239) still carries the split-off description and verify sentences.
+  closed: 2026-11-08, stale: built as 23.23 (#39).
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-editor-frame-shows-the-design-plan.md`
   summary: The empty Layout hint writes `G` and `Ctrl+K` out by hand; 13.7 (Add group) and the palette story render them from their handles' `hotkeys` through `formatHotkey`.
   evidence: 23.8's Decision (Sergii): no Add group or palette entry exists yet to read them from; AD-26 "Every `kbd` hint is formatted by its formatter".
+  owner: 13.7 (Add group) and the palette story.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-editor-frame-shows-the-design-plan.md`
   summary: `packages/editor/src/invoke/invoke.spec.ts` repeats its `unavailable` assertion in about seven tests, and its `arrange` registers `container.register(Recorder).useClass(Recorder)` for every test.
   evidence: AGENTS.md "Write a shared assertion once" and "Arrange only what the test uses, passed as arguments to an `arrange` helper"; 23.8's conformance pass.
+  closed: 2026-11-08, fixed by the refactor sweep: one `expectUnavailable`; `Recorder` is passed only by tests that use it.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-editor-frame-shows-the-design-plan.md`
   summary: `packages/workers/src/model-worker/model-worker-lifecycle.spec.ts`'s `arrange` runs `registerCommand(container, RenameDesign)` for every test.
   evidence: AGENTS.md "Arrange only what the test uses, passed as arguments to an `arrange` helper"; 23.8's conformance pass.
+  closed: 2026-11-08, fixed by the refactor sweep: `RenameDesign` is registered only for tests that run it.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-editor-frame-shows-the-design-plan.md`
   summary: `ui`'s hotkey layer calls `preventDefault()` on every matched key, so a key whose entry is unavailable (Esc with the slide-out closed, 1 at layout) is swallowed.
   evidence: `packages/ui/src/hotkeys/hotkey-layer.ts` prevents before the registry asks `available`; 23.8 adds Escape, F6 and 1–5 as UiAction hotkeys.
+  owner: 16.4, the first chord.
+  note: AD-26 says `Alt+arrow and every Ctrl chord call preventDefault`.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-editor-frame-shows-the-design-plan.md`
   summary: Editor browser specs run at a 1366x768 page viewport, while DESIGN.md › Layout specifies "a 1366×768 minimum laptop viewport (1366×696 inside the browser)", so no test checks the shell at the 696px-high page.
   evidence: 23.8's ticket and boundary row say 1366x768 and its shell-boxes row expects a 1002x696 canvas; at DESIGN's 1366×696 page the canvas would be 624 high. The shell is flex, so nothing breaks today; a ticket or DESIGN wording fix settles which height is meant.
+  closed: 2026-11-08, decided (Sergii): editor browser specs run at a 1366×696 page, the inside of the browser DESIGN.md names; the canvas row is 1002×624.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-editor-frame-shows-the-design-plan.md`
   summary: Editor specs' `afterEach(resetColorScheme)` runs before `mountShell`'s `onTestFinished` unmounts the app, so VueUse's `useColorMode` listener may write `data-theme` back after the reset (medium, unverified).
   evidence: Vitest runs `onTestFinished` after `afterEach`; settle it with a run that reads `document.documentElement.dataset.theme` after teardown, or by resetting inside the unmounting `onTestFinished`. Seen green on three shuffled runs.
+  closed: 2026-11-08, settled by a run and fixed: a probe read `data-theme="light"` after teardown in 1 of 24 tests, so the reset moved into the unmounting `onTestFinished`; the probe then read none in 72 of 72.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-status-strip-shows-the-model-worker-s-state-plan.md`
   summary: The violations-panel story answers whether `failed:` also shows in that panel (Sofia's pick: no).
   evidence: EXPERIENCE.md's Output states row says the message is "also in the violations panel"; epic-a-new-design-opens leaves that panel to epic-change-a-parameter.
+  owner: the violations-panel story.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-status-strip-shows-the-model-worker-s-state-plan.md`
   summary: bmad-ux reconciles EXPERIENCE.md's Output states `◌` for `waiting for edit to finish` and `rebuilding N%` with AD-11.
   evidence: 23.23 builds to the spine's glyphs (`◌` on behind counts, the running stage as `parts 2 s`), because no live stage posts a percent (Decision (Sergii)).
+  owner: `bmad-ux`.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-status-strip-shows-the-model-worker-s-state-plan.md`
   summary: 13.17/13.18 add the non-zero severity row to the status strip's counts.
   evidence: 23.23 tests only zero counts: "only zero counts can be posted, so this story tests zero and dimmed zero"; AGENTS.md "Arrange only a state real commands could reach".
+  owner: 13.17/13.18.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-status-strip-shows-the-model-worker-s-state-plan.md`
   summary: `packages/editor/src/design/use-open-design.ts:9` holds an `Option` in a computed.
   evidence: AD-24: "A value that is stored (a computed, a ref) … is unwrapped first".
+  closed: 2026-11-08, fixed by the refactor sweep: returns `Frozen<Design> | undefined`.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-status-strip-shows-the-model-worker-s-state-plan.md`
   summary: `packages/workers/src/model-worker/model-worker-lifecycle.spec.ts`'s `arrange` runs `registerCommand(container, RenameDesign)` for every test.
   evidence: AGENTS.md "Arrange only what the test uses"; 23.23's new rows arrange only what they use.
+  closed: 2026-11-08, fixed by the refactor sweep: `RenameDesign` is registered only for tests that run it.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-status-strip-shows-the-model-worker-s-state-plan.md`
   summary: `model-worker-lifecycle.spec.ts`'s `aViolation` literal has no `schema/testing` builder; the first violation kind's story adds it.
   evidence: AGENTS.md "Build schema values the test doesn't read with the concept's test builder".
+  owner: the first violation kind's story.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-devtools-inspect-services-and-commands-in-development-plan.md`
   summary: `packages/editor/src/invoke/invoke.spec.ts` registers its `Recorder` in `arrange` for every test, including tests that never read it.
   evidence: offending line `container.register(Recorder).useClass(Recorder)`; rule `Arrange only what the test uses, passed as arguments to an `arrange` helper`. 23.22's new rows take it as an argument; the existing rows are left as they are.
+  closed: 2026-11-08, fixed by the refactor sweep: `Recorder` is passed only by tests that use it.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-refactor-sweep-plan.md`
+  summary: Fold into 23.8's ticket wording that editor browser specs run at a 1366×696 page and the shell-boxes row's canvas is 1002×624, not 1366×768 and 1002×696.
+  evidence: Sergii, 2026-11-08, the refactor sweep's plan: `DESIGN.md` says `1366×768 minimum laptop viewport (1366×696 inside the browser)` and the page a test renders is the inside of the browser. The build never writes a ticket file, so the PO folds this in.
+  owner: the PO (Sofia).

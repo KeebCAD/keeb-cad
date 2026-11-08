@@ -49,11 +49,12 @@ class RenameDesign implements Command<RenameDesignInput> {
 interface Arrangement {
   loaded?: boolean
   renamed?: boolean
+  renamable?: boolean
 }
 
-async function arrange({ loaded = false, renamed = false }: Arrangement = {}) {
+async function arrange({ loaded = false, renamed = false, renamable = false }: Arrangement = {}) {
   const container = new Container().addModule(designModule).addModule(workersModule)
-  registerCommand(container, RenameDesign)
+  if (renamed || renamable) registerCommand(container, RenameDesign)
   await container.autoLoad()
   const store = container.resolve(DesignStore)
   if (loaded) load(store)
@@ -177,7 +178,7 @@ describe('ModelWorkerLifecycle', () => {
 
   describe('sending', () => {
     it("forwards a command's patches at its seq and the current epoch", async () => {
-      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true, renamable: true })
       lifecycle.start(spawn)
 
       expectOk(store.run(RenameDesign, { name: 'Corne v2' }))
@@ -313,7 +314,7 @@ describe('ModelWorkerLifecycle', () => {
     })
 
     it('sends nothing for a commit while failed', async () => {
-      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true, renamable: true })
       lifecycle.start(spawn)
       latest(spawned).crash()
       latest(spawned).crash()
@@ -529,7 +530,7 @@ describe('ModelWorkerLifecycle', () => {
     })
 
     it('drops derived files below the latest seq', async () => {
-      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true, renamable: true })
       lifecycle.start(spawn)
       const before = committed(store)
       expectOk(store.run(RenameDesign, { name: 'Corne v2' }))
@@ -560,7 +561,7 @@ describe('ModelWorkerLifecycle', () => {
     })
 
     it('keeps its issues on a post below the latest seq', async () => {
-      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true, renamable: true })
       lifecycle.start(spawn)
       const { seq } = committed(store)
       latest(spawned).post(issuesAt(1, seq, [aViolation('first')]))
@@ -622,7 +623,7 @@ describe('ModelWorkerLifecycle', () => {
     })
 
     it('stays on an issues post below the latest seq', async () => {
-      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true, renamable: true })
       lifecycle.start(spawn)
       const { seq } = committed(store)
       expectOk(store.run(RenameDesign, { name: 'Corne v2' }))

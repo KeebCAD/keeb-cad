@@ -1,9 +1,9 @@
-// AD-10 dependency direction and AD-25's entry fences, enforced. The single source of truth for
+// Package dependency direction and entry fences, enforced. The single source of truth for
 // both the `pnpm depcruise` CLI step and tooling/ad10/rules.spec.ts.
 import { fileURLToPath } from 'node:url'
 import type { IConfiguration, IForbiddenRuleType } from 'dependency-cruiser'
 
-/** The eight kernels import no workspace package at all, `di` and `reactive` included (AD-10). */
+/** The eight kernels import no workspace package except `result`; `result` imports none at all. */
 export const KERNELS = [
   'expr',
   'reactive',
@@ -15,22 +15,22 @@ export const KERNELS = [
   'ui',
 ] as const
 
-/** Every other package may import these without a drawn edge (AD-10's open-kernel notes). */
+/** Every other package may import these without a drawn edge. */
 export const OPEN_KERNELS = ['di', 'reactive', 'result'] as const
 
 /**
- * AD-10's graph as data: each package (28 under packages/, plus `app` and `reference-designs`) and the
+ * The package graph as data: each package (28 under packages/, plus `app` and `reference-designs`) and the
  * packages it is drawn to. One `<package>-imports-only-drawn-edges` rule is generated per row.
  */
 export const GRAPH: Readonly<Record<string, readonly string[]>> = {
-  expr: [],
-  reactive: [],
-  messaging: [],
-  hashing: [],
-  geometry: [],
-  di: [],
+  expr: ['result'],
+  reactive: ['result'],
+  messaging: ['result'],
+  hashing: ['result'],
+  geometry: ['result'],
+  di: ['result'],
   result: [],
-  ui: [],
+  ui: ['result'],
   schema: ['expr'],
   blueprint: ['geometry', 'expr', 'schema', 'hashing'],
   drc: ['schema', 'geometry'],
@@ -154,7 +154,7 @@ const selfTarget = (name: string) =>
 /** An npm package target, by resolved node_modules path or by bare specifier. */
 export const npm = (names: string) => `(^|/)node_modules/(${names})/|^(${names})(/|$)`
 
-// @vue/reactivity is not Vue for this rule: it belongs to `reactive` alone (AD-10).
+// @vue/reactivity is not Vue for this rule: it belongs to `reactive` alone.
 const VUE_NAMES = 'vue|vue-router|pinia|@vue/(?!reactivity(?:/|$))[^/]+'
 export const VUE = String.raw`${npm(VUE_NAMES)}|\.vue$`
 export const VUEUSE = npm('@vueuse/core')
@@ -189,7 +189,7 @@ const importsOnly = (name: string): IForbiddenRuleType => {
   const allowed = allowedTargets(name)
   return {
     name: `${name}-imports-only-drawn-edges`,
-    comment: `${name} imports ${allowed.length > 0 ? `only ${allowed.join(', ')}` : 'no workspace package'} (AD-10).`,
+    comment: `${name} imports ${allowed.length > 0 ? `only ${allowed.join(', ')}` : 'no workspace package'}.`,
     severity: 'error',
     from: { path: sourcePath(name) },
     // reference-designs belongs to reference-designs-only-in-tests, so nothing double-reports.
@@ -220,7 +220,7 @@ const entryOnlyRules = (): IForbiddenRuleType[] => {
     const verb = importers.length === 1 ? 'imports' : 'import'
     return {
       name: `${importers.join('-')}-${verb}-${target}-${sub === '.' ? 'root' : sub}-only`,
-      comment: `${importers.join(', ')} reach ${target} only through ${label} (AD-10).`,
+      comment: `${importers.join(', ')} reach ${target} only through ${label}.`,
       severity: 'error',
       from: { path: importers.map((i) => sourcePath(i)) },
       to: { path: ws(escape(target)), pathNot: entry(target, sub) },
@@ -285,12 +285,11 @@ const config: IConfiguration = {
       'vue',
       // di's own sources belong to di-root-reaches-no-vue, so a root → bridge import reports once.
       ['^packages/editor/', '^packages/di/src/'],
-      "Only editor imports di's Vue bridge (AD-25).",
+      "Only editor imports di's Vue bridge.",
     ),
     {
       name: 'di-root-reaches-no-vue',
-      comment:
-        "di's root never reaches its Vue bridge, so it stays Vue-free on every thread (AD-25).",
+      comment: "di's root never reaches its Vue bridge, so it stays Vue-free on every thread.",
       severity: 'error',
       from: { path: '^packages/di/src/', pathNot: '^packages/di/src/vue/' },
       // The whole bridge folder, so a future bridge-internal file stays fenced too, and the bare
@@ -300,7 +299,7 @@ const config: IConfiguration = {
     {
       name: 'model-root-and-main-reach-no-blueprint',
       comment:
-        "model reaches blueprint only through model/worker, so main's graph holds no blueprint (AD-10).",
+        "model reaches blueprint only through model/worker, so main's graph holds no blueprint.",
       severity: 'error',
       from: { path: String.raw`^packages/model/src/(index|main)\.ts$` },
       to: { path: ws('blueprint'), reachable: true },
@@ -308,7 +307,7 @@ const config: IConfiguration = {
     {
       name: 'main-entry-reaches-no-pipeline-stage-or-sandbox',
       comment:
-        "main's entry never reaches pipeline, a stage, blueprint or quickjs-wasi: main derives nothing (AD-25).",
+        "main's entry never reaches pipeline, a stage, blueprint or quickjs-wasi: main derives nothing.",
       severity: 'error',
       from: { path: MAIN_ENTRY },
       to: {
@@ -318,21 +317,21 @@ const config: IConfiguration = {
     },
     {
       name: 'worker-entries-reach-no-ui',
-      comment: 'No worker entry reaches ui, editor, di/vue or Vue (AD-25).',
+      comment: 'No worker entry reaches ui, editor, di/vue or Vue.',
       severity: 'error',
       from: { path: WORKER_ENTRIES },
       to: { path: [ws('ui|editor'), entry('di', 'vue'), VUE], reachable: true },
     },
     {
       name: 'case-worker-entry-reaches-no-model',
-      comment: "The case worker's entry never reaches model (AD-25).",
+      comment: "The case worker's entry never reaches model.",
       severity: 'error',
       from: { path: CASE_WORKER_ENTRY },
       to: { path: ws('model'), reachable: true },
     },
     {
       name: 'only-editor-ui-and-di-vue-import-vue',
-      comment: 'Only editor, ui and di/vue import Vue (AD-10).',
+      comment: 'Only editor, ui and di/vue import Vue.',
       severity: 'error',
       from: {
         pathNot: ['^packages/editor/', '^packages/ui/', '^packages/di/src/vue/'],
@@ -343,7 +342,7 @@ const config: IConfiguration = {
       'only-editor-and-ui-import-vueuse',
       ['^packages/editor/', '^packages/ui/'],
       VUEUSE,
-      'Only editor and ui import @vueuse/core (AD-10).',
+      'Only editor and ui import @vueuse/core.',
     ),
     onlyImports(
       'only-reactive-imports-vue-reactivity',
@@ -361,13 +360,13 @@ const config: IConfiguration = {
       'only-storage-browser-imports-dexie',
       '^packages/storage/src/browser/',
       npm('dexie'),
-      "Only storage's browser backend imports dexie (AD-13).",
+      "Only storage's browser backend imports dexie.",
     ),
     onlyImports(
       'only-design-imports-immer',
       '^packages/design/',
       npm('immer'),
-      'Only design imports immer: its register and design/worker (AD-2).',
+      'Only design imports immer: its register and design/worker.',
     ),
     onlyImports(
       'only-ui-imports-its-widget-libraries',
@@ -387,8 +386,7 @@ const config: IConfiguration = {
     ),
     {
       name: 'result-imports-no-npm-package',
-      comment:
-        'result imports no npm package; its specs and testing folder may import vitest (AD-10, AD-24).',
+      comment: 'result imports no npm package; its specs and testing folder may import vitest.',
       severity: 'error',
       from: { path: '^packages/result/', pathNot: [TEST_FILE, TESTING_FOLDER] },
       to: {

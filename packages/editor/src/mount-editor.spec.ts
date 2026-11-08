@@ -5,15 +5,13 @@ import type { Design } from '@keeb-cad/schema'
 import { aDesign, aMeta, anId } from '@keeb-cad/schema/testing'
 import { THEME_STORAGE_KEY } from '@keeb-cad/ui'
 import { workersModule } from '@keeb-cad/workers'
-import { afterEach, describe, expect, it, onTestFinished } from 'vitest'
+import { describe, expect, it, onTestFinished } from 'vitest'
 import { page } from 'vitest/browser'
 import { effectScope, type App } from 'vue'
 
 import { editorModule } from './editor-module'
 import { mountEditor } from './mount-editor'
 import { emulateColorScheme, resetColorScheme } from './testing/color-scheme'
-
-afterEach(resetColorScheme)
 
 async function arrange(design?: Design) {
   const container = new Container()
@@ -34,6 +32,7 @@ async function arrange(design?: Design) {
     root.remove()
     history.replaceState(null, '', location.pathname + location.search)
     await container.dispose()
+    await resetColorScheme()
   })
   const injector = container.resolve(InjectorToken)
   return { mount: () => scope.run(() => mountEditor('#editor-root', injector)) }

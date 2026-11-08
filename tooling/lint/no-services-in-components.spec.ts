@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { SERVICE_IMPORT_MESSAGE } from '../../eslint.config'
 import { COLD_CONFIG_TIMEOUT } from './cold-config-timeout'
 import { ruleMessages } from './rule-messages'
 
 const RULE = '@typescript-eslint/no-restricted-imports'
 const COMPONENT = 'packages/x/src/A.vue'
+
+const expectedMessage =
+  "A component reaches services only through editor's composables; import a composable instead of di or di/vue."
 
 const component = (imports: string) => `<script setup lang="ts">\n${imports}\n</script>\n`
 
@@ -17,7 +19,7 @@ describe('no services in components', { timeout: COLD_CONFIG_TIMEOUT }, () => {
     ['a side-effect import', "import '@keeb-cad/di/vue'"],
   ])('rejects %s in a component', async (_, imports) => {
     expect(await ruleMessages(RULE, component(imports), COMPONENT)).toEqual([
-      expect.stringContaining(SERVICE_IMPORT_MESSAGE),
+      expect.stringContaining(expectedMessage),
     ])
   })
 

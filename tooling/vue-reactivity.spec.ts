@@ -1,4 +1,4 @@
-// One reactive graph (AD-10): @vue/runtime-core pins @vue/reactivity exactly, so a second
+// One reactive graph: @vue/runtime-core pins @vue/reactivity exactly, so a second
 // installed copy would split the graph between the editor and the core. The catalog keeps
 // one number for both through a YAML alias; this proves the lockfile and the alias.
 import { readFileSync } from 'node:fs'

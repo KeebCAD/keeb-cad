@@ -8,7 +8,7 @@
     ".dependency-cruiser.mts",
     "tooling/**/*.ts"
   ],
-  // Deliberate AD-10 violations; cruised by tooling/ad10/rules.spec.ts, never compiled.
+  // Deliberate dependency-rule violations; cruised by tooling/ad10/rules.spec.ts, never compiled.
   "exclude": ["tooling/**/violations/**"],
   "compilerOptions": {
     "noEmit": true,

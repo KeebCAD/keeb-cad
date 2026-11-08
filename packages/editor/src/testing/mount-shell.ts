@@ -10,6 +10,7 @@ import { type App, effectScope } from 'vue'
 import { editorModule } from '../editor-module'
 import { Invoke } from '../invoke/invoke'
 import { mountEditor } from '../mount-editor'
+import { resetColorScheme } from './color-scheme'
 import type {
   MountedShell,
   RecordingShell,
@@ -64,6 +65,8 @@ export async function mountShell({
     root.remove()
     history.replaceState(null, '', location.pathname + location.search)
     await container.dispose()
+    // After the unmount: a mounted useColorMode would write data-theme back on the scheme change.
+    await resetColorScheme()
   })
   const router = scope.run(() => mountEditor('#app', container.resolve(InjectorToken)))
   if (router === undefined) throw new Error('The scope ran nothing.')

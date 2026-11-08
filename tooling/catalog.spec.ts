@@ -1,4 +1,4 @@
-// Shared dependencies go through the pnpm catalog (AD-10): a third-party package declared by
+// Shared dependencies go through the pnpm catalog: a third-party package declared by
 // more than one workspace package uses `catalog:` in each, so no two drift onto different
 // copies. `catalogMode: strict` makes `pnpm add` follow this for packages already in the
 // catalog; this catches the rest (hand edits, a dependency becoming shared).

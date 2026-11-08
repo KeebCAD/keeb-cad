@@ -17,13 +17,7 @@ async function arrange(backend = new MemoryBackend()) {
   for (const module of mainModules) container.addModule(module)
   container.override(storageBackend).useValue(backend)
   await container.autoLoad()
-  return {
-    store: container.resolve(DesignStore),
-    storage: container.resolve(DesignStorage),
-    autosave: container.resolve(Autosave),
-    lifecycle: container.resolve(ModelWorkerLifecycle),
-    flow: container.resolve(LoadFlow),
-  }
+  return container
 }
 
 function committed(store: DesignStore): Committed {
@@ -45,7 +39,10 @@ async function saved(storage: DesignStorage, store: DesignStore) {
 
 describe('Autosave', () => {
   it('saves a new design while the model worker is stopped', async () => {
-    const { store, storage, lifecycle } = await arrange()
+    const container = await arrange()
+    const store = container.resolve(DesignStore)
+    const storage = container.resolve(DesignStorage)
+    const lifecycle = container.resolve(ModelWorkerLifecycle)
 
     expectOk(await store.run(NewDesign, {}))
 
@@ -60,7 +57,9 @@ describe('Autosave', () => {
   })
 
   it("saves accepted derived files with no edit after, replacing that revision's version", async () => {
-    const { store, storage } = await arrange()
+    const container = await arrange()
+    const store = container.resolve(DesignStore)
+    const storage = container.resolve(DesignStorage)
     expectOk(await store.run(NewDesign, {}))
     const { revision, seq } = committed(store)
     await expect
@@ -84,13 +83,17 @@ describe('Autosave', () => {
   })
 
   it('holds no failure before a save fails', async () => {
-    const { autosave } = await arrange()
+    const container = await arrange()
+    const autosave = container.resolve(Autosave)
 
     expect(autosave.failure).toEqual(Option.none())
   })
 
   it('holds quota-exceeded after a save refused for space, and clears it on the next success', async () => {
-    const { store, autosave, flow } = await arrange(new MemoryBackend({ capacity: 1 }))
+    const container = await arrange(new MemoryBackend({ capacity: 1 }))
+    const store = container.resolve(DesignStore)
+    const autosave = container.resolve(Autosave)
+    const flow = container.resolve(LoadFlow)
     expectOk(await store.run(NewDesign, {}))
     const first = committed(store).design.meta.id
     // A second design finds storage full and has no autosave of its own to drop.

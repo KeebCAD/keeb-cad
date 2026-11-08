@@ -472,7 +472,7 @@ describe('DesignStore', () => {
       const result = store.run(RejectRename, { name: 'discarded' })
 
       expectErr(result)
-      expect(result.error).toBe(rejection)
+      expect(result.error).toEqual(rejection)
 
       expectNothingCommitted(store, before, events)
     })

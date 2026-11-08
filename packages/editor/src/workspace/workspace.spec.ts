@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { page } from 'vitest/browser'
 
-import { emulateColorScheme, resetColorScheme } from '../testing/color-scheme'
+import { emulateColorScheme } from '../testing/color-scheme'
 import { mountShell } from '../testing/mount-shell'
 import { pressKey } from '../testing/press'
 import { ShowLayout } from './layout/show-layout'
@@ -14,8 +14,6 @@ function digit(key: string) {
 
 describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
   beforeEach(() => emulateColorScheme(scheme))
-  afterEach(resetColorScheme)
-
   describe('the workspace tabs', () => {
     it.each([
       ['2', AT_LAYOUT, 'Outline', 'outline'],

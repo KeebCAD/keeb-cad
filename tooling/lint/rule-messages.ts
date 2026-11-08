@@ -1,10 +1,8 @@
 import { fileURLToPath } from 'node:url'
 import { ESLint } from 'eslint'
 
-const eslint = new ESLint({ cwd: fileURLToPath(new URL('../..', import.meta.url)) })
-
-/** The result of linting `code` at `filePath` under the real config; throws if it did not parse. */
 export async function lintResult(code: string, filePath: string): Promise<ESLint.LintResult> {
+  const eslint = new ESLint({ cwd: fileURLToPath(new URL('../..', import.meta.url)) })
   const [result] = await eslint.lintText(code, { filePath })
   if (result === undefined) throw new Error(`ESLint returned no result for ${filePath}`)
   const fatal = result.messages.find((message) => message.fatal)
@@ -12,7 +10,6 @@ export async function lintResult(code: string, filePath: string): Promise<ESLint
   return result
 }
 
-/** The messages `ruleId` reports under the real config for `code` at `filePath`. */
 export async function ruleMessages(
   ruleId: string,
   code: string,
