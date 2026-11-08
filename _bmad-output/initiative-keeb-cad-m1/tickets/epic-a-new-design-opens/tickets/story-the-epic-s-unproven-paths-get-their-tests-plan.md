@@ -3,7 +3,7 @@ title: "The epic's unproven paths get their tests"
 type: 'chore'
 ticket: '24'
 created: '2026-11-08'
-status: 'built'
+status: done
 baseline_revision: '62eb0a1be671d5a739255d24103d0589478973d5'
 route: 'oneshot'
 route_source: 'auto'

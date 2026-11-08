@@ -8,6 +8,7 @@ companions: [_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-c
 after: []
 refined: true
 risk: high
+status: done
 ---
 
 # A new design opens in the editor frame
@@ -34,10 +35,10 @@ For Sergii: the app opens a design in the editor frame and a reload reopens it u
 
 ## Done when
 
-- Launch with empty storage opens a new design in the editor frame at /#/design/<id>/layout, in both themes, in Chromium and Firefox, in Vitest browser mode.
+- Launch with empty storage opens a new design in the editor frame at /#/design/<id>/layout, in Chromium and Firefox, in Vitest browser mode.
 - Every command and action runs through the design store; the model worker's mirror equals main's design after each one.
 - A reload reopens the design from autosave byte-identical.
-- The frame's checks (workspace keys, tree slide-out, F6, status strip at 0 errors and 0 warnings) pass in Vitest browser mode, in Chromium and Firefox.
+- The frame's checks (workspace keys, tree slide-out, F6, status strip at 0 errors and 0 warnings) pass in Vitest browser mode, in both themes, in Chromium and Firefox.
 
 ## Boundaries
 
@@ -79,3 +80,4 @@ For Sergii: the app opens a design in the editor frame and a reload reopens it u
 - Decision (2026-11-08, replan after 23.8's build split): Sergii split 23.8 at its plan, which ran about 5,100 tokens over the 3,000 cap. 8 keeps the frame (top bar, tabs with the URL and focus, rail and Tree slide-out, canvas hints, the inspector region, F6 regions) with the status strip as an empty labelled region; new 23 (after 8) takes the strip's contents and the workers changes they read (issues with seq, the running stage, WorkerFailed, the crash count reset only by issues) and RestartModelWorker, with 8's verify sentences for them and its violations-panel question. 8 covers R3; 23 covers R2 and R3. 9 waits on 23; epic-routing-and-fab's 2 waits on 23.23 (its tab badges read the crash cap and Restart). 13.7 and 16.4 still wait on 8 only: they need the strip region and the top bar, not the strip's entries. What R1 to R3 require is unchanged. Rejected: keeping one plan (twice the cap) and a crash-count fix on its own (2026-11-07's rejection), since 23 keeps the crash count with the strip that shows it. Source: deferred-work.md, entry from story-the-editor-frame-shows-the-design-plan.md.
 - Open (2026-11-08): EXPERIENCE.md › Output states gives ◌ to `waiting for edit to finish` and `rebuilding N%` to a running output, while the spine (AD-11) dims behind counts with ◌ and shows the running stage as `<stage> 2 s`; 23's unknown asks Sergii, then bmad-ux, to reconcile them.
 - Decision (2026-11-08, retrospective, Sergii): the retrospective accepted the epic with open items. New entry 24 after 9 proves what it left unproven (a failed browser write keeps the versions it replaces, a patches commit through the real autosave, launch's storage-unavailable stop, all three bundle files across a reload) and removes three planning-process comments; 13.2 and 14.1 wait on it. The epic stays open until 24 is built, not closed now with the tests left to ticket order, because done is a check and that check has known holes. Done when and R1 now say what was built: the frame and launch checks run in Vitest browser mode, as the 2026-11-07 replan decided, and R1 names the bundle (AD-1); what is required is otherwise unchanged. Rejected: holding each proof in deferred-work.md only, which would let 13.2 start on the unproven path. Source: epic-a-new-design-opens-retrospective.md.
+- Decision (2026-11-08, closure, Sergii): the epic is closed, all 24 tickets done (24 merged at 19cca38). Done when's mirror line stands on its split proof (design's equality, workers' forwarding, pipeline's port, the real entry in app), not one whole-path test, because AD-25 forbids an app spec from reading the mirror and each link is tested; a stage reading the mirror (13.17 on) exercises the chain on real designs. Launch's Done when line no longer claims both themes, which the frame's checks prove. Non-zero status strip counts are proven with 13.17/13.18, as deferred-work.md records. The retrospective's remaining questions stay open there and in deferred-work.md.

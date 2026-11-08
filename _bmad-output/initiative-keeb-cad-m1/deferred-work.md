@@ -321,3 +321,11 @@
   summary: A4: hand-written `switch` on tags in `design-file`, where other packages use ts-pattern.
   evidence: `packages/design-file/src/codec/schema-fields.ts:23`, `read-kdl.ts:67`.
   owner: the next refactor sweep.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
+  summary: E9: should opening a design with no edit write autosave and move `savedAt`, which orders `listDesigns`?
+  evidence: In the served build the stored version went from 2 to 4 with no edit; `app/src/autosave/autosave.ts:10-11` saves on `commit` and `accept`.
+  owner: Sergii, before epic-keep-my-work's recent list.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
+  summary: E1: should a nested reactive input keep throwing `DataCloneError` from `run`, or be unwrapped or refused as `input-invalid`?
+  evidence: `packages/design/src/store/design-store.ts:198-200` unwraps only the top level; 23.16's plan line 130 chose to let the error through but doesn't mention nested proxies.
+  owner: Sergii, before the first command whose input comes from reactive UI state.
