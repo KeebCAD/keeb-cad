@@ -12,10 +12,11 @@ import {
 import { Container, inject } from '@keeb-cad/di'
 import { AsyncResult, Option } from '@keeb-cad/result'
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
-import type { Design } from '@keeb-cad/schema'
+import type { Design, Rejection } from '@keeb-cad/schema'
 import { aDesign, aMeta } from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
 import { describe, expect, it, onTestFinished } from 'vitest'
+import { nextTick } from 'vue'
 
 import { editorModule } from '../editor-module'
 import { Recorder } from '../testing/recorder'
@@ -24,7 +25,7 @@ import type { UiAction, UiActionHandle } from '../ui-actions/types'
 import { DuplicateInputBuilderError } from './duplicate-input-builder-error'
 import { Invoke } from './invoke'
 import { registerInputBuilder } from './register-input-builder'
-import type { EntryHandle, InputBuilder } from './types'
+import type { EntryHandle, InputBuilder, InvokeEvent } from './types'
 
 const nameInputSchema = v.object({ name: v.pipe(v.string(), v.minLength(1)) })
 type NameInput = v.InferOutput<typeof nameInputSchema>
@@ -420,6 +421,222 @@ describe('Invoke', () => {
       await expect(
         arrange({ builders: [[RenameDesign, buildName('Corne')]] }),
       ).resolves.toMatchObject({ invoke: expect.any(Invoke) })
+    })
+  })
+})
+
+class FailingAction implements Action<NameInput, string> {
+  static readonly kind = 'action'
+  static readonly id = 'test.failingAction'
+  static readonly label = 'Failing action'
+  static readonly input = nameInputSchema
+
+  available(): boolean {
+    return true
+  }
+
+  apply(): AsyncResult<void, string> {
+    return AsyncResult.err('disk full')
+  }
+}
+
+function rejectingCommand(rejection: Rejection) {
+  return class RejectingCommand implements Command<NameInput> {
+    static readonly kind = 'command'
+    static readonly id = 'test.rejectingCommand'
+    static readonly label = 'Rejecting command'
+    static readonly input = nameInputSchema
+
+    available(): boolean {
+      return true
+    }
+
+    apply(): Rejection {
+      return rejection
+    }
+  }
+}
+
+function waitingAction(finished: Promise<void>) {
+  return class WaitingAction implements Action<NameInput, never> {
+    static readonly kind = 'action'
+    static readonly id = 'test.waitingAction'
+    static readonly label = 'Waiting action'
+    static readonly input = nameInputSchema
+
+    available(): boolean {
+      return true
+    }
+
+    apply(): AsyncResult<void, never> {
+      return AsyncResult.fromPromise(finished, (cause) => {
+        throw cause
+      })
+    }
+  }
+}
+
+async function arrangeEvents(entries: Entries, recorder?: Recorder) {
+  const container = new Container().addModule(designModule).addModule(editorModule)
+  if (recorder !== undefined) container.register(Recorder).useValue(recorder)
+  for (const handle of entries.commands ?? []) registerCommand(container, handle)
+  for (const handle of entries.actions ?? []) registerAction(container, handle)
+  for (const handle of entries.uiActions ?? []) registerUiAction(container, handle)
+  for (const [handle, builder] of entries.builders ?? []) {
+    registerInputBuilder(container, handle, builder)
+  }
+  onTestFinished(() => container.dispose())
+  await container.autoLoad()
+  if (entries.design !== undefined) {
+    expectOk(
+      container.resolve(DesignStore).replaceDesign({ design: entries.design, unreadable: [] }),
+    )
+  }
+  return container.resolve(Invoke)
+}
+
+// An Err's iterator throws past its first yield, so the matchers can't compare one directly.
+function eventsOf(invoke: Invoke) {
+  const events: unknown[] = []
+  invoke.events.on('invoke', (event: InvokeEvent) => {
+    const result = event.result.match<unknown>({ ok: () => 'ok', err: (error) => ({ error }) })
+    events.push({ ...event, result })
+  })
+  return events
+}
+
+describe('Invoke events', () => {
+  it("reports an available command with the caller's input and ok", async () => {
+    const invoke = await arrangeEvents({ commands: [RenameDesign], design: aDesign() })
+    const events = eventsOf(invoke)
+
+    await invoke.invoke(RenameDesign, { name: 'Lily58' })
+
+    expect(events).toEqual([
+      {
+        id: RenameDesign.id,
+        label: RenameDesign.label,
+        input: { name: 'Lily58' },
+        result: 'ok',
+      },
+    ])
+  })
+
+  it("reports the builder's input when the caller gives none", async () => {
+    const invoke = await arrangeEvents({
+      commands: [RenameDesign],
+      builders: [[RenameDesign, buildName('Corne')]],
+      design: aDesign(),
+    })
+    const events = eventsOf(invoke)
+
+    await invoke.invoke(RenameDesign)
+
+    expect(events).toEqual([expect.objectContaining({ input: { name: 'Corne' } })])
+  })
+
+  const refusedCommand = renameWith(false)
+  const refusedAction = recordAction('test.refused', false)
+  const refusedUiAction = recordName('test.refused', false)
+
+  it.each<[string, EntryHandle, Entries]>([
+    ['command', refusedCommand, { commands: [refusedCommand], design: aDesign() }],
+    ['action', refusedAction, { actions: [refusedAction] }],
+    ['UiAction', refusedUiAction, { uiActions: [refusedUiAction] }],
+  ])(
+    'reports a refused %s as unavailable with no input, leaving its builder unasked',
+    async (_kind, handle, entries) => {
+      const recorder = new Recorder()
+      const invoke = await arrangeEvents(
+        { ...entries, builders: [[handle, RecordedBuildName]] },
+        recorder,
+      )
+      const events = eventsOf(invoke)
+
+      await invoke.invoke(handle as CommandHandle)
+
+      expect({ events, asked: recorder.recorded }).toEqual({
+        events: [
+          {
+            id: handle.id,
+            label: handle.label,
+            input: undefined,
+            result: { error: { kind: 'unavailable', command: handle.id } },
+          },
+        ],
+        asked: [],
+      })
+    },
+  )
+
+  it('reports the rejection a command returns', async () => {
+    const rejection: Rejection = { kind: 'stale', seq: 1, latest: 2 }
+    const command = rejectingCommand(rejection)
+    const invoke = await arrangeEvents({ commands: [command], design: aDesign() })
+    const events = eventsOf(invoke)
+
+    await invoke.invoke(command, { name: 'Lily58' })
+
+    expect(events).toEqual([expect.objectContaining({ result: { error: rejection } })])
+  })
+
+  it('reports the error an action gives', async () => {
+    const invoke = await arrangeEvents({ actions: [FailingAction] })
+    const events = eventsOf(invoke)
+
+    await invoke.invoke(FailingAction, { name: 'Lily58' })
+
+    expect(events).toEqual([expect.objectContaining({ result: { error: 'disk full' } })])
+  })
+
+  it('reports a UiAction that applies as ok', async () => {
+    const uiAction = recordName('test.recordName', true)
+    const invoke = await arrangeEvents({ uiActions: [uiAction] }, new Recorder())
+    const events = eventsOf(invoke)
+
+    await invoke.invoke(uiAction, { name: 'Lily58' })
+
+    expect(events).toEqual([expect.objectContaining({ result: 'ok' })])
+  })
+
+  it('reports a UiAction input its schema refuses as input-invalid', async () => {
+    const uiAction = recordName('test.recordName', true)
+    const invoke = await arrangeEvents({ uiActions: [uiAction] }, new Recorder())
+    const events = eventsOf(invoke)
+
+    await invoke.invoke(uiAction, { name: '' })
+
+    expect(events).toEqual([
+      expect.objectContaining({
+        result: {
+          error: {
+            kind: 'input-invalid',
+            command: uiAction.id,
+            issues: [{ path: ['name'], message: expect.any(String) }],
+          },
+        },
+      }),
+    ])
+  })
+
+  it('reports an action once, only after it settles', async () => {
+    const settlers: (() => void)[] = []
+    const finished = new Promise<void>((settle) => {
+      settlers.push(settle)
+    })
+    const action = waitingAction(finished)
+    const invoke = await arrangeEvents({ actions: [action] })
+    const events = eventsOf(invoke)
+
+    const result = invoke.invoke(action, { name: 'Lily58' })
+    await nextTick()
+    const beforeSettling = [...events]
+    for (const settle of settlers) settle()
+    await result
+
+    expect({ beforeSettling, events }).toEqual({
+      beforeSettling: [],
+      events: [expect.objectContaining({ id: action.id, result: 'ok' })],
     })
   })
 })

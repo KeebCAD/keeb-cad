@@ -18,9 +18,10 @@
     "test:mutation": "stryker run",
     "build": "pnpm --filter @keeb-cad/app build",
     "build:workbench": "pnpm --filter @keeb-cad/ui build:workbench",
+    "check:dist": "node tooling/check-dist/check-dist.ts",
     "smoke": "pnpm --filter @keeb-cad/app test:e2e",
     "check:fast": "pnpm lint && pnpm format:check && pnpm depcruise",
-    "check": "pnpm typecheck && pnpm check:fast && pnpm test && pnpm build && pnpm build:workbench && pnpm smoke"
+    "check": "pnpm typecheck && pnpm check:fast && pnpm test && pnpm build && pnpm check:dist && pnpm build:workbench && pnpm smoke"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

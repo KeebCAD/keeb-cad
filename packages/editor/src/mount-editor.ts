@@ -15,6 +15,11 @@ export function mountEditor(selector: string, injector: Injector): Router {
   provideInjectorOnApp(app, injector)
   app.use(router)
 
+  if (import.meta.env.MODE === 'development')
+    void import('./devtools/connect-devtools').then(({ connectDevtools }) =>
+      connectDevtools(app, injector),
+    )
+
   useThemeChoice()
   app.mount(selector)
   return router

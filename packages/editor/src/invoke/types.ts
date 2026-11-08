@@ -1,10 +1,22 @@
 import type { ActionHandle, CommandHandle } from '@keeb-cad/design'
+import type { Result } from '@keeb-cad/result'
 import type * as v from 'valibot'
 
 import type { UiActionHandle } from '../ui-actions/types'
 import type { Invoke } from './invoke'
 
 export type EntryHandle = CommandHandle | ActionHandle | UiActionHandle
+
+export interface InvokeEvent {
+  readonly id: string
+  readonly label: string
+  readonly input: unknown
+  readonly result: Result<void, unknown>
+}
+
+export type InvokeEvents = {
+  invoke: (event: InvokeEvent) => void
+}
 
 export interface InputBuilder<Input> {
   input(): Input
