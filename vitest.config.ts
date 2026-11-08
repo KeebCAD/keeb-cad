@@ -85,6 +85,17 @@ export default defineConfig({
         },
       },
       {
+        // blueprint's rules run on Node, where the real engine is not needed; its
+        // vitest.config.ts runs the *.browser.spec.ts files on the real engine, in browsers.
+        test: {
+          name: 'blueprint',
+          root: 'packages/blueprint',
+          environment: 'node',
+          include: ['src/**/*.spec.ts'],
+          exclude: [...configDefaults.exclude, TYPE_SPECS, 'src/**/*.browser.spec.ts'],
+        },
+      },
+      {
         // The editor folders listed here hold specs that touch no DOM, so they run on Node; its
         // vitest.config.ts runs every other spec, in browsers.
         test: {

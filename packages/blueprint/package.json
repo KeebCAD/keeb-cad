@@ -7,5 +7,22 @@
     ".": "./src/index.ts",
     "./worker": "./src/worker.ts",
     "./authoring": "./src/authoring.ts"
+  },
+  "dependencies": {
+    "@keeb-cad/di": "workspace:*",
+    "@keeb-cad/expr": "workspace:*",
+    "@keeb-cad/result": "workspace:*",
+    "@keeb-cad/schema": "workspace:*",
+    "quickjs-wasi": "catalog:",
+    "ts-pattern": "catalog:",
+    "valibot": "catalog:"
+  },
+  "devDependencies": {
+    "@tsconfig/node26": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
   }
 }

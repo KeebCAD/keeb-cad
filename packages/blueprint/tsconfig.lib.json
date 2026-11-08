@@ -1,0 +1,14 @@
+{
+  // The sandbox host. No DOM lib: it runs in the model and case workers.
+  "extends": "../../tsconfig.base.json",
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.spec.ts"],
+  "compilerOptions": {
+    // Symbol.dispose and Symbol.asyncDispose, which di's container calls on dispose().
+    // WebWorker for fetch and WebAssembly, both worker APIs; vite/client types the ?url import.
+    "lib": ["ES2023", "ESNext.Disposable", "WebWorker"],
+    "types": ["vite/client"],
+    "noEmit": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo"
+  }
+}
