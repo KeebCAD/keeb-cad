@@ -10,11 +10,13 @@
     "test:unit": "vitest"
   },
   "dependencies": {
+    "@keeb-cad/commands": "workspace:*",
     "@keeb-cad/design": "workspace:*",
     "@keeb-cad/di": "workspace:*",
     "@keeb-cad/result": "workspace:*",
     "@keeb-cad/schema": "workspace:*",
     "@keeb-cad/ui": "workspace:*",
+    "@keeb-cad/workers": "workspace:*",
     "ts-pattern": "catalog:",
     "valibot": "catalog:",
     "vue": "catalog:",

@@ -17,6 +17,12 @@ describe(
     it.each([
       ['an entry in commands', 'packages/commands/src/layout/reset.ts'],
       ["a test entry in design's specs", 'packages/design/src/store/a.spec.ts'],
+      ["a UiAction in editor's workspace folder", 'packages/editor/src/workspace/pcb/show-pcb.ts'],
+      [
+        "a UiAction in editor's landmarks folder",
+        'packages/editor/src/landmarks/focus-next-landmark.ts',
+      ],
+      ["a UiAction in editor's slide-out folder", 'packages/editor/src/slide-out/open-tree.ts'],
     ])('allows %s', async (_, filePath) => {
       expect(await unusedVariables(IGNORED_INPUT, filePath)).toEqual([])
     })

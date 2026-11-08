@@ -20,7 +20,7 @@ import {
 import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
 import { FakeWorker } from '@keeb-cad/workers/testing'
 import { afterEach, describe, expect, it, onTestFinished } from 'vitest'
-import { page } from 'vitest/browser'
+import { page, userEvent } from 'vitest/browser'
 
 import { Autosave } from '../autosave/autosave'
 import { mainModules } from '../main-modules'
@@ -331,6 +331,17 @@ describe('Launch', () => {
         expect.objectContaining({ kind: 'focus', workspace: 'pcb' }),
       )
     })
+
+    it("sends the model worker focus on a switch by a workspace's key", async () => {
+      const arranged = await arrange({ hash: '#/design/older/layout', stored: [intact(older)] })
+      await arranged.launch()
+
+      await userEvent.keyboard('3')
+
+      await expect
+        .poll(() => arranged.workers[0]?.received.at(-1))
+        .toMatchObject({ kind: 'focus', workspace: 'pcb' })
+    })
   })
 
   describe('a reload', () => {
@@ -352,7 +363,9 @@ describe('Launch', () => {
       const designs = await second.storage.listDesigns()
       expectOk(designs)
       expect(designs.value).toMatchObject([{ id }])
-      await expect.element(page.getByText(id, { exact: true })).toBeVisible()
+      await expect
+        .element(page.getByRole('heading', { level: 1 }))
+        .toHaveTextContent(opened(second).name)
     })
   })
 })

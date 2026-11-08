@@ -288,7 +288,12 @@ export default defineConfigWithVueTs(
   {
     // An entry's apply declares its input exactly as its schema outputs, even when it ignores it.
     name: 'keeb-cad/entry-parameters',
-    files: ['packages/commands/src/**/*.ts', 'packages/design/src/**/*.spec.ts'],
+    files: [
+      'packages/commands/src/**/*.ts',
+      'packages/design/src/**/*.spec.ts',
+      // editor's UiActions are entries too.
+      'packages/editor/src/{workspace,landmarks,slide-out}/**/*.ts',
+    ],
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },

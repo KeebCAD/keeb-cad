@@ -1,31 +1,29 @@
 import { NewDesign, OpenStoredDesign } from '@keeb-cad/commands'
 import { DesignStore } from '@keeb-cad/design'
 import { inject, InjectorToken } from '@keeb-cad/di'
-import { mountEditor } from '@keeb-cad/editor'
+import { DesignLocation, mountEditor } from '@keeb-cad/editor'
 import { InvariantError } from '@keeb-cad/result'
-import { type Id, idSchema, type Workspace, workspaceSchema } from '@keeb-cad/schema'
+import { type Id, idSchema } from '@keeb-cad/schema'
 import { DesignStorage } from '@keeb-cad/storage'
 import { ModelWorkerLifecycle, type Spawn } from '@keeb-cad/workers'
 import * as v from 'valibot'
 
 export class Launch {
   async run(selector: string, spawn: Spawn): Promise<void> {
-    const location = mountEditor(selector, this.#injector)
-    await location.isReady()
-    const { name, params } = location.currentRoute.value
-    const onDesign = name === 'design'
-    const parsed = v.safeParse(idSchema, params.id)
-    const requested = onDesign && parsed.success ? parsed.output : undefined
-    // The router's guard has already replaced a missing or unknown workspace with layout.
-    const workspace: Workspace = onDesign ? v.parse(workspaceSchema, params.workspace) : 'layout'
+    const router = mountEditor(selector, this.#injector)
+    await router.isReady()
+    const parsed = v.safeParse(idSchema, router.currentRoute.value.params.id)
+    const requested = parsed.success ? parsed.output : undefined
+    const workspace = this.#location.workspace.getOr('layout')
 
     const id = await this.#open(requested)
 
-    await location.replace({ name: 'design', params: { id, workspace } })
+    await router.replace({ name: workspace, params: { id } })
     this.#lifecycle.start(spawn, workspace)
   }
 
   readonly #injector = inject(InjectorToken)
+  readonly #location = inject(DesignLocation)
   readonly #store = inject(DesignStore)
   readonly #storage = inject(DesignStorage)
   readonly #lifecycle = inject(ModelWorkerLifecycle)

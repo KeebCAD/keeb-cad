@@ -1,17 +1,40 @@
-import type { TabsProps } from '../../src/tabs/types'
+import { h } from 'vue'
+
+import UiKbd from '../../src/kbd/UiKbd.vue'
+import UiTabList from '../../src/tabs/UiTabList.vue'
+import UiTabPanel from '../../src/tabs/UiTabPanel.vue'
 import type { WidgetState } from './types'
 
-export const tabsStates: readonly WidgetState<TabsProps & { modelValue?: string }>[] = [
+const items = [
+  { value: 'layout', label: 'Layout', hotkey: '1' },
+  { value: 'outline', label: 'Outline', hotkey: '2' },
+]
+
+export const tabsStates: readonly WidgetState<{ modelValue?: string }>[] = [
   {
-    name: 'two tabs, the first active',
-    props: {
-      items: [
-        { value: 'layout', label: 'Layout' },
-        { value: 'outline', label: 'Outline' },
+    name: 'a list and a panel per tab, the first active',
+    props: { modelValue: 'layout' },
+    slots: {
+      default: () => [
+        h(UiTabList, { items }),
+        h(UiTabPanel, { value: 'layout' }, () => 'Layout panel'),
+        h(UiTabPanel, { value: 'outline' }, () => 'Outline panel'),
       ],
-      modelValue: 'layout',
     },
-    slots: { layout: () => 'Layout panel', outline: () => 'Outline panel' },
   },
-  { name: 'no tabs', props: { items: [] } },
+  {
+    name: 'a list with hints',
+    props: { modelValue: 'layout' },
+    slots: {
+      default: () =>
+        h(
+          UiTabList,
+          { items },
+          {
+            hint: ({ item }: { item: (typeof items)[number] }) => h(UiKbd, { hotkey: item.hotkey }),
+          },
+        ),
+    },
+  },
+  { name: 'no tabs', props: {}, slots: { default: () => h(UiTabList, { items: [] }) } },
 ]

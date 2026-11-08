@@ -1,7 +1,8 @@
 {
   // The shared base comes second so its strictness applies; DOM `lib`/`types` are restored below.
   "extends": ["@vue/tsconfig/tsconfig.dom.json", "../../tsconfig.base.json"],
-  "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
+  // testing/ is compiled here too, and its helpers call the browser commands.
+  "include": ["env.d.ts", "browser-commands.d.ts", "src/**/*", "src/**/*.vue"],
   "exclude": ["src/**/*.spec.ts"],
   "compilerOptions": {
     // Restore what tsconfig.base.json overrides from @vue/tsconfig/tsconfig.dom.json.

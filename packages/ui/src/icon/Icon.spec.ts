@@ -20,6 +20,12 @@ describe('Icon', () => {
     await expect.element(screen.getByRole('img', { name: state.props.label })).toBeVisible()
   })
 
+  it('renders the tree state as an image named Tree', async () => {
+    const screen = await render(UiIcon, { props: iconState('tree').props })
+
+    await expect.element(screen.getByRole('img', { name: 'Tree' })).toBeVisible()
+  })
+
   it('renders the decorative state hidden from assistive technology', async () => {
     const screen = await render(UiIcon, { props: iconState('decorative').props })
 

@@ -4,6 +4,7 @@ import { expectOk } from '@keeb-cad/result/testing'
 import type { Design } from '@keeb-cad/schema'
 import { aDesign, aMeta, anId } from '@keeb-cad/schema/testing'
 import { THEME_STORAGE_KEY } from '@keeb-cad/ui'
+import { workersModule } from '@keeb-cad/workers'
 import { afterEach, describe, expect, it, onTestFinished } from 'vitest'
 import { commands, page } from 'vitest/browser'
 import { effectScope, type App } from 'vue'
@@ -19,7 +20,10 @@ afterEach(async () => {
 })
 
 async function arrange(design?: Design) {
-  const container = new Container().addModule(designModule).addModule(editorModule)
+  const container = new Container()
+    .addModule(designModule)
+    .addModule(workersModule)
+    .addModule(editorModule)
   await container.autoLoad()
   if (design !== undefined) {
     expectOk(container.resolve(DesignStore).replaceDesign({ design, unreadable: [] }))
@@ -28,10 +32,12 @@ async function arrange(design?: Design) {
   root.id = 'editor-root'
   document.body.append(root)
   const scope = effectScope()
-  onTestFinished(() => {
+  onTestFinished(async () => {
     ;(root as HTMLElement & { __vue_app__?: App }).__vue_app__?.unmount()
     scope.stop()
     root.remove()
+    history.replaceState(null, '', location.pathname + location.search)
+    await container.dispose()
   })
   const injector = container.resolve(InjectorToken)
   return { mount: () => scope.run(() => mountEditor('#editor-root', injector)) }
@@ -50,14 +56,16 @@ describe('mountEditor', () => {
     expect(document.documentElement.dataset.theme).toBe('light')
   })
 
-  it("provides the container, so the page shows its store's design", async () => {
+  it("provides the container, so the shell's top bar shows its store's design", async () => {
+    history.replaceState(null, '', '#/design/lily-58/layout')
     const { mount } = await arrange(
       aDesign({ meta: aMeta({ id: anId('lily-58'), name: 'Lily58' }) }),
     )
 
     mount()
 
-    await expect.element(page.getByText('Lily58', { exact: true })).toBeVisible()
-    await expect.element(page.getByText('lily-58', { exact: true })).toBeVisible()
+    await expect
+      .element(page.getByRole('banner', { name: 'Top bar' }).getByRole('heading', { level: 1 }))
+      .toHaveTextContent('Lily58')
   })
 })

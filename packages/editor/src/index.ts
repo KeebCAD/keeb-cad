@@ -1,5 +1,5 @@
 export { mountEditor } from './mount-editor'
-export type { DesignLocation } from './types'
+export { DesignLocation } from './router/design-location'
 
 export { editorModule } from './editor-module'
 
