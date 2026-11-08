@@ -5,3 +5,6 @@ export { LoadFlow } from './load/load-flow'
 export { loadModule } from './load/load-module'
 export { OpenStoredDesign } from './load/open-stored-design'
 export type { LoadFlowError, LoadOutcome, OpenStoredDesignInput } from './load/types'
+
+export { emptyInputSchema } from './empty-input-schema'
+export type { EmptyInput } from './types'

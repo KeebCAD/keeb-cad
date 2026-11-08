@@ -3,14 +3,14 @@ title: 'The editor frame shows the design'
 type: 'feature'
 ticket: '8'
 created: '2026-11-08'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: 'd276578abff75d4fc8917e80fb08d87797f6fe2c'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md'
@@ -95,7 +95,7 @@ context:
 - [ ] `packages/workers/src/testing/recording-model-worker-lifecycle.ts` -- `RecordingModelWorkerLifecycle` (service: a test fake extending `ModelWorkerLifecycle`, beside `FakeWorker`) records `focus` calls; exported from `workers/testing`; editor specs register it with `override` and read it after arrange.
 - [ ] Editor specs (browser) -- the editor rows, each in its folder, in both themes (the ticket's verify). Copy only `invoke.spec.ts`'s and the lifecycle spec's `arrange({ options })` shape: register each part only when an option asks for it. `App.spec.ts` and `mount-editor.spec.ts` move to the shell (the top bar's name; `workersModule` or the fake registered).
 - [ ] `app/e2e/vue.spec.ts` -- the `h1` is `Untitled design`.
-- [ ] Docs commit on main, before the code branch: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md` adds `landmark`, `shell`, `top bar` and `left rail` to its chrome-word list; the spine's **canvas** glossary row reads "inside the editor shell" (Sergii decision).
+- [x] Docs commit on main, before the code branch (d276578): `_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md` adds `landmark`, `shell`, `top bar` and `left rail` to its chrome-word list; the spine's **canvas** glossary row reads "inside the editor shell" (Sergii decision).
 - [ ] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` -- close the `App.vue` `#ccc` entry; add: the Layout hint's `G` (13.7) and `Ctrl+K` (palette story) render from their handles' `hotkeys` through `formatHotkey`; `invoke.spec.ts` repeats its `unavailable` assertion in about seven tests (AGENTS.md: "Write a shared assertion once"), and its `arrange` registers `container.register(Recorder).useClass(Recorder)` for every test; `model-worker-lifecycle.spec.ts`'s `arrange` runs `registerCommand(container, RenameDesign)` for every test (AGENTS.md: "Arrange only what the test uses, passed as arguments to an `arrange` helper"); the hotkey layer swallows a key whose entry is unavailable.
 
 **Acceptance Criteria:**
@@ -105,9 +105,70 @@ context:
 
 ## Implementation Notes
 
+- Decision (Sergii): `eslint.config.ts`'s `keeb-cad/entry-parameters` override also covers `packages/editor/src/{workspace,landmarks,slide-out}/**/*.ts`, one folder per UiAction concept, with an "allows" row each in `tooling/lint/entry-parameters.spec.ts`; not all of `editor/src`, because the spec's existing row rejects `packages/editor/src/a.ts` and editing it is weakening a test; not a parameterless `apply()`, because AGENTS.md: "`implements` and `apply` use the type". A later UiAction folder adds itself to the glob and the spec.
+- Decision (build): a `Show<W>` is unavailable off a design route, not available, because `/design/:id` needs an id and `router.push({ name: 'pcb' })` without one throws vue-router's missing-param error.
+- Decision (build): a tab is named by its label alone, the hint `aria-hidden`, not `Layout1`, because EXPERIENCE.md names a tab's accessible name by its workspace (Tab badge: "Accessible name = the state text (`PCB: routing 41/56`)").
+- Decision (build): empty views are `defineComponent({ render: () => null })`, not an empty `<template>`, because `eslint-plugin-vue`'s `vue/valid-template-root` rejects an empty template.
+- Decision (build): `DesignLocation` stops the router listening on dispose, not each spec, because of the router spec's precedent: "A router left listening would answer a later test's hash change."
+- Decision (build): the rail sits just before the slide-out in `Landmarks`' order, not in its place, so F6 from the rail reaches an open slide-out (Sergii's F6 decision).
+- Decision (build): the Layout hint is `text-text`, not `text-text-muted`, because muted text on `canvas` measures about 4.27:1 and EXPERIENCE.md asks "WCAG AA text contrast … in both themes" (4.5:1).
+- Decision (build): an empty segment redirects through a `''` child and an unknown one through `:unknown(.*)*`, not one catch-all, because with the `''` child removed, `pnpm vitest run src/router/create-editor-router.spec.ts` fails `replaces a missing one with layout` in Chromium and Firefox (tried 2026-11-08, restored).
+- Decision (Sergii): the left rail is `<div role="group" aria-label="Left rail">`, not `<nav>` or a bare `<div>`, because a `nav` landmark would be one F6 skips and a bare `div` gives assistive tech no name for the rail's buttons.
+- Decision (Sergii): `RecordingModelWorkerLifecycle.focus` records the workspace and does not call `super.focus`, not forwarding, because editor specs assert only what `DesignLocation` asked for and the app integration row proves the real send.
+- Decision (Sergii): the same-workspace-key test asserts `invoke.available(ShowLayout)` is false and the URL and `focus` unchanged with no wait, not a one-macrotask wait or an `await router.push(current)`, because a refused key schedules nothing, a new push cancels a pending navigation, and a wrongly available key pushes a duplicate that changes neither URL nor `focus`: only the availability assertion fails on that bug.
+- Decision (build): `UiTabPanel` re-registers its value with Reka's root context (`injectTabsRootContext().registerContent`) when it changes, not one `TabsContent` per trigger as Reka documents ("Contains the content associated with each trigger"), because Sergii's nested-routes decision has one panel follow the route, and with the re-register removed `TabPanel.spec.ts`'s second test goes red.
+- Decision (build): a failed or cancelled navigation sends no `focus`, not the attempted workspace, because the open workspace didn't change.
+- Decision (Sergii): closing the slide-out moves focus to the invoker, else the canvas, only when focus is inside the slide-out or on `body` at close; otherwise focus stays where the user put it. Not always returning focus, because a non-modal overlay doesn't own focus once the user leaves it. Patched in review, not looped back, with Sergii's consent; the boundary table gains the row "focus stays outside".
+- Decision (Sergii): the colour-scheme steps live once in `src/testing/color-scheme.ts`, and `tsconfig.app.json` includes `browser-commands.d.ts` so `testing/` compiles; not five copies of the set, poll and reset steps, because they are identical in each spec. A triple-slash reference and an empty `import type {}` were rejected by lint.
+- Decision (build): `optimizeDeps.include` gains `dexie` and `@bgotink/kdl`, which `commands` brings in, because the config's own comment: a dependency found mid-run re-bundles and loads Vitest's runner twice.
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+Pass 1 (quick, test-reviewer; 0 findings dropped): high 0, medium 3, low 9, false 3, maybe-false 0.
+
+| Lens | Finding | Verdict | Route | Evidence |
+| --- | --- | --- | --- | --- |
+| quick | Editor rows run in one theme, not both | medium | patch | Only `EditorShell.spec.ts`'s box row calls `setColorScheme`; the plan's AC says "the editor rows in Chromium and Firefox and both themes". |
+| quick | `UiTabPanel` is a Tab stop; F6 from it goes to the top bar | low | reject | Reka's `TabsContent.js:61` renders `tabindex: "0"`, its documented APG panel; F6 from it follows Sergii's "from outside every landmark, F6 goes to the top bar". Raised at the look. |
+| quick | `registerContent` re-registration is an unlabelled departure from Reka's setup | low | patch | Recorded as a `Decision (build)` in Implementation Notes, with `TabPanel.spec.ts`'s toggled re-register as its evidence. |
+| quick | `mountShell` registers the recording lifecycle for every caller | low | patch | AGENTS.md: "Arrange only what the test uses"; landmarks, canvas and shell specs never read it, and the real `focus` returns early when not running. |
+| quick | `useWorkspace`, `useSlideOut` and `Landmarks.#targets` declare types inline | low | patch | AGENTS.md: "Put every type a folder declares … in that folder's `types.ts`"; precedent `InvokeFunctions` in `invoke/types.ts`. |
+| quick | Comments that restate the code | low | patch | `// -1 when focus is in no place.`, `// To the invoker, else the canvas.`, `use-landmark.ts`'s and `mount-shell.ts`'s headers say what the next line does. |
+| quick | Closing pulls focus to the invoker even after focus left the slide-out | medium | patch (Sergii: A, patch not loopback) | `onBeforeUnmount(returnFocus)` runs whatever holds focus; Esc from the canvas after T on the Layout tab lands on the tab. EXPERIENCE's "closing returns focus to the invoker, else the canvas" has two readings. |
+| quick | The viewport is 1366x768, DESIGN.md says "1366×696 inside the browser" | low | defer | The ticket and the approved boundary row say 1366x768; the shell is flex, so 696 only shortens the canvas. |
+| quick | `mount-editor.spec.ts` never disposes its container | medium | patch | Its `onTestFinished` unmounts but skips `container.dispose()`, so `DesignLocation`'s router keeps listening; it also leaves `#/design/lily-58/layout` in the hash. |
+| test-reviewer | `toHaveTextContent('')` can't fail | false | reject | Vitest 5's matcher compares exactly: `pass: i === a` (`@vitest/browser/dist/expect-element.js`). |
+| test-reviewer | `toBeVisible` after T-while-open adds nothing | low | reject | `invoke.available(OpenTree)` is the failing assertion; the extra line is harmless. |
+| test-reviewer | The tree icon test hard-codes `Tree` | low | reject | The label is the requirement's (`label: 'Tree'`), not computed. |
+| test-reviewer | Fallback when the invoker left the DOM is undocumented | false | reject | EXPERIENCE.md: "closing returns focus to the invoker, else the canvas". |
+| test-reviewer | A failed navigation sends no `focus`; `useLandmark` throws on no root | low | patch | Recorded as a `Decision (build)`; the throw is a loud failure on an unreachable state, correct behaviour. |
+| test-reviewer | `unregister` removes only the same element | low | reject | It keeps a remounted root registered when the old one unmounts after; correct and negligible. |
+
+Pass 2 (quick, test-reviewer, on the files pass 1's patches touched; 0 dropped): high 0, medium 0, low 5, false 2, maybe-false 1.
+
+| Lens | Finding | Verdict | Route | Evidence |
+| --- | --- | --- | --- | --- |
+| quick | Rendered shell rows still run in one theme | low | patch | `EditorShell.spec.ts`'s top-bar-name and landmark-label rows set no scheme; `design-location.spec.ts` and the router spec render nothing, so a theme can't reach them. |
+| quick | `EditorShell.spec.ts` and `mount-editor.spec.ts` copy the colour-scheme steps | low | patch | Their `afterEach` and set-and-poll lines match `emulateColorScheme` / `resetColorScheme` line for line; Sergii's decision puts them in `testing/color-scheme.ts`. |
+| quick | `resetColorScheme` runs before the app unmounts, so `useColorMode` may write `data-theme` back | maybe-false | defer | Vitest runs `onTestFinished` after `afterEach`, so the reset does run while mounted; whether VueUse's listener rewrites `data-theme` on `setColorScheme(null)` needs a run that reads the attribute after teardown. Three green shuffled runs so far. |
+| quick | `mount-editor.spec.ts` resets the hash twice | low | patch | The top-level `afterEach` and the new `onTestFinished` both call `history.replaceState`. |
+| quick | `mountShell`'s overload builds `ShellArrangement & { recordFocus: true }` inline | low | patch | AGENTS.md: "Put every type a folder declares … in that folder's `types.ts`". |
+| quick | `landmarks.ts`'s "From outside every place" and `use-slide-out.ts`'s focus comment restate code | low | reject | They state the rule behind a non-obvious fallback (Sergii's F6 and focus-return decisions), which `at === -1 ? undefined` doesn't say. |
+| quick | `rounded-r-lg` on the slide-out has no requirement | false | reject | DESIGN.md › Components: the slide-out has "right corners `{rounded.lg}`". |
+| test-reviewer | `toHaveTextContent(hint)` is a substring match | false | reject | Vitest 5's matcher: `let a=String(t); return {pass: i===a, …}`, exact after whitespace normalising. |
+
+Pass 3 (quick, test-reviewer, on pass 2's patches; 0 dropped): high 0, medium 0, low 3, false 1, carried 2. Nothing patched.
+
+| Lens | Finding | Verdict | Route | Evidence |
+| --- | --- | --- | --- | --- |
+| quick | `mount-editor.spec.ts`'s top-bar test runs in one theme | low | reject | It is `mountEditor`'s container contract, not a boundary row; the "top bar name" row runs in both themes in `EditorShell.spec.ts`. |
+| quick | The hash reset in `arrange`'s `onTestFinished` misses a setup that throws | low | reject | Only after a setup failure, which already fails that test; unlikely in everyday use. |
+| quick | The deferred entry says "medium, unverified" but the log says `maybe-false` | false | reject | The workflow's defer rule: a `maybe-false` that would be medium is recorded "with that severity marked unverified". |
+| quick | The reset-before-unmount race was cheap to fix | maybe-false | carried | carried: pass 2's deferred row, the same claim and the same code. |
+| test-reviewer | `afterEach(resetColorScheme)` runs before unmount | maybe-false | carried | carried: pass 2's deferred row. |
+| test-reviewer | Theme-looped rows have no theme-dependent `expect` | low | reject | The ticket's verify asks every row "in both themes"; the doubled run is the requirement's. |
 
 ## Design Notes
 
@@ -177,6 +238,7 @@ context:
 | rules | T while open | open: T | still open | unit (editor) |
 | rules | rail button | click Tree; click Tree | open, `aria-expanded=true`; closed, `false` | unit (editor) |
 | rules | focus returns to the invoker | focus on the Layout tab, T, Esc | focus on the Layout tab | unit (editor) |
+| rules | focus stays outside | focus on the Layout tab, T, focus on the canvas, Esc | focus on the canvas | unit (editor) |
 | rules | focus falls back to the canvas | focus on body, T, Esc | focus on the canvas landmark | unit (editor) |
 | rules | F6 order, closed slide-out | from body, F6 ×4, then a 5th | top bar, canvas, inspector, status strip; top bar | unit (editor) |
 | rules | F6 order, open slide-out | slide-out open, from top bar, F6 | slide-out | unit (editor) |

@@ -9,6 +9,7 @@ import { Container, InjectorToken } from '@keeb-cad/di'
 import { expectOk } from '@keeb-cad/result/testing'
 import type { Design } from '@keeb-cad/schema'
 import { aDesign, aMeta } from '@keeb-cad/schema/testing'
+import { workersModule } from '@keeb-cad/workers'
 import * as v from 'valibot'
 import { afterEach, describe, expect, it, onTestFinished } from 'vitest'
 import { effectScope, type App } from 'vue'
@@ -45,7 +46,10 @@ afterEach(() => {
 })
 
 async function arrange(design: Design) {
-  const container = new Container().addModule(designModule).addModule(editorModule)
+  const container = new Container()
+    .addModule(designModule)
+    .addModule(workersModule)
+    .addModule(editorModule)
   registerCommand(container, RenameDesign)
   await container.autoLoad()
   const store = container.resolve(DesignStore)

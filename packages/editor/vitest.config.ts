@@ -28,6 +28,8 @@ export default defineConfig({
       '@keeb-cad/ui > @zag-js/hotkeys',
       '@keeb-cad/ui > @lucide/vue',
       '@keeb-cad/ui > @vueuse/core',
+      '@keeb-cad/commands > @keeb-cad/storage > dexie',
+      '@keeb-cad/commands > @keeb-cad/storage > @keeb-cad/design-file > @bgotink/kdl',
     ],
   },
   test: {
@@ -41,6 +43,8 @@ export default defineConfig({
       enabled: true,
       provider: playwright(),
       headless: true,
+      // EXPERIENCE.md's laptop floor; the shell's boxes are specified at it.
+      viewport: { width: 1366, height: 768 },
       instances: browserInstances,
       commands: { setColorScheme },
     },

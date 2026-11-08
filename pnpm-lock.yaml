@@ -526,6 +526,9 @@ importers:
 
   packages/editor:
     dependencies:
+      '@keeb-cad/commands':
+        specifier: workspace:*
+        version: link:../commands
       '@keeb-cad/design':
         specifier: workspace:*
         version: link:../design
@@ -541,6 +544,9 @@ importers:
       '@keeb-cad/ui':
         specifier: workspace:*
         version: link:../ui
+      '@keeb-cad/workers':
+        specifier: workspace:*
+        version: link:../workers
       ts-pattern:
         specifier: 'catalog:'
         version: 5.9.2

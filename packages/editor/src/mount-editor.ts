@@ -2,15 +2,15 @@ import type { Injector } from '@keeb-cad/di'
 import { provideInjectorOnApp } from '@keeb-cad/di/vue'
 import { useThemeChoice } from '@keeb-cad/ui'
 import { createApp } from 'vue'
+import type { Router } from 'vue-router'
 
 import App from './App.vue'
-import { createEditorRouter } from './router/create-editor-router'
-import type { DesignLocation } from './types'
+import { DesignLocation } from './router/design-location'
 import './styles.css'
 
-export function mountEditor(selector: string, injector: Injector): DesignLocation {
+export function mountEditor(selector: string, injector: Injector): Router {
   const app = createApp(App)
-  const router = createEditorRouter()
+  const { router } = injector.resolve(DesignLocation)
 
   provideInjectorOnApp(app, injector)
   app.use(router)
