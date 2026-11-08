@@ -98,6 +98,9 @@ context:
   - false -- `ShortcutRegistry` now throws on an unregistered command with no design (quick): the plan's Decision on unregistered handles chose this ("throws only on a bug"), and `ShortcutRegistry`'s handles all come from the registered tokens, so no keypress reaches an unregistered command.
 
 - Pass 1 patches applied: the UiAction row's toggled bug (input built before the guard in `#invokeUiAction`) went red, only that row, and green once restored. `pnpm test` 2149 passed; `pnpm check` exit 0, e2e included. The patches have not had their own review pass.
+- 2026-11-08, pass 2, on pass 1's patches (lenses: quick, test-reviewer; quotes checked, none dropped). Verdicts: high 0, medium 0, low 0, false 2, maybe-false 0.
+  - false -- the boundary table and toggle list carry no UiAction builder-before-guard row (quick): the test exists (`refuses a UiAction its check says no to without asking its builder`) and its toggle is logged above; the fix would edit this build's frozen boundary table, so rejected.
+  - false -- `checkSays` and `expected` hold equal literals per row (test-reviewer, check 2): both come from the boundary table ("check no / yes → false / true"), and passing the check through is the behaviour under test.
 
 ## Design Notes
 
