@@ -12,7 +12,7 @@ const packageName = (dir: string) =>
 // one (`sequence` included), so each becomes an inline project, which extends it. The name stays
 // the package name Vitest would give the directory.
 const configlessProjects = [
-  'fixtures/package.json',
+  'reference-designs/package.json',
   ...globSync('packages/*/package.json', { cwd: root }),
 ]
   .map((manifest) => path.dirname(manifest))

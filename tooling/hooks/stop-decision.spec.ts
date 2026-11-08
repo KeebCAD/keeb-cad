@@ -38,7 +38,7 @@ describe('the stop hook', () => {
   it.each([
     ['a package source', '/repo/packages/x/src/a.ts'],
     ['an app component', '/repo/app/src/App.vue'],
-    ['a fixture module', '/repo/fixtures/src/a.ts'],
+    ['a reference-designs module', '/repo/reference-designs/src/a.ts'],
     ['a tooling script', '/repo/tooling/hooks/guard.ts'],
     ['a path given relative to the project', 'packages/x/src/a.ts'],
   ])('blocks when %s changed', (_, path) => {

@@ -29,7 +29,7 @@
     { "path": "./packages/workers" },
     { "path": "./packages/commands" },
     { "path": "./packages/editor" },
-    { "path": "./fixtures" },
+    { "path": "./reference-designs" },
     { "path": "./app" },
     { "path": "./tsconfig.node.json" }
   ]

@@ -1,7 +1,7 @@
 packages:
   - packages/*
   - app
-  - fixtures
+  - reference-designs
 
 # A package already in the catalog is added as `catalog:`, never a second literal version
 # (tooling/catalog.spec.ts checks every shared dependency).

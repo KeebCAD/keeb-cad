@@ -43,11 +43,15 @@ const edgesOf = (result: ICruiseResult, from: string) =>
     ?.dependencies.map((d) => (d.couldNotResolve ? d.module : d.resolved))
 
 const ROWS = Object.keys(GRAPH)
-const PACKAGES = ROWS.filter((row) => row !== 'fixtures')
+const PACKAGES = ROWS.filter((row) => row !== 'reference-designs')
 
 /** Where a row's generated probes live, under the cruised roots. */
 const probeDir = (row: string) =>
-  row === 'app' ? 'app/src' : row === 'fixtures' ? 'fixtures/src' : `packages/${row}/src`
+  row === 'app'
+    ? 'app/src'
+    : row === 'reference-designs'
+      ? 'reference-designs/src'
+      : `packages/${row}/src`
 
 /** The specifier a row uses for an allowed target: through the one entry ENTRY_ONLY allows. */
 const specifier = (row: string, target: string) => {
@@ -100,13 +104,13 @@ for (const row of ROWS) {
 }
 
 // The graph describe awaits this while collecting, so it always runs; one cruise serves every use.
-const generated = cruiseWithConfig(['packages', 'app', 'fixtures'], generatedDir)
+const generated = cruiseWithConfig(['packages', 'app', 'reference-designs'], generatedDir)
 
 describe('AD-10 graph rules, generated from GRAPH', async () => {
   const result = await generated
   const violations = violationsOf(result)
 
-  it('covers all 29 packages plus fixtures', () => {
+  it('covers all 29 packages plus reference-designs', () => {
     expect(ROWS).toHaveLength(30)
   })
 
@@ -170,7 +174,11 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
           'packages/editor/src/index.ts',
           '@keeb-cad/model',
         ),
-        v('fixtures-only-in-tests', 'packages/model/src/index.ts', '@keeb-cad/fixtures'),
+        v(
+          'reference-designs-only-in-tests',
+          'packages/model/src/index.ts',
+          '@keeb-cad/reference-designs',
+        ),
         v('geometry-imports-only-drawn-edges', 'packages/geometry/src/index.ts', '@keeb-cad/di'),
         v(
           'geometry-imports-only-drawn-edges',
@@ -285,9 +293,9 @@ describe('AD-10 and AD-25 rules on the hand-written violation tree', async () =>
     expect(edgesOf(result, from)).toEqual([expect.stringMatching(/\/node_modules\/vitest\//)])
   })
 
-  it('allows a model test to import fixtures', () => {
+  it('allows a model test to import reference-designs', () => {
     expect(violations.filter((v) => v.from === 'packages/model/src/x.spec.ts')).toEqual([])
-    expect(edgesOf(result, 'packages/model/src/x.spec.ts')).toContain('@keeb-cad/fixtures')
+    expect(edgesOf(result, 'packages/model/src/x.spec.ts')).toContain('@keeb-cad/reference-designs')
   })
 
   // Each allowed edge reports nothing and was really cruised, not silently dropped.

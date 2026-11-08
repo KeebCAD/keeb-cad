@@ -25,7 +25,7 @@ describe('the check steps', () => {
       typecheck: 'vue-tsc --build',
       lint: 'eslint . --cache --cache-location node_modules/.cache/eslint/',
       'format:check': 'prettier --check .',
-      depcruise: 'depcruise packages app/src fixtures --config .dependency-cruiser.mts',
+      depcruise: 'depcruise packages app/src reference-designs --config .dependency-cruiser.mts',
       test: 'vitest run',
       'test:mutation': 'stryker run',
       build: 'pnpm --filter @keeb-cad/app build',

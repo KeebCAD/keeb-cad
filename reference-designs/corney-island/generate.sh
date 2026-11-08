@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Regenerates the Corney Island v0.3 golden fixture. See README.md for provenance.
-# Rerunning must leave no git diff under fixtures/corney-island/.
+# Rerunning must leave no git diff under reference-designs/corney-island/.
 set -euo pipefail
 
 ERGOGEN_TAG=v4.2.1

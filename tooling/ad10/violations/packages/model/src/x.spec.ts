@@ -1,2 +1,2 @@
-// Allowed: a test imports fixtures.
-import '@keeb-cad/fixtures'
+// Allowed: a test imports reference-designs.
+import '@keeb-cad/reference-designs'

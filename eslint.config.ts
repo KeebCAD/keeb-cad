@@ -30,8 +30,8 @@ const IGNORED = [
   // Deliberate AD-10 violations, cruised by tooling/ad10/rules.spec.ts.
   'tooling/ad10/violations/**',
   // Ergogen's input and output, committed verbatim.
-  'fixtures/corney-island/source/**',
-  'fixtures/corney-island/ergogen/**',
+  'reference-designs/corney-island/source/**',
+  'reference-designs/corney-island/ergogen/**',
 ]
 
 // Root, app, editor, di and ui tool configs, tooling/ and the e2e specs run in Node.js.

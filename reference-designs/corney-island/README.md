@@ -15,8 +15,8 @@ Ergogen's output for Corney Island v0.3, the reference that layout acceptance (i
 ## Reproduce
 
 ```sh
-bash fixtures/corney-island/generate.sh
-git status --porcelain fixtures/corney-island/   # expected: empty
+bash reference-designs/corney-island/generate.sh
+git status --porcelain reference-designs/corney-island/   # expected: empty
 ```
 
 The script builds everything in a temp dir and replaces `source/` and `ergogen/` only once it all succeeded. It fetches the footprints at the pinned SHA into `source/footprints/ceoloide/`, copies the config to `source/config.yaml`, clones Ergogen at tag `v4.2.1` into a temp dir (checking the commit above), installs it with `npm ci` and runs it under a clock fixed at 2026-10-23T00:00:00Z (the Corney HEAD commit date), because the KiCad 8 template stamps each PCB with today's date:

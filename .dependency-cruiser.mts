@@ -19,7 +19,7 @@ export const KERNELS = [
 export const OPEN_KERNELS = ['di', 'reactive', 'result'] as const
 
 /**
- * AD-10's graph as data: each package (28 under packages/, plus `app` and `fixtures`) and the
+ * AD-10's graph as data: each package (28 under packages/, plus `app` and `reference-designs`) and the
  * packages it is drawn to. One `<package>-imports-only-drawn-edges` rule is generated per row.
  */
 export const GRAPH: Readonly<Record<string, readonly string[]>> = {
@@ -95,7 +95,7 @@ export const GRAPH: Readonly<Record<string, readonly string[]>> = {
     'case',
     'routing',
   ],
-  fixtures: ['schema'],
+  'reference-designs': ['schema'],
 }
 
 /**
@@ -125,7 +125,7 @@ const escape = (s: string) => s.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&
  * undeclared import stays unresolved and keeps its bare name).
  */
 export const ws = (names: string) => `^(packages/(${names})/|@keeb-cad/(${names})(/|$))`
-export const FIXTURES = '^(fixtures/|@keeb-cad/fixtures(/|$))'
+export const REFERENCE_DESIGNS = '^(reference-designs/|@keeb-cad/reference-designs(/|$))'
 
 /**
  * One entry of a package (`.` is its root), by resolved source file (`src/<sub>.ts`, or a folder
@@ -138,10 +138,18 @@ export const entry = (name: string, sub: string) =>
 
 /** The files a row's rules apply to: `app` only at its sources, as `pnpm depcruise` cruises them. */
 export const sourcePath = (name: string) =>
-  name === 'app' ? '^app/src/' : name === 'fixtures' ? '^fixtures/' : `^packages/${escape(name)}/`
+  name === 'app'
+    ? '^app/src/'
+    : name === 'reference-designs'
+      ? '^reference-designs/'
+      : `^packages/${escape(name)}/`
 
 const selfTarget = (name: string) =>
-  name === 'app' ? '^(app/|@keeb-cad/app(/|$))' : name === 'fixtures' ? FIXTURES : ws(escape(name))
+  name === 'app'
+    ? '^(app/|@keeb-cad/app(/|$))'
+    : name === 'reference-designs'
+      ? REFERENCE_DESIGNS
+      : ws(escape(name))
 
 /** An npm package target, by resolved node_modules path or by bare specifier. */
 export const npm = (names: string) => `(^|/)node_modules/(${names})/|^(${names})(/|$)`
@@ -184,10 +192,14 @@ const importsOnly = (name: string): IForbiddenRuleType => {
     comment: `${name} imports ${allowed.length > 0 ? `only ${allowed.join(', ')}` : 'no workspace package'} (AD-10).`,
     severity: 'error',
     from: { path: sourcePath(name) },
-    // fixtures belong to fixtures-only-in-tests, so nothing double-reports.
+    // reference-designs belongs to reference-designs-only-in-tests, so nothing double-reports.
     to: {
       path: ANY_WORKSPACE_TARGET,
-      pathNot: [selfTarget(name), FIXTURES, ...(allowed.length > 0 ? [ws(alt(allowed))] : [])],
+      pathNot: [
+        selfTarget(name),
+        REFERENCE_DESIGNS,
+        ...(allowed.length > 0 ? [ws(alt(allowed))] : []),
+      ],
     },
   }
 }
@@ -381,7 +393,7 @@ const config: IConfiguration = {
       from: { path: '^packages/result/', pathNot: [TEST_FILE, TESTING_FOLDER] },
       to: {
         path: '(^|/)node_modules/|^[^./]',
-        pathNot: [ANY_WORKSPACE_TARGET, FIXTURES],
+        pathNot: [ANY_WORKSPACE_TARGET, REFERENCE_DESIGNS],
       },
     },
     {
@@ -393,20 +405,20 @@ const config: IConfiguration = {
       to: { path: [TESTING_FOLDER, '^@keeb-cad/[^/]+/testing$'] },
     },
     {
-      name: 'fixtures-only-in-tests',
-      comment: 'fixtures are imported only by tests.',
+      name: 'reference-designs-only-in-tests',
+      comment: 'reference-designs is imported only by tests.',
       severity: 'error',
       from: { path: '^(packages|app)/', pathNot: TEST_FILE },
-      to: { path: FIXTURES },
+      to: { path: REFERENCE_DESIGNS },
     },
   ],
   options: {
     doNotFollow: { path: 'node_modules' },
     // Anchored to the workspace: an unanchored `dist/` or `node_modules/` would also drop
     // resolved npm targets (vue/dist/vue.d.mts), hiding them from the Vue rule.
-    // fixtures/corney-island/ holds Ergogen's footprint .js files and output, not workspace code.
+    // reference-designs/corney-island/ holds Ergogen's footprint .js files and output, not workspace code.
     exclude: {
-      path: '^((packages/[^/]+|app|fixtures)/(dist|node_modules)/|fixtures/corney-island/)',
+      path: '^((packages/[^/]+|app|reference-designs)/(dist|node_modules)/|reference-designs/corney-island/)',
     },
     tsPreCompilationDeps: true,
     // Absolute: dependency-cruiser hands TypeScript a cwd-relative name, and TypeScript

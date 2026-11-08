@@ -15,7 +15,7 @@ import path from 'node:path'
 
 import type { ChangedFile, StopDecision, TranscriptEntry, TranscriptToolUse } from './types.ts'
 
-const LOGIC_FILE = /^(packages|app|fixtures|tooling)\/.+\.(ts|mts|cts|tsx|js|mjs|cjs|vue)$/
+const LOGIC_FILE = /^(packages|app|reference-designs|tooling)\/.+\.(ts|mts|cts|tsx|js|mjs|cjs|vue)$/
 const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit'])
 // A run counts only unscoped: `pnpm test <file>` or `--project x` proves the files it ran.
 const FULL_RUN = /^(mise exec -- )?pnpm (run )?(test|check)$/
@@ -26,7 +26,7 @@ const REDIRECT = /\s*\d*>>?\s*&?\S+/g
 const SUBSHELL = /^\(|\)$/g
 
 /**
- * Blocks the stop when a spec or source file under packages/, app/, fixtures/ or tooling/ changed
+ * Blocks the stop when a spec or source file under packages/, app/, reference-designs/ or tooling/ changed
  * with no full `pnpm test` after it: an Edit, Write or MultiEdit after the last full run in the
  * transcript, or a file `git status` reports changed later than that run (any such file when no
  * full run happened), which catches files written through Bash. A stop that a block already
