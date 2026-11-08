@@ -3,19 +3,31 @@ import { inject } from '@keeb-cad/di'
 import { Dispatcher } from '@keeb-cad/messaging'
 import type { FromModelWorker, ToModelWorker } from '@keeb-cad/protocol'
 import { shallowRef } from '@keeb-cad/reactive'
-import { InvariantError } from '@keeb-cad/result'
-import type { Frozen, Violation, Workspace } from '@keeb-cad/schema'
+import { InvariantError, Option } from '@keeb-cad/result'
+import type { Workspace } from '@keeb-cad/schema'
 
-import type { ModelWorkerStatus, Running, Spawn, SpawnedWorker } from './types'
+import type {
+  ModelWorkerStatus,
+  PostedIssues,
+  Running,
+  RunningStage,
+  Spawn,
+  SpawnedWorker,
+} from './types'
+import { DID_NOT_LOAD_TEXT, UNREADABLE_MESSAGE_TEXT } from './worker-failure-text'
 
 export class ModelWorkerLifecycle {
   get status(): ModelWorkerStatus {
     return this.#status.value
   }
 
-  // The whole list at the latest seq the gate accepted.
-  get issues(): Frozen<Violation[]> {
-    return this.#issues.value
+  // The whole list of the last post the gate accepted, with that post's seq.
+  get issues(): Option<PostedIssues> {
+    return Option.fromNullable(this.#issues.value)
+  }
+
+  get runningStage(): Option<RunningStage> {
+    return Option.fromNullable(this.#runningStage.value)
   }
 
   start(spawn: Spawn, workspace: Workspace = 'layout'): void {
@@ -50,7 +62,8 @@ export class ModelWorkerLifecycle {
 
   readonly #store = inject(DesignStore)
   readonly #status = shallowRef<ModelWorkerStatus>('idle')
-  readonly #issues = shallowRef<Frozen<Violation[]>>([])
+  readonly #issues = shallowRef<PostedIssues | undefined>(undefined)
+  readonly #runningStage = shallowRef<RunningStage | undefined>(undefined)
   readonly #dispatcher = inject(Dispatcher)
   #spawn: Spawn | undefined
   #workspace: Workspace = 'layout'
@@ -86,6 +99,7 @@ export class ModelWorkerLifecycle {
     this.#stop()
     this.#epoch += 1
     this.#dispatcher.restart(this.#epoch)
+    this.#runningStage.value = undefined
     const worker = spawn()
     this.#running = { worker, stop: this.#watch(worker) }
     this.#status.value = 'running'
@@ -113,26 +127,26 @@ export class ModelWorkerLifecycle {
 
   // Returns the call that stops watching the worker and terminates it.
   #watch(worker: SpawnedWorker): () => void {
-    const resetCrashes = () => {
-      this.#crashes = 0
-    }
     const stopListening = this.#dispatcher.listen<FromModelWorker>(worker, {
-      issues: ({ violations }) => {
-        resetCrashes()
-        this.#issues.value = violations
+      issues: ({ seq, violations }) => {
+        this.#crashes = 0
+        this.#runningStage.value = undefined
+        this.#issues.value = { seq, violations }
       },
-      'stage-started': resetCrashes,
+      'stage-started': ({ stage }) => {
+        this.#runningStage.value = { stage, arrivedAt: performance.now() }
+      },
       'derived-files': ({ routing, fingerprints, seq }) => {
-        resetCrashes()
+        this.#runningStage.value = undefined
         this.#store.acceptDerivedFiles({ routing, fingerprints }, seq)
       },
     })
     const onError = (event: Event) => {
       // Uncancelled, a worker's error is also reported as uncaught in main's global scope.
       event.preventDefault()
-      this.#crash()
+      this.#crash(ModelWorkerLifecycle.#errorMessage(event))
     }
-    const onMessageError = () => this.#crash()
+    const onMessageError = () => this.#crash(UNREADABLE_MESSAGE_TEXT)
     worker.addEventListener('error', onError)
     worker.addEventListener('messageerror', onMessageError)
     return () => {
@@ -143,14 +157,21 @@ export class ModelWorkerLifecycle {
     }
   }
 
-  #crash(): void {
+  // A throw in the worker delivers an ErrorEvent; a script that fails to load, a plain Event.
+  static #errorMessage(event: Event): string {
+    return event instanceof ErrorEvent && event.message !== '' ? event.message : DID_NOT_LOAD_TEXT
+  }
+
+  #crash(message: string): void {
     this.#crashes += 1
     if (this.#crashes < ModelWorkerLifecycle.#crashCap) {
       this.#spawnFromStore()
       return
     }
+    const stage = this.#runningStage.value?.stage
     this.#stop()
-    this.#status.value = 'failed'
+    this.#runningStage.value = undefined
+    this.#status.value = stage === undefined ? { message } : { message, stage }
   }
 
   #stop(): void {

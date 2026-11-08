@@ -1,1 +1,1 @@
-export type DisplayUnit = 'mm' | 'deg'
+export type DisplayUnit = 'mm' | 'deg' | 's' | 'none'

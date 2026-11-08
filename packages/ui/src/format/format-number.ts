@@ -2,7 +2,12 @@ import type { DisplayUnit } from './types'
 
 const DECIMALS = 2
 const MINUS = '−'
-const UNIT_SUFFIX: Readonly<Record<DisplayUnit, string>> = { mm: ' mm', deg: '°' }
+const UNIT_SUFFIX: Readonly<Record<DisplayUnit, string>> = {
+  mm: ' mm',
+  deg: '°',
+  s: ' s',
+  none: '',
+}
 
 /** It rounds the shortest decimal string, because binary `toFixed` turns `1.005` into `1.00`. */
 export function formatNumber(value: number, unit: DisplayUnit): string {

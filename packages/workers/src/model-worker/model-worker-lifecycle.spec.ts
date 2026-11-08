@@ -7,9 +7,9 @@ import {
   type Writable,
 } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
-import { InvariantError } from '@keeb-cad/result'
+import { InvariantError, Option } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
-import type { Design, Workspace } from '@keeb-cad/schema'
+import type { Design, StageId, Workspace } from '@keeb-cad/schema'
 import {
   aDesign,
   aFingerprintsFile,
@@ -20,7 +20,7 @@ import {
   aWorkspace,
 } from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, onTestFinished, vi } from 'vitest'
 
 import { FakeWorker } from '../testing'
 import { workersModule } from '../workers-module'
@@ -94,6 +94,10 @@ function startMessages(current: Committed, epoch: number, workspace: Workspace =
 
 function issuesAt(epoch: number, seq: number, violations: unknown[] = []) {
   return { kind: 'issues', epoch, seq, violations }
+}
+
+function stageStartedAt(epoch: number, seq: number, stage: StageId = aStageId()) {
+  return { kind: 'stage-started', epoch, seq, stage }
 }
 
 function derivedFilesAt(epoch: number, seq: number, revision: string) {
@@ -289,7 +293,7 @@ describe('ModelWorkerLifecycle', () => {
 
       expect({ spawned: spawned.length, status: lifecycle.status }).toEqual({
         spawned: 3,
-        status: 'failed',
+        status: { message: 'model worker did not load' },
       })
     })
 
@@ -321,17 +325,18 @@ describe('ModelWorkerLifecycle', () => {
       expect(spawned.map((worker) => worker.received.length)).toEqual(before)
     })
 
-    it('starts counting again after a post its gate accepts', async () => {
+    it('starts counting again after an issues post its gate accepts', async () => {
       const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
       lifecycle.start(spawn)
-
       latest(spawned).crash()
-      latest(spawned).post(issuesAt(2, committed(store).seq))
+      latest(spawned).crash()
+
+      latest(spawned).post(issuesAt(3, committed(store).seq))
       latest(spawned).crash()
       latest(spawned).crash()
 
       expect({ spawned: spawned.length, status: lifecycle.status }).toEqual({
-        spawned: 4,
+        spawned: 5,
         status: 'running',
       })
     })
@@ -339,10 +344,6 @@ describe('ModelWorkerLifecycle', () => {
     it.each([
       ['issues below the latest seq', (seq: number) => issuesAt(3, seq - 1)],
       ['issues from an older epoch', (seq: number) => issuesAt(1, seq)],
-      [
-        'a stage-started below the latest seq',
-        (seq: number) => ({ kind: 'stage-started', epoch: 3, seq: seq - 1, stage: aStageId() }),
-      ],
     ])('keeps counting after %s', async (_what, makePost) => {
       const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true, renamed: true })
       lifecycle.start(spawn)
@@ -352,24 +353,100 @@ describe('ModelWorkerLifecycle', () => {
       latest(spawned).post(makePost(committed(store).seq))
       latest(spawned).crash()
 
-      expect(lifecycle.status).toBe('failed')
+      expect(lifecycle.status).toEqual({ message: 'model worker did not load' })
     })
 
-    it('starts counting again after a stage-started at the latest seq', async () => {
+    it.each([
+      ['a stage-started', (seq: number) => stageStartedAt(3, seq)],
+      ['a derived-files post', (seq: number) => derivedFilesAt(3, seq, aRevision('accepted'))],
+    ])('resets no count on %s at the latest seq', async (_what, makePost) => {
       const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
       lifecycle.start(spawn)
-
       latest(spawned).crash()
-      latest(spawned).crash()
-      latest(spawned).post({
-        kind: 'stage-started',
-        epoch: 3,
-        seq: committed(store).seq,
-        stage: aStageId(),
-      })
       latest(spawned).crash()
 
-      expect(lifecycle.status).toBe('running')
+      latest(spawned).post(makePost(committed(store).seq))
+      latest(spawned).crash()
+
+      expect(lifecycle.status).toMatchObject({ message: 'model worker did not load' })
+    })
+
+    it('names the stage running at each crash in failed', async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+      const { seq } = committed(store)
+
+      latest(spawned).post(stageStartedAt(1, seq, 'plates'))
+      latest(spawned).crash('boom')
+      latest(spawned).post(stageStartedAt(2, seq, 'plates'))
+      latest(spawned).crash('boom')
+      latest(spawned).post(stageStartedAt(3, seq, 'plates'))
+      latest(spawned).crash('boom')
+
+      expect(lifecycle.status).toEqual({ message: 'boom', stage: 'plates' })
+    })
+
+    it('names no stage when none started', async () => {
+      const { lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+
+      latest(spawned).crash('boom')
+      latest(spawned).crash('boom')
+      latest(spawned).crash('boom')
+
+      expect(lifecycle.status).toEqual({ message: 'boom' })
+    })
+
+    it('names no stage when a post came after its stage-started', async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+      latest(spawned).crash('boom')
+      latest(spawned).crash('boom')
+      const { seq, revision } = committed(store)
+
+      latest(spawned).post(stageStartedAt(3, seq))
+      latest(spawned).post(derivedFilesAt(3, seq, revision))
+      latest(spawned).crash('boom')
+
+      expect(lifecycle.status).toEqual({ message: 'boom' })
+    })
+
+    it("takes the last crash's message", async () => {
+      const { lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+
+      latest(spawned).crash('a')
+      latest(spawned).crash('b')
+      latest(spawned).crash('c')
+
+      expect(lifecycle.status).toEqual({ message: 'c' })
+    })
+
+    it.each([
+      [
+        'a message that fails to deserialize',
+        (worker: FakeWorker) => worker.failToDeserialize(),
+        'model worker sent an unreadable message',
+      ],
+      [
+        'an error event with no message',
+        (worker: FakeWorker) => worker.crash(),
+        'model worker did not load',
+      ],
+      [
+        'an error event with an empty message',
+        (worker: FakeWorker) => worker.crash(''),
+        'model worker did not load',
+      ],
+    ])('gives failed a fixed text for %s on the cap', async (_what, crash, expected) => {
+      const { lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+
+      latest(spawned).crash('boom')
+      latest(spawned).crash('boom')
+      crash(latest(spawned))
+
+      expect(lifecycle.status).toEqual({ message: expected })
     })
   })
 
@@ -388,6 +465,18 @@ describe('ModelWorkerLifecycle', () => {
         received: latest(spawned).received,
         status: lifecycle.status,
       }).toEqual({ spawned: 4, received: startMessages(committed(store), 4), status: 'running' })
+    })
+
+    it('clears failed', async () => {
+      const { lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+      latest(spawned).crash('boom')
+      latest(spawned).crash('boom')
+      latest(spawned).crash('boom')
+
+      lifecycle.restart()
+
+      expect(lifecycle.status).toBe('running')
     })
 
     it('replaces a running worker and starts counting crashes again', async () => {
@@ -456,7 +545,7 @@ describe('ModelWorkerLifecycle', () => {
     it('holds no issues before the first post', async () => {
       const { lifecycle } = await arrange({ loaded: true })
 
-      expect(lifecycle.issues).toEqual([])
+      expect(lifecycle.issues).toEqual(Option.none())
     })
 
     it("replaces its issues with each accepted post's whole list", async () => {
@@ -467,7 +556,7 @@ describe('ModelWorkerLifecycle', () => {
 
       latest(spawned).post(issuesAt(1, seq, [aViolation('third')]))
 
-      expect(lifecycle.issues).toEqual([aViolation('third')])
+      expect(lifecycle.issues).toEqual(Option.some({ seq, violations: [aViolation('third')] }))
     })
 
     it('keeps its issues on a post below the latest seq', async () => {
@@ -479,7 +568,72 @@ describe('ModelWorkerLifecycle', () => {
 
       latest(spawned).post(issuesAt(1, seq, [aViolation('stale')]))
 
-      expect(lifecycle.issues).toEqual([aViolation('first')])
+      expect(lifecycle.issues).toEqual(Option.some({ seq, violations: [aViolation('first')] }))
+    })
+  })
+
+  describe('the running stage', () => {
+    it('holds a stage-started at the latest seq with its arrival time', async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+      vi.useFakeTimers()
+      onTestFinished(() => {
+        vi.useRealTimers()
+      })
+      const startedAt = performance.now()
+      const waited = 250
+      vi.advanceTimersByTime(waited)
+
+      latest(spawned).post(stageStartedAt(1, committed(store).seq, 'plates'))
+
+      expect(lifecycle.runningStage).toEqual(
+        Option.some({ stage: 'plates', arrivedAt: startedAt + waited }),
+      )
+    })
+
+    it('holds none for a stage-started below the latest seq', async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true, renamed: true })
+      lifecycle.start(spawn)
+
+      latest(spawned).post(stageStartedAt(1, committed(store).seq - 1, 'plates'))
+
+      expect(lifecycle.runningStage).toEqual(Option.none())
+    })
+
+    it('clears on a crash below the cap, which starts a new epoch', async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+      latest(spawned).post(stageStartedAt(1, committed(store).seq))
+
+      latest(spawned).crash('boom')
+
+      expect(lifecycle.runningStage).toEqual(Option.none())
+    })
+
+    it('clears on an accepted issues post', async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+      const { seq } = committed(store)
+      latest(spawned).post(stageStartedAt(1, seq))
+
+      latest(spawned).post(issuesAt(1, seq))
+
+      expect(lifecycle.runningStage).toEqual(Option.none())
+    })
+
+    it('stays on an issues post below the latest seq', async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+      const { seq } = committed(store)
+      expectOk(store.run(RenameDesign, { name: 'Corne v2' }))
+      const latestSeq = committed(store).seq
+      latest(spawned).post(stageStartedAt(1, latestSeq, 'plates'))
+
+      latest(spawned).post(issuesAt(1, seq))
+
+      expect(lifecycle.runningStage).toEqual(
+        Option.some({ stage: 'plates', arrivedAt: expect.any(Number) }),
+      )
     })
   })
 })

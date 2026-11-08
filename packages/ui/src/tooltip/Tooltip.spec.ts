@@ -4,13 +4,14 @@ import { render } from 'vitest-browser-vue'
 import { h } from 'vue'
 
 import { tooltipStates } from '../../workbench/states/tooltip-states'
+import '../theme/theme.css'
 import UiTooltip from './UiTooltip.vue'
 
 const CONTENT = 'Close the panel'
 
-function arrange() {
+function arrange(content = CONTENT) {
   return render(UiTooltip, {
-    props: { content: CONTENT },
+    props: { content },
     slots: { default: () => h('button', { type: 'button' }, 'Close') },
   })
 }
@@ -53,6 +54,21 @@ describe('Tooltip', () => {
     vi.useRealTimers()
 
     expect(page.getByRole('tooltip').query()?.textContent ?? null).toBe(expectedContent)
+  })
+
+  it('wraps a long unbroken text within its maximum width', async () => {
+    const expectedWidth = 320
+    const screen = await arrange('x'.repeat(1000))
+
+    screen.getByRole('button', { name: 'Close' }).element().focus()
+    const tooltip = page.getByRole('tooltip')
+    await expect.element(tooltip).toBeInTheDocument()
+
+    const popper = tooltip.element().closest('[data-reka-popper-content-wrapper]')
+    expect({
+      width: popper?.getBoundingClientRect().width,
+      scrollWidth: popper?.scrollWidth,
+    }).toEqual({ width: expectedWidth, scrollWidth: expectedWidth })
   })
 
   it('portals its content out of the rendered component', async () => {

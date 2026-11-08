@@ -3,14 +3,14 @@ title: "The status strip shows the model worker's state"
 type: 'feature'
 ticket: '23'
 created: '2026-11-08'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '879b12c6f10826fb4be4ca73b3fea6dd0837b9fa'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md'
@@ -101,9 +101,73 @@ See `## Boundary Table`.
 
 ## Implementation Notes
 
+- Decision (Sergii): dimming turns the glyph `text-muted` too, not only the number, so red and yellow appear only on a current result (as built; he chose it at the preview).
+- Decision (Sergii): `landmarks.spec.ts`'s "land on the empty inspector, then the status strip" drops the strip's `toBeEmptyDOMElement`, not an assertion that the strip shows counts, because 23.8's plan: "The status strip is an empty labelled landmark; 23.23 fills it", and AGENTS.md: "Test a rule where it is defined". `toHaveFocus` stays.
+- Decision (build): the Restart click ignores `invoke`'s result (`void invoke`), not a toast, because the action is unavailable only while `idle`, when the button isn't shown; `packages/editor/src/slide-out/LeftRail.vue` does the same.
+- Decision (build): `useWorkerFailure` uses a `typeof` check, not ts-pattern, because lint rejects `() => undefined` branches (implementer's run).
+- Decision (build): `tooling/design-tokens.spec.ts` counts 53 colours, not 52, because docs commit 879b12c added `glyph-stroke` to DESIGN.md; that commit left this spec red on main until this branch merges.
+- The acceptance item "the 1000 ms comparison at `>=`" goes red only with the first timer also moved to 1000 ms: the timer arms at 1001 ms, so nothing renders at exactly 1000 (implementer's toggle, 45 passed for the comparison alone).
+
+- Decision (build): the truncated `failed:` span takes `tabindex="0"`, not hover only, because EXPERIENCE.md requires everything keyboard-reachable and the tooltip is the only way to read the cut-off text.
+
+- Decision (build): tooltips cap at `max-w-80` (320 px) and the worker state and counts block at `max-w-160` (640 px, under half the 1366 px minimum), not `max-w-inspector-width` or `max-w-1/2`, because the first token is named for another thing and a fraction is neither of AD-26's allowed sizes ("Tailwind's 4px grid with DESIGN.md's named sizes as aliases"). *judgement* on the two values.
+- Decision (build): the half-width cap wraps worker state and counts together, not the worker-state wrapper alone, because with the wrapper alone the message's left edge passed the strip's midpoint in both browsers.
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+Pass 1 (quick, test-reviewer; 0 findings dropped): high 0, medium 1, low 8, false 1, rejected low 2.
+
+| Lens | Finding | Verdict | Route | Evidence |
+| --- | --- | --- | --- | --- |
+| quick | The `>=` comparison has no test of its own | low | reject | The first timer at 1001 ms guards the threshold; the fix edits this build's plan; recorded in Implementation Notes. |
+| quick | A dimmed warning keeps its Latte stroke | low | patch | `glyph-stroke` applied on `!isError`; DESIGN.md gives the stroke to Yellow glyphs. |
+| quick | A long `failed:` message breaks the 30px strip | medium | patch (Sergii: truncate + tooltip) | The span has no truncation; EXPERIENCE.md: "the full state text shows in a tooltip and stays the accessible name". |
+| quick, test-reviewer | The glyph test narrows with `startsWith` | low | patch | AGENTS.md: "assert whole values". |
+| test-reviewer | `clears when an accepted post arrives` never shows the stage first | low | patch | No precondition; passes if the stage never rendered. |
+| test-reviewer | `countsText()` normaliser | low | patch | AGENTS.md: expected values not tied to a helper's cleanup. |
+| test-reviewer | `scheme === 'dark'` branch and `previousElementSibling` | low | patch | AGENTS.md: "No `if` or loop around `expect`". |
+| test-reviewer | Restart rows hard-code worker counts and epochs | low | patch | AGENTS.md: "Assert relative to the arranged state". |
+| test-reviewer | `vi.useRealTimers()` makes the Restart row racy | false | reject | A timer scheduled on the fake clock is dropped when real timers return; `refresh` runs again only on a `running` change. |
+| test-reviewer | `prints %s with its suffix` on the `none` row | low | patch | Name and row disagree. |
+| test-reviewer | `mainSeq` undefined with issues is undimmed | low | reject | Unreachable: a worker spawns only once the store holds a `Committed` (AD-11). |
+| test-reviewer | `renders the $name state visibly` asserts only visibility | low | reject | A workbench smoke row; the state rows assert content. |
+| test-reviewer | `arrivedAt: expect.any(Number)` | low | patch | Can't fail if the time isn't taken on arrival. |
+
+Pass 2 (quick, test-reviewer, on pass 1's patches; 0 dropped): high 0, medium 1, low 8, rejected low 1.
+
+| Lens | Finding | Verdict | Route | Evidence |
+| --- | --- | --- | --- | --- |
+| quick | The tooltip can't show a long message whole | medium | patch | `TooltipContent` has no width limit; Reka sets `minWidth: max-content` (`reka-ui/dist/Popper/PopperContent.js:251`). |
+| quick | No test covers the tooltip or `tabindex` | low | patch | Removing either leaves every test green. |
+| quick | The 30px check can't fail; one line untested | low | patch | The footer's height is fixed by `h-status-strip`. |
+| quick | A long failure takes the left end | low | patch | The plan's frozen line: "the left end stays free". |
+| quick | `readCounts()` lost the order check | low | patch | The boundary: "dimmed with one `◌` before them". |
+| quick | Number dimming isn't asserted | low | patch | A hard-coded `:dimmed` stays green. |
+| quick | The stroke row's Latte wrapper does nothing | low | patch | Only the width is read, and it is 1px in every theme. |
+| test-reviewer | `.first()` can fall onto the counts' `●` | low | patch | Both render `●`. |
+| test-reviewer | The cast in `lastEpoch` | low | reject | A wrong message gives `NaN`, which fails the assertion loudly. |
+| test-reviewer | Only the left edge is checked; the message is sliced | low | patch | Same test as the one-line row. |
+
+Pass 3 (quick, test-reviewer, on pass 2's patches; 0 dropped): high 0, medium 0, low 5, false 2.
+
+| Lens | Finding | Verdict | Route | Evidence |
+| --- | --- | --- | --- | --- |
+| test-reviewer | `toHaveTextContent` is a substring match (two rows) | false | reject | Vitest 5's matcher compares exactly: 23.8's Review Triage Log quotes `pass: i === a` (`@vitest/browser/dist/expect-element.js`). |
+| quick, test-reviewer | The tooltip cap and strip cap are named for other things or off the grid | low | patch | AD-26: "Tailwind's 4px grid with DESIGN.md's named sizes as aliases"; now `max-w-80`, `max-w-160`, recorded in Implementation Notes. |
+| quick | The dimmed stroke row pins a colour no requirement states | low | patch | A 0px stroke has no visible colour. |
+| quick | `reads 0 and 0, dimmed…` claims dimming with text only | low | patch | Renamed; the themed row asserts the colour. |
+| quick | The tooltip row repeats `render` | low | patch | AGENTS.md: "passed as arguments to an `arrange` helper". |
+
+Pass 4 (quick, test-reviewer, on pass 3's patches; 0 dropped): high 0, medium 0, low 4. Nothing patched.
+
+| Lens | Finding | Verdict | Route | Evidence |
+| --- | --- | --- | --- | --- |
+| quick | The before-first-post row's dimming is split over two tests; only `0 errors`' colour is read | low | reject | `ViolationCounts.vue` passes one `counts.dimmed` to both severities; the behind-main row asserts both colours. A test gap, production is right. |
+| quick | The tooltip cap has one row; `w-80` would stay green | low | reject | No requirement sets a tooltip width; the cap is this build's own *judgement* decision. |
+| test-reviewer | `toMatchObject` weakens the undimmed stroke row | low | reject | The compared object has exactly the two keys. |
+| test-reviewer | 320 is not requirement-derived | low | reject | Recorded as a *judgement* decision in Implementation Notes. |
 
 ## Design Notes
 

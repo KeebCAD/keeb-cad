@@ -26,9 +26,14 @@ export class FakeWorker implements SpawnedWorker {
     this.#target.dispatchEvent(new MessageEvent('message', { data: message }))
   }
 
+  // An ErrorEvent carrying `message`, or with none the plain Event of a script that fails to load.
   // Returns false when a listener cancelled the error.
-  crash(): boolean {
-    return this.#target.dispatchEvent(new Event('error', { cancelable: true }))
+  crash(message?: string): boolean {
+    const event =
+      message === undefined
+        ? new Event('error', { cancelable: true })
+        : new ErrorEvent('error', { message, cancelable: true })
+    return this.#target.dispatchEvent(event)
   }
 
   failToDeserialize(): void {

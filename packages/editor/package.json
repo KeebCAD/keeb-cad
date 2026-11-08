@@ -17,6 +17,7 @@
     "@keeb-cad/schema": "workspace:*",
     "@keeb-cad/ui": "workspace:*",
     "@keeb-cad/workers": "workspace:*",
+    "@vueuse/core": "catalog:",
     "ts-pattern": "catalog:",
     "valibot": "catalog:",
     "vue": "catalog:",

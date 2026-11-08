@@ -191,6 +191,9 @@ catalogs:
     '@vue/tsconfig':
       specifier: ^0.9.1
       version: 0.9.1
+    '@vueuse/core':
+      specifier: 14.4.0
+      version: 14.4.0
     dexie:
       specifier: ^4.4.7
       version: 4.4.7
@@ -409,6 +412,9 @@ importers:
       '@keeb-cad/storage':
         specifier: workspace:*
         version: link:../storage
+      '@keeb-cad/workers':
+        specifier: workspace:*
+        version: link:../workers
       valibot:
         specifier: 'catalog:'
         version: 1.5.0(typescript@6.0.3)
@@ -547,6 +553,9 @@ importers:
       '@keeb-cad/workers':
         specifier: workspace:*
         version: link:../workers
+      '@vueuse/core':
+        specifier: 'catalog:'
+        version: 14.4.0(vue@3.5.44(typescript@6.0.3))
       ts-pattern:
         specifier: 'catalog:'
         version: 5.9.2
@@ -808,7 +817,7 @@ importers:
         specifier: 1.65.0
         version: 1.65.0(vue@3.5.44(typescript@6.0.3))
       '@vueuse/core':
-        specifier: 14.4.0
+        specifier: 'catalog:'
         version: 14.4.0(vue@3.5.44(typescript@6.0.3))
       '@zag-js/hotkeys':
         specifier: 1.47.0

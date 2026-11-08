@@ -59,7 +59,7 @@ describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
       await expect.element(slideOut()).toHaveFocus()
     })
 
-    it('land on the empty inspector, then the empty status strip', async () => {
+    it('land on the empty inspector, then the status strip', async () => {
       await arrange()
       canvas().element().focus()
 
@@ -68,7 +68,6 @@ describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
       await expect.element(inspector()).toBeEmptyDOMElement()
       pressKey(F6)
       await expect.element(statusStrip()).toHaveFocus()
-      await expect.element(statusStrip()).toBeEmptyDOMElement()
     })
 
     it('move from the PCB tab, inside the top bar, to the canvas', async () => {

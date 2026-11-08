@@ -94,7 +94,7 @@ describe("ui's tokens against DESIGN.md", () => {
       namedSpacing: namedSpacing.length,
       rounded: rounded.length,
       typography: typography.length,
-    }).toEqual({ darkColors: 52, lightColors: 52, namedSpacing: 12, rounded: 4, typography: 6 })
+    }).toEqual({ darkColors: 53, lightColors: 53, namedSpacing: 12, rounded: 4, typography: 6 })
   })
 
   it.each(darkColors)('carries the dark colour $name in @theme and the dark theme', (entry) => {

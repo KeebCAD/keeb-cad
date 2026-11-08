@@ -67,6 +67,13 @@ describe('formatNumber', () => {
     expect(formatNumber(123_456.789, 'mm')).toBe('≈ 123456.79 mm')
   })
 
+  it.each([
+    ['whole seconds', 2, 's', '2 s'],
+    ['a bare count', 0, 'none', '0'],
+  ] as const)('prints %s as its display unit asks', (_, value, unit, expected) => {
+    expect(formatNumber(value, unit)).toBe(expected)
+  })
+
   it.each([NaN, Infinity, -Infinity])('throws on %s', (value) => {
     expect(() => formatNumber(value, 'mm')).toThrow(RangeError)
   })
