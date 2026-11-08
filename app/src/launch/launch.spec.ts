@@ -1,6 +1,6 @@
-import { DesignStore } from '@keeb-cad/design'
+import { type Committed, DesignStore } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
-import { Option, Result } from '@keeb-cad/result'
+import { AsyncResult, Option, Result } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
 import type { Design, Id } from '@keeb-cad/schema'
 import {
@@ -73,6 +73,16 @@ function insecureFactory(): IDBFactory {
   }
 }
 
+class BackendWithUnreadableVersion extends MemoryBackend {
+  unreadable: number | undefined
+
+  override read(version: number) {
+    return version === this.unreadable
+      ? AsyncResult.err({ name: 'UnknownError', message: 'Internal error.' })
+      : super.read(version)
+  }
+}
+
 // A database of the test's own, deleted after it.
 function aDatabase(): string {
   const name = `launch-${crypto.randomUUID()}`
@@ -140,11 +150,15 @@ async function arrange({
 
 type Arranged = Awaited<ReturnType<typeof arrange>>
 
-function opened({ store }: Arranged) {
+function opened(arranged: Arranged) {
+  const { id, name } = openBundle(arranged).design.meta
+  return { id, name }
+}
+
+function openBundle({ store }: Arranged): Committed {
   const current = store.current
   if (current.isNone()) throw new Error('Expected a committed design.')
-  const { id, name } = current.value.design.meta
-  return { id, name }
+  return current.value
 }
 
 // The read of each version kept for a design, newest first.
@@ -285,6 +299,24 @@ describe('Launch', () => {
     })
   })
 
+  describe("when the URL's design can't be read from storage", () => {
+    it('opens a new design, not the newer stored one', async () => {
+      const backend = new BackendWithUnreadableVersion()
+      const arranged = await arrange({
+        hash: '#/design/older/layout',
+        stored: [intact(older), intact(newer)],
+        storage: { backend },
+      })
+      const versions = await arranged.storage.listVersions(anId('older'))
+      expectOk(versions)
+      backend.unreadable = versions.value[0]?.version
+
+      await arranged.launch()
+
+      expect(arranged.storedIds).not.toContain(opened(arranged).id)
+    })
+  })
+
   describe("when browser storage can't be opened", () => {
     it.each([
       ['at listDesigns', ''],
@@ -345,6 +377,23 @@ describe('Launch', () => {
   })
 
   describe('a reload', () => {
+    it('reopens with the design, routing and fingerprints texts a launch saved', async () => {
+      const database = aDatabase()
+      const hash = '#/design/older/layout'
+      const first = await arrange({ hash, stored: [intact(older)], storage: { database } })
+      await first.launch()
+      const { revision } = openBundle(first)
+      await expect
+        .poll(async () => (await first.storage.listDesigns()).map((list) => list[0]?.revision))
+        .toMatchObject({ value: revision })
+      first.unmount()
+
+      const second = await arrange({ hash, storage: { database } })
+      await second.launch()
+
+      expect(writeBundle(openBundle(second))).toEqual(textsOf(older))
+    })
+
     it('reopens the design the first launch opened, showing it on the page', async () => {
       const database = aDatabase()
       const first = await arrange({ hash: '', storage: { database } })
@@ -375,10 +424,8 @@ describe('Launch', () => {
         .getByRole('contentinfo', { name: 'Status strip' })
         .getByRole('button', { name: 'Restart' })
 
-    function currentSeq({ store }: Arranged): number {
-      const current = store.current
-      if (current.isNone()) throw new Error('Expected a committed design.')
-      return current.value.seq
+    function currentSeq(arranged: Arranged): number {
+      return openBundle(arranged).seq
     }
 
     function lastEpoch({ workers }: Arranged): number {

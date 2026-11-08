@@ -1,21 +1,51 @@
 import { LoadFlow, NewDesign } from '@keeb-cad/commands'
-import { type Committed, DesignStore } from '@keeb-cad/design'
+import {
+  type Command,
+  type Committed,
+  DesignStore,
+  registerCommand,
+  type Writable,
+} from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
 import { Option } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
+import type { Design } from '@keeb-cad/schema'
 import { aFingerprintsFile, aRevision, aRoutingFile } from '@keeb-cad/schema/testing'
 import { DesignStorage, writeBundle } from '@keeb-cad/storage'
 import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
 import { ModelWorkerLifecycle } from '@keeb-cad/workers'
+import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
 import { mainModules } from '../main-modules'
 import { Autosave } from './autosave'
 
-async function arrange(backend = new MemoryBackend()) {
+const renameDesignInputSchema = v.object({ name: v.string() })
+type RenameDesignInput = v.InferOutput<typeof renameDesignInputSchema>
+
+class RenameDesign implements Command<RenameDesignInput> {
+  static readonly kind = 'command'
+  static readonly id = 'meta.renameDesign'
+  static readonly label = 'Rename design'
+  static readonly input = renameDesignInputSchema
+
+  available(): boolean {
+    return true
+  }
+
+  apply(draft: Writable<Design>, input: RenameDesignInput): void {
+    draft.meta.name = input.name
+  }
+}
+
+async function arrange(
+  backend = new MemoryBackend(),
+  register: (container: Container) => void = () => {},
+) {
   const container = new Container()
   for (const module of mainModules) container.addModule(module)
   container.override(storageBackend).useValue(backend)
+  register(container)
   await container.autoLoad()
   return container
 }
@@ -54,6 +84,32 @@ describe('Autosave', () => {
         newest: { value: writeBundle(committed(store)) },
       })
     expect(lifecycle.status).toBe('idle')
+  })
+
+  it('saves after a command commits patches, keeping the version before it', async () => {
+    const container = await arrange(undefined, (c) => registerCommand(c, RenameDesign))
+    const store = container.resolve(DesignStore)
+    const storage = container.resolve(DesignStorage)
+    expectOk(await store.run(NewDesign, {}))
+    const { revision: before } = committed(store)
+    await expect
+      .poll(async () => (await saved(storage, store)).versions)
+      .toMatchObject({ value: [{ revision: before }] })
+
+    expectOk(store.run(RenameDesign, { name: 'Renamed' }))
+
+    const { revision } = committed(store)
+    await expect
+      .poll(() => saved(storage, store))
+      .toMatchObject({
+        versions: {
+          value: [
+            { revision, reason: 'autosave' },
+            { revision: before, reason: 'autosave' },
+          ],
+        },
+        newest: { value: writeBundle(committed(store)) },
+      })
   })
 
   it("saves accepted derived files with no edit after, replacing that revision's version", async () => {

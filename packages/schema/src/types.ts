@@ -86,7 +86,6 @@ export interface SchemaIssue {
   message: string
 }
 
-// Each member is added by the story that first rejects with it.
 export type ModelRejectionKind = never
 
 // The design store's own kinds carry no message: the editor writes their text from the kind.
@@ -96,7 +95,6 @@ export type Rejection =
   | { kind: 'stale'; seq: number; latest: number }
   | { kind: ModelRejectionKind; ids: ItemId[]; message: string }
 
-// Each member is added by the story that first reports it.
 export type ViolationKind = never
 
 export type Fix = v.InferOutput<typeof fixSchema>

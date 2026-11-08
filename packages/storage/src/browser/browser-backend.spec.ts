@@ -1,4 +1,6 @@
 import { Container } from '@keeb-cad/di'
+import { Option, Result } from '@keeb-cad/result'
+import { expectOk } from '@keeb-cad/result/testing'
 import { aDesign, aFingerprintsFile, anId, aRevision, aRoutingFile } from '@keeb-cad/schema/testing'
 import { describe, expect, it, onTestFinished } from 'vitest'
 
@@ -11,6 +13,7 @@ import { BrowserStorageAccess } from './browser-storage-access'
 import { StorageDatabase } from './storage-database'
 
 const insecure = 'The operation is insecure.'
+const refused = 'The write was refused.'
 
 // A database of its own per test, deleted after it, so a shuffled run shares none.
 function arrange(factory: IDBFactory = indexedDB) {
@@ -42,6 +45,39 @@ function insecureFactory(): IDBFactory {
 
 describe('BrowserBackend', () => {
   backendContract(() => arrange().resolve(storageBackend))
+
+  it('keeps the version a failed write would replace, and none of that write', async () => {
+    const container = arrange()
+    const backend = container.resolve(storageBackend)
+    const texts = { design: 'design', routing: 'routing', fingerprints: 'fingerprints' }
+    const version = {
+      designId: anId('corne'),
+      name: 'Corne',
+      revision: aRevision('r1'),
+      reason: 'autosave',
+      savedAt: 1000,
+      texts,
+    } as const
+    const replaced = await backend.write(version, [])
+    expectOk(replaced)
+    const designs = await backend.designs()
+    // Deleting is the write's last step, so the new version and design row are already in.
+    container.resolve(StorageDatabase).versions.hook('deleting', () => {
+      throw new DOMException(refused, 'QuotaExceededError')
+    })
+
+    const failed = await backend.write({ ...version, revision: aRevision('r2') }, [replaced.value])
+
+    expect(failed.match(failure)).toMatchObject({
+      name: 'QuotaExceededError',
+      inner: { name: 'QuotaExceededError', message: refused },
+    })
+    expect(await backend.read(replaced.value)).toEqual(Result.ok(Option.some(texts)))
+    expect(
+      (await backend.versions(anId('corne'))).map((list) => list.map((v) => v.version)),
+    ).toEqual(Result.ok([replaced.value]))
+    expect(await backend.designs()).toEqual(designs)
+  })
 
   it.each([
     ['load', (storage: DesignStorage) => storage.load(anId('corne')).match(failure)],
