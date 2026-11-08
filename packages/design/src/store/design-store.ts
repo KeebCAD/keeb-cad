@@ -72,6 +72,26 @@ export class DesignStore {
       .exhaustive()
   }
 
+  available(handle: CommandHandle | ActionHandle): boolean {
+    return match(handle)
+      .with(
+        P.when((entry): entry is CommandHandle => entry.kind === 'command'),
+        (command) => {
+          this.#ensureRegistered(this.#commands, command)
+          const current = this.#current.value
+          return current !== undefined && this.#commandAvailable(command, current.design)
+        },
+      )
+      .with(
+        P.when((entry): entry is ActionHandle => entry.kind === 'action'),
+        (action) => {
+          this.#ensureRegistered(this.#actions, action)
+          return this.#actionAvailable(action)
+        },
+      )
+      .exhaustive()
+  }
+
   replaceDesign(bundle: MigratedBundle): Result<{ emptied: Emptied[] }, DesignInvalid> {
     return parseDesign(bundle).map((parsed) => {
       const design = deepFreeze(parsed)
@@ -124,9 +144,9 @@ export class DesignStore {
     const copied = this.#copyInput(input)
     const current = this.#committed()
     const { design } = current
-    const command = this.#injector.resolve(handle)
-    if (!command.available(design))
+    if (!this.#commandAvailable(handle, design))
       return Result.err<Rejection>({ kind: 'unavailable', command: handle.id })
+    const command = this.#injector.resolve(handle)
     return parse(handle.input, copied)
       .mapErr((issues): Rejection => ({ kind: 'input-invalid', command: handle.id, issues }))
       .flatMap((parsed) => this.#patcher.change(design, (draft) => command.apply(draft, parsed)))
@@ -147,14 +167,21 @@ export class DesignStore {
   #runAction(handle: ActionHandle, input: unknown): AsyncResult<void, unknown> {
     this.#ensureRegistered(this.#actions, handle)
     const copied = this.#copyInput(input)
-    const action = this.#injector.resolve(handle)
-    if (!action.available(this.current))
-      return AsyncResult.err<Rejection>({ kind: 'unavailable', command: handle.id })
-    return parse(handle.input, copied).match<AsyncResult<void, unknown>>({
-      ok: (parsed) => action.apply(parsed),
-      err: (issues) =>
-        AsyncResult.err<Rejection>({ kind: 'input-invalid', command: handle.id, issues }),
-    })
+    return this.#actionAvailable(handle)
+      ? parse(handle.input, copied).match<AsyncResult<void, unknown>>({
+          ok: (parsed) => this.#injector.resolve(handle).apply(parsed),
+          err: (issues) =>
+            AsyncResult.err<Rejection>({ kind: 'input-invalid', command: handle.id, issues }),
+        })
+      : AsyncResult.err<Rejection>({ kind: 'unavailable', command: handle.id })
+  }
+
+  #commandAvailable(handle: CommandHandle, design: Frozen<Design>): boolean {
+    return this.#injector.resolve(handle).available(design)
+  }
+
+  #actionAvailable(handle: ActionHandle): boolean {
+    return this.#injector.resolve(handle).available(this.current)
   }
 
   #ensureRegistered<H extends CommandHandle | ActionHandle>(

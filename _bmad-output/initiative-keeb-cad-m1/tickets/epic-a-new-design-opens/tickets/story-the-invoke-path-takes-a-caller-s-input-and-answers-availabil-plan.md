@@ -3,14 +3,14 @@ title: "The invoke path takes a caller's input and answers availability"
 type: 'feature'
 ticket: '21'
 created: '2026-11-08'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: 'bb247bd9a316964a3341ccfc5d51e2a9cd76a743'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/AGENTS.md'
@@ -68,18 +68,36 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `packages/design/src/store/design-store.ts` -- `available(handle: CommandHandle | ActionHandle): boolean` (service: a method of `DesignStore`): `#ensureRegistered`, then a command is `false` with no design, else `#commandAvailable(handle, design)`; an action is `#actionAvailable(handle)`. Both private helpers (service: private methods of `DesignStore`) resolve the entry and ask its check. `#runCommand` calls `#commandAvailable(handle, design)` after `#committed()`, and `#runAction` calls `#actionAvailable(handle)` where it asks today, so `run`'s throws and their order don't change.
-- [ ] `packages/design/src/store/design-store.spec.ts` -- the `design` rows of the boundary table under `describe('available')`, with a spec factory `renameWith(available: (design) => boolean)` (function) for the command and `saveWith(available: (current) => boolean)` (function) for the action.
-- [ ] `packages/editor/src/invoke/invoke.ts` -- each overload gains `input?: v.InferInput<H['input']>`. Add `available(handle: EntryHandle): boolean` (service: a method of `Invoke`): a command or action is `store.available(handle)`, a UiAction its own `available()`. Each of the three branches (`#invokeCommand`, a new `#invokeAction` (service: a private method of `Invoke`), `#invokeUiAction`) first returns `unavailable` when `this.available(handle)` is false, then takes `input === undefined ? this.#inputFor(handle) : input`. Rewrite `#invokeCommand`'s comment to fit the new guard.
-- [ ] `packages/editor/src/invoke/invoke.spec.ts` -- the editor `Invoke` rows. Add `actions` to `Entries`, a spec factory `recordAction(id, available)` (function) recording its input through `Recorder`, a command factory `renameWith(available: boolean)` (function), and a factory `recordNullableName()` (function) returning a UiAction over `v.nullable(nameInputSchema)` for the `null` row.
-- [ ] `packages/editor/src/invoke/invoke.types.spec.ts` -- the type rows, as `expectTypeOf` only (no `@ts-expect-error`, the repo's type-test convention): for each kind, the input parameter of `invoke` instantiated for a hand-written `{ name: string }` handle equals `{ name: string } | undefined`, so `{ name: 1 }` is refused by that type. If an instantiation expression on the overloads can't select one, the implementer reports it rather than switching to `@ts-expect-error`.
-- [ ] `packages/editor/src/invoke/types.ts` -- `InvokeFunctions = Pick<Invoke, 'invoke' | 'available'>`.
-- [ ] `packages/editor/src/invoke/use-invoke.ts` (function, composable) -- `useInvoke(): InvokeFunctions`: `useService(Invoke)`, then a new object whose `invoke` and `available` forward to it. Not exported from `index.ts`.
-- [ ] `packages/editor/src/invoke/use-invoke.spec.ts` (browser) -- the glue row: a spec-declared component (function: a render-function component, no template) with one button labelled "Rename" whose click calls `invoke(RenameDesign, { name: 'Lily58' })`; a real container with a committed `aDesign()`; click it by role and label; assert `store.current`'s design name.
+- [x] `packages/design/src/store/design-store.ts` -- `available(handle: CommandHandle | ActionHandle): boolean` (service: a method of `DesignStore`): `#ensureRegistered`, then a command is `false` with no design, else `#commandAvailable(handle, design)`; an action is `#actionAvailable(handle)`. Both private helpers (service: private methods of `DesignStore`) resolve the entry and ask its check. `#runCommand` calls `#commandAvailable(handle, design)` after `#committed()`, and `#runAction` calls `#actionAvailable(handle)` where it asks today, so `run`'s throws and their order don't change.
+- [x] `packages/design/src/store/design-store.spec.ts` -- the `design` rows of the boundary table under `describe('available')`, with a spec factory `renameWith(available: (design) => boolean)` (function) for the command and `saveWith(available: (current) => boolean)` (function) for the action.
+- [x] `packages/editor/src/invoke/invoke.ts` -- each overload gains `input?: v.InferInput<H['input']>`. Add `available(handle: EntryHandle): boolean` (service: a method of `Invoke`): a command or action is `store.available(handle)`, a UiAction its own `available()`. Each of the three branches (`#invokeCommand`, a new `#invokeAction` (service: a private method of `Invoke`), `#invokeUiAction`) first returns `unavailable` when `this.available(handle)` is false, then takes `input === undefined ? this.#inputFor(handle) : input`. Rewrite `#invokeCommand`'s comment to fit the new guard.
+- [x] `packages/editor/src/invoke/invoke.spec.ts` -- the editor `Invoke` rows. Add `actions` to `Entries`, a spec factory `recordAction(id, available)` (function) recording its input through `Recorder`, a command factory `renameWith(available: boolean)` (function), and a factory `recordNullableName()` (function) returning a UiAction over `v.nullable(nameInputSchema)` for the `null` row.
+- [x] `packages/editor/src/invoke/invoke.types.spec.ts` -- the type rows, as `expectTypeOf` only (no `@ts-expect-error`, the repo's type-test convention): for each kind, the input parameter of `invoke` instantiated for a hand-written `{ name: string }` handle equals `{ name: string } | undefined`, so `{ name: 1 }` is refused by that type. If an instantiation expression on the overloads can't select one, the implementer reports it rather than switching to `@ts-expect-error`.
+- [x] `packages/editor/src/invoke/types.ts` -- `InvokeFunctions = Pick<Invoke, 'invoke' | 'available'>`.
+- [x] `packages/editor/src/invoke/use-invoke.ts` (function, composable) -- `useInvoke(): InvokeFunctions`: `useService(Invoke)`, then a new object whose `invoke` and `available` forward to it. Not exported from `index.ts`.
+- [x] `packages/editor/src/invoke/use-invoke.spec.ts` (browser) -- the glue row: a spec-declared component (function: a render-function component, no template) with one button labelled "Rename" whose click calls `invoke(RenameDesign, { name: 'Lily58' })`; a real container with a committed `aDesign()`; click it by role and label; assert `store.current`'s design name.
 
 **Acceptance Criteria:**
 - Given each boundary-table row, when `pnpm test` runs, then a test named for it passes at its level, the editor rows in Chromium and Firefox.
 - Given each toggled bug, its tests go red, and green once restored: `invoke` ignores the caller's input; `invoke` asks the builder even when given input; `invoke` never asks the builder; `Invoke.available` returns `true` for a command and an action without asking the store; `available` returns `true` for a UiAction; the action branch builds its input before its guard; `null` treated as no input; `useInvoke`'s `invoke` drops its input argument.
+
+## Implementation Notes
+
+- Decision (Sergii, 2026-11-08): the caller-input type rows are dropped and `invoke.types.spec.ts` is deleted, not stated with `@ts-expect-error` and not moved onto an exported `EntryInput<H>` alias, because no `expectTypeOf` matcher can state them: `Invoke.prototype.invoke<RenameHandle>` applies the type argument to all three overloads (`tsc`: "RenameHandle does not satisfy the constraint ActionHandle"), `toBeCallableWith(rename, { name: 1 })` compiles, and `.not.toExtend<(h: RenameHandle, input: { name: number }) => unknown>()` fails, since a generic overload widens to its constraint. The earlier rule is that rows only `@ts-expect-error` can state are dropped. The compile check itself stands: the editor specs compile only with schema inputs. The dropped row was: `| module boundaries | caller input type | `invoke` of a `{ name: string }` command, action and UiAction: `{ name: 'x' }` / none / `{ name: 1 }` | compiles / compiles / does not | types (editor) |`
+- Decision (build): `useInvoke` returns `{ invoke: service.invoke.bind(service), available: service.available.bind(service) }`, not forwarding arrows, because an arrow can't keep `invoke`'s three overloads without casts, and `bind`'s `OmitThisParameter` keeps the type unchanged (`pnpm typecheck` passes on `InvokeFunctions`).
+- Decision (build): each "check says no" row is its own test asserting `available` and the refusal, not an `it.each` yes/no pair, because the refusal applies only to the "no" case and AGENTS.md says "No `if` or loop around `expect`".
+- Decision (build): `#runAction` ends in a ternary, not an early return, because `unicorn/no-declarations-before-early-exit` refuses the early return; behaviour is unchanged.
+
+## Review Triage Log
+
+- 2026-11-08, pass 1 (lenses: quick, test-reviewer; quotes checked against the diff, none dropped). Verdicts: high 0, medium 1, low 2, false 2, maybe-false 0.
+  - medium, patch -- `invoke.spec.ts`: no row proves an unavailable UiAction refuses before its builder is asked (quick). Real: the new UiAction-unavailable row passes caller input, so `#inputFor` never reaches the builder, against the Always line "before any builder is asked". Fix: a row with `RecordedBuildName` and no caller input, toggled bug run.
+  - low, patch -- `invoke.spec.ts`: `renameWith`, `recordAction`, `recordName` annotate their return as the base handle interfaces, so `v.InferInput<H['input']>` widens and those calls accept any input (quick), weakening the Decision (Sergii) note that the specs compile only with schema inputs. Fix: drop the annotations.
+  - low, patch -- `design-store.spec.ts` `says a command with a design loaded is %s` / `says an action with no design loaded is %s`: one `expected` both configures the fake check and is the expected value (test-reviewer, check 2). Fix: separate check and expected columns.
+  - false -- plan Tasks wording (`input === undefined ? … : input` in each branch) against `#inputFor(handle, input)`: the guard still runs first in all three branches and behaviour matches; the fix would edit this build's plan, so rejected.
+  - false -- `ShortcutRegistry` now throws on an unregistered command with no design (quick): the plan's Decision on unregistered handles chose this ("throws only on a bug"), and `ShortcutRegistry`'s handles all come from the registered tokens, so no keypress reaches an unregistered command.
+
+- Pass 1 patches applied: the UiAction row's toggled bug (input built before the guard in `#invokeUiAction`) went red, only that row, and green once restored. `pnpm test` 2149 passed; `pnpm check` exit 0, e2e included. The patches have not had their own review pass.
 
 ## Design Notes
 
@@ -139,5 +157,5 @@ First pass: two conformance readers and one gap reader (Sonnet, context-free); t
 | rules | store: action | check no / check yes, no design | `false` / `true` | unit (design, Node) |
 | rules | store: action sees the design | check returns `current.isSome()`, before / after `replaceDesign` | `false` / `true` | unit (design, Node) |
 | rules | store: unregistered | `available` of a command no token holds | throws `InvariantError` naming it | unit (design, Node) |
-| module boundaries | caller input type | `invoke` of a `{ name: string }` command, action and UiAction: `{ name: 'x' }` / none / `{ name: 1 }` | compiles / compiles / does not | types (editor) |
+| ~~module boundaries~~ | ~~caller input type~~ | dropped (Decision (Sergii), Implementation Notes) | — | — |
 | glue | component click | a spec component's "Rename" button calling `useInvoke().invoke(RenameDesign, { name: 'Lily58' })`, design committed | after the click, `current`'s name `'Lily58'` | unit (editor, browser) |

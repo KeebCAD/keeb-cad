@@ -2,6 +2,7 @@ import type { ActionHandle, CommandHandle } from '@keeb-cad/design'
 import type * as v from 'valibot'
 
 import type { UiActionHandle } from '../ui-actions/types'
+import type { Invoke } from './invoke'
 
 export type EntryHandle = CommandHandle | ActionHandle | UiActionHandle
 
@@ -22,3 +23,5 @@ export interface BuilderInputMismatch {
 
 export type BuilderInputCheck<Input, Schema extends v.GenericSchema> =
   Same<Input, v.InferInput<Schema>> extends true ? unknown : BuilderInputMismatch
+
+export type InvokeFunctions = Pick<Invoke, 'invoke' | 'available'>
