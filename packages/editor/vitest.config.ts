@@ -24,6 +24,7 @@ export default defineConfig({
     include: [
       'vue',
       'vue-router',
+      '@vueuse/core',
       '@keeb-cad/ui > reka-ui',
       '@keeb-cad/ui > @zag-js/hotkeys',
       '@keeb-cad/ui > @lucide/vue',

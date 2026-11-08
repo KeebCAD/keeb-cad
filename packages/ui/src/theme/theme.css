@@ -64,6 +64,7 @@
   --color-pick-point: #ca9ee6;
   --color-via: #c6d0f5;
   --color-via-hole: #232634;
+  --color-glyph-stroke: transparent;
 
   --spacing: 4px;
   --spacing-row: 30px;
@@ -167,6 +168,7 @@
     --color-pick-point: #ca9ee6;
     --color-via: #c6d0f5;
     --color-via-hole: #232634;
+    --color-glyph-stroke: transparent;
   }
 
   [data-theme='light'] {
@@ -222,6 +224,7 @@
     --color-pick-point: #8839ef;
     --color-via: #4c4f69;
     --color-via-hole: #eff1f5;
+    --color-glyph-stroke: #4c4f69;
   }
 
   /* Before mount no data-theme is set yet, so the OS preference picks the values. */
@@ -279,6 +282,11 @@
       --color-pick-point: #8839ef;
       --color-via: #4c4f69;
       --color-via-hole: #eff1f5;
+      --color-glyph-stroke: #4c4f69;
     }
   }
+}
+
+@utility glyph-stroke {
+  -webkit-text-stroke: 1px var(--color-glyph-stroke);
 }

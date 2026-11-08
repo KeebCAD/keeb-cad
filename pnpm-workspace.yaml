@@ -19,6 +19,7 @@ catalog:
   '@vitejs/plugin-vue': ^6.0.8
   '@vitest/browser-playwright': 5.0.5
   '@vue/tsconfig': ^0.9.1
+  '@vueuse/core': 14.4.0
   dexie: ^4.4.7
   nanoevents: ^10.0.0
   nanoid: ^6.0.2

@@ -1,6 +1,13 @@
 import type { Endpoint } from '@keeb-cad/messaging'
+import type { Frozen, StageId, Violation } from '@keeb-cad/schema'
 
-export type ModelWorkerStatus = 'idle' | 'running' | 'failed'
+export type WorkerFailed = { message: string; stage?: StageId }
+
+export type ModelWorkerStatus = 'idle' | 'running' | WorkerFailed
+
+export type RunningStage = { stage: StageId; arrivedAt: number }
+
+export type PostedIssues = { seq: number; violations: Frozen<Violation[]> }
 
 export interface SpawnedWorker extends Endpoint {
   addEventListener(type: 'message', listener: (event: MessageEvent) => void): void

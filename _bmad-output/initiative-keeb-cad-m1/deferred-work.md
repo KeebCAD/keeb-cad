@@ -208,3 +208,21 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-editor-frame-shows-the-design-plan.md`
   summary: Editor specs' `afterEach(resetColorScheme)` runs before `mountShell`'s `onTestFinished` unmounts the app, so VueUse's `useColorMode` listener may write `data-theme` back after the reset (medium, unverified).
   evidence: Vitest runs `onTestFinished` after `afterEach`; settle it with a run that reads `document.documentElement.dataset.theme` after teardown, or by resetting inside the unmounting `onTestFinished`. Seen green on three shuffled runs.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-status-strip-shows-the-model-worker-s-state-plan.md`
+  summary: The violations-panel story answers whether `failed:` also shows in that panel (Sofia's pick: no).
+  evidence: EXPERIENCE.md's Output states row says the message is "also in the violations panel"; epic-a-new-design-opens leaves that panel to epic-change-a-parameter.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-status-strip-shows-the-model-worker-s-state-plan.md`
+  summary: bmad-ux reconciles EXPERIENCE.md's Output states `◌` for `waiting for edit to finish` and `rebuilding N%` with AD-11.
+  evidence: 23.23 builds to the spine's glyphs (`◌` on behind counts, the running stage as `parts 2 s`), because no live stage posts a percent (Decision (Sergii)).
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-status-strip-shows-the-model-worker-s-state-plan.md`
+  summary: 13.17/13.18 add the non-zero severity row to the status strip's counts.
+  evidence: 23.23 tests only zero counts: "only zero counts can be posted, so this story tests zero and dimmed zero"; AGENTS.md "Arrange only a state real commands could reach".
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-status-strip-shows-the-model-worker-s-state-plan.md`
+  summary: `packages/editor/src/design/use-open-design.ts:9` holds an `Option` in a computed.
+  evidence: AD-24: "A value that is stored (a computed, a ref) … is unwrapped first".
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-status-strip-shows-the-model-worker-s-state-plan.md`
+  summary: `packages/workers/src/model-worker/model-worker-lifecycle.spec.ts`'s `arrange` runs `registerCommand(container, RenameDesign)` for every test.
+  evidence: AGENTS.md "Arrange only what the test uses"; 23.23's new rows arrange only what they use.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-status-strip-shows-the-model-worker-s-state-plan.md`
+  summary: `model-worker-lifecycle.spec.ts`'s `aViolation` literal has no `schema/testing` builder; the first violation kind's story adds it.
+  evidence: AGENTS.md "Build schema values the test doesn't read with the concept's test builder".

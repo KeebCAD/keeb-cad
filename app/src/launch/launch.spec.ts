@@ -19,7 +19,7 @@ import {
 } from '@keeb-cad/storage'
 import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
 import { FakeWorker } from '@keeb-cad/workers/testing'
-import { afterEach, describe, expect, it, onTestFinished } from 'vitest'
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { page, userEvent } from 'vitest/browser'
 
 import { Autosave } from '../autosave/autosave'
@@ -366,6 +366,73 @@ describe('Launch', () => {
       await expect
         .element(page.getByRole('heading', { level: 1 }))
         .toHaveTextContent(opened(second).name)
+    })
+  })
+
+  describe('the status strip Restart', () => {
+    const restart = () =>
+      page
+        .getByRole('contentinfo', { name: 'Status strip' })
+        .getByRole('button', { name: 'Restart' })
+
+    function currentSeq({ store }: Arranged): number {
+      const current = store.current
+      if (current.isNone()) throw new Error('Expected a committed design.')
+      return current.value.seq
+    }
+
+    function lastEpoch({ workers }: Arranged): number {
+      const [first] = workers.at(-1)?.received ?? []
+      return (first as { epoch: number }).epoch
+    }
+
+    it('respawns a failed model worker at the next epoch and clears failed', async () => {
+      const arranged = await arrange({ hash: '#/design/older/layout', stored: [intact(older)] })
+      await arranged.launch()
+      arranged.workers[0]?.crash('boom')
+      arranged.workers[1]?.crash('boom')
+      arranged.workers[2]?.crash('boom')
+      await expect.element(page.getByText('failed: boom', { exact: true })).toBeVisible()
+      const workersBefore = arranged.workers.length
+      const epochBefore = lastEpoch(arranged)
+
+      await restart().click()
+
+      await expect.element(page.getByText('failed: boom', { exact: true })).not.toBeInTheDocument()
+      expect(arranged.workers).toHaveLength(workersBefore + 1)
+      expect(arranged.workers.at(-1)?.received[0]).toMatchObject({
+        kind: 'design',
+        epoch: epochBefore + 1,
+      })
+    })
+
+    it('respawns the model worker from a running stage and clears the stage', async () => {
+      const arranged = await arrange({ hash: '#/design/older/layout', stored: [intact(older)] })
+      await arranged.launch()
+      vi.useFakeTimers()
+      onTestFinished(() => {
+        vi.useRealTimers()
+      })
+      arranged.workers[0]?.post({
+        kind: 'stage-started',
+        epoch: 1,
+        seq: currentSeq(arranged),
+        stage: 'parts',
+      })
+      await vi.advanceTimersByTimeAsync(1001)
+      vi.useRealTimers()
+      await expect.element(page.getByText('parts 1 s', { exact: true })).toBeVisible()
+      const workersBefore = arranged.workers.length
+      const epochBefore = lastEpoch(arranged)
+
+      await restart().click()
+
+      await expect.element(page.getByText('parts 1 s', { exact: true })).not.toBeInTheDocument()
+      expect(arranged.workers).toHaveLength(workersBefore + 1)
+      expect(arranged.workers.at(-1)?.received[0]).toMatchObject({
+        kind: 'design',
+        epoch: epochBefore + 1,
+      })
     })
   })
 })

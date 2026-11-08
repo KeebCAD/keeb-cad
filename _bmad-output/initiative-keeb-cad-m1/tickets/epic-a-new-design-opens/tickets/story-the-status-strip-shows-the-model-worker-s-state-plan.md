@@ -3,14 +3,14 @@ title: "The status strip shows the model worker's state"
 type: 'feature'
 ticket: '23'
 created: '2026-11-08'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '879b12c6f10826fb4be4ca73b3fea6dd0837b9fa'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md'
@@ -101,9 +101,36 @@ See `## Boundary Table`.
 
 ## Implementation Notes
 
+- Decision (Sergii): dimming turns the glyph `text-muted` too, not only the number, so red and yellow appear only on a current result (as built; he chose it at the preview).
+- Decision (Sergii): `landmarks.spec.ts`'s "land on the empty inspector, then the status strip" drops the strip's `toBeEmptyDOMElement`, not an assertion that the strip shows counts, because 23.8's plan: "The status strip is an empty labelled landmark; 23.23 fills it", and AGENTS.md: "Test a rule where it is defined". `toHaveFocus` stays.
+- Decision (build): the Restart click ignores `invoke`'s result (`void invoke`), not a toast, because the action is unavailable only while `idle`, when the button isn't shown; `packages/editor/src/slide-out/LeftRail.vue` does the same.
+- Decision (build): `useWorkerFailure` uses a `typeof` check, not ts-pattern, because lint rejects `() => undefined` branches (implementer's run).
+- Decision (build): `tooling/design-tokens.spec.ts` counts 53 colours, not 52, because docs commit 879b12c added `glyph-stroke` to DESIGN.md; that commit left this spec red on main until this branch merges.
+- The acceptance item "the 1000 ms comparison at `>=`" goes red only with the first timer also moved to 1000 ms: the timer arms at 1001 ms, so nothing renders at exactly 1000 (implementer's toggle, 45 passed for the comparison alone).
+
+- Decision (build): the truncated `failed:` span takes `tabindex="0"`, not hover only, because EXPERIENCE.md requires everything keyboard-reachable and the tooltip is the only way to read the cut-off text.
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+Pass 1 (quick, test-reviewer; 0 findings dropped): high 0, medium 1, low 8, false 1, rejected low 2.
+
+| Lens | Finding | Verdict | Route | Evidence |
+| --- | --- | --- | --- | --- |
+| quick | The `>=` comparison has no test of its own | low | reject | The first timer at 1001 ms guards the threshold; the fix edits this build's plan; recorded in Implementation Notes. |
+| quick | A dimmed warning keeps its Latte stroke | low | patch | `glyph-stroke` applied on `!isError`; DESIGN.md gives the stroke to Yellow glyphs. |
+| quick | A long `failed:` message breaks the 30px strip | medium | patch (Sergii: truncate + tooltip) | The span has no truncation; EXPERIENCE.md: "the full state text shows in a tooltip and stays the accessible name". |
+| quick, test-reviewer | The glyph test narrows with `startsWith` | low | patch | AGENTS.md: "assert whole values". |
+| test-reviewer | `clears when an accepted post arrives` never shows the stage first | low | patch | No precondition; passes if the stage never rendered. |
+| test-reviewer | `countsText()` normaliser | low | patch | AGENTS.md: expected values not tied to a helper's cleanup. |
+| test-reviewer | `scheme === 'dark'` branch and `previousElementSibling` | low | patch | AGENTS.md: "No `if` or loop around `expect`". |
+| test-reviewer | Restart rows hard-code worker counts and epochs | low | patch | AGENTS.md: "Assert relative to the arranged state". |
+| test-reviewer | `vi.useRealTimers()` makes the Restart row racy | false | reject | A timer scheduled on the fake clock is dropped when real timers return; `refresh` runs again only on a `running` change. |
+| test-reviewer | `prints %s with its suffix` on the `none` row | low | patch | Name and row disagree. |
+| test-reviewer | `mainSeq` undefined with issues is undimmed | low | reject | Unreachable: a worker spawns only once the store holds a `Committed` (AD-11). |
+| test-reviewer | `renders the $name state visibly` asserts only visibility | low | reject | A workbench smoke row; the state rows assert content. |
+| test-reviewer | `arrivedAt: expect.any(Number)` | low | patch | Can't fail if the time isn't taken on arrival. |
 
 ## Design Notes
 
