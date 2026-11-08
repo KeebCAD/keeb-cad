@@ -3,7 +3,7 @@ title: 'The editor frame shows the design'
 type: 'feature'
 ticket: '8'
 created: '2026-11-08'
-status: 'draft'
+status: 'ready-for-dev'
 baseline_revision: ''
 route: 'full'
 route_source: 'auto'
@@ -21,26 +21,33 @@ context:
 
 ## Intent
 
-**Problem:** The app opens a design but shows only an `h1` "keeb-cad" over the design's name and id: no frame, no workspace switching, no region focus, and nothing tells the user what the model worker is doing or that it has given up. `workers` holds a bare `'failed'`, keeps only the issues list (no seq), and resets its crash count on `stage-started` and `derived-files`, against AD-11.
+**Problem:** The app opens a design but shows only an `h1` "keeb-cad" over the design's name and id: no shell, no workspace switching, no landmark focus.
 
-**Approach:** Build EXPERIENCE.md › Global chrome in `editor` (top bar with the design name and the workspace tabs, left rail with the Tree slide-out shell, canvas region, docked 320px inspector region, status strip), each region a labelled landmark that F6 / Shift+F6 cycle. Keys 1–5, T, Esc, F6 and Shift+F6 are UiActions. `workers` keeps the issues with their seq, the running stage with its arrival time, and a `WorkerFailed`; its crash count resets only on an `issues` post; `commands` gains `RestartModelWorker`, which the strip offers.
+**Approach:** Build EXPERIENCE.md › Global chrome's shell in `editor`: a top bar with the design name and the workspace tabs, a left rail with the Tree slide-out shell, the canvas landmark, a docked 320px inspector landmark and an empty status strip landmark, each a labelled landmark that F6 / Shift+F6 cycle. Keys 1–5, T, Esc, F6 and Shift+F6 are UiActions; a workspace switch moves the URL and sends `focus` through `workers`.
 
 ## Boundaries & Constraints
 
 **Always:**
-- Tabs follow `workspaceSchema`'s option order (Layout, Outline, PCB, Case, Firmware) on `ui`'s Tabs wrapper, `role=tablist`. A switch changes the route's workspace segment (vue-router owns the design location) and `workers` sends `focus { workspace }` for it.
-- Region roots (top bar, slide-out when open, canvas, inspector, status strip) are `tabindex="-1"` with an `aria-label`; F6 moves to the next in that order, Shift+F6 to the previous, wrapping, landing on a region even when it is empty; a closed slide-out is skipped.
-- T opens the Tree slide-out (non-modal) showing `No nodes. Add a group (G).`; Esc closes it. The empty Layout canvas shows `Add a group (G) or open the command palette (Ctrl+K).` verbatim; Outline, PCB, Case and Firmware show an empty canvas region with no text. G and Ctrl+K stay inert.
-- Status strip counts: errors and warnings from the last posted `issues`, `0` before the first; dimmed with `◌` while that issues' seq is behind the open design's seq (AD-11).
-- Running stage: shown only when more than 1000 ms have passed since its `stage-started` arrived on main: its `StageId`, the elapsed whole seconds (`2 s`) and Restart, until the next accepted post clears it.
-- The crash count resets only on an accepted `issues` post (and, later, a stage output). `stage-started` and `derived-files` never reset it. At the third consecutive crash the status is failed with `WorkerFailed { message, stage? }`: `message` is the `ErrorEvent`'s message, or `workers`' fixed text for a message that fails to deserialize; `stage` is set only when a `stage-started` arrived in the crashing epoch with no accepted post after it. The strip shows `failed: <message>`, naming that stage when set, with Restart, until Restart.
-- Restart runs `RestartModelWorker` (a `commands` action) through `useInvoke()`; components reach services only through composables.
+- Tabs follow `workspaceSchema`'s option order (Layout, Outline, PCB, Case, Firmware) on `ui`'s Tabs wrapper, `role=tablist`, each tab with a `UiKbd` hint given its `Show<W>` handle's raw `hotkeys[0]` (`UiKbd` formats it) (AD-26: "Every `kbd` hint is formatted by its formatter"). A switch changes the route's workspace segment (vue-router owns the design location) and `ModelWorkerLifecycle.focus(workspace)` sends `focus { workspace }`.
+- Landmark roots (top bar, slide-out when open, canvas, inspector, status strip) are `tabindex="-1"` with an `aria-label`; F6 moves to the next in that order, Shift+F6 to the previous, wrapping, landing on a landmark even when it is empty; a closed slide-out is skipped.
+- T opens the Tree slide-out (non-modal); Esc closes it. The empty Layout canvas shows `Add a group (G) or open the command palette (Ctrl+K).` verbatim; Outline, PCB, Case and Firmware show an empty canvas landmark with no text. G and Ctrl+K stay inert.
+- The status strip is an empty labelled landmark; 23.23 fills it.
+- Components reach services only through composables and run entries through `useInvoke()`.
+- Landmark roots are `header` (top bar), `aside` (slide-out), `main` (canvas), `aside` (inspector) and `footer` (status strip), each with its `aria-label`, so tests find them by role and name.
 - Every visible colour and size comes from `ui`'s tokens (DESIGN.md: top bar 42px, rail 44px, inspector 320px, status strip 30px, slide-out 260px), in both themes.
 
 **Never:**
-- Tab badges, the save state, File and Export menus, undo/redo, the violations panel, cursor and zoom, the Tree's nodes, Parameters and Parts tabs, the command palette, Design settings in the inspector.
-- A `failed` message in the violations panel (ticket's open question, Sofia's pick: a worker crash is not a Violation).
-- A hand-built ARIA widget; Tailwind's `dark:`; arbitrary Tailwind values; `vi.mock`; a clock registered for tests.
+- Status-strip content (counts, running stage, failed state, Restart: 23.23), tab badges, the save state, File and Export menus, undo/redo, cursor and zoom, the Tree's nodes, Parameters and Parts tabs, the command palette, Design settings in the inspector.
+- A hand-built ARIA widget; Tailwind's `dark:`; arbitrary Tailwind values; `vi.mock`.
+
+**Decisions (Sergii):**
+- Decision (Sergii): an `editor` service `DesignLocation` creates the router in its constructor and sends `ModelWorkerLifecycle.focus(workspace)` from its `afterEach` on a workspace change; `mountEditor` resolves it, `app.use`s its router and returns the router to `Launch`; the `DesignLocation = Router` alias is removed (not renamed: a second name for `Router` would be named after the library, AGENTS.md) and `mountEditor` returns vue-router's `Router`, so the class takes the glossary name. Not a `createToken` registered by `mountEditor`, because that is a spine edit (AD-25's token table) hiding only a creation order; not `Launch` wiring `focus`, because the focus rule would leave `editor` and its specs.
+- Decision (Sergii): the work area is vue-router nested routes with named views, not Reka `TabsContent` panels choosing what shows. `/design/:id` renders the shell; one child per `workspaceSchema` option (`path` and `name` = the workspace) fills `default` (the canvas landmark's `<RouterView />`) and `inspector` (the inspector landmark's `<RouterView name="inspector" />`); an empty or unknown child segment redirects to `layout`, replacing the `resolveWorkspace` guard, whose spec rows stay as the requirement. The landmark roots stay fixed in the shell; only their contents swap. The tabs are `ui` wrapper parts (root, list, one panel): the root's model is the route's workspace, and one `UiTabPanel` whose `value` follows the route wraps the canvas and inspector landmarks. Because the router docs give this layout ("possible to create complex layouts using named views with nested views"), while Reka's documented setup has a `TabsContent` that "Contains the content associated with each trigger" (reka-ui.com/docs/components/tabs), and Reka panels would make a second owner of what shows beside "vue-router is the one owner of the open design and workspace".
+- Decision (Sergii): five plain UiAction classes `ShowLayout` … `ShowFirmware` (ids `workspace.showLayout` …, labels `Layout` … `Firmware`, hotkeys `1` … `5`), one file each in that workspace's folder (`workspace/layout/show-layout.ts`), all `emptyInputSchema`; each calls `DesignLocation.openWorkspace` and is unavailable while its workspace is open. Not a `defineShowWorkspace` factory, because nothing in the repo registers factory-made handles and each workspace's folder then owns its own entry.
+- Decision (Sergii): the Tree slide-out shows no text until 13.7, not EXPERIENCE's `[ASSUMPTION]` `No nodes. Add a group (G).`, because a hint's shortcut should come from its entry's `hotkeys` through the hotkey formatter, never hardcoded, and no Add group entry exists yet.
+- Decision (Sergii): the empty Layout hint shows verbatim with `G` and `Ctrl+K` written out, as the ticket asks, not left out, because no Add group or palette entry exists yet to read them from; a `deferred-work.md` entry has 13.7 and the palette story render them from their handles' `hotkeys` through `formatHotkey`.
+- Decision (Sergii): the F6 targets are **landmarks** (`landmarks/`, `Landmarks`, `use-landmark.ts`, `CanvasLandmark`, `InspectorLandmark`, `StatusStripLandmark`, `FocusNextLandmark` / `FocusPreviousLandmark`, ids `landmarks.focusNextLandmark` / `landmarks.focusPreviousLandmark`, labels `Next landmark` / `Previous landmark`) and the frame is the **shell** (`shell/`, `EditorShell`), not `region` / `frame`, because the spine's glossary already defines both ("Each term means exactly one thing"); a docs commit adds both words to EXPERIENCE's chrome-word list and rewords the spine's **canvas** row.
+- Decision (Sergii): from any element inside a landmark, F6 moves to the next landmark and Shift+F6 to the previous; the left rail takes the slide-out's place in the order (from the rail, F6 goes to the slide-out when open, else the canvas; Shift+F6 to the top bar); from outside every landmark, F6 goes to the top bar. Not a sixth landmark for the rail, because that changes EXPERIENCE's order ("top bar, slide-out (when open), canvas, inspector, status strip"); not left out, because the behaviour would be untested.
 
 ## I/O & Edge-Case Matrix
 
@@ -48,68 +55,53 @@ context:
 |----------|--------------|---------------------------|----------------|
 | Switch workspace | design open at layout; press 3 | tab PCB selected, URL `…/pcb`, worker receives `focus { workspace: 'pcb' }` | — |
 | Same workspace | at layout; press 1 | nothing changes, no second `focus` | — |
-| Slide-out | closed; T, then Esc | opens with the empty text; Esc closes; Esc while closed does nothing | — |
+| Slide-out | closed; T, then Esc | opens, holding no text; Esc closes; Esc while closed does nothing | — |
 | F6 | focus on body / top bar / status strip | top bar / canvas (slide-out closed) / top bar | — |
-| Counts | no issues yet; issues at seq 2 while design at seq 3 | `0`/`0` undimmed per Open Question 3; dimmed with `◌` | — |
-| Running stage | `stage-started` parts, fake timers | nothing at 999 and 1000 ms; `parts`, `1 s`, Restart at 1001 ms | — |
-| Crash cap | 3 crashes, each after `stage-started` plates | `failed: <message>` naming plates, Restart | no auto-restart |
-| Crash cap, no stage | 3 crashes, no `stage-started`, or one followed by `derived-files` | `failed: <message>`, no stage | — |
-| Deserialize failure | 3 `messageerror`s | `failed: <workers' fixed text>` | — |
 
 </frozen-after-approval>
 
 ## Code Map
 
-- `packages/workers/src/model-worker/types.ts` -- `ModelWorkerStatus = 'idle' | 'running' | 'failed'` (bare); `SpawnedWorker`'s `'error' | 'messageerror'` listener takes `Event`. `Running` stays private.
-- `packages/workers/src/model-worker/model-worker-lifecycle.ts` -- `start(spawn, workspace = 'layout')` L21, `focus(workspace)` L29 (stores it; sends when running; no caller outside specs yet), `restart()` L41 (throws before start, zeroes the count, respawns). `#spawnFromStore` L82 bumps the epoch and `dispatcher.restart(epoch)`. `#watch` L115–144: `issues` sets `#issues` and resets, `'stage-started': resetCrashes`, `derived-files` resets and calls `store.acceptDerivedFiles`; `onError(event: Event)` calls `preventDefault()` then `#crash()`, `onMessageError` calls `#crash()`. `#crash` L146: cap 3, then `'failed'`. Reactive state is private `shallowRef`s behind getters.
-- `packages/workers/src/model-worker/model-worker-lifecycle.spec.ts` -- `arrange()` L54 (real `designModule` + `workersModule`, `spawn` pushing `FakeWorker`s), helpers `issuesAt`, `derivedFilesAt`, `aViolation`, `latest`. Rows "starts counting again after a stage-started at the latest seq" and the derived-files reset contradict AD-11 now; the requirement changed, so they change (not weakened).
-- `packages/workers/src/testing/fake-worker.ts` -- `crash()` dispatches a plain `Event('error')`; `failToDeserialize()`; `post(msg)`.
-- `packages/messaging/src/dispatcher/dispatcher.ts` -- the gate; accepted posts only reach `#watch`'s handlers. Don't change.
-- `packages/protocol/src/model-worker/types.ts` -- `issues { violations }`, `stage-started { stage }`, `derived-files`, all `Stamp`ed (`epoch`, `seq`). No stage-output kind. Don't change.
-- `packages/schema/src/{workspace.ts,stage-id.ts,types.ts}` -- `workspaceSchema` (tab order), `stageIdSchema`, `Violation.severity: 'error' | 'warning'`; `schema/testing` has `aWorkspace`, `aStageId`.
-- `packages/commands/src/design/new-design.ts` -- the action shape to copy (`kind`, `id`, `label`, `input = emptyInputSchema`, `available(current)`, `apply` returning `AsyncResult`, `#x = inject(...)`); `design-actions-module.ts` the module shape; `src/empty-input-schema.ts`, `src/types.ts` not exported yet. NewDesign names a design `Untitled design`.
-- `packages/editor/src/App.vue` -- `useShortcuts()`, `h1` "keeb-cad", scoped CSS with `#ccc` (deferred-work entry; this story replaces it). `App.spec.ts` and `app/e2e/vue.spec.ts` assert that `h1`.
-- `packages/editor/src/mount-editor.ts` -- creates the router (`createEditorRouter()`), `provideInjectorOnApp`, `useThemeChoice()`, mounts, returns `DesignLocation` (= `Router`, `types.ts`), which `app/src/launch/launch.ts` uses (`isReady`, `currentRoute`, `replace`) and then calls `lifecycle.start(spawn, workspace)`.
-- `packages/editor/src/router/{create-editor-router.ts,resolve-workspace.ts}` -- hash history, `/design/:id/:workspace?`, a bad segment replaced with `layout`.
-- `packages/editor/src/views/DesignCanvas.vue` (+spec) -- `useOpenDesign()`, shows name and id "until 8"; becomes the canvas region's content.
-- `packages/editor/src/{ui-actions,invoke,shortcuts,design}/` -- `registerUiAction(container, Handle)`, `useInvoke()`, `ShortcutRegistry` (layer id `<handle id>#<index>`, refusals dropped), `useOpenDesign()`. No real UiAction yet. `invoke.spec.ts` and `shortcut-registry.spec.ts` are the arrange precedent.
-- `packages/editor/src/testing/press.ts` -- letters only (`code: Key<L>`); 1–5, F6, Shift+F6 and Escape need their own key and code.
-- `packages/editor/vitest.config.ts` -- browser mode, `setColorScheme` command, no viewport (Vitest's default is 414x896).
-- `packages/ui/src/tabs/UiTabs.vue` -- Reka `TabsRoot` > `TabsList` + one `TabsContent` per item with a named slot; `TabItem = { value, label }`, `v-model`. List and panels can't sit in different parts of the frame today (Open Question 2).
-- `packages/ui/src/icon/` -- `IconName` map holds only `close`; the rail's Tree button needs one more lucide icon. `ui`'s `UiButton` (`disabledReason`), `UiTooltip`, `src/testing/css-rgb.ts`, `theme/theme.css` tokens (`chrome`, `panel`, `border`, `text`, `text-muted`, `error`, `warning`, `focus`, spacing `top-bar`, `left-rail`, `inspector-width`, `status-strip`, `slide-out-width`, `target-min`, `focus-offset`).
-- `packages/ui/src/hotkeys/hotkey-layer.ts` -- calls `preventDefault()` on a matched entry, so F6 never reaches the browser's own F6.
-- `app/src/main-modules.ts` -- gains `commands`' new module.
+- `packages/editor/src/App.vue` -- `useShortcuts()`, `h1` "keeb-cad", a scoped block with `#ccc` (a deferred-work entry) and an unscoped `html, body, #app` reset. `App.spec.ts` (builds its own `createEditorRouter()`), `mount-editor.spec.ts` (container of `designModule` + `editorModule`; asserts `Lily58` and `lily-58`) and `app/e2e/vue.spec.ts` assert today's shell.
+- `packages/editor/src/mount-editor.ts` -- calls `createEditorRouter()`, `provideInjectorOnApp`, `app.use(router)`, `useThemeChoice()`, mounts, returns the router typed `DesignLocation` (`types.ts`: `= Router`, re-exported by `index.ts`).
+- `app/src/launch/launch.ts` (+spec) -- reads `currentRoute.value.name === 'design'` and `params.workspace`, then `replace({ name: 'design', params: { id, workspace } })` and `lifecycle.start(spawn, workspace)`. Static child routes have neither that name nor that param, so Launch changes.
+- `packages/editor/src/router/` -- hash history; `/` and `/design/:id/:workspace?` render `DesignCanvas`; `resolve-workspace.ts`'s guard replaces a bad segment with `layout`. The spec's `arrange()` (`router.listening = false`, `history.replaceState` on finish) is the router-cleanup precedent. vue-router matches paths case-insensitively unless `sensitive: true`, and the spec's `/design/corne/Layout` row expects a redirect.
+- `packages/editor/src/views/DesignCanvas.vue` (+spec) -- name and id "until 8"; goes.
+- `packages/editor/src/design/use-open-design.ts` -- `useOpenDesign()`; the top bar's name.
+- `packages/editor/src/ui-actions/`, `invoke/`, `shortcuts/` -- `registerUiAction(container, Handle)`; `UiAction { available(); apply(input) }` with statics `kind`, `id`, `label`, `input`, `hotkeys?`; `useInvoke()`; `ShortcutRegistry` reads every handle's `hotkeys`. `invoke.spec.ts`'s `arrange` shape is the precedent; not its repeated `unavailable` assertion.
+- `packages/editor/src/testing/press.ts` -- letters only (`code: Key<L>`).
+- `packages/editor/vitest.config.ts` -- browser mode, `setColorScheme`, `optimizeDeps.include`, no viewport (Vitest's default 414x896).
+- `packages/workers/src/model-worker/model-worker-lifecycle.ts` -- `focus(workspace)` sends `focus` on every call while running. Don't change. `@keeb-cad/workers/testing`'s `FakeWorker` records `posted`; the lifecycle spec's `arrange()` shows the spawn wiring.
+- `packages/commands/src/empty-input-schema.ts`, `types.ts` -- `emptyInputSchema`, `EmptyInput`; not exported from `index.ts`.
+- `packages/ui/src/tabs/` -- `UiTabs.vue`: Reka `TabsRoot` > `TabsList` + a `TabsContent` per item. Reka 2.11's `TabsTrigger` sets `aria-controls` only for a value with a registered `TabsContent` (`reka-ui/dist/Tabs/TabsTrigger.js:36`). `Tabs.spec.ts` takes its expected labels from the state's props and keeps a module-level `ITEMS`; the moved specs don't copy either.
+- `packages/ui/` -- `src/index.ts` exports every component; `workbench/widgets.ts` + `workbench/states/*-states.ts` register each; `icon/icons.ts` holds only `close`; `hotkeys/format-hotkey.ts`; `theme/theme.css` tokens (`chrome`, `panel`, `border`, `fill-on`, `selection`, `focus`, `font-ui`; spacing `top-bar`, `left-rail`, `inspector-width`, `status-strip`, `slide-out-width`; `overlay` shadow). `hotkeys/hotkey-layer.ts` calls `preventDefault()` on every match, available or not.
 
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `packages/workers/src/model-worker/types.ts` -- `WorkerFailed = { message: string; stage?: StageId }`; `ModelWorkerStatus = { kind: 'idle' } | { kind: 'running' } | { kind: 'failed'; failure: WorkerFailed }`; `PostedIssues = { seq: number; violations: Frozen<Violation[]> }`; `RunningStage = { stage: StageId; arrivedAt: number }`; `SpawnedWorker`'s `error` listener takes `ErrorEvent`, `messageerror` keeps `Event`.
-- [ ] `packages/workers/src/model-worker/unreadable-message-text.ts` -- the fixed text (Open Question 4).
-- [ ] `packages/workers/src/model-worker/model-worker-lifecycle.ts` (service) -- `issues: Option<PostedIssues>` (none before the first); `runningStage: Option<RunningStage>`, set on `stage-started` with `Date.now()`, cleared by an accepted `issues` or `derived-files` post, by a respawn and by `restart()`; `#crashes` reset only by `issues`; `#crash(message)` records the message; at the cap, status failed with `stage` from `runningStage` of the crashing epoch.
-- [ ] `packages/workers/src/testing/fake-worker.ts` -- `crash(message)` dispatches a cancelable `ErrorEvent` carrying it.
-- [ ] `packages/workers/src/model-worker/model-worker-lifecycle.spec.ts` -- the workers rows of the boundary table; rewrite the stage-started and derived-files reset rows to AD-11.
-- [ ] `packages/workers/src/index.ts` -- export the new types and the fixed text.
-- [ ] `packages/commands/src/model-worker/{restart-model-worker.ts,restart-model-worker.spec.ts,model-worker-module.ts}` -- `RestartModelWorker` (service: an action class), id `model-worker.restartModelWorker`, label `Restart`, `emptyInputSchema`; `available` is false while the lifecycle is idle (its `restart()` throws before `start`); `apply` calls `lifecycle.restart()`. `modelWorkerModule` registers it. `index.ts` exports both, `emptyInputSchema` and `EmptyInput`; `package.json` gains `@keeb-cad/workers`.
-- [ ] `app/src/main-modules.ts` -- add `modelWorkerModule`.
-- [ ] `packages/ui/src/tabs/` -- per Open Question 2; its workbench states and spec follow.
-- [ ] `packages/ui/src/icon/` -- add a `tree` icon (lucide `ListTree`) to the map and its workbench state.
-- [ ] `packages/editor/package.json` -- add `@keeb-cad/commands`, `@keeb-cad/workers`, `@vueuse/core` (14.4.0, as `ui`). `vitest.config.ts` -- `browser.viewport: { width: 1366, height: 768 }`; pre-bundle what the new imports need.
-- [ ] `packages/editor/src/router/` -- per Open Question 1: the router reachable from a UiAction; on a workspace change `ModelWorkerLifecycle.focus(workspace)`.
-- [ ] `packages/editor/src/workspace/` -- five UiActions (Open Question 5), hotkeys `1`…`5`, unavailable when already on that workspace; `use-workspace.ts` (function, composable): the current workspace and a switch through `invoke`; `WorkspaceTabs.vue`.
-- [ ] `packages/editor/src/regions/` -- `Regions` (service): region root elements by name in EXPERIENCE's order; `use-region.ts` (function, composable) registers a template ref while mounted; `FocusNextRegion` (`F6`) and `FocusPreviousRegion` (`shift+F6`) UiActions (service: UiAction classes) over it, three files each with `emptyInputSchema`.
-- [ ] `packages/editor/src/tree/` -- `SlideOut` (service: an `open` ref); `OpenTree` (`T`, unavailable while open) and `CloseSlideOut` (`Escape`, unavailable while closed) UiActions; `use-slide-out.ts` (function, composable); `TreeSlideOut.vue` (260px, floats over the canvas edge, overlay shadow, focused on open; focus returns to the element focused before, else the canvas, per EXPERIENCE.md › Focus and regions); `LeftRail.vue` with a Tree button (`aria-expanded`) running `OpenTree`/`CloseSlideOut`.
-- [ ] `packages/editor/src/status-strip/` -- `use-status-strip.ts` (function, composable): error and warning counts, `behind` (issues seq < open design's seq), the running stage once past 1000 ms with whole seconds (VueUse for the tick), the failure; `StatusStrip.vue` with Restart (`UiButton`, `invoke(RestartModelWorker)`).
-- [ ] `packages/editor/src/frame/{TopBar.vue,InspectorRegion.vue,CanvasRegion.vue}` + `App.vue` -- the frame grid; the top bar's `h1` is the design's name; `CanvasRegion` replaces `DesignCanvas` (hint for Layout, nothing for 2–5). Drop `App.vue`'s scoped CSS.
-- [ ] `packages/editor/src/editor-module.ts` -- register the services and the UiActions.
-- [ ] `packages/editor/src/testing/press.ts` -- a key helper taking `key`, `code` and Shift.
-- [ ] Editor specs (browser) -- the editor rows of the boundary table, each in the folder of what it tests; `App.spec.ts` for the frame rows, in both themes.
-- [ ] `app/e2e/vue.spec.ts` -- the `h1` is `Untitled design` (the requirement moved the name into the top bar).
-- [ ] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` -- mark the `App.vue` `#ccc` entry closed by this story.
+- [ ] `packages/ui/src/tabs/` -- `UiTabs` (`TabsRoot`, `v-model`, default slot), `UiTabList` (`items`; `TabsList` + `TabsTrigger`s, a per-item slot for the hint) and `UiTabPanel` (`value`; `TabsContent`), one file each, props in `types.ts`; specs per part. `src/index.ts` exports the parts and their prop types; `workbench/widgets.ts` and `states/tabs-states.ts` register them.
+- [ ] `packages/ui/src/icon/icons.ts` -- add `tree` (lucide `ListTree`) and its `icon-states.ts` state.
+- [ ] `packages/commands/src/index.ts` -- export `emptyInputSchema` and `EmptyInput` (AGENTS.md: an entry with no input "uses `commands`' shared `emptyInputSchema` and `EmptyInput`").
+- [ ] `packages/editor/package.json` -- add `@keeb-cad/commands` and `@keeb-cad/workers`; `vitest.config.ts` -- `browser.viewport: { width: 1366, height: 768 }`, the new imports in `optimizeDeps.include`.
+- [ ] `packages/editor/src/router/` -- `create-editor-router.ts` (function) builds the nested routes (Sergii decision) with `sensitive: true`, and `/` with `NoDesign.vue` (renders nothing); `resolve-workspace.ts` goes; the spec keeps its rows. `design-location.ts`: `DesignLocation` (service) calls `createEditorRouter()`, exposes the router, the current workspace (the matched child's name) and `openWorkspace(workspace)`; its `afterEach` calls `ModelWorkerLifecycle.focus` only when both the previous and the new route are design routes with different workspaces, so the first navigation calls nothing (Launch's `start` gives the first workspace). `types.ts`'s alias goes (the file goes if empty); `index.ts` drops its export; `mount-editor.ts` resolves the service and returns `Router`.
+- [ ] `app/src/launch/launch.ts` (+spec) -- inject `DesignLocation` and read its `workspace` (none off a design route: `layout`); replace with `{ name: workspace, params: { id } }`; the stale guard comment goes.
+- [ ] `packages/editor/src/workspace/` -- per workspace `<w>/`: `<W>Canvas.vue`, `<W>Inspector.vue` (only `LayoutCanvas` has content, the hint) and `show-<w>.ts` (service: UiAction class, Sergii decision); `use-workspace.ts` (function, composable): the current workspace, a switch through `invoke`, each tab's raw hotkey for `UiKbd`; `WorkspaceTabs.vue`.
+- [ ] `packages/editor/src/landmarks/` -- `Landmarks` (service): landmark roots by name in EXPERIENCE's order; `use-landmark.ts` (function, composable) registers a template ref while mounted; `FocusNextLandmark` (`F6`; `landmarks.focusNextLandmark`, `Next landmark`), `FocusPreviousLandmark` (`shift+F6`; `landmarks.focusPreviousLandmark`, `Previous landmark`) (service: UiAction classes); the landmark name union in `types.ts`.
+- [ ] `packages/editor/src/slide-out/` -- `SlideOut` (service: an `open` ref and the invoker); `OpenTree` (`T`; `slideOut.openTree`, `Open tree`; unavailable while open), `CloseSlideOut` (`Escape`; `slideOut.closeSlideOut`, `Close slide-out`; unavailable while closed) (service: UiAction classes); `use-slide-out.ts` (function, composable); `TreeSlideOut.vue` (260px, `chrome`, overlay shadow over the canvas edge, no text; focuses its root on open; closing returns focus to the invoker, else the canvas); `LeftRail.vue`: a `UiRailButton` (`tree` icon, label `Tree`) runs `OpenTree` / `CloseSlideOut`.
+- [ ] `packages/ui/src/rail-button/` -- `UiRailButton.vue` (`icon`, `label`, `expanded` → `aria-expanded`; `fill-on` and the Mauve left bar through `aria-expanded:` variants; `target-min`), `types.ts`, spec, workbench state, `index.ts` export.
+- [ ] `packages/editor/src/shell/{EditorShell,TopBar,CanvasLandmark,InspectorLandmark,StatusStripLandmark}.vue` + `App.vue` -- `EditorShell` is the `/design/:id` component: the grid inside `UiTabs`, one `UiTabPanel` around the canvas and inspector landmarks, which hold the named `RouterView`s; the top bar's `h1` is the design name. `App.vue` keeps `useShortcuts()` and a bare `RouterView`, no style blocks; the full-height reset moves to `styles.css` with `font-ui`. `DesignCanvas` and its spec go.
+- [ ] `packages/editor/src/editor-module.ts` -- register the services and UiActions.
+- [ ] `packages/editor/src/testing/press.ts` -- `pressKey(key: KeyPress)` (function) beside `press`; `KeyPress = { key; code; shift? }` in `testing/types.ts`.
+- [ ] `packages/workers/src/testing/recording-model-worker-lifecycle.ts` -- `RecordingModelWorkerLifecycle` (service: a test fake extending `ModelWorkerLifecycle`, beside `FakeWorker`) records `focus` calls; exported from `workers/testing`; editor specs register it with `override` and read it after arrange.
+- [ ] Editor specs (browser) -- the editor rows, each in its folder, in both themes (the ticket's verify). Copy only `invoke.spec.ts`'s and the lifecycle spec's `arrange({ options })` shape: register each part only when an option asks for it. `App.spec.ts` and `mount-editor.spec.ts` move to the shell (the top bar's name; `workersModule` or the fake registered).
+- [ ] `app/e2e/vue.spec.ts` -- the `h1` is `Untitled design`.
+- [ ] Docs commit on main, before the code branch: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md` adds `landmark`, `shell`, `top bar` and `left rail` to its chrome-word list; the spine's **canvas** glossary row reads "inside the editor shell" (Sergii decision).
+- [ ] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` -- close the `App.vue` `#ccc` entry; add: the Layout hint's `G` (13.7) and `Ctrl+K` (palette story) render from their handles' `hotkeys` through `formatHotkey`; `invoke.spec.ts` repeats its `unavailable` assertion in about seven tests (AGENTS.md: "Write a shared assertion once"), and its `arrange` registers `container.register(Recorder).useClass(Recorder)` for every test; `model-worker-lifecycle.spec.ts`'s `arrange` runs `registerCommand(container, RenameDesign)` for every test (AGENTS.md: "Arrange only what the test uses, passed as arguments to an `arrange` helper"); the hotkey layer swallows a key whose entry is unavailable.
 
 **Acceptance Criteria:**
-- Given each boundary-table row, when `pnpm test` runs, then a test named for it passes at its level, the editor rows in Chromium and Firefox.
-- Given each toggled bug, its tests go red and green once restored: `stage-started` resets the count again; `runningStage` not cleared by a post; the 1000 ms check uses `>=`; F6 skipping no closed slide-out; a switch not sending `focus`.
-- Given `pnpm --filter app e2e` (the smoke), then the served app shows the frame at `/#/design/<id>/layout`.
+- Given each boundary-table row, when `pnpm test` runs, then a test named for it passes at its level, the editor rows in Chromium and Firefox and both themes.
+- Given each toggled bug, its tests go red and green once restored: F6 not skipping a closed slide-out; a switch not calling `focus`; Esc available while closed; focus returning to the canvas instead of the invoker.
+- Given `pnpm --filter app e2e` (the smoke), then the served app shows the shell at `/#/design/<id>/layout`.
 
 ## Implementation Notes
 
@@ -119,75 +111,93 @@ context:
 
 ## Design Notes
 
-- **Decision (plan): `ModelWorkerStatus` is a union discriminated by `kind`, not `'idle' | 'running' | WorkerFailed`,** because the spine's Data Schema discriminates every union by `kind` (`Rejection`: `input-invalid`, `unavailable`, `stale`).
-- **Decision (plan): the running stage is cleared by any accepted post (`issues`, `derived-files`), not only by `issues`,** because AD-11 says "until the next post clears it" and "a stage was running at the last crash (its `stage-started` in the crashing epoch with no later post)", and the ticket's no-stage row is "one followed by a derived-files post".
-- **Decision (plan): `workers` stamps arrival with `Date.now()`, not an injected clock,** because AGENTS.md: "Set time with Vitest's fake timers; never register a clock only so tests can control it", and Vitest's fake timers fake `Date`.
-- **Decision (plan): `RestartModelWorker` is a design-store action in `commands`, not a UiAction,** because the ticket says "a RestartModelWorker action class in commands" and AD-10 says commands "imports workers".
-- **Decision (plan): only the frame rows run in both themes; behaviour rows run once,** not every row twice, because AD-26: "Themes swap token values; components never use Tailwind's `dark:` variant", so a theme can change only colours.
-- **Decision (plan): 1366x768 is the editor browser config's viewport, not a per-test `page.viewport`,** because every editor row runs at it (ticket: "In Vitest browser mode at 1366x768") and AGENTS.md: "a helper never takes a hidden step the assertions depend on". Vitest's documented `browser.viewport` (vitest.dev/config/browser/viewport) is that setting.
-- **Decision (plan): VueUse ticks the elapsed time, not a hand-written `setInterval`,** because AD-26: "**VueUse** covers low-level Vue utilities".
-- **Decision (plan): a workspace key on the open workspace is unavailable, not a second navigation,** because vue-router resolves a navigation to the current location as a no-op and the I/O matrix's "Same workspace" sends no second `focus`.
+- **Decision (plan): 1366x768 is the editor browser config's viewport, not a per-test `page.viewport`,** because every editor row runs at it (ticket: "In Vitest browser mode at 1366x768") and AGENTS.md: "a helper never takes a hidden step the assertions depend on"; `browser.viewport` is Vitest's documented setting (vitest.dev/config/browser/viewport).
+- **Decision (plan): opening the slide-out focuses its root, not leaving focus where it was,** because EXPERIENCE.md: "Opening an overlay focuses its first meaningful item", and the empty slide-out's root (`tabindex="-1"`) is its only focusable element.
+- **Decision (plan): Esc is unavailable while the slide-out is closed, not a no-op apply,** because the I/O matrix: "Esc while closed does nothing", and the spine: "Its `available(handle)` is the one availability query the UI reads".
+- **Decision (plan): T while open is unavailable, not a toggle,** because EXPERIENCE.md: "T opens it … Non-modal; Esc closes".
+- **Decision (plan): landmark roots are `header`, `aside`, `main`, `aside`, `footer`, not `div`s with `role`,** because AGENTS.md: "Find elements by role, then label, then text", and the HTML elements carry those landmark roles natively.
+- **Decision (plan): `/` renders an empty `NoDesign`, not the shell,** because the shell needs an open design and EXPERIENCE gives "No design open (the empty state)" to the Start screen, another story's; Launch always replaces `/`.
+- **Decision (plan): the landmark labels are `Top bar`, `Tree`, `Canvas`, `Inspector`, `Status strip`, not workspace-specific names,** because they are EXPERIENCE.md's component names (Global chrome, Panels and overlays) and the landmarks stay fixed while workspaces swap.
+- **Decision (plan): Shift+F6 from outside every landmark goes to the status strip, not the top bar,** because the order wraps ("Shift+F6 to the previous, wrapping") and F6 from there goes to the first.
+- **Decision (plan): the rail button is a new `ui` part `UiRailButton`, not `UiButton` with overriding classes or a raw `button` in `editor`,** because the spine: "Callers pass a `ui` component only **outer layout classes** … never what the component styles itself", and "States … are styled through ARIA and data-attribute variants". It is a disclosure button, not one of the spine's Reka-listed widgets.
+- **Decision (plan): the UiAction ids take `workspace.`, `landmarks.` and `slideOut.`,** the concept folders (`workspace/`, `landmarks/`, `slide-out/`), not the per-workspace subfolder, because the Naming row: "a command id is `<concept folder>.<verb+noun camelCase>`" and `layout.` belongs to the layout tree's commands.
+- **Decision (plan): `focus` is asserted on a fake `ModelWorkerLifecycle` in editor specs, not on a `FakeWorker`'s posts,** because AGENTS.md: "Test wiring between packages as integration in `pipeline` or `app`"; the call is the behaviour, so `toHaveBeenCalledWith` fits. The app row proves the post.
+- **Decision (plan): the e2e smoke stays, not dropped for the app integration rows,** because those rows don't run the built bundle (its worker, bundling, hash history) and AGENTS.md keeps an e2e test for "a boundary no lower level can fake"; it covers only the normal flow.
 
-## Open Questions
+## Conformance Log
 
-1. **How a workspace UiAction reaches the router.** The router is created inside `mountEditor`, after the container; a UiAction is a `di` class. Spine: "vue-router is the one owner of the open design and workspace" and "UI state … lives in small `di` services". (A, recommended) an `editor` service that creates the router in its constructor; `mountEditor` resolves it and `app.use`s it, still returning the router to `Launch`; it also sends `focus` on a workspace change. (B) `mountEditor` registers the created router into the container through a new `createToken` (a spine edit: AD-25's token table). (C) `Launch` in `app` wires `focus` from `router.afterEach`, with (A) for the UiActions.
-2. **The Tabs wrapper.** `UiTabs` renders its list and panels together; the list goes in the top bar, the panel in the canvas region. Spine: "Every ARIA widget (… tabs …) is a Reka UI primitive, never hand-built. Reka is wrapped in `ui`". (A, recommended) split it into `UiTabs` (root, default slot), `UiTabList` (`items`) and `UiTabPanel` (`value`), each a thin Reka wrapper; story 6's spec and workbench move to the parts. (B) keep `UiTabs` and add a `UiTabList`-only wrapper with no panels (Reka then points `aria-controls` at no panel). (C) leave it out: tabs as plain buttons with `role` attributes (hand-built, against AD-26).
-3. **Counts before the first `issues`.** Spine: "the error and warning counts show the last known numbers, dimmed with `◌` while their seq is behind main's, and `0` before the first `issues`". It doesn't say whether that `0` is dimmed. (A, recommended) dimmed with `◌`: no numbers are known yet. (B) undimmed. (C) leave it out: no row for it.
-4. **Failure texts.** Spine: "`message` is the error event's message, or a fixed text from `workers` for a message that failed to deserialize". (a) the fixed text: recommended `the model worker sent a message that could not be read`. (b) an `ErrorEvent` with an empty message: (A, recommended) use `the model worker stopped with no message`; (B) show `failed: ` with nothing after it; (C) leave it out. (c) the strip's text naming a stage: recommended `plates · failed: <message>`; and elapsed seconds rounded down (`1999 ms` → `1 s`), not to nearest, since the strip reports seconds passed.
-5. **The five workspace UiActions.** AGENTS.md: "Give each command or action three files in its concept folder" and "tokens, errors and `define*` factories each get their own file". (A, recommended) five plain classes `ShowLayout` … `ShowFirmware` (`workspace.showLayout`, …), one file each, all `emptyInputSchema`, no factory. (B) one `defineShowWorkspace(workspace, hotkey)` factory and five handles from it.
+- `Shared dependencies go through the pnpm catalog` -- fixed (`@vueuse/core` dropped: nothing in 23.8 uses it).
+- `Give every threshold three rows … an input that breaks an assumption` (Shift+F6 rows, F6 from inside a landmark and the rail) -- asked, fixed.
+- `Put every type a folder declares … in that folder's types.ts` (`landmarks/`, `testing/`) -- fixed.
+- `ui … only editor imports it, through its root` (new parts' `index.ts` exports, workbench registration) -- fixed.
+- `A missing provider fails at the entry's first run` (`mount-editor.spec.ts`, `App.spec.ts`, `index.ts` unlisted) -- fixed.
+- `vue-router is the one owner of the open design and workspace` (Launch reads `name === 'design'` and `params.workspace`) -- fixed.
+- `Every kbd hint is formatted by its formatter` (tab hints) -- fixed; final pass: `UiKbd` formats the raw hotkey -- fixed.
+- `Take expected values from the requirement` (both themes per the ticket's verify) -- fixed.
+- `A choice no requirement made is a decision and is labelled as one` (T while open, ids and labels, focus return to the invoker, `/` route, landmark elements) -- fixed.
+- `Give every test an expect that fails when the behaviour breaks` (focus-return row) -- fixed.
+- `When nothing says what a boundary returns, ask` (trailing-slash row) -- fixed (row dropped); final pass: landmark labels, Shift+F6 from body, first navigation -- fixed.
+- `Each term means exactly one thing` (`region`, `frame`) -- asked (Sergii: landmark, shell); final pass: `top bar`, `left rail` -- fixed.
+- `Test wiring between packages as integration in pipeline or app` (`focus` on a FakeWorker) -- fixed.
+- `Find elements by role, then label, then text` (landmark roles) -- fixed.
+- `When a decision departs from a Stack dependency's documented setup, that documented setup is its Y, cited from the library's docs` (Reka tabs) -- fixed.
+- `Give every decision its rejected alternative` (themes decision; final pass: e2e decision) -- fixed.
+- `Write a shared assertion once` -- deferred (`packages/editor/src/invoke/invoke.spec.ts`, repeated `unavailable` assertion).
+- `Arrange only what the test uses` -- deferred (`packages/editor/src/invoke/invoke.spec.ts:159` `container.register(Recorder).useClass(Recorder)`; `packages/workers/src/model-worker/model-worker-lifecycle.spec.ts:56` `registerCommand(container, RenameDesign)`).
+- `Take expected values from the requirement` (`packages/ui/src/tabs/Tabs.spec.ts` labels from props, module-level `ITEMS`) -- fixed (the moved specs don't copy it).
+- `(service) or (function)` tags (`pressKey`, `createEditorRouter`; final pass: the recording fake) -- fixed.
+- `Callers pass a ui component only outer layout classes` (rail button) -- fixed (`UiRailButton`).
+- `a command id is <concept folder>.<verb+noun camelCase>` -- fixed (decision names the concept folders).
+- `never after the library it wraps` (`EditorRouter`) -- asked (Sergii: alias removed).
+- gap: `@vueuse/core` in `packages/ui/package.json` and `packages/editor/package.json` -- fixed.
+- gap: F6 from `packages/editor/src/slide-out/LeftRail.vue`'s button -- asked.
+- gap: `packages/editor/src/landmarks/types.ts` -- fixed.
+- gap: `packages/ui/src/index.ts`, `packages/ui/workbench/widgets.ts` -- fixed.
+- gap: `packages/editor/src/index.ts`, `mount-editor.spec.ts`, `App.spec.ts` -- fixed.
+- Dropped findings: 0.
 
 ## Verification
 
 **Commands:**
-- `pnpm test` -- expected: green, the editor and workers browser rows in Chromium and Firefox.
+- `pnpm test` -- expected: green, the editor browser rows in Chromium and Firefox.
 - `pnpm check` -- expected: exit 0, lint, typecheck, dependency-cruiser, build and the e2e smoke included.
 
 **Manual checks:**
-- `pnpm --filter app dev`, open `/`: the frame at 1366x768 in both themes; 1–5, T, Esc, F6 behave as above.
+- `pnpm --filter app dev`, open `/`: the shell at 1366x768 in both themes; 1–5, T, Esc, F6 behave as above.
 
 ## Boundary Table
 
 | Group | Row | Input | Expected | Level |
 | --- | --- | --- | --- | --- |
-| production bugs | stage-started resets nothing | 2 crashes, `stage-started` at latest seq, 1 crash | failed | unit (workers) |
-| production bugs | derived-files resets nothing | 2 crashes, `derived-files` at latest seq, 1 crash | failed | unit (workers) |
-| production bugs | issues resets | 2 crashes, `issues` at latest seq, 2 crashes | running | unit (workers) |
-| production bugs | below / on the cap | 2 / 3 consecutive crashes | running / failed | unit (workers) |
-| production bugs | second crash restarts | 2 consecutive crashes | a third worker spawned, running | unit (workers) |
-| rules | failure names the stage | 3 crashes, each after `stage-started` plates | `{ kind: 'failed', failure: { message, stage: 'plates' } }` | unit (workers) |
-| rules | no stage started | 3 crashes, no `stage-started` | failure without `stage` | unit (workers) |
-| rules | stage then derived-files | 3 crashes, the last after `stage-started` plates then `derived-files` | failure without `stage` | unit (workers) |
-| rules | stage from an older epoch | `stage-started` plates, crash, then 2 crashes with none | failure without `stage` | unit (workers) |
-| rules | deserialize failure | 3 `messageerror`s | failure `message` = the fixed text | unit (workers) |
-| rules | error message | 3 crashes with `ErrorEvent` message `boom` | failure `message: 'boom'` | unit (workers) |
-| rules | empty error message | `ErrorEvent` message `''` | per Open Question 4b | unit (workers) |
-| rules | issues held with seq | `issues` at seq 2 | `issues` some `{ seq: 2, violations }` | unit (workers) |
-| rules | running stage | `stage-started` parts at t; then `issues` | some `{ stage: 'parts', arrivedAt: t }`; then none | unit (workers) |
-| rules | restart clears failure | failed; `restart()` | running, a new worker | unit (workers) |
-| rules | Restart available | lifecycle idle / running / failed | false / true / true | unit (commands) |
-| rules | Restart applies | failed; run `RestartModelWorker` | lifecycle running | unit (commands) |
-| rules | counts before issues | no `issues` | `0` errors, `0` warnings, dimmed per Open Question 3 | unit (editor) |
-| rules | counts current | issues at the design's seq: 1 error, 2 warnings | `1` / `2`, not dimmed | unit (editor) |
-| rules | counts behind | issues at seq n−1, design at n | dimmed with `◌` | unit (editor) |
-| rules | running stage threshold | `stage-started` parts; advance 999 / 1000 / 1001 ms | nothing / nothing / `parts`, `1 s`, Restart | unit (editor) |
-| rules | elapsed seconds | advance 1999 / 2000 ms | `1 s` / `2 s` | unit (editor) |
-| rules | post clears stage | at 1001 ms, `issues` at latest seq | no stage, no Restart | unit (editor) |
-| rules | failed with stage | 3 crashes after `stage-started` plates | `failed: boom` naming `plates`, Restart | unit (editor) |
-| rules | failed, no stage | 3 crashes, no stage | `failed: boom`, no stage name, Restart | unit (editor) |
-| rules | failed, deserialize | 3 `messageerror`s | `failed: ` + the fixed text | unit (editor) |
-| rules | Restart click | failed; click Restart | strip clears, a new worker spawned | unit (editor) |
-| rules | keys 1–5 | at layout; press 2 / 3 / 4 / 5 / 1 | tab selected, URL segment, worker's last `focus` = that workspace | unit (editor) |
-| rules | same workspace key | at layout; press 1 | URL unchanged, no new `focus` | unit (editor) |
-| rules | T and Esc | closed: T; open: Esc; closed: Esc | open with `No nodes. Add a group (G).`; closed; still closed | unit (editor) |
+| rules | keys 1–5 | at layout; press 2 / 3 / 4 / 5, then 1 from firmware | that tab selected, URL segment that workspace, lifecycle `focus` called with it | unit (editor) |
+| rules | same workspace key | at layout; press 1 | URL unchanged, `focus` not called | unit (editor) |
+| rules | tab click | at layout; click the Case tab | URL `…/case`, lifecycle `focus('case')` | unit (editor) |
+| rules | tab hints | the shell | hints `1` … `5`, from the handles' hotkeys | unit (editor) |
+| rules | T and Esc | closed: T; open: Esc; closed: Esc | open, the slide-out holds no text; closed; still closed | unit (editor) |
 | rules | T while open | open: T | still open | unit (editor) |
-| rules | F6 order, closed slide-out | from body, press F6 ×4 | top bar, canvas, inspector, status strip; a 5th: top bar | unit (editor) |
+| rules | rail button | click Tree; click Tree | open, `aria-expanded=true`; closed, `false` | unit (editor) |
+| rules | focus returns to the invoker | focus on the Layout tab, T, Esc | focus on the Layout tab | unit (editor) |
+| rules | focus falls back to the canvas | focus on body, T, Esc | focus on the canvas landmark | unit (editor) |
+| rules | F6 order, closed slide-out | from body, F6 ×4, then a 5th | top bar, canvas, inspector, status strip; top bar | unit (editor) |
 | rules | F6 order, open slide-out | slide-out open, from top bar, F6 | slide-out | unit (editor) |
-| rules | Shift+F6 | from top bar | status strip | unit (editor) |
-| rules | empty inspector | F6 to the inspector | focus on the inspector region, which holds nothing | unit (editor) |
+| rules | Shift+F6 wraps | from top bar | status strip | unit (editor) |
+| rules | Shift+F6 from outside | focus on body | status strip | unit (editor) |
+| rules | first navigation | DesignLocation at `/`, then to `/design/corne/layout` | `focus` not called | unit (editor) |
+| rules | Shift+F6, open slide-out | slide-out open, from the canvas | slide-out | unit (editor) |
+| rules | Shift+F6, closed slide-out | from the canvas | top bar | unit (editor) |
+| rules | F6 from inside a landmark | focus on the PCB tab | canvas | unit (editor) |
+| rules | F6 from the rail, closed | focus on the Tree button, slide-out closed | canvas | unit (editor) |
+| rules | F6 from the rail, open | focus on the Tree button, slide-out open | slide-out | unit (editor) |
+| rules | Shift+F6 from the rail | focus on the Tree button | top bar | unit (editor) |
+| rules | empty landmarks | F6 to the inspector, then the status strip | focus on each landmark root, which holds nothing | unit (editor) |
 | rules | empty Layout hint | at layout | `Add a group (G) or open the command palette (Ctrl+K).` | unit (editor) |
-| rules | empty other workspaces | at outline | canvas region with no text | unit (editor) |
+| rules | empty other workspaces | at outline | canvas landmark with no text | unit (editor) |
 | module boundaries | top bar name | design `Corne` open | top bar heading `Corne` | unit (editor) |
-| module boundaries | frame boxes, each theme | 1366x768, dark / light | top bar 42px high, rail 44px wide, inspector 320px wide, strip 30px high, canvas the rest; top bar and strip `chrome`, inspector `panel` in that theme | unit (editor) |
-| module boundaries | regions are labelled landmarks | the frame | each region root `tabindex=-1` with its `aria-label` | unit (editor) |
-| glue | Restart reaches workers | `modelWorkerModule` in `mainModules` | `RestartModelWorker` registered (the store runs it) | integration (app) |
-| glue | launch shows the frame | served app at `/` | heading `Untitled design`, URL `/#/design/<id>/layout` | end to end |
+| module boundaries | tab order | the shell | tabs `Layout`, `Outline`, `PCB`, `Case`, `Firmware` in `role=tablist` | unit (editor) |
+| module boundaries | shell boxes, each theme | 1366x768, dark / light | top bar 42px high, rail 44px wide, inspector 320px wide, strip 30px high, canvas 1002x696 (DESIGN.md's sizes at 1366x768); top bar, rail and strip `chrome`, inspector `panel` in that theme | unit (editor) |
+| module boundaries | landmarks are labelled | the shell | `banner`, `main`, `complementary` (inspector), `contentinfo`, each `tabindex=-1` with its `aria-label` | unit (editor) |
+| module boundaries | Tabs parts apart | `UiTabList` and one `UiTabPanel` in separate containers under `UiTabs` | the selected tab's `aria-controls` is the panel's id; the panel's `aria-labelledby` is that tab | unit (ui) |
+| module boundaries | workspace URL forms | `/design/corne` / `/design/corne/bogus` / `/design/corne/Layout` | `/design/corne/layout` each (the router spec's existing rows) | unit (editor) |
+| glue | switch reaches the worker | app container, launched; press 3 | the model worker receives `focus { workspace: 'pcb' }` | integration (app) |
+| glue | launch at a workspace | stored design, URL `…/pcb` | Launch opens it at pcb, `start` given `pcb` | integration (app) |
+| glue | launch shows the shell | served app at `/` | heading `Untitled design`, URL `/#/design/<id>/layout` | end to end |

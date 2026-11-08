@@ -22,7 +22,7 @@ Desktop web (Chromium, Firefox), mouse or trackpad and keyboard, heavy shortcut 
 
 Widgets are Reka UI primitives wrapped in `packages/ui` and styled with Tailwind 4 on the Catppuccin tokens; shortcuts go through `@zag-js/hotkeys`, fed from the design store's entries (architecture AD-26, decided 2026-10-30). `DESIGN.md` is the visual reference; this spine is the behavior. Mocks are linked inline.
 
-**Words.** Domain words are architecture Glossary terms only (route, component, module, pad, side-qualified id, revision…). UI chrome terms that are not domain words: workspace, inspector, slide-out, chip, palette, status strip, badge, toast, banner, keycap, legend.
+**Words.** Domain words are architecture Glossary terms only (route, component, module, pad, side-qualified id, revision…). UI chrome terms that are not domain words: workspace, inspector, slide-out, chip, palette, status strip, badge, toast, banner, keycap, legend, top bar, left rail, landmark (an F6 target: top bar, slide-out, canvas, inspector, status strip), shell (the editor frame of those landmarks).
 
 **Outputs are never edited directly.** Every change is a command on the authored sections. Board routing is automatic (no Route button); there is no manual route editing on the board. In M1 a design-local part applies a library part blueprint with inputs; hand-building a part (isolated part mode, fixed tracks) is milestone 2 (see Deferred past M1).
 
