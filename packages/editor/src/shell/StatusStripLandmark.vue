@@ -14,9 +14,11 @@ useLandmark('status-strip', root)
     ref="root"
     tabindex="-1"
     aria-label="Status strip"
-    class="flex h-status-strip shrink-0 items-center justify-end gap-3 border-t border-border bg-chrome px-pad focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
+    class="flex h-status-strip shrink-0 items-center justify-end border-t border-border bg-chrome px-pad focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
   >
-    <ModelWorkerState />
-    <ViolationCounts class="shrink-0" />
+    <div class="flex max-w-160 min-w-0 items-center justify-end gap-3">
+      <ModelWorkerState />
+      <ViolationCounts class="shrink-0" />
+    </div>
   </footer>
 </template>

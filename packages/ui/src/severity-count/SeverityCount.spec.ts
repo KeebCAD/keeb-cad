@@ -39,8 +39,8 @@ describe('SeverityCount', () => {
   })
 
   it.each([
-    ['strokes an undimmed', false, '1px'],
-    ['leaves unstroked a dimmed', true, '0px'],
+    ['strokes an undimmed', false, { width: '1px', color: 'rgb(76, 79, 105)' }],
+    ['leaves unstroked a dimmed', true, { width: '0px' }],
   ])('%s warning glyph', async (_role, dimmed, expected) => {
     const screen = await render({
       render: () =>
@@ -51,8 +51,11 @@ describe('SeverityCount', () => {
         ),
     })
 
-    const glyph = screen.getByText('▲', { exact: true }).element()
-    expect(getComputedStyle(glyph).getPropertyValue('-webkit-text-stroke-width')).toBe(expected)
+    const style = getComputedStyle(screen.getByText('▲', { exact: true }).element())
+    expect({
+      width: style.getPropertyValue('-webkit-text-stroke-width'),
+      color: style.getPropertyValue('-webkit-text-stroke-color'),
+    }).toMatchObject(expected)
   })
 
   it.each([

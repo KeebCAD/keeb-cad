@@ -21,7 +21,7 @@ defineProps<TooltipProps>()
       <TooltipPortal>
         <TooltipContent
           :side-offset="4"
-          class="rounded-lg border border-border bg-panel px-2 py-1 text-ui text-text shadow-overlay"
+          class="max-w-80 rounded-lg border border-border bg-panel px-2 py-1 text-ui wrap-anywhere text-text shadow-overlay"
         >
           {{ content }}
         </TooltipContent>

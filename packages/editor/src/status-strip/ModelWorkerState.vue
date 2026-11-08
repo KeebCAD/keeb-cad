@@ -16,7 +16,12 @@ function restart(): void {
 </script>
 
 <template>
-  <div v-if="failure !== undefined" class="flex min-w-0 items-center gap-2">
+  <div
+    v-if="failure !== undefined"
+    role="group"
+    aria-label="Model worker failure"
+    class="flex min-w-0 items-center gap-2"
+  >
     <span aria-hidden="true" class="shrink-0 text-error">●</span>
     <UiTooltip :content="failure">
       <span

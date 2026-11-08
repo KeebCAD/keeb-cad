@@ -24,6 +24,19 @@ function text(): string {
   return strip().element().textContent
 }
 
+const DIMMED_COUNTS = '◌●0 errors▲0 warnings'
+const CURRENT_COUNTS = '●0 errors▲0 warnings'
+
+function counts() {
+  return page.getByRole('group', { name: 'Violation counts' })
+}
+
+function countColours() {
+  const colour = (text: string) =>
+    getComputedStyle(counts().getByText(text, { exact: true }).element()).color
+  return { errors: colour('0 errors'), warnings: colour('0 warnings') }
+}
+
 function latestSeq(store: DesignStore): number {
   const current = store.current
   if (current.isNone()) throw new Error('Expected a committed design.')
@@ -132,38 +145,10 @@ describe('the status strip', () => {
   })
 
   describe('the counts', () => {
-    function readCounts() {
-      const counts = strip()
-      return {
-        mark: counts.getByText('◌', { exact: true }).query() !== null,
-        errors: counts.getByText('0 errors', { exact: true }).query() !== null,
-        warnings: counts.getByText('0 warnings', { exact: true }).query() !== null,
-      }
-    }
-
-    it('reads 0 and 0, dimmed with one mark, before the first issues post', async () => {
+    it('reads 0 and 0 with one mark before the first issues post', async () => {
       await arrange()
 
-      expect(readCounts()).toEqual({ mark: true, errors: true, warnings: true })
-    })
-
-    it("reads 0 and 0 undimmed for an issues post at main's seq", async () => {
-      const shell = await arrange()
-
-      postIssues(latest(shell.spawned), shell.spawned.length, latestSeq(shell.store))
-      await nextTick()
-
-      expect(readCounts()).toEqual({ mark: false, errors: true, warnings: true })
-    })
-
-    it("reads 0 and 0 dimmed for an issues post behind main's seq", async () => {
-      const shell = await arrange()
-      postIssues(latest(shell.spawned), shell.spawned.length, latestSeq(shell.store))
-
-      shell.store.replaceDesign({ design: aDesign(), unreadable: [] })
-      await nextTick()
-
-      expect(readCounts()).toEqual({ mark: true, errors: true, warnings: true })
+      await expect.element(counts()).toHaveTextContent(DIMMED_COUNTS)
     })
   })
 
@@ -184,24 +169,46 @@ describe('the status strip', () => {
       expect(restartButton().query()).not.toBeNull()
     })
 
-    it('keeps a long message on one line in the 30px strip, Restart visible, the text whole', async () => {
-      const shell = await arrange()
-      const long = `failed: ${'x'.repeat(600)}`
-
-      latest(shell.spawned).crash(long.slice('failed: '.length))
-      latest(shell.spawned).crash(long.slice('failed: '.length))
-      latest(shell.spawned).crash(long.slice('failed: '.length))
+    async function failWith(spawned: FakeWorker[], message: string): Promise<void> {
+      latest(spawned).crash(message)
+      latest(spawned).crash(message)
+      latest(spawned).crash(message)
       await nextTick()
+    }
 
-      const message = page.getByText(long, { exact: true }).element()
+    it('keeps a long message on one line in the right half, before Restart, the text whole', async () => {
+      const shell = await arrange()
+      const message = 'x'.repeat(600)
+
+      await failWith(shell.spawned, message)
+
+      const shown = page.getByText(`failed: ${message}`, { exact: true }).element()
+      const { left, right } = shown.getBoundingClientRect()
+      const stripBox = strip().element().getBoundingClientRect()
       expect({
-        height: strip().element().getBoundingClientRect().height,
-        insideLeft:
-          message.getBoundingClientRect().left >= strip().element().getBoundingClientRect().left,
-        ellipsis: getComputedStyle(message).textOverflow,
-        text: message.textContent,
-      }).toEqual({ height: 30, insideLeft: true, ellipsis: 'ellipsis', text: long })
+        whiteSpace: getComputedStyle(shown).whiteSpace,
+        ellipsis: getComputedStyle(shown).textOverflow,
+        beforeRestart: right <= restartButton().element().getBoundingClientRect().left,
+        rightOfMidpoint: left >= stripBox.left + stripBox.width / 2,
+        text: shown.textContent,
+      }).toEqual({
+        whiteSpace: 'nowrap',
+        ellipsis: 'ellipsis',
+        beforeRestart: true,
+        rightOfMidpoint: true,
+        text: `failed: ${message}`,
+      })
       await expect.element(restartButton()).toBeInViewport()
+    })
+
+    it('shows the whole long message in a tooltip when the truncated text takes focus', async () => {
+      const shell = await arrange()
+      const message = 'x'.repeat(600)
+      await failWith(shell.spawned, message)
+
+      page.getByText(`failed: ${message}`, { exact: true }).element().focus()
+
+      await expect.element(page.getByRole('tooltip')).toHaveTextContent(`failed: ${message}`)
     })
 
     it('reads failed with no stage and offers Restart', async () => {
@@ -226,11 +233,35 @@ describe('the status strip', () => {
       await crashThrice(shell.spawned)
 
       const message = page.getByText('failed: boom', { exact: true }).element()
-      const mark = strip().getByText('●', { exact: true }).first().element()
+      const mark = page
+        .getByRole('group', { name: 'Model worker failure' })
+        .getByText('●', { exact: true })
+        .element()
       expect({
         message: getComputedStyle(message).color,
         mark: getComputedStyle(mark).color,
       }).toEqual({ message: textColour, mark: redColour })
+    })
+
+    it("reads 0 and 0 undimmed, in the theme's text, for an issues post at main's seq", async () => {
+      const shell = await arrange()
+
+      postIssues(latest(shell.spawned), shell.spawned.length, latestSeq(shell.store))
+      await nextTick()
+
+      await expect.element(counts()).toHaveTextContent(CURRENT_COUNTS)
+      expect(countColours()).toEqual({ errors: textColour, warnings: textColour })
+    })
+
+    it("reads 0 and 0 dimmed, in the theme's text-muted, for an issues post behind main's seq", async () => {
+      const shell = await arrange()
+      postIssues(latest(shell.spawned), shell.spawned.length, latestSeq(shell.store))
+
+      shell.store.replaceDesign({ design: aDesign(), unreadable: [] })
+      await nextTick()
+
+      await expect.element(counts()).toHaveTextContent(DIMMED_COUNTS)
+      expect(countColours()).toEqual({ errors: mutedColour, warnings: mutedColour })
     })
 
     it("colours dimmed counts in the theme's text-muted", async () => {

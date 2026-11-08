@@ -110,6 +110,9 @@ See `## Boundary Table`.
 
 - Decision (build): the truncated `failed:` span takes `tabindex="0"`, not hover only, because EXPERIENCE.md requires everything keyboard-reachable and the tooltip is the only way to read the cut-off text.
 
+- Decision (build): tooltips cap at `max-w-80` (320 px) and the worker state and counts block at `max-w-160` (640 px, under half the 1366 px minimum), not `max-w-inspector-width` or `max-w-1/2`, because the first token is named for another thing and a fraction is neither of AD-26's allowed sizes ("Tailwind's 4px grid with DESIGN.md's named sizes as aliases"). *judgement* on the two values.
+- Decision (build): the half-width cap wraps worker state and counts together, not the worker-state wrapper alone, because with the wrapper alone the message's left edge passed the strip's midpoint in both browsers.
+
 ## Plan Change Log
 
 ## Review Triage Log
@@ -131,6 +134,40 @@ Pass 1 (quick, test-reviewer; 0 findings dropped): high 0, medium 1, low 8, fals
 | test-reviewer | `mainSeq` undefined with issues is undimmed | low | reject | Unreachable: a worker spawns only once the store holds a `Committed` (AD-11). |
 | test-reviewer | `renders the $name state visibly` asserts only visibility | low | reject | A workbench smoke row; the state rows assert content. |
 | test-reviewer | `arrivedAt: expect.any(Number)` | low | patch | Can't fail if the time isn't taken on arrival. |
+
+Pass 2 (quick, test-reviewer, on pass 1's patches; 0 dropped): high 0, medium 1, low 8, rejected low 1.
+
+| Lens | Finding | Verdict | Route | Evidence |
+| --- | --- | --- | --- | --- |
+| quick | The tooltip can't show a long message whole | medium | patch | `TooltipContent` has no width limit; Reka sets `minWidth: max-content` (`reka-ui/dist/Popper/PopperContent.js:251`). |
+| quick | No test covers the tooltip or `tabindex` | low | patch | Removing either leaves every test green. |
+| quick | The 30px check can't fail; one line untested | low | patch | The footer's height is fixed by `h-status-strip`. |
+| quick | A long failure takes the left end | low | patch | The plan's frozen line: "the left end stays free". |
+| quick | `readCounts()` lost the order check | low | patch | The boundary: "dimmed with one `◌` before them". |
+| quick | Number dimming isn't asserted | low | patch | A hard-coded `:dimmed` stays green. |
+| quick | The stroke row's Latte wrapper does nothing | low | patch | Only the width is read, and it is 1px in every theme. |
+| test-reviewer | `.first()` can fall onto the counts' `●` | low | patch | Both render `●`. |
+| test-reviewer | The cast in `lastEpoch` | low | reject | A wrong message gives `NaN`, which fails the assertion loudly. |
+| test-reviewer | Only the left edge is checked; the message is sliced | low | patch | Same test as the one-line row. |
+
+Pass 3 (quick, test-reviewer, on pass 2's patches; 0 dropped): high 0, medium 0, low 5, false 2.
+
+| Lens | Finding | Verdict | Route | Evidence |
+| --- | --- | --- | --- | --- |
+| test-reviewer | `toHaveTextContent` is a substring match (two rows) | false | reject | Vitest 5's matcher compares exactly: 23.8's Review Triage Log quotes `pass: i === a` (`@vitest/browser/dist/expect-element.js`). |
+| quick, test-reviewer | The tooltip cap and strip cap are named for other things or off the grid | low | patch | AD-26: "Tailwind's 4px grid with DESIGN.md's named sizes as aliases"; now `max-w-80`, `max-w-160`, recorded in Implementation Notes. |
+| quick | The dimmed stroke row pins a colour no requirement states | low | patch | A 0px stroke has no visible colour. |
+| quick | `reads 0 and 0, dimmed…` claims dimming with text only | low | patch | Renamed; the themed row asserts the colour. |
+| quick | The tooltip row repeats `render` | low | patch | AGENTS.md: "passed as arguments to an `arrange` helper". |
+
+Pass 4 (quick, test-reviewer, on pass 3's patches; 0 dropped): high 0, medium 0, low 4. Nothing patched.
+
+| Lens | Finding | Verdict | Route | Evidence |
+| --- | --- | --- | --- | --- |
+| quick | The before-first-post row's dimming is split over two tests; only `0 errors`' colour is read | low | reject | `ViolationCounts.vue` passes one `counts.dimmed` to both severities; the behind-main row asserts both colours. A test gap, production is right. |
+| quick | The tooltip cap has one row; `w-80` would stay green | low | reject | No requirement sets a tooltip width; the cap is this build's own *judgement* decision. |
+| test-reviewer | `toMatchObject` weakens the undimmed stroke row | low | reject | The compared object has exactly the two keys. |
+| test-reviewer | 320 is not requirement-derived | low | reject | Recorded as a *judgement* decision in Implementation Notes. |
 
 ## Design Notes
 
