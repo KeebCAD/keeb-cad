@@ -3,6 +3,7 @@ import { configDefaults, defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { playwright } from '@vitest/browser-playwright'
+import { browserInstances } from '../tooling/vitest/browser-instances'
 
 export default defineConfig({
   // Launch mounts the editor, so the specs that build the main container load its components.
@@ -33,7 +34,7 @@ export default defineConfig({
       enabled: true,
       provider: playwright(),
       headless: true,
-      instances: [{ browser: 'chromium' }, { browser: 'firefox' }],
+      instances: browserInstances,
     },
   },
 })

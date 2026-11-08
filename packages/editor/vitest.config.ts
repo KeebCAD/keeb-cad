@@ -4,6 +4,7 @@ import type { BrowserCommand } from 'vitest/node'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { playwright } from '@vitest/browser-playwright'
+import { browserInstances } from '../../tooling/vitest/browser-instances'
 
 // `null` hands the scheme back to the browser's own default.
 const setColorScheme: BrowserCommand<[scheme: 'light' | 'dark' | null]> = async (
@@ -40,7 +41,7 @@ export default defineConfig({
       enabled: true,
       provider: playwright(),
       headless: true,
-      instances: [{ browser: 'chromium' }, { browser: 'firefox' }],
+      instances: browserInstances,
       commands: { setColorScheme },
     },
   },
