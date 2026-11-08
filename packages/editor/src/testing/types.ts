@@ -10,6 +10,8 @@ export type ColorScheme = 'dark' | 'light'
 
 export type ShellArrangement = { path: string; design?: Design; recordFocus?: boolean }
 
+export type RecordingShellArrangement = ShellArrangement & { recordFocus: true }
+
 export type MountedShell = { router: Router; invoke: Invoke }
 
 export type RecordingShell = MountedShell & { lifecycle: RecordingModelWorkerLifecycle }

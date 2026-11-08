@@ -146,6 +146,30 @@ Pass 1 (quick, test-reviewer; 0 findings dropped): high 0, medium 3, low 9, fals
 | test-reviewer | A failed navigation sends no `focus`; `useLandmark` throws on no root | low | patch | Recorded as a `Decision (build)`; the throw is a loud failure on an unreachable state, correct behaviour. |
 | test-reviewer | `unregister` removes only the same element | low | reject | It keeps a remounted root registered when the old one unmounts after; correct and negligible. |
 
+Pass 2 (quick, test-reviewer, on the files pass 1's patches touched; 0 dropped): high 0, medium 0, low 5, false 2, maybe-false 1.
+
+| Lens | Finding | Verdict | Route | Evidence |
+| --- | --- | --- | --- | --- |
+| quick | Rendered shell rows still run in one theme | low | patch | `EditorShell.spec.ts`'s top-bar-name and landmark-label rows set no scheme; `design-location.spec.ts` and the router spec render nothing, so a theme can't reach them. |
+| quick | `EditorShell.spec.ts` and `mount-editor.spec.ts` copy the colour-scheme steps | low | patch | Their `afterEach` and set-and-poll lines match `emulateColorScheme` / `resetColorScheme` line for line; Sergii's decision puts them in `testing/color-scheme.ts`. |
+| quick | `resetColorScheme` runs before the app unmounts, so `useColorMode` may write `data-theme` back | maybe-false | defer | Vitest runs `onTestFinished` after `afterEach`, so the reset does run while mounted; whether VueUse's listener rewrites `data-theme` on `setColorScheme(null)` needs a run that reads the attribute after teardown. Three green shuffled runs so far. |
+| quick | `mount-editor.spec.ts` resets the hash twice | low | patch | The top-level `afterEach` and the new `onTestFinished` both call `history.replaceState`. |
+| quick | `mountShell`'s overload builds `ShellArrangement & { recordFocus: true }` inline | low | patch | AGENTS.md: "Put every type a folder declares … in that folder's `types.ts`". |
+| quick | `landmarks.ts`'s "From outside every place" and `use-slide-out.ts`'s focus comment restate code | low | reject | They state the rule behind a non-obvious fallback (Sergii's F6 and focus-return decisions), which `at === -1 ? undefined` doesn't say. |
+| quick | `rounded-r-lg` on the slide-out has no requirement | false | reject | DESIGN.md › Components: the slide-out has "right corners `{rounded.lg}`". |
+| test-reviewer | `toHaveTextContent(hint)` is a substring match | false | reject | Vitest 5's matcher: `let a=String(t); return {pass: i===a, …}`, exact after whitespace normalising. |
+
+Pass 3 (quick, test-reviewer, on pass 2's patches; 0 dropped): high 0, medium 0, low 3, false 1, carried 2. Nothing patched.
+
+| Lens | Finding | Verdict | Route | Evidence |
+| --- | --- | --- | --- | --- |
+| quick | `mount-editor.spec.ts`'s top-bar test runs in one theme | low | reject | It is `mountEditor`'s container contract, not a boundary row; the "top bar name" row runs in both themes in `EditorShell.spec.ts`. |
+| quick | The hash reset in `arrange`'s `onTestFinished` misses a setup that throws | low | reject | Only after a setup failure, which already fails that test; unlikely in everyday use. |
+| quick | The deferred entry says "medium, unverified" but the log says `maybe-false` | false | reject | The workflow's defer rule: a `maybe-false` that would be medium is recorded "with that severity marked unverified". |
+| quick | The reset-before-unmount race was cheap to fix | maybe-false | carried | carried: pass 2's deferred row, the same claim and the same code. |
+| test-reviewer | `afterEach(resetColorScheme)` runs before unmount | maybe-false | carried | carried: pass 2's deferred row. |
+| test-reviewer | Theme-looped rows have no theme-dependent `expect` | low | reject | The ticket's verify asks every row "in both themes"; the doubled run is the requirement's. |
+
 ## Design Notes
 
 - **Decision (plan): 1366x768 is the editor browser config's viewport, not a per-test `page.viewport`,** because every editor row runs at it (ticket: "In Vitest browser mode at 1366x768") and AGENTS.md: "a helper never takes a hidden step the assertions depend on"; `browser.viewport` is Vitest's documented setting (vitest.dev/config/browser/viewport).

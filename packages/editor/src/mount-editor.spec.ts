@@ -6,18 +6,14 @@ import { aDesign, aMeta, anId } from '@keeb-cad/schema/testing'
 import { THEME_STORAGE_KEY } from '@keeb-cad/ui'
 import { workersModule } from '@keeb-cad/workers'
 import { afterEach, describe, expect, it, onTestFinished } from 'vitest'
-import { commands, page } from 'vitest/browser'
+import { page } from 'vitest/browser'
 import { effectScope, type App } from 'vue'
 
 import { editorModule } from './editor-module'
 import { mountEditor } from './mount-editor'
+import { emulateColorScheme, resetColorScheme } from './testing/color-scheme'
 
-afterEach(async () => {
-  localStorage.clear()
-  delete document.documentElement.dataset.theme
-  history.replaceState(null, '', location.pathname + location.search)
-  await commands.setColorScheme(null)
-})
+afterEach(resetColorScheme)
 
 async function arrange(design?: Design) {
   const container = new Container()
@@ -45,9 +41,7 @@ async function arrange(design?: Design) {
 
 describe('mountEditor', () => {
   it('applies the stored theme over the OS one before it returns', async () => {
-    await commands.setColorScheme('dark')
-    // The emulated scheme reaches the test frame's media queries a moment later.
-    await expect.poll(() => matchMedia('(prefers-color-scheme: dark)').matches).toBe(true)
+    await emulateColorScheme('dark')
     localStorage.setItem(THEME_STORAGE_KEY, 'light')
     const { mount } = await arrange()
 

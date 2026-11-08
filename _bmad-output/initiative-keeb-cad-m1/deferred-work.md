@@ -205,3 +205,6 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-editor-frame-shows-the-design-plan.md`
   summary: Editor browser specs run at a 1366x768 page viewport, while DESIGN.md › Layout specifies "a 1366×768 minimum laptop viewport (1366×696 inside the browser)", so no test checks the shell at the 696px-high page.
   evidence: 23.8's ticket and boundary row say 1366x768 and its shell-boxes row expects a 1002x696 canvas; at DESIGN's 1366×696 page the canvas would be 624 high. The shell is flex, so nothing breaks today; a ticket or DESIGN wording fix settles which height is meant.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-editor-frame-shows-the-design-plan.md`
+  summary: Editor specs' `afterEach(resetColorScheme)` runs before `mountShell`'s `onTestFinished` unmounts the app, so VueUse's `useColorMode` listener may write `data-theme` back after the reset (medium, unverified).
+  evidence: Vitest runs `onTestFinished` after `afterEach`; settle it with a run that reads `document.documentElement.dataset.theme` after teardown, or by resetting inside the unmounting `onTestFinished`. Seen green on three shuffled runs.

@@ -9,11 +9,14 @@ import { type App, effectScope } from 'vue'
 import { editorModule } from '../editor-module'
 import { Invoke } from '../invoke/invoke'
 import { mountEditor } from '../mount-editor'
-import type { MountedShell, RecordingShell, ShellArrangement } from './types'
+import type {
+  MountedShell,
+  RecordingShell,
+  RecordingShellArrangement,
+  ShellArrangement,
+} from './types'
 
-export async function mountShell(
-  arrangement: ShellArrangement & { recordFocus: true },
-): Promise<RecordingShell>
+export async function mountShell(arrangement: RecordingShellArrangement): Promise<RecordingShell>
 export async function mountShell(arrangement: ShellArrangement): Promise<MountedShell>
 export async function mountShell({
   path,
