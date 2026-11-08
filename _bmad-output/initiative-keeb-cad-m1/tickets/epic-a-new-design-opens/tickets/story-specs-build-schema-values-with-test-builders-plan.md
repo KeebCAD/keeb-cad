@@ -3,7 +3,7 @@ title: 'Specs build schema values with test builders'
 type: 'refactor'
 ticket: '17'
 created: '2026-11-06'
-status: 'built'
+status: done
 baseline_revision: 'edd63fd460f4bfd3e0baf4be452be0cab503bde6'
 route: 'full'
 route_source: 'auto'

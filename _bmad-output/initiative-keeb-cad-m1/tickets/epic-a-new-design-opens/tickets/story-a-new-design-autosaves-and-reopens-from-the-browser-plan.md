@@ -3,7 +3,7 @@ title: 'A new design autosaves and reopens from the browser'
 type: 'feature'
 ticket: '5'
 created: '2026-11-07'
-status: 'built'
+status: done
 baseline_revision: '4e090884860f3c6672edbad91a46265996b00dee'
 route: 'full'
 route_source: 'auto'

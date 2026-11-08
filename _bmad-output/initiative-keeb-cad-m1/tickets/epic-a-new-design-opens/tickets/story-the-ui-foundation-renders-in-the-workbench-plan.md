@@ -3,7 +3,7 @@ title: 'The ui foundation renders in the workbench'
 type: 'feature'
 ticket: '6'
 created: '2026-11-06'
-status: 'built'
+status: done
 baseline_revision: '903962dd0b59cca5c50010b0919127e833b1a514'
 route: 'full'
 route_source: 'auto'

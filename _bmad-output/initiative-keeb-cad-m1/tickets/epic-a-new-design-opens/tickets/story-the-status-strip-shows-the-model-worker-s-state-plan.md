@@ -3,7 +3,7 @@ title: "The status strip shows the model worker's state"
 type: 'feature'
 ticket: '23'
 created: '2026-11-08'
-status: 'built'
+status: done
 baseline_revision: '879b12c6f10826fb4be4ca73b3fea6dd0837b9fa'
 route: 'full'
 route_source: 'auto'

@@ -3,7 +3,7 @@ title: 'A new design writes and reads back byte-identical'
 type: 'feature'
 ticket: '3'
 created: '2026-11-05'
-status: 'built'
+status: done
 baseline_revision: 'e8674dbe1b6351e9cf5746ea96ee4e7cce84cf8c'
 route: 'full'
 route_source: 'auto'

@@ -3,7 +3,7 @@ title: "The invoke path takes a caller's input and answers availability"
 type: 'feature'
 ticket: '21'
 created: '2026-11-08'
-status: 'built'
+status: done
 baseline_revision: 'bb247bd9a316964a3341ccfc5d51e2a9cd76a743'
 route: 'full'
 route_source: 'auto'

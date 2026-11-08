@@ -3,7 +3,7 @@ title: 'The editor frame shows the design'
 type: 'feature'
 ticket: '8'
 created: '2026-11-08'
-status: 'built'
+status: done
 baseline_revision: 'd276578abff75d4fc8917e80fb08d87797f6fe2c'
 route: 'full'
 route_source: 'auto'

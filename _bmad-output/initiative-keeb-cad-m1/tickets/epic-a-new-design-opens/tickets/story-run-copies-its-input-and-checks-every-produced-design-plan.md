@@ -3,7 +3,7 @@ title: 'run copies its input and checks every produced design'
 type: 'feature'
 ticket: '16'
 created: '2026-11-06'
-status: 'built'
+status: done
 baseline_revision: '56e9a854d3efedb5d745bc854ce3c985f37aea4c'
 route: 'full'
 route_source: 'auto'

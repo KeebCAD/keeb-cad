@@ -3,7 +3,7 @@ title: 'Components reach services only through composables'
 type: 'refactor'
 ticket: '20'
 created: '2026-11-08'
-status: 'built'
+status: done
 baseline_revision: '2f74d177bad2618dcf805c16f97f210caff8207e'
 route: 'full'
 route_source: 'auto'

@@ -3,7 +3,7 @@ title: 'The model worker mirrors the design'
 type: 'feature'
 ticket: '4'
 created: '2026-11-07'
-status: 'built'
+status: done
 baseline_revision: 'f489035a89a6733360ccfe0ef7c8c06eb1e65b37'
 route: 'full'
 route_source: 'auto'

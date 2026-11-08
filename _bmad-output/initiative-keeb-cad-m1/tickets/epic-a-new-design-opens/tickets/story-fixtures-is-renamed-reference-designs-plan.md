@@ -3,7 +3,7 @@ title: 'fixtures is renamed reference-designs'
 type: 'refactor'
 ticket: '14'
 created: '2026-11-08'
-status: 'built'
+status: done
 baseline_revision: '10c75bc5e801a60d6f2a4b148be554f3a2fcc168'
 route: 'oneshot'
 route_source: 'auto'

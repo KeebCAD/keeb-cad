@@ -73,7 +73,7 @@ description = "Fills the layout schema section (groups, slots, chain on axis x o
 verify = "A design built by Corney's script with one column as a chain places each key per the AD-4 step rule, 19 mm apart with 1u keys and the new design's 1 mm gap; a chain holding a group steps it by its slots' bounding extent; an AddSlot with an omitted id gets a minted one, a given id is kept and one already in the design is refused with id-taken naming that id, the design unchanged; an AddSlot under a missing parent is refused with unknown-target naming it; a test command that leaves a reference pointing at a missing id is refused by the structural check with unknown-target, the design unchanged; DuplicateNode puts the copy after the original with new ids (thumb-home becomes thumb-home-2) and references inside the copy remapped; DeleteNode removes every listed node's subtree and refuses the root with root-required naming it; a types test shows a field built on lengthSchema infers Quantity<'mm'> and an Angle doesn't assign to a Length; the reference walk finds every reference in a design built from every section; saving and reopening it places the same; placement does not recompute when an unrelated section changes; a gap that isn't an expression, and one of '1deg', is refused as design-invalid naming meta.gap.x; a slot rotated 190 deg posts rot -170, one at 180 deg posts 180 and one at -180 deg posts 180; angle comparisons in tests are mod 360."
 unknown = ""
 covers = ["R1", "R2"]
-after = [18, "23.16", "23.14"]
+after = [18, "23.16", "23.14", "23.24"]
 hitl = false
 risk = "medium"
 

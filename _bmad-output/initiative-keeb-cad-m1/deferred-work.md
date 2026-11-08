@@ -280,4 +280,44 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-refactor-sweep-plan.md`
   summary: Fold into 23.8's ticket wording that editor browser specs run at a 1366×696 page and the shell-boxes row's canvas is 1002×624, not 1366×768 and 1002×696.
   evidence: Sergii, 2026-11-08, the refactor sweep's plan: `DESIGN.md` says `1366×768 minimum laptop viewport (1366×696 inside the browser)` and the page a test renders is the inside of the browser. The build never writes a ticket file, so the PO folds this in.
-  owner: the PO (Sofia).
+  closed: 2026-11-08, folded into 23.8's description and verify.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
+  summary: E2: the crash cap can't be reached by a worker that posts `issues` before crashing, since every whole design posts `issues` first and that post resets the count.
+  evidence: `packages/workers/src/model-worker/model-worker-lifecycle.ts:131-135`, `packages/pipeline/src/pipeline/pipeline.ts:49`; the code follows AD-11 as written.
+  owner: Sergii, then `bmad-architecture`; latent until a stage can crash.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
+  summary: E3: `format-too-new` at launch falls through to another or a new design, replaces the URL and shows nothing.
+  evidence: `app/src/launch/launch.ts:33-47`, spine AD-8. Unreachable until the format version changes.
+  owner: epic-keep-my-work.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
+  summary: E4: `LoadFlow`'s `emptied` outcome and load failures are reported nowhere.
+  evidence: `packages/commands/src/load/load-flow.ts:11-20`, `open-stored-design.ts:19-21`, spine AD-13 One load flow.
+  owner: 16.1, with the notices.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
+  summary: E6: `NewDesign` and `OpenStoredDesign` don't align the route; only `Launch` does.
+  evidence: `app/src/launch/launch.ts:21`, `packages/editor/src/router/design-location.ts:31-33`.
+  owner: epic-keep-my-work's Start screen story.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
+  summary: E7: `DesignStorage.load` isn't serialized with `save`, and its `versions` then `read` are two transactions, so a replacement between them reads as `not-found`.
+  evidence: `packages/storage/src/design-storage/design-storage.ts:37-49`. Needs a second writer.
+  owner: the Web Lock story.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
+  summary: E8: duplicate hotkeys are never checked, and a handle with a hotkey, a required input and no builder fails silently.
+  evidence: `packages/editor/src/shortcuts/shortcut-registry.ts:18-27,55-59`. None exist today.
+  owner: the first story that adds a hotkey a second entry could claim.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
+  summary: E10 (traced, not run): a KDL node named `constructor` reads `Object.prototype` from `entries` and takes the schema path.
+  evidence: `packages/design-file/src/codec/read-kdl.ts:43`. Reachable from a hand-edited file once Open exists.
+  owner: 16.2.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
+  summary: E11: `spawn()` throwing synchronously; `writeBundle` throwing inside the commit emit, skipping later listeners; `Autosave` and `ModelWorkerLifecycle` not disposable; (not verified) `indexedDB` read eagerly where the accessor itself throws.
+  evidence: `packages/workers/src/model-worker/model-worker-lifecycle.ts:103`, `app/src/autosave/autosave.ts:28`, `packages/storage/src/browser/browser-storage-access.ts:3`. Unreachable today.
+  owner: the next refactor sweep.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
+  summary: A3: small duplications: plain-object check, code-unit comparator, `Dispatcher` registration, a `committed` helper in four specs.
+  evidence: `packages/hashing/src/is-plain-object.ts:2-3`, `packages/messaging/src/sending/assert-plain.ts:20-21`, `packages/hashing/src/canonical-encoding.ts:19`, `packages/design/src/parsing/format-issue-paths.ts:6`.
+  owner: the next refactor sweep.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
+  summary: A4: hand-written `switch` on tags in `design-file`, where other packages use ts-pattern.
+  evidence: `packages/design-file/src/codec/schema-fields.ts:23`, `read-kdl.ts:67`.
+  owner: the next refactor sweep.

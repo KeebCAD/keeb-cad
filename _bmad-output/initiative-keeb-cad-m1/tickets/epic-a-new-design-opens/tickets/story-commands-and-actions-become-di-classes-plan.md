@@ -3,7 +3,7 @@ title: 'Commands and actions become di classes'
 type: 'refactor'
 ticket: '15'
 created: '2026-11-05'
-status: 'built'
+status: done
 baseline_revision: '233d99e63adba9aa25639cef46b8a1fbe3f2831b'
 route: 'full'
 route_source: 'auto'

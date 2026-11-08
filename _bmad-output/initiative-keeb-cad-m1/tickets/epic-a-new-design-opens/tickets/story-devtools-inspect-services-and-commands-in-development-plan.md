@@ -3,7 +3,7 @@ title: 'Devtools inspect services and commands in development'
 type: 'feature'
 ticket: '22'
 created: '2026-11-08'
-status: 'built'
+status: done
 baseline_revision: '5ba4dff5f2c42412f91a7e1524e8347ae21444b7'
 route: 'full'
 route_source: 'auto'

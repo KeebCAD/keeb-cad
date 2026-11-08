@@ -3,7 +3,7 @@ title: 'Tests and lint close the silent-green shortcuts'
 type: 'chore'
 ticket: '18'
 created: '2026-11-06'
-status: 'built'
+status: done
 baseline_revision: 'fc8c6d14471f9fce3eba3fc0e1d0162ec60caeae'
 route: 'full'
 route_source: 'auto'

@@ -3,7 +3,7 @@ title: 'UiActions and the shortcut registry run every hotkey'
 type: 'feature'
 ticket: '19'
 created: '2026-11-07'
-status: 'built'
+status: done
 baseline_revision: '01707a61e820a2eba0f31815ef19a0b2bc8c0c55'
 route: 'full'
 route_source: 'auto'

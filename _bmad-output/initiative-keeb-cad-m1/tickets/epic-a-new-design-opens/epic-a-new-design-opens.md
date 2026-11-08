@@ -22,7 +22,7 @@ For Sergii: the app opens a design in the editor frame and a reload reopens it u
 
 ## Requirements
 
-- R1 (parent R18): A new design autosaves in the browser after every applied command and reopens from autosave byte-identical, as one versioned canonical file. (Was epic-see-corneys-keys R5.)
+- R1 (parent R18): A new design autosaves in the browser after every applied command and reopens from autosave byte-identical, as one versioned design bundle (the design file with its routing and fingerprints files, AD-1). (Was epic-see-corneys-keys R5.)
 - R2 (parent R17): A command the design store refuses returns a typed rejection and leaves the design unchanged; the status strip shows the error and warning counts. (The status strip half of epic-see-corneys-keys R4; its anchor-cycle rule stays there.)
 - R3 (parent R17): The design is seen in the editor frame, in both themes: top bar, workspace tabs, status strip (violation counts; cursor and zoom arrive with epic-see-corneys-keys's viewport), left rail with the Tree slide-out, the docked right-panel region and the canvas region. The open design and workspace are in the URL. (The frame half of epic-see-corneys-keys R6; the Layout canvas stays there.)
 
@@ -34,10 +34,10 @@ For Sergii: the app opens a design in the editor frame and a reload reopens it u
 
 ## Done when
 
-- Launch with empty storage opens a new design in the editor frame at /#/design/<id>/layout, in both themes, in Chromium and Firefox.
+- Launch with empty storage opens a new design in the editor frame at /#/design/<id>/layout, in both themes, in Chromium and Firefox, in Vitest browser mode.
 - Every command and action runs through the design store; the model worker's mirror equals main's design after each one.
 - A reload reopens the design from autosave byte-identical.
-- The frame's checks (workspace keys, tree slide-out, F6, status strip at 0 errors and 0 warnings) pass in the locally served build.
+- The frame's checks (workspace keys, tree slide-out, F6, status strip at 0 errors and 0 warnings) pass in Vitest browser mode, in Chromium and Firefox.
 
 ## Boundaries
 
@@ -78,3 +78,4 @@ For Sergii: the app opens a design in the editor frame and a reload reopens it u
 - Decision (2026-11-07, replan after the 23.20 spine pass 2ff372c, 6dff10c): Sergii split 23.20 in three. 20 keeps the composables and the lint ban on di and di/vue in .vue files (DesignCanvas moves to useOpenDesign()); new 21 gives Invoke an optional caller input and available(handle), with useInvoke(); new 22 is the devtools plugin, inspectables, two-layer timeline and build check, after 21. 8 waits on 19, 20 and 21, not on 22; 9 also waits on 21 and 22. What R1 to R3 require is unchanged. Rejected: one story (8 would wait on devtools, the riskiest and least-needed piece) and a two-way split (the invoke change rides with the lint though 22 and 8 need it on its own). 16.4 gains an unknown on how undo gets a handle.
 - Decision (2026-11-08, replan after 23.8's build split): Sergii split 23.8 at its plan, which ran about 5,100 tokens over the 3,000 cap. 8 keeps the frame (top bar, tabs with the URL and focus, rail and Tree slide-out, canvas hints, the inspector region, F6 regions) with the status strip as an empty labelled region; new 23 (after 8) takes the strip's contents and the workers changes they read (issues with seq, the running stage, WorkerFailed, the crash count reset only by issues) and RestartModelWorker, with 8's verify sentences for them and its violations-panel question. 8 covers R3; 23 covers R2 and R3. 9 waits on 23; epic-routing-and-fab's 2 waits on 23.23 (its tab badges read the crash cap and Restart). 13.7 and 16.4 still wait on 8 only: they need the strip region and the top bar, not the strip's entries. What R1 to R3 require is unchanged. Rejected: keeping one plan (twice the cap) and a crash-count fix on its own (2026-11-07's rejection), since 23 keeps the crash count with the strip that shows it. Source: deferred-work.md, entry from story-the-editor-frame-shows-the-design-plan.md.
 - Open (2026-11-08): EXPERIENCE.md › Output states gives ◌ to `waiting for edit to finish` and `rebuilding N%` to a running output, while the spine (AD-11) dims behind counts with ◌ and shows the running stage as `<stage> 2 s`; 23's unknown asks Sergii, then bmad-ux, to reconcile them.
+- Decision (2026-11-08, retrospective, Sergii): the retrospective accepted the epic with open items. New entry 24 after 9 proves what it left unproven (a failed browser write keeps the versions it replaces, a patches commit through the real autosave, launch's storage-unavailable stop, all three bundle files across a reload) and removes three planning-process comments; 13.2 and 14.1 wait on it. The epic stays open until 24 is built, not closed now with the tests left to ticket order, because done is a check and that check has known holes. Done when and R1 now say what was built: the frame and launch checks run in Vitest browser mode, as the 2026-11-07 replan decided, and R1 names the bundle (AD-1); what is required is otherwise unchanged. Rejected: holding each proof in deferred-work.md only, which would let 13.2 start on the unproven path. Source: epic-a-new-design-opens-retrospective.md.

@@ -3,7 +3,7 @@ title: 'The app opens the last design'
 type: 'feature'
 ticket: '7'
 created: '2026-11-07'
-status: 'built'
+status: done
 baseline_revision: '9a20a761859931736f4c7a7014ac839008f7ec7a'
 route: 'full'
 route_source: 'auto'
