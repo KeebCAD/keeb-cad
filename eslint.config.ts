@@ -152,6 +152,9 @@ export const TEST_ID_MESSAGE =
 export const TYPE_SPEC_MESSAGE =
   'A *.types.spec.ts runs only in its types project, where `expect`, `assert` and `should` never run; assert with expectTypeOf, or move the test to a runtime spec.'
 
+export const SERVICE_IMPORT_MESSAGE =
+  "A component reaches services only through editor's composables; import a composable instead of di or di/vue."
+
 export default defineConfigWithVueTs(
   {
     name: 'keeb-cad/files-to-lint',
@@ -327,6 +330,22 @@ export default defineConfigWithVueTs(
         { key: 'data-testid', message: TEST_ID_MESSAGE },
       ],
       'vue/no-restricted-v-bind': ['error', { argument: 'data-testid', message: TEST_ID_MESSAGE }],
+    },
+  },
+
+  {
+    name: 'keeb-cad/no-services-in-components',
+    files: ['**/*.vue'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            { name: '@keeb-cad/di', message: SERVICE_IMPORT_MESSAGE, allowTypeImports: true },
+            { name: '@keeb-cad/di/vue', message: SERVICE_IMPORT_MESSAGE, allowTypeImports: true },
+          ],
+        },
+      ],
     },
   },
 

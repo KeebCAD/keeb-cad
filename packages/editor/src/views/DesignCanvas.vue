@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { DesignStore } from '@keeb-cad/design'
-import { useService } from '@keeb-cad/di/vue'
 import { computed } from 'vue'
 
-const store = useService(DesignStore)
-const meta = computed(() => store.current.getOrUndefined()?.design.meta)
+import { useOpenDesign } from '../design/use-open-design'
+
+const openDesign = useOpenDesign()
+const meta = computed(() => openDesign.value.getOrUndefined()?.meta)
 </script>
 
 <template>

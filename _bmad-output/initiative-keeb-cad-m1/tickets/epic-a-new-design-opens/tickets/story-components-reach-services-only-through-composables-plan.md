@@ -3,14 +3,14 @@ title: 'Components reach services only through composables'
 type: 'refactor'
 ticket: '20'
 created: '2026-11-08'
-status: 'ready-for-dev'
+status: 'built'
 baseline_revision: '2f74d177bad2618dcf805c16f97f210caff8207e'
 route: 'full'
 route_source: 'auto'
 risk: 'low'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/AGENTS.md'
@@ -63,14 +63,14 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `eslint.config.ts` -- export `SERVICE_IMPORT_MESSAGE` ("A component reaches services only through editor's composables; import a composable instead of di or di/vue."). Add a block `keeb-cad/no-services-in-components` with `files: ['**/*.vue']`: `'@typescript-eslint/no-restricted-imports': ['error', { paths: [{ name: '@keeb-cad/di', message, allowTypeImports: true }, { name: '@keeb-cad/di/vue', message, allowTypeImports: true }] }]`.
-- [ ] `tooling/lint/no-services-in-components.spec.ts` -- the lint rows of the boundary table, each through `ruleMessages('@typescript-eslint/no-restricted-imports', …)` on `packages/x/src/A.vue` text with a `<script setup lang="ts">` block. Each rejected row expects `[expect.stringContaining(SERVICE_IMPORT_MESSAGE)]`, and each accepted row expects `[]`.
-- [ ] `packages/editor/src/design/use-open-design.ts` (function) -- `useOpenDesign(): ComputedRef<Option<Frozen<Design>>>`: `const store = useService(DesignStore)`, then `computed(() => store.current.map((committed) => committed.design))`.
-- [ ] `vitest.config.ts` (root) -- add a project `{ test: { name: 'editor', root: 'packages/editor', environment: 'node', include: ['src/design/**/*.spec.ts'], exclude: [...configDefaults.exclude, TYPE_SPECS] } }`, with a comment like `di`'s saying why. `packages/editor/vitest.config.ts` -- add `'src/design/**'` to its `exclude`, so no spec runs twice.
-- [ ] `packages/editor/src/design/use-open-design.spec.ts` (Node) -- the composable rows. `arrange` (function) builds `new Container().addModule(designModule)`, then `autoLoad`, and returns `{ app, commit }`. `app` is `createApp({})` after `provideInjectorOnApp`, and `commit(design)` is `expectOk(store.replaceDesign({ design, unreadable: [] }))`. The no-design row takes only `app`. Each test calls `app.runWithContext(() => useOpenDesign())` itself, so no hidden step sits in the helper. Commits go through `store.replaceDesign({ design, unreadable: [] })`, the path `NewDesign` and `OpenStoredDesign` take. The test asserts `toEqual(Option.none())` and `toEqual(Option.some(design))`. Designs are built with `aDesign`, and the later-commit row's two designs differ only in `meta: aMeta({ id: anId(…), name })`, the data that row is about.
-- [ ] `packages/editor/src/views/DesignCanvas.vue` -- `const openDesign = useOpenDesign()`, then `computed(() => openDesign.value.getOrUndefined()?.meta)`. Drop the `di` and `design` imports.
+- [x] `eslint.config.ts` -- export `SERVICE_IMPORT_MESSAGE` ("A component reaches services only through editor's composables; import a composable instead of di or di/vue."). Add a block `keeb-cad/no-services-in-components` with `files: ['**/*.vue']`: `'@typescript-eslint/no-restricted-imports': ['error', { paths: [{ name: '@keeb-cad/di', message, allowTypeImports: true }, { name: '@keeb-cad/di/vue', message, allowTypeImports: true }] }]`.
+- [x] `tooling/lint/no-services-in-components.spec.ts` -- the lint rows of the boundary table, each through `ruleMessages('@typescript-eslint/no-restricted-imports', …)` on `packages/x/src/A.vue` text with a `<script setup lang="ts">` block. Each rejected row expects `[expect.stringContaining(SERVICE_IMPORT_MESSAGE)]`, and each accepted row expects `[]`.
+- [x] `packages/editor/src/design/use-open-design.ts` (function) -- `useOpenDesign(): ComputedRef<Option<Frozen<Design>>>`: `const store = useService(DesignStore)`, then `computed(() => store.current.map((committed) => committed.design))`.
+- [x] `vitest.config.ts` (root) -- add a project `{ test: { name: 'editor', root: 'packages/editor', environment: 'node', include: ['src/design/**/*.spec.ts'], exclude: [...configDefaults.exclude, TYPE_SPECS] } }`, with a comment like `di`'s saying why. `packages/editor/vitest.config.ts` -- add `'src/design/**'` to its `exclude`, so no spec runs twice.
+- [x] `packages/editor/src/design/use-open-design.spec.ts` (Node) -- the composable rows. `arrange` (function) builds `new Container().addModule(designModule)`, then `autoLoad`, and returns `{ app, commit }`. `app` is `createApp({})` after `provideInjectorOnApp`, and `commit(design)` is `expectOk(store.replaceDesign({ design, unreadable: [] }))`. The no-design row takes only `app`. Each test calls `app.runWithContext(() => useOpenDesign())` itself, so no hidden step sits in the helper. Commits go through `store.replaceDesign({ design, unreadable: [] })`, the path `NewDesign` and `OpenStoredDesign` take. The test asserts `toEqual(Option.none())` and `toEqual(Option.some(design))`. Designs are built with `aDesign`, and the later-commit row's two designs differ only in `meta: aMeta({ id: anId(…), name })`, the data that row is about.
+- [x] `packages/editor/src/views/DesignCanvas.vue` -- `const openDesign = useOpenDesign()`, then `computed(() => openDesign.value.getOrUndefined()?.meta)`. Drop the `di` and `design` imports.
 - `useOpenDesign` is not exported from `packages/editor/src/index.ts`: only editor's own components use it, and nothing outside editor renders them.
-- [ ] `packages/editor/package.json` -- no change. `@keeb-cad/result` (for `Option`), `schema`, `design` and `di` are already dependencies.
+- [x] `packages/editor/package.json` -- no change. `@keeb-cad/result` (for `Option`), `schema`, `design` and `di` are already dependencies.
 
 **Acceptance Criteria:**
 - Given each boundary-table row, when `pnpm test` runs, then a test named for it passes at its level.
@@ -80,9 +80,26 @@ context:
 
 ## Implementation Notes
 
+- Decision (build): the later-commit row commits the first design before calling `useOpenDesign()`, not after, because then a composable that reads `store.current` once holds the first design and the row goes red (toggled bug run: red, then green once restored).
+- Decision (build): the lint rows are two `it.each` tables (rejected, accepted), not separate tests, because each table shares one assertion (AGENTS.md: "Write a shared assertion once"). The `.ts` row is its own test, since its file path differs.
+- The root Node project's comment says which editor folders run on Node, not "editor's composables touch no DOM", because `use-shortcuts.ts` listens on `document`.
+- Toggled bugs run: with the lint block's `files` broken, the 4 rejected rows went red, then green once restored. With the composable keeping its first result, the later-commit row went red, then green once restored. With `useService` put back in `DesignCanvas.vue`, eslint reports the ban.
+- No structural change beyond the plan: the two Vitest configs are named in its tasks.
+- `pnpm test`: one failure in `ui`'s `Button.spec.ts` ("keeps focus when its disabled reason is cleared", Firefox, seed `1794115850237`), which 23.20 doesn't touch. It is logged in `deferred-work.md` and not triaged here. Later full runs were green (seeds `1794115928614`, `1794116251113`, `1794116516616`).
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+- 2026-11-08, pass 1 (lenses: quick, test-reviewer; quotes checked against the diff, none dropped). Verdicts: high 0, medium 1, low 0, false 2, maybe-false 0.
+  - medium, patch -- `use-open-design.spec.ts` 'holds the later design after a second commit': `openDesign.value` was first read after the last commit, so a lazy `computed` that never tracked `store.current` still passed. Fix: read before and after the second commit and assert `[before, after]` in one `toEqual`. The implementer re-ran the toggled bug: red, then green once restored.
+  - false -- `pnpm --filter @keeb-cad/editor test:unit` quietly skips `src/design/**`: the `exclude` line carries the comment "The root config's editor project runs these folders on Node.", the same split `di` and `storage` use.
+  - false -- an empty Review Triage Log while `lenses_ran` is set: this entry is that log, written in this pass.
+- 2026-11-08, pass 2, on pass 1's patch (lenses: quick, test-reviewer; quotes checked, none dropped). Verdicts: high 0, medium 0, low 2, false 1, maybe-false 0.
+  - low, patch -- the later-commit test's name ('holds the later design after a second commit') claimed less than its `expect`, which also checks the first design (AGENTS.md: "Make a test's name and its `expect`s claim the same thing"). Fix: renamed to 'moves from the first design to the later one on a second commit'.
+  - low, reject -- 'holds the committed design' reads `.value` only after its commit, so it alone can't catch lost tracking. The later-commit row proves tracking, and a second read here would repeat it.
+  - false -- the two designs differing only in `meta` can't tell `design` from `Committed`: 'holds the committed design' compares against `Option.some(design)`, and the return type pins it.
+- 2026-11-08, pass 3, on the rename (lenses: quick, test-reviewer). No findings; the quick lens's note that passes 2 and 3 were unlogged is this entry.
 
 ## Design Notes
 
