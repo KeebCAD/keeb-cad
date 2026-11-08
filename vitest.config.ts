@@ -85,6 +85,17 @@ export default defineConfig({
         },
       },
       {
+        // The editor folders listed here hold specs that touch no DOM, so they run on Node; its
+        // vitest.config.ts runs every other spec, in browsers.
+        test: {
+          name: 'editor',
+          root: 'packages/editor',
+          environment: 'node',
+          include: ['src/design/**/*.spec.ts'],
+          exclude: [...configDefaults.exclude, TYPE_SPECS],
+        },
+      },
+      {
         test: {
           name: 'tooling',
           environment: 'node',

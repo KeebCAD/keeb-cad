@@ -34,7 +34,8 @@ export default defineConfig({
     // A config file of its own inherits nothing from the root, so it shuffles again here.
     sequence: { shuffle: true },
     expect: { requireAssertions: true },
-    exclude: [...configDefaults.exclude, '**/*.types.spec.ts'],
+    // The root config's editor project runs these folders on Node.
+    exclude: [...configDefaults.exclude, '**/*.types.spec.ts', 'src/design/**'],
     browser: {
       enabled: true,
       provider: playwright(),
