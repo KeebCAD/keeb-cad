@@ -1,0 +1,74 @@
+import { designModule } from '@keeb-cad/design'
+import { Container, type MultiToken, type TokenLike } from '@keeb-cad/di'
+import { workersModule } from '@keeb-cad/workers'
+import { describe, expect, it, onTestFinished } from 'vitest'
+
+import { editorModule } from '../editor-module'
+import { Invoke } from '../invoke/invoke'
+import { Landmarks } from '../landmarks/landmarks'
+import { DesignLocation } from '../router/design-location'
+import { ShortcutRegistry } from '../shortcuts/shortcut-registry'
+import { SlideOut } from '../slide-out/slide-out'
+import { devtoolsModule } from './devtools-module'
+import { devtoolsPluginId } from './plugin-id'
+import { inspectables } from './tokens'
+
+type Classification = { shownAs: string } | { notShown: string }
+
+const designStoreId = `${devtoolsPluginId}.design-store`
+
+const classified: readonly (readonly [new () => unknown, Classification])[] = [
+  [Invoke, { notShown: 'its calls are the invocations timeline layer' }],
+  [ShortcutRegistry, { notShown: 'its content is declared by handles, nothing changes it live' }],
+  [Landmarks, { notShown: 'focus order, read off the DOM by the browser devtools' }],
+  [DesignLocation, { shownAs: `${devtoolsPluginId}.design-location` }],
+  [SlideOut, { shownAs: `${devtoolsPluginId}.slide-out` }],
+]
+
+// The base constructor registers its builtins before this class's fields exist, so `recorded`
+// starts undefined and each test switches recording on after construction.
+class RecordingContainer extends Container {
+  recorded: unknown[] | undefined
+
+  override register<T>(token: TokenLike<T> | MultiToken<T>) {
+    this.recorded?.push(token)
+    return super.register<T>(token)
+  }
+}
+
+function byText(a: string, b: string): number {
+  return a.localeCompare(b)
+}
+
+function registeredClassNames(): string[] {
+  const container = new RecordingContainer()
+  container.recorded = []
+  editorModule.register(container)
+  return container.recorded
+    .filter((token): token is new () => unknown => typeof token === 'function')
+    .filter((token) => (token as unknown as { kind?: string }).kind !== 'ui-action')
+    .map((token) => token.name)
+    .toSorted(byText)
+}
+
+describe('the services shown in the devtools', () => {
+  it('classifies every class editorModule registers', () => {
+    const table = classified.map(([service]) => service.name).toSorted(byText)
+
+    expect(registeredClassNames()).toEqual(table)
+  })
+
+  it("registers exactly the table's shown ids plus the design store's", async () => {
+    const container = new Container()
+      .addModule(designModule)
+      .addModule(workersModule)
+      .addModule(editorModule)
+      .addModule(devtoolsModule)
+    onTestFinished(() => container.dispose())
+    const shown = classified.flatMap(([, entry]) => ('shownAs' in entry ? [entry.shownAs] : []))
+
+    const registered = container.resolve(inspectables).map(({ id }) => id)
+
+    expect(registered.toSorted(byText)).toEqual([...shown, designStoreId].toSorted(byText))
+  })
+})

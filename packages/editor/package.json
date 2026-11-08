@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./devtools": "./src/devtools.ts"
   },
   "scripts": {
     "test:unit": "vitest"
@@ -17,7 +18,9 @@
     "@keeb-cad/schema": "workspace:*",
     "@keeb-cad/ui": "workspace:*",
     "@keeb-cad/workers": "workspace:*",
+    "@vue/devtools-api": "8.2.1",
     "@vueuse/core": "catalog:",
+    "nanoevents": "catalog:",
     "ts-pattern": "catalog:",
     "valibot": "catalog:",
     "vue": "catalog:",

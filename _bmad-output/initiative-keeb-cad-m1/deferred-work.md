@@ -226,3 +226,6 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-status-strip-shows-the-model-worker-s-state-plan.md`
   summary: `model-worker-lifecycle.spec.ts`'s `aViolation` literal has no `schema/testing` builder; the first violation kind's story adds it.
   evidence: AGENTS.md "Build schema values the test doesn't read with the concept's test builder".
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-devtools-inspect-services-and-commands-in-development-plan.md`
+  summary: `packages/editor/src/invoke/invoke.spec.ts` registers its `Recorder` in `arrange` for every test, including tests that never read it.
+  evidence: offending line `container.register(Recorder).useClass(Recorder)`; rule `Arrange only what the test uses, passed as arguments to an `arrange` helper`. 23.22's new rows take it as an argument; the existing rows are left as they are.
