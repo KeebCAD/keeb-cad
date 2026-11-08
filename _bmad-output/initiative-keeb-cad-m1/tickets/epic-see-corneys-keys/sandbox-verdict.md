@@ -334,6 +334,28 @@ Tested on all three hosts in both browsers (`spikes/src/sandbox.test.ts`; the nu
 - **A WASM trap was not triggered** on either runtime. The isolation difference in the
   comparison table follows from how each library is built, not from a test.
 
+## Re-run, 2026-11-08: browser-worker timings and memory on battery
+
+Story 17 re-ran `archive/spike-blueprint-calls` before pinning any budget (run
+`05820635-68e1-43a0-b851-645ccc569979`), on **battery, `power-saver`** (battery 78% to 77%,
+governors `powersave`, load 0.65 to 2.94), in a module Web Worker in Chromium and Firefox. **The AC
+reference run is still outstanding**: no AC was at hand, and Sergii decided the build does not
+wait for it (recorded in `deferred-work.md`). The numbers below are on the state the app is really
+used in, not the fastest one.
+
+| Measure, quickjs-wasi | Chromium | Firefox |
+| --- | --- | --- |
+| Command, 50 keys x key blueprint (10 calls), JSON results, median / p95 ms | 3.575 / 4.125 | 4.38 / 5.94 |
+| Set-up per blueprint, total median / p95 ms | 6.46 / 7.025 | 8.34 / 9.6 |
+| VM create (async), median ms | 0.925 | 1.32 |
+| WASM per VM, MiB (1 blueprint, after calls) | 1.44 | 1.44 |
+| QuickJS used per VM, KiB | 139 | 139 |
+| 100 distinct VMs, WASM MiB | 143.75 | 143.75 |
+
+Nothing here argues against the budgets: a 50-key command stays well inside the 100 ms visible-set
+target, one VM's 1.44 MiB is far below the 48 MiB replacement limit and the 64 MiB `memoryLimit`, and
+the run contradicts no step budget. **The budgets stay 100 steps, 64 MiB and 48 MiB.**
+
 ## Sign-off
 
 Pass / miss: pass, runtime superseded by BP-2 (quickjs-wasi 3.6.3)  Sergii, date: 2026-11-02

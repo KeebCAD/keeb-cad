@@ -96,7 +96,7 @@ flowchart LR
 - **Rule:**
   - The **lane runner** lives in `blueprint/worker`; it owns the per-run lane cache, which is memory-only and never persisted. The case worker loads it without `model`.
   - A lane run's cache key is the stage and its version, the blueprint version, the transitive closure of its pinned `uses` and the hash of exactly the arguments it receives, each in its resolved canonical form: quantities, options and text by value; a part ref by the referenced part's content hash (blueprint version plus inputs); an asset by its content hash; a pull by the pulled output's content hash, `count: any` pulls ordered by producer id; an anchor by its resolved frame. Identical runs share one entry. A stage receives only lane outputs, never runs blueprint code, and keeps its own AD-11 cache key.
-  - A **deterministic** failure (a throw, the step budget, out of memory, a non-JSON-exact value, an undeclared or missing role, a pending job) is cached like a success: it reruns only when the key changes. Its last good output shows stale with `lane-failed`, carrying the stable message.
+  - A **deterministic** failure (a throw, the step budget, out of memory, a non-JSON-exact value, an undeclared or missing role, a pending job, a boundary failure) is cached like a success: it reruns only when the key changes. Its last good output shows stale with `lane-failed`, carrying the stable message.
   - A lane whose VM is gone (dropped mid-stage after a trap or a pending job) is skipped, marked `unavailable` and **never cached**; it reruns in the next pause. Only the run that trapped is cached.
 
 ### BP-6 — Nesting
@@ -142,7 +142,7 @@ flowchart LR
 
 | Concern | Convention |
 | --- | --- |
-| Failure kinds | `lane-failed` names the entry, the slot and its cause (a throw with its message, the step budget, out of memory, a non-JSON-exact value with its path, a pending job, an undeclared or missing role); `unavailable` is transient and uncached; `blueprint-input-invalid` comes from main; `blueprint-api-too-new` and an unknown query from the worker (initiative spine, Violations) |
+| Failure kinds | `lane-failed` names the entry, the slot and its cause (a throw with its message, the step budget, out of memory, a non-JSON-exact value with its path, a pending job, an undeclared or missing role, a nested input, an unreadable result or an engine trap (boundary)); `unavailable` is transient and uncached; `blueprint-input-invalid` comes from main; `blueprint-api-too-new` and an unknown query from the worker (initiative spine, Violations) |
 | Host API | Every operation is defined once in `blueprint` (signature and JSON result shape) and implemented by the stage that owns the lane (AD-18) |
 | Verification | Per host: a stateful blueprint gives the same output for the same input; a runaway stops at the step budget; an allocation loop fails out of memory, typed; unbounded recursion fails typed; the global allow-list test; a throwing getter never runs on the host; a nested blueprint can't see its caller; the pending-job contract test. At library build: every declaration validates and every part blueprint declares one `rectangle` |
 

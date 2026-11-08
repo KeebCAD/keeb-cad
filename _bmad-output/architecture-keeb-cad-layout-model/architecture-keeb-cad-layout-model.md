@@ -924,7 +924,8 @@ type UpgradeMapping = {
 }
 type Role = string                                // open string (AD-18): 'rectangle', 'cutout', 'mount', 'outline', 'case-body', …
 type Target = 'plate' | 'pcb' | 'case'
-type Unit = 'mm' | 'deg'                          // AD-17's units
+type Unit = 'mm' | 'deg'                          // AD-17's units; owned by expr, re-exported by schema
+type ParseError = { kind: 'expression-parse-failed'; input: string }   // owned by expr, re-exported by schema; the editor writes its text from the kind
 type OutputKind = 'shape' | 'solid' | 'footprint' | 'part-placement' | 'config' | 'envelope'   // closed list; grows with the stories
 // envelope: a 2D region plus a height range (bottom, top in mm above the plate); live, read by fit and overlap (AD-5, AD-16)
 type QueryName = string                           // one of the queries defined in `blueprint`; closed list, grows with the stories

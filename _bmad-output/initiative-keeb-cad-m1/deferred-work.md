@@ -329,3 +329,23 @@
   summary: E1: should a nested reactive input keep throwing `DataCloneError` from `run`, or be unwrapped or refused as `input-invalid`?
   evidence: `packages/design/src/store/design-store.ts:198-200` unwraps only the top level; 23.16's plan line 130 chose to let the error through but doesn't mention nested proxies.
   owner: Sergii, before the first command whose input comes from reactive UI state.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-sandbox-runs-a-blueprint-lane-plan.md`
+  summary: Out-of-memory results depend on garbage left by earlier runs, so the same lane can pass or fail by VM history.
+  evidence: BP-4; `packages/blueprint/src/pool/blueprint-vm.ts`.
+  owner: the first story a real blueprint hits the limit.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-sandbox-runs-a-blueprint-lane-plan.md`
+  summary: Handles are integers with no 2D/3D tag; a lane can pass a 2D handle to a 3D operation.
+  evidence: BP-4 Deferred; `packages/blueprint/src/lane/handle-table.ts`.
+  owner: the first story with 3D operations.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-sandbox-runs-a-blueprint-lane-plan.md`
+  summary: The unknown-query check in the worker (a query not in `blueprint`'s list) is not built: there is no query yet.
+  evidence: `_bmad-output/initiative-keeb-cad-m1/architecture-blueprints/architecture-blueprints.md` Failure kinds.
+  owner: the first query's story.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-sandbox-runs-a-blueprint-lane-plan.md`
+  summary: `checkNestedInputs` skips a nested quantity's `range`: its bounds are expressions the stub cannot parse.
+  evidence: `packages/blueprint/src/lane/check-nested-inputs.ts`.
+  owner: 14.2, with the expression grammar.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-sandbox-runs-a-blueprint-lane-plan.md`
+  summary: The AC reference run of the sandbox timings: the 2026-11-08 re-run was on battery, `power-saver`.
+  evidence: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/sandbox-verdict.md`.
+  owner: whoever next has AC at hand.
