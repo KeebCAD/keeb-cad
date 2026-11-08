@@ -75,6 +75,8 @@ colors:
   focus-light: '#8839ef'
   warning-light: '#df8e1d'       # glyph only, with Text stroke; label in {colors.text-light}
   error-light: '#d20f39'         # as text only on panel/canvas, never on chrome
+  glyph-stroke: 'transparent'    # Frappé: no stroke on status glyphs
+  glyph-stroke-light: '#4c4f69'  # the 1px stroke on Yellow and Green glyphs
   ok-light: '#40a02b'            # glyph only, with Text stroke; label in {colors.text-light}
   progress-light: '#1e66f5'      # ring/bar only; label in {colors.text-light}
   stale-light: '#9ca0b0'
