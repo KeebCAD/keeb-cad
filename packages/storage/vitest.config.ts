@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url'
 import { configDefaults, defineConfig } from 'vitest/config'
 import { playwright } from '@vitest/browser-playwright'
+import { browserInstances } from '../../tooling/vitest/browser-instances'
 
 // The browser backend's specs need IndexedDB, so they run in real browsers; every other storage
 // spec runs on Node, in the root config's `storage` project, where Stryker reaches it.
@@ -17,7 +18,7 @@ export default defineConfig({
       enabled: true,
       provider: playwright(),
       headless: true,
-      instances: [{ browser: 'chromium' }, { browser: 'firefox' }],
+      instances: browserInstances,
     },
   },
 })
