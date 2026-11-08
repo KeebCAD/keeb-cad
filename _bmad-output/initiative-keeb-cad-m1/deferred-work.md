@@ -180,3 +180,7 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-components-reach-services-only-through-composables-plan.md`
   summary: `packages/ui/src/button/Button.spec.ts`'s "keeps focus when its disabled reason is cleared" failed once in Firefox during 23.20's build (focus on `body`, not the button); a second, unnamed failure was in an earlier run of the same session.
   evidence: local `pnpm test`, 2026-11-08, seed `1794115850237`; later runs green (seed `1794115928614` among them). 23.20 touches no `ui` file. Same family as the tooltip focus flake above. Not triaged: the build's implementer re-ran the suite instead, which flaky-triage warns against; owner is whoever next touches `ui`'s focus tests (flaky-triage with the seed).
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-invoke-path-takes-a-caller-s-input-and-answers-availabil-plan.md`
+  summary: `ui`'s `Button.spec.ts` "with a disabled reason shows the reason in a tooltip once focused" timed out in Firefox in CI (expect.poll), a second flaky test in that file beside 23.20's.
+  evidence: PR #36 run 42454209243, seed `1794118810293`, on a docs-only commit; the re-run of the failed job passed. 23.21 doesn't touch `ui`. Needs flaky-triage, not a retry.
