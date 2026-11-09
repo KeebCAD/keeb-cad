@@ -349,3 +349,25 @@
   summary: The AC reference run of the sandbox timings: the 2026-11-08 re-run was on battery, `power-saver`.
   evidence: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/sandbox-verdict.md`.
   owner: whoever next has AC at hand.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-library-blueprints-build-and-run-in-the-model-worker-plan.md`
+  summary: Add BP-8's refusal of an anchor input on a `parts` lane with the story that adds `InputValue`'s anchor variant.
+  evidence: 13.21 fails every anchor input at build, so no source can reach the check. Decision, Sergii, 2026-11-09.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-library-blueprints-build-and-run-in-the-model-worker-plan.md`
+  summary: Split `packages/blueprint/src/testing/a-pinned-blueprint.ts` by concept and build `aContract` on `aBlueprintDeclaration`.
+  evidence: `export const MIB = 1024 * 1024` beside pins and scripts; AGENTS.md `helpers over one concept share a file named for it`, `never a copied literal`.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-library-blueprints-build-and-run-in-the-model-worker-plan.md`
+  summary: Import `devtoolsPluginId` in `tooling/check-dist/check-dist.ts` through a package export.
+  evidence: `from '../../packages/editor/src/devtools/plugin-id.ts'`; spine `Each closes its public surface through package \`exports\``.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-library-blueprints-build-and-run-in-the-model-worker-plan.md`
+  summary: Decide or pin `filesContaining`'s `localeCompare` sort, its throw on an empty folder and an empty needle.
+  evidence: `tooling/check-dist/files-containing.ts` `.toSorted((a, b) => a.localeCompare(b))`; no test has two results; AGENTS.md `Give every threshold three rows`.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-library-blueprints-build-and-run-in-the-model-worker-plan.md`
+  summary: Replace the cast in `check-nested-inputs.ts` and the parallel `NestedInputDeclaration` with `schema`'s types.
+  evidence: `(value as { value: string }).value`; AD-24 `A type whose value has a schema is inferred from it`.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-library-blueprints-build-and-run-in-the-model-worker-plan.md`
+  summary: Move recording out of `arrange()` in `packages/pipeline/src/pipeline/pipeline.spec.ts`.
+  evidence: `port2.addEventListener('message', (event) => posts.push(event.data))` inside `arrange`; AGENTS.md `Start recording after arrange`.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-library-blueprints-build-and-run-in-the-model-worker-plan.md`
+  summary: 13.18 re-enters the backoff after running stages when a VM was lost mid-stage.
+  evidence: `blueprint-pause.ts` reads `hasUnavailable` only after its own pause; no stage calls `runLane` until 13.18. Decision, Sergii, 2026-11-09; on 13.18's ticket.

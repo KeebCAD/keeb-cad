@@ -725,7 +725,7 @@ The design file's fields defined so far: what layout needs (the `meta`, `library
 ```ts
 // ── shared kinds (defined once in schema) ───────────────────
 // A quantity is always an Expression string (AD-17); a literal with a unit ('19mm', '-15deg') is the smallest expression. `u` is not a length (decision 48).
-type Expression = Brand<string, 'Expression'>                    // parses with expr's parser (13.17's literal-only stub, then 14.2's grammar); expressionSchema adds v.metadata({ expression: true }) for the walk (AD-24); 13.2
+type Expression = Brand<string, 'Expression'>                    // parses with expr's parser (13.17's literal-only stub, then 14.2's grammar); expressionSchema adds v.metadata({ expression: true }) for the walk (AD-24); 13.21
 type Quantity<U extends Unit> = Expression & { readonly [unit]?: U }   // hand-declared; the unit is a phantom type; quantity(unit) = expressionSchema piped with v.metadata({ unit }) and the wrong-unit literal check, declared as returning v.GenericSchema<string, Quantity<U>> (the one cast, inside quantity) so inferred fields keep their unit; 13.2
 // One schema per kind, each on quantity(unit) plus v.metadata({ quantity }): lengthSchema ('length'), deltaSchema ('delta'), angleSchema ('angle').
 type Delta  = Quantity<'mm'>                  // deltaSchema: signed displacement, no check
@@ -898,7 +898,7 @@ type BlueprintDeclaration = {
   lanes: Partial<Record<LaneStage, LaneDeclaration>>
   upgrade?: UpgradeMapping                        // from the previous version only
   uses: { id: BlueprintId; minVersion: Version }[] // nested blueprints (use()); MVS on main writes the result into library-versions; the worker runs only pins
-  nets?: unknown                                  // nets and pin-role joins: typed with PinRole (AD-14)
+  nets?: unknown                                  // nets and pin-role joins: typed with PinRole (AD-14); parses as v.optional(v.unknown()), opaque until then (13.21)
 }
 type LaneStage = 'parts' | 'shapes' | 'extras' | 'plates' | 'pcb' | 'firmware' | 'case'   // a stage named here and in StageId is spelled the same; 'case' lanes run in the case worker and have no StageId
 type DeclaredInput = {
@@ -914,7 +914,7 @@ type DeclaredInput = {
 type LaneDeclaration = {
   pulls: { role: Role; target?: Target; count: 'exactly-one' | 'at-least-one' | 'any' }[]
   queries: QueryName[]                            // defined in `blueprint` (AD-11)
-  outputs: { name: string; role: Role; target?: Target; kind: OutputKind; purpose?: CutoutPurpose; count: 'one' | 'any' }[]   // name unique within the lane; any may be empty
+  outputs: { name: string; role: Role; target?: Target; kind: OutputKind; purpose?: CutoutPurpose; count: 'one' | 'any' }[]   // name unique within the lane; any may be empty; purpose parses as v.optional(v.unknown()), opaque until CutoutPurpose is defined (13.21)
 }
 type UpgradeMapping = {
   from: Version                                   // the previous version; an upgrade across versions chains the mappings in one command
@@ -1139,7 +1139,7 @@ keeb-cad/
     schema/      # types, Valibot schemas and the helpers that define a kind or its order (ref(kind), compareId)
                  # testing: one test builder per concept, a builder per branch plus a common one per variant (anId, aRevision,
                  # aHash, aFormatVersion, aFingerprint, aSplitForm/aUnibodyForm/aForm, aFreeGroup/aChainGroup/aGroup,
-                 # aSlot, aLayout, aMeta, aDesign, aRoutingFile, aFingerprintsFile; 13.2: anExpression, aLength, aDelta, anAngle);
+                 # aSlot, aLayout, aMeta, aDesign, aRoutingFile, aFingerprintsFile; 13.21: anExpression; 13.2: aLength, aDelta, anAngle);
                  # tests and testing folders only
                  # (= the Data Schema section): shared kinds, generic type helpers (Quantity, Frozen, Mutable,
                  # ReadonlyRef), the fix variant, LibraryData, design file sections, derived files, part schema, blueprint
