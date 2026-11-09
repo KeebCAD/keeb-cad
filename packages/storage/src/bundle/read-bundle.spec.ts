@@ -1,11 +1,11 @@
+import { writeDesignFile } from '@keeb-cad/design-file'
 import { expectOk } from '@keeb-cad/result/testing'
 import { aDesign, aFingerprintsFile, aRevision, aRoutingFile } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { readBundle } from './read-bundle'
 
-const designText =
-  'format-version 1\nmeta id="corne" name="Corne" {\n    form type="split" board="reversible"\n}\nlayout id="root" arrangement="free"\n'
+const designText = writeDesignFile(aDesign())
 
 describe('readBundle', () => {
   it('reads each text as its own file of the bundle', () => {

@@ -1,5 +1,6 @@
 import { expectOk } from '@keeb-cad/result/testing'
 import { designSchema, fingerprintsFileSchema, routingFileSchema } from '@keeb-cad/schema'
+import { aBlueprintDesignPart, aDesign, aQuantityInputValue } from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
@@ -13,8 +14,16 @@ const lines = (...text: string[]) => text.map((line) => `${line}\n`).join('')
 const canonical = {
   design: lines(
     'format-version 1',
-    String.raw`meta id=corne name="Corne \"wireless\"" {`,
+    String.raw`meta id=corne name="Corne \"wireless\"" default-part=key {`,
     '\tform type=split board=reversible',
+    '}',
+    'library-versions {',
+    '\tlibrary-version id="lib:blueprint/choc-key" version=1',
+    '}',
+    'parts {',
+    '\tpart type=blueprint id=key blueprint="lib:blueprint/choc-key" {',
+    '\t\tinputs',
+    '\t}',
     '}',
     'layout id=root arrangement=free {',
     '\tgroup id=thumbs arrangement=chain axis=x {',
@@ -55,8 +64,16 @@ describe('a bundle read and written back', () => {
     const layoutFirst = lines(
       'format-version 1',
       'layout id=root arrangement=free',
-      'meta id=corne name=Corne {',
+      'meta id=corne name=Corne default-part=key {',
       '\tform type=split board=reversible',
+      '}',
+      'library-versions {',
+      '\tlibrary-version id="lib:blueprint/choc-key" version=1',
+      '}',
+      'parts {',
+      '\tpart type=blueprint id=key blueprint="lib:blueprint/choc-key" {',
+      '\t\tinputs',
+      '\t}',
       '}',
     )
 
@@ -65,11 +82,35 @@ describe('a bundle read and written back', () => {
     expect(written.design).toBe(
       lines(
         'format-version 1',
-        'meta id=corne name=Corne {',
+        'meta id=corne name=Corne default-part=key {',
         '\tform type=split board=reversible',
+        '}',
+        'library-versions {',
+        '\tlibrary-version id="lib:blueprint/choc-key" version=1',
+        '}',
+        'parts {',
+        '\tpart type=blueprint id=key blueprint="lib:blueprint/choc-key" {',
+        '\t\tinputs',
+        '\t}',
         '}',
         'layout id=root arrangement=free',
       ),
     )
+  })
+
+  it.each([
+    ['a part with empty inputs', {}],
+    ['boolean, text and quantity inputs', { flag: true, size: '1u', width: aQuantityInputValue() }],
+    ['a kebab-case input key', { 'my-input': '1u' }],
+  ])('reproduces %s byte for byte, its keys unchanged', (_role, inputs) => {
+    const design = aDesign({ parts: [aBlueprintDesignPart({ inputs })] })
+    const written = writeDesignFile(design)
+
+    const migrated = migrateBundle({ design: written })
+    expectOk(migrated)
+
+    const reread = v.parse(designSchema, migrated.value.design)
+    expect(reread).toEqual(design)
+    expect(writeDesignFile(reread)).toBe(written)
   })
 })

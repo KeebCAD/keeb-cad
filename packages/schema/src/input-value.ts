@@ -8,3 +8,5 @@ export const quantityInputValueSchema = v.strictObject({
 })
 
 export const inputValueSchema = v.union([v.boolean(), v.string(), quantityInputValueSchema])
+
+export const blueprintInputsSchema = v.record(v.string(), inputValueSchema)

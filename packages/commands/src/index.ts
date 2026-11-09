@@ -9,5 +9,8 @@ export type { LoadFlowError, LoadOutcome, OpenStoredDesignInput } from './load/t
 export { modelWorkerActionsModule } from './model-worker/model-worker-actions-module'
 export { RestartModelWorker } from './model-worker/restart-model-worker'
 
+export { DeletePart } from './parts/delete-part'
+export { partsCommandsModule } from './parts/parts-commands-module'
+
 export { emptyInputSchema } from './empty-input-schema'
-export type { EmptyInput } from './types'
+export type { DeletePartInput, EmptyInput } from './types'

@@ -1,5 +1,6 @@
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
 import { designSchema, fingerprintsFileSchema, routingFileSchema } from '@keeb-cad/schema'
+import { aMeta } from '@keeb-cad/schema/testing'
 import type * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
@@ -14,8 +15,12 @@ function read(schema: v.GenericSchema, text: string) {
   return readKdl(schema, document.value.nodes)
 }
 
-const meta = ['meta id="corne" name="Corne" {', '    form type="split" board="reversible"', '}']
-const metaValue = { id: 'corne', name: 'Corne', form: { type: 'split', board: 'reversible' } }
+const meta = [
+  'meta id="corne" name="Corne" default-part="key" {',
+  '    form type="split" board="reversible"',
+  '}',
+]
+const metaValue = aMeta()
 
 describe('readKdl', () => {
   it('reads an absent flattened list as empty', () => {
@@ -88,14 +93,11 @@ describe('readKdl', () => {
   })
 
   it('passes a property its schema has no field for on under its key in camelCase', () => {
-    const result = read(
-      designSchema,
-      lines('layout id="root" arrangement="free" default-part="p1"'),
-    )
+    const result = read(designSchema, lines('layout id="root" arrangement="free" paint="p1"'))
 
     expectOk(result)
     expect(result.value).toEqual({
-      layout: { id: 'root', arrangement: 'free', defaultPart: 'p1', children: [] },
+      layout: { id: 'root', arrangement: 'free', paint: 'p1', children: [] },
     })
   })
 

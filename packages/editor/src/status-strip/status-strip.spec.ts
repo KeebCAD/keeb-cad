@@ -1,5 +1,5 @@
 import type { DesignStore } from '@keeb-cad/design'
-import { aDesign } from '@keeb-cad/schema/testing'
+import { aDesign, aViolation } from '@keeb-cad/schema/testing'
 import { RestartModelWorker } from '@keeb-cad/commands'
 import type { FakeWorker } from '@keeb-cad/workers/testing'
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
@@ -249,6 +249,20 @@ describe('the status strip', () => {
 
       await expect.element(counts()).toHaveTextContent(CURRENT_COUNTS)
       expect(countColours()).toEqual({ errors: textColour, warnings: textColour })
+    })
+
+    it('counts one error and one warning from a post of each', async () => {
+      const shell = await arrange()
+
+      latest(shell.spawned).post({
+        kind: 'issues',
+        epoch: shell.spawned.length,
+        seq: latestSeq(shell.store),
+        violations: [aViolation({ severity: 'error' }), aViolation({ severity: 'warning' })],
+      })
+      await nextTick()
+
+      await expect.element(counts()).toHaveTextContent('●1 error▲1 warning')
     })
 
     it("reads 0 and 0 dimmed, in the theme's text-muted, for an issues post behind main's seq", async () => {

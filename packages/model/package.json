@@ -9,12 +9,16 @@
     "./worker": "./src/worker.ts"
   },
   "dependencies": {
+    "@keeb-cad/blueprint": "workspace:*",
+    "@keeb-cad/reactive": "workspace:*",
     "@keeb-cad/result": "workspace:*",
     "@keeb-cad/schema": "workspace:*",
     "nanoid": "catalog:",
+    "ts-pattern": "catalog:",
     "valibot": "catalog:"
   },
   "devDependencies": {
+    "@keeb-cad/di": "workspace:*",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

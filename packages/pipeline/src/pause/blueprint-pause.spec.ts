@@ -8,6 +8,7 @@ import {
   aBlueprintId,
   aDesign,
   aFingerprintsFile,
+  aResolvedParts,
   aRevision,
   aRoutingFile,
   aVersion,
@@ -19,6 +20,7 @@ import { Pipeline } from '../pipeline/pipeline'
 import { BlueprintPause } from './blueprint-pause'
 
 const FIRST_DELAY = 1000
+const noStages = () => {}
 const SECOND_RETRY_AT = 3000
 const CAPPED_RETRY_AT = 91_000
 const AT_SIXTEEN_SECOND_DELAY = 15_000
@@ -78,7 +80,7 @@ describe('BlueprintPause', () => {
     ['just after the first delay', FIRST_DELAY + 1, 1],
   ])('after an Err, %s', async (_role, elapsed, expectedRetries) => {
     const { pause, runner } = await arrangeFailing()
-    pause.enter(() => [])
+    pause.enter(() => [], noStages)
     await vi.advanceTimersByTimeAsync(0)
     const before = runner.pauses
 
@@ -93,7 +95,7 @@ describe('BlueprintPause', () => {
     ['just after the doubled delay', SECOND_RETRY_AT + 1, 2],
   ])('after a second failure, %s', async (_role, elapsed, expectedRetries) => {
     const { pause, runner } = await arrangeFailing()
-    pause.enter(() => [])
+    pause.enter(() => [], noStages)
     await vi.advanceTimersByTimeAsync(0)
     const before = runner.pauses
 
@@ -108,7 +110,7 @@ describe('BlueprintPause', () => {
     ['just after the capped delay', CAPPED_RETRY_AT + 1, 7],
   ])('past the doubling, %s', async (_role, elapsed, expectedRetries) => {
     const { pause, runner } = await arrangeFailing()
-    pause.enter(() => [])
+    pause.enter(() => [], noStages)
     await vi.advanceTimersByTimeAsync(0)
     const before = runner.pauses
 
@@ -122,7 +124,7 @@ describe('BlueprintPause', () => {
     const { pause, runner } = await arrange()
     runner.unavailable = true
 
-    pause.enter(() => [])
+    pause.enter(() => [], noStages)
     await vi.advanceTimersByTimeAsync(FIRST_DELAY)
 
     expect(runner.pauses).toBe(2)
@@ -130,11 +132,11 @@ describe('BlueprintPause', () => {
 
   it('re-runs at once on an edit while waiting', async () => {
     const { pause, runner } = await arrangeFailing()
-    pause.enter(() => [])
+    pause.enter(() => [], noStages)
     await vi.advanceTimersByTimeAsync(0)
     const before = runner.pauses
 
-    pause.enter(() => [])
+    pause.enter(() => [], noStages)
     await vi.advanceTimersByTimeAsync(0)
 
     expect(runner.pauses).toBe(before + 1)
@@ -142,10 +144,10 @@ describe('BlueprintPause', () => {
 
   it('restarts the backoff at the first delay when an edit retries and fails', async () => {
     const { pause, runner } = await arrangeFailing()
-    pause.enter(() => [])
+    pause.enter(() => [], noStages)
     await vi.advanceTimersByTimeAsync(0)
     await vi.advanceTimersByTimeAsync(AT_SIXTEEN_SECOND_DELAY)
-    pause.enter(() => [])
+    pause.enter(() => [], noStages)
     await vi.advanceTimersByTimeAsync(0)
     const afterEdit = runner.pauses
 
@@ -160,7 +162,7 @@ describe('BlueprintPause', () => {
     const { pause, runner } = await arrangeFailing()
     const pins = [{ id: aBlueprintId(), version: aVersion() }]
 
-    pause.enter(() => pins)
+    pause.enter(() => pins, noStages)
     await vi.advanceTimersByTimeAsync(FIRST_DELAY)
 
     expect(runner.receivedPins).toEqual([pins, pins])
@@ -170,7 +172,7 @@ describe('BlueprintPause', () => {
     vi.useFakeTimers()
     const { pause } = await arrange()
 
-    pause.enter(() => [])
+    pause.enter(() => [], noStages)
     await vi.advanceTimersByTimeAsync(0)
 
     expect(vi.getTimerCount()).toBe(0)
@@ -182,9 +184,9 @@ describe('BlueprintPause', () => {
     const { promise, resolve: release } = Promise.withResolvers<void>()
     runner.held = promise
 
-    pause.enter(() => [])
-    pause.enter(() => [])
-    pause.enter(() => [])
+    pause.enter(() => [], noStages)
+    pause.enter(() => [], noStages)
+    pause.enter(() => [], noStages)
     await vi.advanceTimersByTimeAsync(0)
     const startedWhileHeld = runner.pauses
     release()
@@ -232,7 +234,7 @@ describe('BlueprintPause', () => {
   ])('enters the pause when %s arrives', async (_role, messages) => {
     const { pipeline, runner } = await arrange()
     const { port1, port2 } = new MessageChannel()
-    pipeline.listen(port1, () => [])
+    pipeline.listen(port1, { parts: { value: aResolvedParts() }, pins: { value: [] } })
 
     for (const message of messages) port2.postMessage(message)
 

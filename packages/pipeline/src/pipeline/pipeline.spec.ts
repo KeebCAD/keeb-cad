@@ -8,6 +8,7 @@ import {
   aDesign,
   aFingerprintsFile,
   aMeta,
+  aResolvedParts,
   aRevision,
   aRoutingFile,
   aWorkspace,
@@ -26,7 +27,9 @@ async function arrange() {
     .addModule(pipelineModule)
   await container.autoLoad()
   const { port1, port2 } = new MessageChannel()
-  container.resolve(Pipeline).listen(port1, () => [])
+  container
+    .resolve(Pipeline)
+    .listen(port1, { parts: { value: aResolvedParts() }, pins: { value: [] } })
   const posts: unknown[] = []
   port2.addEventListener('message', (event) => posts.push(event.data))
   port2.start()
@@ -69,6 +72,7 @@ function postsAt(seq: number) {
       ...derivedFiles(),
       revision: `r${seq}`,
     },
+    { kind: 'stage-started', epoch: EPOCH, seq, stage: 'parts' },
   ]) as unknown
 }
 
@@ -78,7 +82,7 @@ describe('Pipeline', () => {
 
     main.postMessage(designMessage(1))
     main.postMessage(patchesMessage(2))
-    await expect.poll(() => posts).toHaveLength(4)
+    await expect.poll(() => posts).toHaveLength(6)
 
     expect(mirror.value).toEqual(aDesign({ meta: aMeta({ name: 'Corne v2' }) }))
     expect(() => Object.assign(mirror.value.meta, { name: 'stray' })).toThrow(TypeError)
@@ -90,9 +94,9 @@ describe('Pipeline', () => {
 
     main.postMessage(designMessage(1))
     main.postMessage(patchesMessage(2))
-    await expect.poll(() => posts).toHaveLength(4)
+    await expect.poll(() => posts).toHaveLength(6)
 
-    expect([posts.slice(0, 2), posts.slice(2)]).toEqual([postsAt(1), postsAt(2)])
+    expect([posts.slice(0, 3), posts.slice(3)]).toEqual([postsAt(1), postsAt(2)])
   })
 
   it('replaces the mirror with a later whole design', async () => {
@@ -100,10 +104,10 @@ describe('Pipeline', () => {
 
     main.postMessage(designMessage(1))
     main.postMessage(designMessage(3, 'Other'))
-    await expect.poll(() => posts).toHaveLength(4)
+    await expect.poll(() => posts).toHaveLength(6)
 
     expect(mirror.value).toEqual(aDesign({ meta: aMeta({ name: 'Other' }) }))
-    expect(posts.slice(2)).toEqual(postsAt(3))
+    expect(posts.slice(3)).toEqual(postsAt(3))
   })
 
   it('neither applies nor answers what its gate drops', async () => {
@@ -115,10 +119,10 @@ describe('Pipeline', () => {
     main.postMessage(designMessage(1))
     main.postMessage(patchesMessage(1, dropped))
     main.postMessage(patchesMessage(2))
-    await expect.poll(() => posts).toHaveLength(4)
+    await expect.poll(() => posts).toHaveLength(6)
 
     expect(mirror.value).toEqual(aDesign({ meta: aMeta({ name: 'Corne v2' }) }))
-    expect([posts.slice(0, 2), posts.slice(2)]).toEqual([postsAt(1), postsAt(2)])
+    expect([posts.slice(0, 3), posts.slice(3)]).toEqual([postsAt(1), postsAt(2)])
   })
 
   it('neither applies nor answers patches before the first whole design', async () => {
@@ -135,7 +139,7 @@ describe('Pipeline', () => {
     expect(() => mirror.value).toThrow(InvariantError)
     main.postMessage(designMessage(3))
     await expect.poll(() => posts).toEqual(postsAt(3))
-    expect(posts).toHaveLength(2)
+    expect(posts).toHaveLength(3)
   })
 
   it('posts nothing for focus', async () => {
@@ -144,8 +148,8 @@ describe('Pipeline', () => {
     main.postMessage(designMessage(1))
     main.postMessage({ kind: 'focus', epoch: EPOCH, seq: 1, workspace: aWorkspace() })
     main.postMessage(patchesMessage(2))
-    await expect.poll(() => posts).toHaveLength(4)
+    await expect.poll(() => posts).toHaveLength(6)
 
-    expect([posts.slice(0, 2), posts.slice(2)]).toEqual([postsAt(1), postsAt(2)])
+    expect([posts.slice(0, 3), posts.slice(3)]).toEqual([postsAt(1), postsAt(2)])
   })
 })

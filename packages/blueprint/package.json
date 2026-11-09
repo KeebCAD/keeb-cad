@@ -12,6 +12,7 @@
     "@keeb-cad/di": "workspace:*",
     "@keeb-cad/expr": "workspace:*",
     "@keeb-cad/hashing": "workspace:*",
+    "@keeb-cad/reactive": "workspace:*",
     "@keeb-cad/result": "workspace:*",
     "@keeb-cad/schema": "workspace:*",
     "quickjs-wasi": "catalog:",

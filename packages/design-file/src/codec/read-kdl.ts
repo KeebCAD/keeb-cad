@@ -3,7 +3,7 @@ import { attempt, Result } from '@keeb-cad/result'
 import type * as v from 'valibot'
 
 import { camelCase } from './camel-case'
-import { fieldForm, fieldMetadata, listItem, resolveObject } from './schema-fields'
+import { fieldForm, fieldMetadata, listItem, recordValue, resolveObject } from './schema-fields'
 import type { Fields, NodeContent, ObjectLikeSchema, ReadStep } from './types'
 
 // Shapes the nodes into the value the schema describes, without checking it: the schema's parse
@@ -75,7 +75,35 @@ function* readField(schema: v.GenericSchema, node: Node): ReadStep<unknown> {
       const bare = content.arguments.length === 0 && content.properties.size === 0
       return bare ? yield* readItems(listItem(schema), content.children) : yield* readLoose(node)
     }
+    case 'record': {
+      return yield* readRecord(recordValue(schema), node, content)
+    }
   }
+}
+
+function* readRecord(entry: v.GenericSchema, node: Node, content: NodeContent): ReadStep<Fields> {
+  if (content.arguments.length > 0 || content.properties.size > 0) {
+    yield* Result.err(
+      `The record "${node.getName()}" holds only child nodes, on line ${lineOf(node)}.`,
+    )
+  }
+  const record: Fields = {}
+  const seen = new Map<string, Node>()
+  for (const child of content.children) {
+    const key = child.getName()
+    const earlier = seen.get(key)
+    if (earlier !== undefined) yield* Result.err(repeatedNode(earlier, child))
+    seen.set(key, child)
+    const childContent = contentOf(child)
+    const shell = shellOf(childContent)
+    record[key] =
+      childContent.arguments.length === 1 &&
+      childContent.properties.size === 0 &&
+      childContent.children.length === 0
+        ? childContent.arguments[0]
+        : yield* readFields(resolveObject(entry, shell), childContent)
+  }
+  return record
 }
 
 function* readItems(item: v.GenericSchema, nodes: readonly Node[]): ReadStep<unknown[]> {

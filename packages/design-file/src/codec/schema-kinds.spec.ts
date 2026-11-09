@@ -1,9 +1,10 @@
-import { expectOk } from '@keeb-cad/result/testing'
+import { expectErr, expectOk } from '@keeb-cad/result/testing'
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
 import { parseKdl } from './parse-kdl'
 import { readKdl } from './read-kdl'
+import { recordValue } from './schema-fields'
 import { writeKdl } from './write-kdl'
 
 const leafSchema = v.pipe(
@@ -57,6 +58,16 @@ const kindsSchema = v.strictObject({
   shapes: v.array(shapeSchema),
   none: v.array(leafSchema),
   note: v.optional(v.string()),
+  enabled: v.boolean(),
+  mixed: v.union([v.string(), v.number()]),
+  inputs: v.record(
+    v.string(),
+    v.union([
+      v.boolean(),
+      v.string(),
+      v.strictObject({ type: v.literal('quantity'), value: v.string() }),
+    ]),
+  ),
 })
 
 const value = v.parse(kindsSchema, {
@@ -74,6 +85,13 @@ const value = v.parse(kindsSchema, {
     { kind: 'circle', radius: 0.5 },
   ],
   none: [],
+  enabled: true,
+  mixed: 'either',
+  inputs: {
+    'my-input': false,
+    size: '1u',
+    width: { type: 'quantity', value: '18mm' },
+  },
 })
 
 const text = [
@@ -94,6 +112,13 @@ const text = [
   '\tshape kind=circle radius=0.5',
   '}',
   'none',
+  'enabled #true',
+  'mixed either',
+  'inputs {',
+  '\tmy-input #false',
+  '\tsize "1u"',
+  '\twidth type=quantity value="18mm"',
+  '}',
   '',
 ].join('\n')
 
@@ -134,8 +159,8 @@ describe('the KDL codec over every schema kind it supports', () => {
   })
 
   it.each([
-    ['a boolean schema', v.strictObject({ flag: v.boolean() }), { flag: true }],
-    ['a record schema', v.strictObject({ map: v.record(v.string(), v.string()) }), { map: {} }],
+    ['a tuple schema', v.strictObject({ pair: v.tuple([v.string()]) }), { pair: ['a'] }],
+    ['a bigint schema', v.strictObject({ big: v.bigint() }), { big: 1n }],
   ])('refuses to write %s, which it has no rule for', (_role, schema, input) => {
     expect(() => writeKdl(schema, input)).toThrow(/^The KDL codec has no rule for a /)
   })
@@ -161,10 +186,101 @@ describe('the KDL codec over every schema kind it supports', () => {
     expect(() => writeKdl(v.string(), 'corne')).toThrow('A string schema is not an object.')
   })
 
-  it('refuses to write a value that is neither a string nor a number', () => {
-    expect(() => writeKdl(v.strictObject({ title: v.string() }), { title: true })).toThrow(
-      'The KDL codec writes only strings and numbers, not boolean.',
+  it('refuses to write a value that is not a string, number or boolean', () => {
+    expect(() => writeKdl(v.strictObject({ title: v.string() }), { title: {} })).toThrow(
+      'The KDL codec writes only strings, numbers and booleans, not object.',
     )
+  })
+
+  it('writes record entries in compareId order, however they were given', () => {
+    const schema = v.strictObject({ map: v.record(v.string(), v.string()) })
+
+    expect(writeKdl(schema, { map: { b: 'x', B: 'y', a: 'z' } })).toBe(
+      'map {\n\tB y\n\ta z\n\tb x\n}\n',
+    )
+  })
+
+  it('refuses a non-record schema read as one', () => {
+    expect(() => recordValue(v.string())).toThrow('A string schema is not a record.')
+  })
+
+  it('writes a union entry by the object option that takes it', () => {
+    const schema = v.strictObject({
+      map: v.record(
+        v.string(),
+        v.union([v.strictObject({ a: v.string() }), v.strictObject({ b: v.string() })]),
+      ),
+    })
+
+    expect(writeKdl(schema, { map: { k: { b: 'x' } } })).toBe('map {\n\tk b=x\n}\n')
+  })
+
+  it('refuses a union entry no object option takes', () => {
+    const schema = v.strictObject({
+      map: v.record(v.string(), v.union([v.strictObject({ a: v.string() })])),
+    })
+
+    expect(() => writeKdl(schema, { map: { k: { c: 'x' } } })).toThrow(
+      'No variant of the schema takes the value.',
+    )
+  })
+
+  it('refuses a null record value as a value it cannot write', () => {
+    const schema = v.strictObject({ map: v.record(v.string(), v.string()) })
+
+    expect(() => writeKdl(schema, { map: { k: null } })).toThrow(
+      'The KDL codec writes only strings, numbers and booleans, not object.',
+    )
+  })
+
+  it.each([
+    ['an argument and a property', 'k "x" b=1', { k: { 0: 'x', b: 1 } }],
+    ['nothing', 'k', { k: {} }],
+  ])('reads a record entry holding %s as its fields', (_role, entry, expected) => {
+    const schema = v.strictObject({ map: v.record(v.string(), v.union([v.string()])) })
+    const document = parseKdl(`map {\n\t${entry}\n}\n`)
+    expectOk(document)
+
+    const result = readKdl(schema, document.value.nodes)
+
+    expectOk(result)
+    expect(result.value).toEqual({ map: expected })
+  })
+
+  it.each([
+    ['a property', 'map x=y\n'],
+    ['an argument', 'map "x"\n'],
+  ])('refuses a record node with %s, naming it and its line', (_role, text) => {
+    const schema = v.strictObject({ map: v.record(v.string(), v.string()) })
+    const document = parseKdl(text)
+    expectOk(document)
+
+    const result = readKdl(schema, document.value.nodes)
+
+    expectErr(result)
+    expect(result.error).toBe('The record "map" holds only child nodes, on line 1.')
+  })
+
+  it('passes a record entry with an argument and a child on for the schema to refuse', () => {
+    const schema = v.strictObject({ map: v.record(v.string(), v.union([v.string()])) })
+    const document = parseKdl('map {\n\tsize "1u" {\n\t\tjunk\n\t}\n}\n')
+    expectOk(document)
+
+    const result = readKdl(schema, document.value.nodes)
+
+    expectOk(result)
+    expect(v.safeParse(schema, result.value).success).toBe(false)
+  })
+
+  it('refuses a key repeated in a record', () => {
+    const schema = v.strictObject({ map: v.record(v.string(), v.string()) })
+    const document = parseKdl('map {\n\ta x\n\ta y\n}\n')
+    expectOk(document)
+
+    const result = readKdl(schema, document.value.nodes)
+
+    expectErr(result)
+    expect(result.error).toBe('The node "a" appears more than once, on lines 2 and 3.')
   })
 
   it('refuses to read a flatten mark on a field that is not a list', () => {

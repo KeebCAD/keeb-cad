@@ -1,5 +1,6 @@
 import { hash } from '@keeb-cad/hashing'
 
+import { argumentHash } from './argument-hash'
 import type { LaneCacheKeyParts } from './types'
 
 export function laneCacheKey({ lane, closureKey, canonical }: LaneCacheKeyParts): string {
@@ -9,6 +10,6 @@ export function laneCacheKey({ lane, closureKey, canonical }: LaneCacheKeyParts)
     id: lane.id,
     version: lane.version,
     closure: closureKey,
-    arguments: hash(canonical),
+    arguments: argumentHash(canonical),
   })
 }
