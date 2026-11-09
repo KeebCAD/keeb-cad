@@ -371,3 +371,14 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-library-blueprints-build-and-run-in-the-model-worker-plan.md`
   summary: 13.18 re-enters the backoff after running stages when a VM was lost mid-stage.
   evidence: `blueprint-pause.ts` reads `hasUnavailable` only after its own pause; no stage calls `runLane` until 13.18. Decision, Sergii, 2026-11-09; on 13.18's ticket.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-a-new-design-holds-a-default-key-part-plan.md`
+  summary: Show a part's last good output for a later failing run.
+  evidence: 13.18 stands the slot in on every failure; no command changes a part's inputs yet, so only 13.4 can reach a later failing run. Decision (plan).
+  owner: 13.4.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-a-new-design-holds-a-default-key-part-plan.md`
+  summary: Report a lane's `problems` as violations once the `blueprint` violation kind arrives.
+  evidence: `createDerivations` reads only a run's `rectangle` output; BP-8 `problems` become `blueprint` violations; `ViolationKind` has no `blueprint` member.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-a-new-design-holds-a-default-key-part-plan.md`
+  summary: Pass quantity inputs to lanes as numbers once `expr` has an evaluator.
+  evidence: `createDerivations` hands lanes the resolved inputs as written, a quantity as `{ type: 'quantity', value }`; BP-8 `quantities as numbers in mm or deg`; `expr` exports only `parseExpression`.
+  owner: 13.4.
