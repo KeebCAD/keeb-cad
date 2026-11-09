@@ -1,18 +1,29 @@
 import * as v from 'valibot'
 
 import { idSchema } from './id'
+import { blueprintInputsSchema } from './input-value'
+import { partRefSchema } from './part-ref'
 import type { Group, Node } from './types'
 
-export const slotSchema = v.pipe(v.strictObject({ id: idSchema }), v.metadata({ node: 'slot' }))
+export const slotSchema = v.pipe(
+  v.strictObject({
+    id: idSchema,
+    part: v.optional(partRefSchema),
+    inputs: v.optional(blueprintInputsSchema),
+  }),
+  v.metadata({ node: 'slot' }),
+)
 
 export const chainGroupFieldsSchema = v.strictObject({
   id: idSchema,
+  defaultPart: v.optional(partRefSchema),
   arrangement: v.literal('chain'),
   axis: v.picklist(['x', 'y']),
 })
 
 export const freeGroupFieldsSchema = v.strictObject({
   id: idSchema,
+  defaultPart: v.optional(partRefSchema),
   arrangement: v.literal('free'),
 })
 

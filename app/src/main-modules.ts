@@ -1,4 +1,9 @@
-import { designActionsModule, loadModule, modelWorkerActionsModule } from '@keeb-cad/commands'
+import {
+  designActionsModule,
+  loadModule,
+  modelWorkerActionsModule,
+  partsCommandsModule,
+} from '@keeb-cad/commands'
 import { designModule } from '@keeb-cad/design'
 import { editorModule } from '@keeb-cad/editor'
 import type { Module } from '@keeb-cad/di'
@@ -11,6 +16,7 @@ import { launchModule } from './launch/launch-module'
 export const mainModules: readonly Module[] = [
   designModule,
   designActionsModule,
+  partsCommandsModule,
   modelWorkerActionsModule,
   editorModule,
   workersModule,

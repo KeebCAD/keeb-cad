@@ -7,8 +7,16 @@ import { migrateBundle } from './migrate-bundle'
 const lines = (...text: string[]) => text.map((line) => `${line}\n`).join('')
 
 const sections = [
-  'meta id="corne" name="Corne" {',
+  'meta id="corne" name="Corne" default-part="key" {',
   '    form type="split" board="reversible"',
+  '}',
+  'library-versions {',
+  '    library-version id="lib:blueprint/choc-key" version=1',
+  '}',
+  'parts {',
+  '    part type="blueprint" id="key" blueprint="lib:blueprint/choc-key" {',
+  '        inputs',
+  '    }',
   '}',
   'layout id="root" arrangement="free"',
 ]
@@ -129,7 +137,7 @@ describe('migrateBundle', () => {
       expect(result.error).toEqual({
         kind: 'file-unreadable',
         file: 'design',
-        message: 'The node "meta" appears more than once, on lines 2 and 6.',
+        message: 'The node "meta" appears more than once, on lines 2 and 14.',
       })
     })
   })

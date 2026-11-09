@@ -15,6 +15,7 @@ import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
 
 // Keep in step with .prettierignore.
 const IGNORED = [
+  'packages/library/compiled/**',
   'spikes/**',
   '_bmad*/**',
   '.agents/**',

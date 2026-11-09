@@ -5,6 +5,7 @@ import { metaSchema } from '../meta'
 import { aUnibodyForm } from './form'
 import { anId } from './id'
 import { aMeta } from './meta'
+import { aPartRef } from './part-ref'
 
 describe('aMeta', () => {
   it('builds a value its schema accepts', () => {
@@ -15,6 +16,7 @@ describe('aMeta', () => {
     ['id', () => ({ id: anId('other') })],
     ['name', () => ({ name: 'Other' })],
     ['form', () => ({ form: aUnibodyForm() })],
+    ['defaultPart', () => ({ defaultPart: aPartRef('other') })],
   ])('keeps the %s it is given', (_field, makeFields) => {
     const fields = makeFields()
 

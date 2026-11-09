@@ -234,8 +234,18 @@ describe('the rules on cruised trees', async () => {
             '@keeb-cad/design/worker',
           ),
           v(
+            'only-model-worker-entry-and-pipeline-import-design-worker',
+            'app/src/spec-helper.ts',
+            '@keeb-cad/design/worker',
+          ),
+          v(
             'only-model-worker-entry-imports-model-worker',
             'app/src/autosave.ts',
+            '@keeb-cad/model/worker',
+          ),
+          v(
+            'only-model-worker-entry-imports-model-worker',
+            'app/src/spec-helper.ts',
             '@keeb-cad/model/worker',
           ),
           v(
@@ -273,6 +283,11 @@ describe('the rules on cruised trees', async () => {
           v(
             'only-worker-entries-import-library-worker',
             'app/src/autosave.ts',
+            '@keeb-cad/library/worker',
+          ),
+          v(
+            'only-worker-entries-import-library-worker',
+            'app/src/spec-helper.ts',
             '@keeb-cad/library/worker',
           ),
           v(
@@ -364,6 +379,12 @@ describe('the rules on cruised trees', async () => {
         "the model worker's start file",
         'its worker subpaths',
         'app/src/start-model-worker.ts',
+        ['@keeb-cad/model/worker', '@keeb-cad/design/worker', '@keeb-cad/library/worker'],
+      ],
+      [
+        "a spec at app's top level",
+        'its worker subpaths',
+        'app/src/wiring.spec.ts',
         ['@keeb-cad/model/worker', '@keeb-cad/design/worker', '@keeb-cad/library/worker'],
       ],
       [

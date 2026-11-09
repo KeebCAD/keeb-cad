@@ -167,6 +167,8 @@ const TESTING_FOLDER = '^packages/[^/]+/src/testing/'
 const MAIN_ENTRY = String.raw`^app/src/main\.ts$`
 const MODEL_WORKER_ENTRY = String.raw`^app/src/(model\.worker|start-model-worker)\.ts$`
 const CASE_WORKER_ENTRY = String.raw`^app/src/case\.worker\.ts$`
+// A spec at app's top level wires a worker's graph by hand; it never reaches a bundle.
+const APP_SPEC = String.raw`^app/src/[^/]+\.spec\.ts$`
 const WORKER_ENTRIES = String.raw`^app/src/(model|case|routing)\.worker\.ts$`
 const AUTHORING = String.raw`^packages/blueprint/src/authoring(\.ts$|/)`
 const STAGES = ['plates', 'pcb', 'firmware', 'case', 'routing', 'exports']
@@ -264,22 +266,22 @@ const config: IConfiguration = {
       'only-model-worker-entry-imports-model-worker',
       'model',
       'worker',
-      [MODEL_WORKER_ENTRY],
-      "Only the model worker's entry and its start file import model/worker: one reactive graph.",
+      [MODEL_WORKER_ENTRY, APP_SPEC],
+      "Only the model worker's entry, its start file and app's specs import model/worker: one reactive graph.",
     ),
     onlyOwnersImportEntry(
       'only-model-worker-entry-and-pipeline-import-design-worker',
       'design',
       'worker',
-      [MODEL_WORKER_ENTRY, sourcePath('pipeline')],
-      "Only the model worker's entry, its start file and pipeline import design/worker.",
+      [MODEL_WORKER_ENTRY, sourcePath('pipeline'), APP_SPEC],
+      "Only the model worker's entry, its start file, pipeline and app's specs import design/worker.",
     ),
     onlyOwnersImportEntry(
       'only-worker-entries-import-library-worker',
       'library',
       'worker',
-      [MODEL_WORKER_ENTRY, CASE_WORKER_ENTRY],
-      "Only the model and case worker entries and the model worker's start file import library/worker.",
+      [MODEL_WORKER_ENTRY, CASE_WORKER_ENTRY, APP_SPEC],
+      "Only the model and case worker entries, the model worker's start file and app's specs import library/worker.",
     ),
     onlyOwnersImportEntry(
       'only-editor-imports-di-vue',

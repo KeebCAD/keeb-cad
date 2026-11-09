@@ -42,6 +42,10 @@ const brokenDesignTexts = {
     design: texts.design.replace(`meta id=${id}`, `meta id=${id.toUpperCase()}`),
   }),
   "isn't KDL": (texts: BundleTexts) => ({ ...texts, design: 'meta id="' }),
+  'has no library-versions': (texts: BundleTexts) => ({
+    ...texts,
+    design: texts.design.replace(/library-versions \{[\s\S]*?\n\}\n/, ''),
+  }),
   'has a newer format-version': (texts: BundleTexts) => ({
     ...texts,
     design: texts.design.replace('format-version 1', 'format-version 2'),
@@ -209,7 +213,12 @@ describe('Launch', () => {
       expect(arranged.storedIds).not.toContain(opened(arranged).id)
     })
 
-    it.each([['fails its schema'], ["isn't KDL"], ['has a newer format-version']] as const)(
+    it.each([
+      ['fails its schema'],
+      ["isn't KDL"],
+      ['has a newer format-version'],
+      ['has no library-versions'],
+    ] as const)(
       'opens a new design when the only stored one %s, leaving it unchanged',
       async (how) => {
         const stored = broken(older, how)

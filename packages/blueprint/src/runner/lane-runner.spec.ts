@@ -99,4 +99,37 @@ describe('LaneRunner', () => {
 
     expect(paused.isOk()).toBe(true)
   })
+
+  describe('lanesReady', () => {
+    it('stays put across a pause with nothing unavailable before it and the same scripts', async () => {
+      const { runner } = await arrange()
+      await runner.pause([pin])
+      const before = runner.lanesReady.value
+
+      await runner.pause([pin])
+
+      expect(runner.lanesReady.value).toBe(before)
+    })
+
+    it('is bumped by a pause loading a new script', async () => {
+      const { runner } = await arrange()
+      const before = runner.lanesReady.value
+
+      await runner.pause([pin])
+
+      expect(runner.lanesReady.value).toBe(before + 1)
+    })
+
+    it('is bumped by a pause after a lane went unavailable', async () => {
+      const { runner, pool } = await arrange()
+      await runner.pause([pin])
+      pool.answer = Result.err({ kind: 'unavailable' })
+      runner.runLane(lane, noCalls, inputs)
+      const before = runner.lanesReady.value
+
+      await runner.pause([pin])
+
+      expect(runner.lanesReady.value).toBe(before + 1)
+    })
+  })
 })

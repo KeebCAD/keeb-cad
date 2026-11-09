@@ -1,9 +1,12 @@
 {
-  // The design's rules. No DOM lib: model runs on main and in the model worker.
+  // The design's rules. No DOM lib: model runs on main and in the model worker. WebWorker is for
+  // the WebAssembly and fetch types of the blueprint sources model/worker reaches.
   "extends": "../../tsconfig.base.json",
   "include": ["src/**/*"],
   "exclude": ["src/**/*.spec.ts"],
   "compilerOptions": {
+    "lib": ["ES2023", "ESNext.Disposable", "WebWorker"],
+    "types": ["vite/client"],
     "noEmit": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo"
   }

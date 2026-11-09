@@ -1,6 +1,7 @@
 import { inject } from '@keeb-cad/di'
+import { type ShallowRef, shallowRef } from '@keeb-cad/reactive'
 import { AsyncResult, attempt, InvariantError, Result } from '@keeb-cad/result'
-import type { BlueprintDeclaration, LibraryData } from '@keeb-cad/schema'
+import type { BlueprintDeclaration, LibraryData, ReadonlyRef } from '@keeb-cad/schema'
 
 import type { LaneFailure, LaneOutput, StageCalls } from '../lane/types'
 import { closureKeyOf, keyOf } from '../pool/pin-key'
@@ -10,12 +11,18 @@ import type { EngineUnavailable } from '../sandbox/types'
 import { LaneCache } from './lane-cache'
 import { laneCacheKey } from './lane-cache-key'
 import { resolveClosure } from './resolve-closure'
+import { sameKeys } from './same-keys'
 import type { BlueprintPin, CachedLaneResult, LaneInputs, ResolvedPin, RunnerLane } from './types'
 
 export class LaneRunner {
   /** True while a lane could become available by entering the pause again. */
   get hasUnavailable(): boolean {
     return this.#hasUnavailable
+  }
+
+  /** Bumped when a pause could change a lane's answer, so a computed reading it reruns. */
+  get lanesReady(): ReadonlyRef<number> {
+    return this.#lanesReady
   }
 
   useLibrary(library: LibraryData): void {
@@ -25,6 +32,7 @@ export class LaneRunner {
   /** Between applying patches and running stages: loads pinned scripts and fills the pool. */
   pause(pins: readonly BlueprintPin[]): AsyncResult<void, EngineUnavailable> {
     return attempt.in(this, async function* () {
+      const hadUnavailable = this.#hasUnavailable
       this.#hasUnavailable = false
       const pinnedVersions = new Map(pins.map(({ id, version }) => [id, version]))
       const loaded = new Map<string, PinnedBlueprint>()
@@ -36,9 +44,11 @@ export class LaneRunner {
         if (pinned === undefined) this.#hasUnavailable = true
         else loaded.set(keyOf(pin.id, pin.version), pinned)
       }
+      const scriptsChanged = !sameKeys(this.#pinned, loaded)
       this.#pinned = loaded
       const paused = await this.#pool.pause([...loaded.values()])
       if (paused.isErr()) this.#hasUnavailable = true
+      if (hadUnavailable || scriptsChanged) this.#lanesReady.value += 1
       yield* paused
     })
   }
@@ -107,4 +117,5 @@ export class LaneRunner {
   #pinned = new Map<string, PinnedBlueprint>()
   #library: LibraryData | undefined
   #hasUnavailable = false
+  readonly #lanesReady: ShallowRef<number> = shallowRef(0)
 }

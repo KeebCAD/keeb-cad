@@ -21,8 +21,20 @@ export { workspaceSchema } from './workspace'
 export { stageIdSchema } from './stage-id'
 export { fixSchema } from './fix'
 export { expressionSchema } from './expression'
-export { inputValueSchema, quantityInputValueSchema } from './input-value'
+export { blueprintInputsSchema, inputValueSchema, quantityInputValueSchema } from './input-value'
 export { blueprintIdSchema } from './blueprint-id'
+export { compareId } from './compare-id'
+export { partIdSchema } from './part-id'
+export { libraryIdSchema } from './library-id'
+export { libraryVersionSchema } from './library-version'
+export { partRefSchema } from './part-ref'
+export { ref } from './ref'
+export {
+  authoredDesignPartSchema,
+  blueprintDesignPartSchema,
+  designPartSchema,
+} from './design-part'
+export { partsOutputSchema } from './parts-output'
 export { versionSchema } from './version'
 export { declaredInputSchema } from './declared-input'
 export { laneDeclarationSchema } from './lane-declaration'
@@ -31,11 +43,14 @@ export { blueprintDeclarationSchema } from './blueprint-declaration'
 
 export type {
   BlueprintDeclaration,
+  BlueprintDesignPart,
   BlueprintId,
+  BlueprintInputs,
   BundleFile,
   ChainGroup,
   DeclaredInput,
   DerivedFile,
+  DesignPart,
   Design,
   DesignFile,
   DesignInvalid,
@@ -56,6 +71,8 @@ export type {
   ItemId,
   LaneDeclaration,
   LibraryData,
+  LibraryId,
+  LibraryVersion,
   LoadError,
   Meta,
   MigratedBundle,
@@ -63,10 +80,15 @@ export type {
   Mutable,
   Node,
   OptionInput,
+  PartId,
+  PartRef,
+  PartsOutput,
   PlainInput,
   QuantityInput,
   QuantityInputValue,
+  ReadonlyRef,
   Rejection,
+  ResolvedParts,
   Revision,
   RoutingFile,
   SchemaIssue,

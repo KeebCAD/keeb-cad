@@ -18,12 +18,20 @@ export type CodecSchema =
   | v.ArraySchema<AnySchema, v.ErrorMessage<v.ArrayIssue> | undefined>
   | v.StringSchema<v.ErrorMessage<v.StringIssue> | undefined>
   | v.NumberSchema<v.ErrorMessage<v.NumberIssue> | undefined>
+  | v.BooleanSchema<v.ErrorMessage<v.BooleanIssue> | undefined>
+  | v.UnionSchema<v.UnionOptions, v.ErrorMessage<v.UnionIssue<v.BaseIssue<unknown>>> | undefined>
+  | v.RecordSchema<
+      v.BaseSchema<string, string, Issue>,
+      AnySchema,
+      v.ErrorMessage<v.RecordIssue> | undefined
+    >
   | v.LiteralSchema<v.Literal, v.ErrorMessage<v.LiteralIssue> | undefined>
   | v.PicklistSchema<v.PicklistOptions, v.ErrorMessage<v.PicklistIssue> | undefined>
 
 // How a field is written: a value (a property, or a node's one argument at the top level), an
-// object (a node holding its fields) or a list (a node holding one node per item).
-export type FieldForm = 'value' | 'object' | 'list'
+// object (a node holding its fields), a list (a node holding one node per item) or a record (a
+// node holding one node per entry, named by its raw key).
+export type FieldForm = 'value' | 'object' | 'list' | 'record'
 
 export interface FieldMetadata {
   node?: string

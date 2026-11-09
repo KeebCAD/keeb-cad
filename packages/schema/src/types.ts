@@ -4,6 +4,7 @@ import type * as v from 'valibot'
 
 import type { blueprintDeclarationSchema } from './blueprint-declaration'
 import type { blueprintIdSchema } from './blueprint-id'
+import type { designPartSchema } from './design-part'
 import type { declaredInputSchema } from './declared-input'
 import type { designSchema } from './design'
 import type { expressionSchema } from './expression'
@@ -14,16 +15,30 @@ import type { formSchema } from './form'
 import type { formatVersionSchema } from './format-version'
 import type { hashSchema } from './hash'
 import type { idSchema } from './id'
-import type { inputValueSchema, quantityInputValueSchema } from './input-value'
+import type {
+  blueprintInputsSchema,
+  inputValueSchema,
+  quantityInputValueSchema,
+} from './input-value'
 import type { laneDeclarationSchema } from './lane-declaration'
 import type { chainGroupFieldsSchema, freeGroupFieldsSchema, slotSchema } from './layout'
+import type { libraryIdSchema } from './library-id'
+import type { libraryVersionSchema } from './library-version'
 import type { metaSchema } from './meta'
+import type { partIdSchema } from './part-id'
+import type { partRefSchema } from './part-ref'
+import type { partsOutputSchema } from './parts-output'
 import type { revisionSchema } from './revision'
 import type { routingFileSchema } from './routing-file'
 import type { stageIdSchema } from './stage-id'
 import type { upgradeMappingSchema } from './upgrade-mapping'
 import type { versionSchema } from './version'
 import type { workspaceSchema } from './workspace'
+
+export type RefSchema<S extends v.GenericSchema> = v.GenericSchema<
+  v.InferInput<S>,
+  v.InferOutput<S>
+>
 
 export type Id = v.InferOutput<typeof idSchema>
 export type Revision = v.InferOutput<typeof revisionSchema>
@@ -39,7 +54,15 @@ export type FingerprintsFile = v.InferOutput<typeof fingerprintsFileSchema>
 export type Expression = v.InferOutput<typeof expressionSchema>
 export type QuantityInputValue = v.InferOutput<typeof quantityInputValueSchema>
 export type InputValue = v.InferOutput<typeof inputValueSchema>
+export type BlueprintInputs = v.InferOutput<typeof blueprintInputsSchema>
 export type BlueprintId = v.InferOutput<typeof blueprintIdSchema>
+export type PartId = v.InferOutput<typeof partIdSchema>
+export type LibraryId = v.InferOutput<typeof libraryIdSchema>
+export type PartRef = v.InferOutput<typeof partRefSchema>
+export type LibraryVersion = v.InferOutput<typeof libraryVersionSchema>
+export type DesignPart = v.InferOutput<typeof designPartSchema>
+export type BlueprintDesignPart = Extract<DesignPart, { type: 'blueprint' }>
+export type PartsOutput = v.InferOutput<typeof partsOutputSchema>
 export type Version = v.InferOutput<typeof versionSchema>
 export type DeclaredInput = v.InferOutput<typeof declaredInputSchema>
 export type QuantityInput = Extract<DeclaredInput, { kind: 'quantity' }>
@@ -103,7 +126,7 @@ export interface MigratedBundle {
   migratedFrom?: FormatVersion
 }
 
-export type ItemId = Id
+export type ItemId = Id | LibraryId
 
 // Hand-declared: the crossing's channel has no validation yet.
 export interface DesignPatch {
@@ -122,7 +145,7 @@ export interface SchemaIssue {
   message: string
 }
 
-export type ModelRejectionKind = never
+export type ModelRejectionKind = 'default-part-required'
 
 // The design store's own kinds carry no message: the editor writes their text from the kind.
 export type Rejection =
@@ -131,7 +154,7 @@ export type Rejection =
   | { kind: 'stale'; seq: number; latest: number }
   | { kind: ModelRejectionKind; ids: ItemId[]; message: string }
 
-export type ViolationKind = 'blueprint-api-too-new' | 'lane-failed'
+export type ViolationKind = 'blueprint-api-too-new' | 'lane-failed' | 'unresolvable-reference'
 
 export type Fix = v.InferOutput<typeof fixSchema>
 
@@ -148,12 +171,22 @@ export interface DesignInvalid {
   issues: SchemaIssue[]
 }
 
+// Plain TypeScript with no schema: it never crosses a thread or enters a file.
+export interface ResolvedParts {
+  output: PartsOutput
+  slots: Record<Id, { run: string; fit: 'fitted' | 'stand-in' }>
+  violations: Violation[]
+}
+
 type Primitive = string | number | boolean | bigint | symbol | null | undefined
 
 // A branded primitive is an intersection with an object type, so primitives are matched first.
 export type Frozen<T> = T extends Primitive | ((...arguments_: never[]) => unknown)
   ? T
   : { readonly [K in keyof T]: Frozen<T[K]> }
+
+// The one shape every thread reads a reactive value through; no Vue type crosses a package.
+export type ReadonlyRef<T> = { readonly value: T }
 
 export type Mutable<T> = T extends Primitive | ((...arguments_: never[]) => unknown)
   ? T

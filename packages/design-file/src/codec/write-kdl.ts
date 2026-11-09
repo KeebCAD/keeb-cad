@@ -1,10 +1,11 @@
 import { Document, format, Node } from '@bgotink/kdl'
 import { InvariantError } from '@keeb-cad/result'
+import { compareId } from '@keeb-cad/schema'
 import type * as v from 'valibot'
 
 import { codecValue } from './codec-value'
 import { kebabCase } from './kebab-case'
-import { fieldForm, fieldMetadata, listItem, resolveObject } from './schema-fields'
+import { fieldForm, fieldMetadata, listItem, recordValue, resolveObject } from './schema-fields'
 import type { Fields, ObjectLikeSchema } from './types'
 
 // One node per top-level field, in the schema's entry order; a primitive one holds its value as
@@ -35,13 +36,31 @@ function writeNode(name: string, schema: ObjectLikeSchema, value: Fields): Node 
 
 function childNodes(key: string, field: v.GenericSchema, value: unknown): Node[] {
   const name = kebabCase(key)
-  if (fieldForm(field) === 'object')
-    return [writeNode(name, objectFor(field, value), value as Fields)]
+  const form = fieldForm(field)
+  if (form === 'object') return [writeNode(name, objectFor(field, value), value as Fields)]
+  if (form === 'record') return [writeRecord(name, recordValue(field), value as Fields)]
   const items = writeItems(listItem(field), value as unknown[])
   if (fieldMetadata(field).flatten === true) return items
   const list = Node.create(name)
   for (const item of items) list.appendNode(item)
   return [list]
+}
+
+function writeRecord(name: string, entry: v.GenericSchema, record: Fields): Node {
+  const node = Node.create(name)
+  for (const key of Object.keys(record).toSorted(compareId)) {
+    node.appendNode(writeEntry(key, entry, record[key]))
+  }
+  return node
+}
+
+function writeEntry(key: string, schema: v.GenericSchema, value: unknown): Node {
+  if (typeof value === 'object' && value !== null) {
+    return writeNode(key, objectFor(schema, value), value as Fields)
+  }
+  const node = Node.create(key)
+  node.addArgument(codecValue(value))
+  return node
 }
 
 function writeItems(item: v.GenericSchema, values: readonly unknown[]): Node[] {

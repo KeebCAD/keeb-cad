@@ -4,20 +4,22 @@ import { describe, expect, it } from 'vitest'
 import { chainGroupSchema, freeGroupSchema, slotSchema } from '../layout'
 import { anId } from './id'
 import { aChainGroup, aFreeGroup, aGroup, aLayout, aSlot } from './layout'
+import { aPartRef } from './part-ref'
 
 describe('aSlot', () => {
   it('builds a value its schema accepts', () => {
     expect(v.safeParse(slotSchema, aSlot()).issues).toBeUndefined()
   })
 
-  it.each([['id', () => ({ id: anId('other') })]])(
-    'keeps the %s it is given',
-    (_field, makeFields) => {
-      const fields = makeFields()
+  it.each([
+    ['id', () => ({ id: anId('other') })],
+    ['part', () => ({ part: aPartRef('other') })],
+    ['inputs', () => ({ inputs: { size: '1u' } })],
+  ])('keeps the %s it is given', (_field, makeFields) => {
+    const fields = makeFields()
 
-      expect(aSlot(fields)).toMatchObject(fields)
-    },
-  )
+    expect(aSlot(fields)).toMatchObject(fields)
+  })
 })
 
 describe('aFreeGroup', () => {
@@ -28,6 +30,7 @@ describe('aFreeGroup', () => {
   it.each([
     ['id', () => ({ id: anId('other') })],
     ['children', () => ({ children: [aSlot()] })],
+    ['defaultPart', () => ({ defaultPart: aPartRef('other') })],
   ])('keeps the %s it is given', (_field, makeFields) => {
     const fields = makeFields()
 
@@ -44,6 +47,7 @@ describe('aChainGroup', () => {
     ['id', () => ({ id: anId('other') })],
     ['axis', () => ({ axis: 'y' as const })],
     ['children', () => ({ children: [aSlot()] })],
+    ['defaultPart', () => ({ defaultPart: aPartRef('other') })],
   ])('keeps the %s it is given', (_field, makeFields) => {
     const fields = makeFields()
 

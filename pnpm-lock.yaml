@@ -331,6 +331,9 @@ importers:
       '@keeb-cad/library':
         specifier: workspace:*
         version: link:../packages/library
+      '@keeb-cad/model':
+        specifier: workspace:*
+        version: link:../packages/model
       '@keeb-cad/pipeline':
         specifier: workspace:*
         version: link:../packages/pipeline
@@ -404,6 +407,9 @@ importers:
       '@keeb-cad/hashing':
         specifier: workspace:*
         version: link:../hashing
+      '@keeb-cad/reactive':
+        specifier: workspace:*
+        version: link:../reactive
       '@keeb-cad/result':
         specifier: workspace:*
         version: link:../result
@@ -750,6 +756,12 @@ importers:
 
   packages/model:
     dependencies:
+      '@keeb-cad/blueprint':
+        specifier: workspace:*
+        version: link:../blueprint
+      '@keeb-cad/reactive':
+        specifier: workspace:*
+        version: link:../reactive
       '@keeb-cad/result':
         specifier: workspace:*
         version: link:../result
@@ -759,10 +771,16 @@ importers:
       nanoid:
         specifier: 'catalog:'
         version: 6.0.2
+      ts-pattern:
+        specifier: 'catalog:'
+        version: 5.9.2
       valibot:
         specifier: 'catalog:'
         version: 1.5.0(typescript@6.0.3)
     devDependencies:
+      '@keeb-cad/di':
+        specifier: workspace:*
+        version: link:../di
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
