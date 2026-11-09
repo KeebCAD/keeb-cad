@@ -18,7 +18,7 @@ import type { ChangedFile, StopDecision, TranscriptEntry, TranscriptToolUse } fr
 const LOGIC_FILE = /^(packages|app|reference-designs|tooling)\/.+\.(ts|mts|cts|tsx|js|mjs|cjs|vue)$/
 const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit'])
 // A run counts only unscoped: `pnpm test <file>` or `--project x` proves the files it ran.
-const FULL_RUN = /^(mise exec -- )?pnpm (run )?(test|check)$/
+const FULL_RUN = /^(mise exec -- )?(timeout \d+[smhd]? )?pnpm (run )?(test|check)$/
 const SEGMENT_SEPARATOR = /\n|&&|\|\||;|\|/
 const REDIRECT = /\s*\d*>>?\s*&?\S+/g
 // A subshell's parentheses stay on its first and last segment after the split. One pair only:
@@ -26,19 +26,22 @@ const REDIRECT = /\s*\d*>>?\s*&?\S+/g
 const SUBSHELL = /^\(|\)$/g
 
 /**
- * Blocks the stop when a spec or source file under packages/, app/, reference-designs/ or tooling/ changed
+ * Asks for a full run at the stop when a spec or source file under packages/, app/, reference-designs/ or tooling/ changed
  * with no full `pnpm test` after it: an Edit, Write or MultiEdit after the last full run in the
  * transcript, or a file `git status` reports changed later than that run (any such file when no
  * full run happened), which catches files written through Bash. A stop that a block already
- * continued passes, so the hook asks once per prompt.
+ * continued passes, so the hook asks once per prompt, and a stop with background tasks in flight
+ * passes, since the session is waiting and not finishing.
  */
 export function stopDecision(
   entries: TranscriptEntry[],
   projectDir: string,
   stopHookActive: boolean,
   changedFiles: ChangedFile[],
+  backgroundTasks: readonly unknown[] = [],
 ): StopDecision {
-  if (stopHookActive) return undefined
+  // Paused for background work is not done: its results land after this stop.
+  if (stopHookActive || backgroundTasks.length > 0) return undefined
   const changedSinceRun = new Set<string>()
   let lastRunAt = -Infinity
   for (const { use, timestamp = '' } of toolUses(entries)) {
@@ -57,8 +60,10 @@ export function stopDecision(
   }
   if (changedSinceRun.size === 0) return undefined
   return {
-    decision: 'block',
-    reason: `Run the whole suite with \`pnpm test\` before finishing: ${[...changedSinceRun].join(', ')} changed after the last full run. A green run of the touched files is not verification.`,
+    hookSpecificOutput: {
+      hookEventName: 'Stop',
+      additionalContext: `Run the whole suite with \`pnpm test\` before finishing: ${[...changedSinceRun].join(', ')} changed after the last full run. A green run of the touched files is not verification.`,
+    },
   }
 }
 

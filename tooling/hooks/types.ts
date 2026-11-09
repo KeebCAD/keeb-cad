@@ -35,6 +35,7 @@ export type TranscriptEntry = {
 
 export type StopInput = {
   stop_hook_active?: boolean
+  background_tasks?: readonly unknown[]
   transcript_path?: string
   cwd?: string
 }
@@ -44,7 +45,8 @@ export type ChangedFile = {
   mtimeMs: number
 }
 
-export type StopDecision = { decision: 'block'; reason: string } | undefined
+export type StopDecision =
+  { hookSpecificOutput: { hookEventName: 'Stop'; additionalContext: string } } | undefined
 
 export type LintOutcome = {
   exitCode: 0 | 2
