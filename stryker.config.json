@@ -5,6 +5,7 @@
   "testRunner": "vitest",
   "vitest": { "configFile": "vitest.mutation.config.ts", "related": false },
   "coverageAnalysis": "perTest",
+  "disableTypeChecks": "packages/*/src/**/*.ts",
   "mutate": [
     "packages/pcb/src/**/*.ts",
     "packages/plates/src/**/*.ts",
