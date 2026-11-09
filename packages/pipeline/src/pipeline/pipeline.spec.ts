@@ -1,3 +1,4 @@
+import { blueprintWorkerModule } from '@keeb-cad/blueprint/worker'
 import { DesignMirror, designWorkerModule } from '@keeb-cad/design/worker'
 import { Container } from '@keeb-cad/di'
 import { InvariantError } from '@keeb-cad/result'
@@ -19,10 +20,13 @@ import { Pipeline } from './pipeline'
 const EPOCH = 1
 
 async function arrange() {
-  const container = new Container().addModule(designWorkerModule).addModule(pipelineModule)
+  const container = new Container()
+    .addModule(designWorkerModule)
+    .addModule(blueprintWorkerModule)
+    .addModule(pipelineModule)
   await container.autoLoad()
   const { port1, port2 } = new MessageChannel()
-  container.resolve(Pipeline).listen(port1)
+  container.resolve(Pipeline).listen(port1, () => [])
   const posts: unknown[] = []
   port2.addEventListener('message', (event) => posts.push(event.data))
   port2.start()

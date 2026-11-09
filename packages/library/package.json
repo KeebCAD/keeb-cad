@@ -6,5 +6,22 @@
   "exports": {
     ".": "./src/index.ts",
     "./worker": "./src/worker.ts"
+  },
+  "scripts": {
+    "build:library": "jiti compile/build-library.ts"
+  },
+  "dependencies": {
+    "@keeb-cad/result": "workspace:*",
+    "@keeb-cad/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@keeb-cad/blueprint": "workspace:*",
+    "@tsconfig/node26": "catalog:",
+    "@types/node": "catalog:",
+    "jiti": "catalog:",
+    "typescript": "catalog:",
+    "valibot": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
   }
 }

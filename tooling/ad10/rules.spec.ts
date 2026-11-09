@@ -291,6 +291,21 @@ describe('the rules on cruised trees', async () => {
             '@keeb-cad/schema',
           ),
           v('only-blueprint-imports-quickjs-wasi', 'packages/plates/src/index.ts', 'quickjs-wasi'),
+          v(
+            'blueprints-src-imports-only-blueprint-authoring',
+            'packages/library/blueprints-src/rejected.ts',
+            '@keeb-cad/schema',
+          ),
+          v(
+            'blueprints-src-imports-only-blueprint-authoring',
+            'packages/library/blueprints-src/sibling.ts',
+            'packages/library/blueprints-src/allowed.ts',
+          ),
+          v(
+            'library-imports-only-drawn-edges',
+            'packages/library/src/index.ts',
+            '@keeb-cad/geometry',
+          ),
           v('result-imports-no-npm-package', 'packages/result/src/index.ts', 'valibot'),
           v('result-imports-only-drawn-edges', 'packages/result/src/index.ts', '@keeb-cad/di'),
           v('worker-entries-reach-no-ui', 'app/src/model.worker.ts', '@keeb-cad/di/vue'),
@@ -303,6 +318,12 @@ describe('the rules on cruised trees', async () => {
           v('worker-entries-reach-no-ui', 'app/src/model.worker.ts', 'vue'),
         ]),
       )
+    })
+
+    it('reports nothing for a blueprint source importing blueprint/authoring', () => {
+      expect(
+        violations.filter(({ from }) => from === 'packages/library/blueprints-src/allowed.ts'),
+      ).toEqual([])
     })
 
     it('reports no import under two rules', () => {

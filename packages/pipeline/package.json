@@ -7,6 +7,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@keeb-cad/blueprint": "workspace:*",
     "@keeb-cad/design": "workspace:*",
     "@keeb-cad/di": "workspace:*",
     "@keeb-cad/messaging": "workspace:*",

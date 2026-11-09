@@ -197,6 +197,9 @@ catalogs:
     dexie:
       specifier: ^4.4.7
       version: 4.4.7
+    jiti:
+      specifier: ^2.7.0
+      version: 2.7.0
     nanoevents:
       specifier: ^10.0.0
       version: 10.0.0
@@ -281,7 +284,7 @@ importers:
         specifier: ~10.11.0
         version: 10.11.1(@typescript-eslint/parser@8.72.0(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(vue-eslint-parser@10.4.1(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0))
       jiti:
-        specifier: ^2.7.0
+        specifier: 'catalog:'
         version: 2.7.0
       lefthook:
         specifier: 2.2.2
@@ -295,6 +298,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      vite:
+        specifier: 'catalog:'
+        version: 8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)
       vitest:
         specifier: 'catalog:'
         version: 5.0.5(@types/node@26.6.6)(@vitest/browser-playwright@5.0.5)(@vitest/ui@5.0.5)(jsdom@30.1.3(@noble/hashes@2.4.0))(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
@@ -307,6 +313,9 @@ importers:
 
   app:
     dependencies:
+      '@keeb-cad/blueprint':
+        specifier: workspace:*
+        version: link:../packages/blueprint
       '@keeb-cad/commands':
         specifier: workspace:*
         version: link:../packages/commands
@@ -319,6 +328,9 @@ importers:
       '@keeb-cad/editor':
         specifier: workspace:*
         version: link:../packages/editor
+      '@keeb-cad/library':
+        specifier: workspace:*
+        version: link:../packages/library
       '@keeb-cad/pipeline':
         specifier: workspace:*
         version: link:../packages/pipeline
@@ -389,6 +401,9 @@ importers:
       '@keeb-cad/expr':
         specifier: workspace:*
         version: link:../expr
+      '@keeb-cad/hashing':
+        specifier: workspace:*
+        version: link:../hashing
       '@keeb-cad/result':
         specifier: workspace:*
         version: link:../result
@@ -681,7 +696,39 @@ importers:
         specifier: 'catalog:'
         version: 5.0.5(@types/node@26.6.6)(@vitest/browser-playwright@5.0.5)(@vitest/ui@5.0.5)(jsdom@30.1.3(@noble/hashes@2.4.0))(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
 
-  packages/library: {}
+  packages/library:
+    dependencies:
+      '@keeb-cad/result':
+        specifier: workspace:*
+        version: link:../result
+      '@keeb-cad/schema':
+        specifier: workspace:*
+        version: link:../schema
+    devDependencies:
+      '@keeb-cad/blueprint':
+        specifier: workspace:*
+        version: link:../blueprint
+      '@tsconfig/node26':
+        specifier: 'catalog:'
+        version: 26.0.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      jiti:
+        specifier: 'catalog:'
+        version: 2.7.0
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      valibot:
+        specifier: 'catalog:'
+        version: 1.5.0(typescript@6.0.3)
+      vite:
+        specifier: 'catalog:'
+        version: 8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.5(@types/node@26.6.6)(@vitest/browser-playwright@5.0.5)(@vitest/ui@5.0.5)(jsdom@30.1.3(@noble/hashes@2.4.0))(vite@8.3.5(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/messaging:
     devDependencies:
@@ -730,6 +777,9 @@ importers:
 
   packages/pipeline:
     dependencies:
+      '@keeb-cad/blueprint':
+        specifier: workspace:*
+        version: link:../blueprint
       '@keeb-cad/design':
         specifier: workspace:*
         version: link:../design
@@ -808,6 +858,12 @@ importers:
 
   packages/schema:
     dependencies:
+      '@keeb-cad/expr':
+        specifier: workspace:*
+        version: link:../expr
+      '@keeb-cad/result':
+        specifier: workspace:*
+        version: link:../result
       valibot:
         specifier: 'catalog:'
         version: 1.5.0(typescript@6.0.3)

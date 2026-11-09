@@ -8,6 +8,8 @@
     "./testing": "./src/testing/index.ts"
   },
   "dependencies": {
+    "@keeb-cad/expr": "workspace:*",
+    "@keeb-cad/result": "workspace:*",
     "valibot": "catalog:"
   },
   "devDependencies": {

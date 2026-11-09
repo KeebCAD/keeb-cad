@@ -13,4 +13,5 @@ export type {
   StageCalls,
 } from './lane/types'
 export type { BlueprintContract, LaneRef, PinnedBlueprint, PinnedScript } from './pool/types'
+export type { BlueprintPin, LaneInputs, RunnerLane } from './runner/types'
 export type { EngineUnavailable } from './sandbox/types'

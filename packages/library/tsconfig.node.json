@@ -1,0 +1,17 @@
+// TSConfig for the library build and the blueprint sources it reads, which run in Node.js.
+{
+  "extends": "@tsconfig/node26/tsconfig.json",
+  "include": ["compile/**/*", "blueprints-src/**/*"],
+  // Deliberately broken sources, read by the build's specs.
+  "exclude": ["compile/fixtures/**"],
+  "compilerOptions": {
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    // The build imports blueprint's root, whose sources need WebAssembly and vite's ?url types.
+    "lib": ["ES2023", "ESNext.Disposable", "WebWorker"],
+    "types": ["node", "vite/client"],
+    "noEmit": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo"
+  }
+}

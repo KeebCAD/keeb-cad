@@ -6,6 +6,8 @@
   "compilerOptions": {
     // Symbol.dispose and Symbol.asyncDispose, which di's container calls on dispose().
     "lib": ["ES2023", "ESNext.Disposable", "WebWorker"],
+    // vite/client types blueprint's ?url import, which this package reaches through blueprint/worker.
+    "types": ["vite/client"],
     "noEmit": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo"
   }

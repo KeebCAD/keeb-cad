@@ -17,6 +17,9 @@ test-results/
 .vitest/
 playwright-report/
 
+# The library build's compiled scripts and declarations
+packages/library/compiled/
+
 # Stryker's reports and sandboxes
 reports/mutation/
 .stryker-tmp/
