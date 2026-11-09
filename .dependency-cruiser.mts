@@ -192,7 +192,8 @@ const importsOnly = (name: string): IForbiddenRuleType => {
     name: `${name}-imports-only-drawn-edges`,
     comment: `${name} imports ${allowed.length > 0 ? `only ${allowed.join(', ')}` : 'no workspace package'}.`,
     severity: 'error',
-    from: { path: sourcePath(name) },
+    // library's blueprints-src has a fence of its own; its sources draw no package edges.
+    from: { path: name === 'library' ? '^packages/library/src/' : sourcePath(name) },
     // reference-designs belongs to reference-designs-only-in-tests, so nothing double-reports.
     to: {
       path: ANY_WORKSPACE_TARGET,
@@ -370,6 +371,14 @@ const config: IConfiguration = {
       npm('quickjs-wasi'),
       'Only blueprint imports quickjs-wasi.',
     ),
+    {
+      name: 'blueprints-src-imports-only-blueprint-authoring',
+      comment:
+        'A library blueprint source imports only blueprint/authoring: every file there is compiled as a blueprint.',
+      severity: 'error',
+      from: { path: '^packages/library/blueprints-src/' },
+      to: { pathNot: entry('blueprint', 'authoring') },
+    },
     {
       name: 'blueprint-authoring-imports-nothing-at-run-time',
       comment:

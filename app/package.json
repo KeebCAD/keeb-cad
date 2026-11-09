@@ -10,10 +10,12 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@keeb-cad/blueprint": "workspace:*",
     "@keeb-cad/commands": "workspace:*",
     "@keeb-cad/design": "workspace:*",
     "@keeb-cad/di": "workspace:*",
     "@keeb-cad/editor": "workspace:*",
+    "@keeb-cad/library": "workspace:*",
     "@keeb-cad/pipeline": "workspace:*",
     "@keeb-cad/reactive": "workspace:*",
     "@keeb-cad/result": "workspace:*",

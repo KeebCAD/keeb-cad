@@ -1,6 +1,12 @@
+import type { Unit } from '@keeb-cad/expr'
+import type { AsyncResult } from '@keeb-cad/result'
 import type * as v from 'valibot'
 
+import type { blueprintDeclarationSchema } from './blueprint-declaration'
+import type { blueprintIdSchema } from './blueprint-id'
+import type { declaredInputSchema } from './declared-input'
 import type { designSchema } from './design'
+import type { expressionSchema } from './expression'
 import type { fixSchema } from './fix'
 import type { fingerprintSchema } from './fingerprint'
 import type { fingerprintsFileSchema } from './fingerprints-file'
@@ -8,11 +14,15 @@ import type { formSchema } from './form'
 import type { formatVersionSchema } from './format-version'
 import type { hashSchema } from './hash'
 import type { idSchema } from './id'
+import type { inputValueSchema, quantityInputValueSchema } from './input-value'
+import type { laneDeclarationSchema } from './lane-declaration'
 import type { chainGroupFieldsSchema, freeGroupFieldsSchema, slotSchema } from './layout'
 import type { metaSchema } from './meta'
 import type { revisionSchema } from './revision'
 import type { routingFileSchema } from './routing-file'
 import type { stageIdSchema } from './stage-id'
+import type { upgradeMappingSchema } from './upgrade-mapping'
+import type { versionSchema } from './version'
 import type { workspaceSchema } from './workspace'
 
 export type Id = v.InferOutput<typeof idSchema>
@@ -25,6 +35,32 @@ export type Hash = v.InferOutput<typeof hashSchema>
 export type Fingerprint = v.InferOutput<typeof fingerprintSchema>
 export type RoutingFile = v.InferOutput<typeof routingFileSchema>
 export type FingerprintsFile = v.InferOutput<typeof fingerprintsFileSchema>
+
+export type Expression = v.InferOutput<typeof expressionSchema>
+export type QuantityInputValue = v.InferOutput<typeof quantityInputValueSchema>
+export type InputValue = v.InferOutput<typeof inputValueSchema>
+export type BlueprintId = v.InferOutput<typeof blueprintIdSchema>
+export type Version = v.InferOutput<typeof versionSchema>
+export type DeclaredInput = v.InferOutput<typeof declaredInputSchema>
+export type QuantityInput = Extract<DeclaredInput, { kind: 'quantity' }>
+export type OptionInput = Extract<DeclaredInput, { kind: 'option' }>
+export type PlainInput = Extract<DeclaredInput, { kind: 'boolean' | 'text' }>
+export type LaneDeclaration = v.InferOutput<typeof laneDeclarationSchema>
+export type UpgradeMapping = v.InferOutput<typeof upgradeMappingSchema>
+export type BlueprintDeclaration = v.InferOutput<typeof blueprintDeclarationSchema>
+
+export type { Unit }
+
+export interface ScriptLoadFailed {
+  kind: 'script-load-failed'
+  message: string
+}
+
+// Plain TypeScript with no schema: it never crosses a thread or enters a file.
+export interface LibraryData {
+  declarations: Readonly<Record<BlueprintId, Readonly<Record<Version, BlueprintDeclaration>>>>
+  loadScript: (id: BlueprintId, version: Version) => AsyncResult<string, ScriptLoadFailed>
+}
 
 export type Slot = v.InferOutput<typeof slotSchema>
 

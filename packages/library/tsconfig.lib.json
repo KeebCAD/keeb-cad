@@ -1,0 +1,12 @@
+{
+  // The library's runtime: declaration data on every thread, script chunks in the workers.
+  "extends": "../../tsconfig.base.json",
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.spec.ts"],
+  "compilerOptions": {
+    // vite/client types import.meta.glob.
+    "types": ["vite/client"],
+    "noEmit": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo"
+  }
+}

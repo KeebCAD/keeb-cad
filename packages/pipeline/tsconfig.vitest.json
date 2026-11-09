@@ -4,6 +4,8 @@
   "include": ["src/**/*.spec.ts"],
   "exclude": [],
   "compilerOptions": {
+    // Promise.withResolvers, for a fake whose answer a test releases.
+    "lib": ["ES2023", "ES2024.Promise", "ESNext.Disposable", "WebWorker"],
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo"
   }
 }

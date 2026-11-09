@@ -6,16 +6,9 @@ import type { BuildLaneArgs, LaneFailure, LaneOutput, StageCalls } from '../lane
 import { EngineLoader } from '../sandbox/engine-loader'
 import type { EngineUnavailable } from '../sandbox/types'
 import { BlueprintVm } from './blueprint-vm'
+import { closureKeyOf, keyOf } from './pin-key'
 import type { LaneRef, PinnedBlueprint, PoolEntry } from './types'
 import { vmHasOutgrown } from './vm-has-outgrown'
-
-const keyOf = (id: string, version: number) => `${id}@${String(version)}`
-
-const closureKeyOf = (pinned: PinnedBlueprint) =>
-  pinned.closure
-    .map(({ declaration }) => keyOf(declaration.id, declaration.version))
-    .toSorted((a, b) => a.localeCompare(b))
-    .join(',')
 
 export class VmPool {
   /** Between applying patches and running stages: creates, replaces and disposes VMs. */

@@ -6,11 +6,14 @@ import { shallowRef } from '@keeb-cad/reactive'
 import { InvariantError } from '@keeb-cad/result'
 import type { FingerprintsFile, Frozen, RoutingFile, Workspace } from '@keeb-cad/schema'
 
+import { BlueprintPause } from '../pause/blueprint-pause'
+import type { PinSource } from '../pause/types'
 import type { DesignMessage, PatchesMessage } from './types'
 
 export class Pipeline {
   // Returns the call that stops listening.
-  listen(endpoint: Endpoint): () => void {
+  listen(endpoint: Endpoint, pins: PinSource): () => void {
+    this.#pins = pins
     return this.#dispatcher.listen<ToModelWorker>(endpoint, {
       design: (message) => this.#receiveDesign(endpoint, message),
       patches: (message) => this.#receivePatches(endpoint, message),
@@ -23,6 +26,8 @@ export class Pipeline {
   readonly #writer = inject(DesignMirrorWriter)
   readonly #mirror = inject(DesignMirror)
   readonly #dispatcher = inject(Dispatcher)
+  readonly #pause = inject(BlueprintPause)
+  #pins: PinSource = () => []
   readonly #routing = shallowRef<Frozen<RoutingFile> | undefined>(undefined)
   readonly #fingerprints = shallowRef<Frozen<FingerprintsFile> | undefined>(undefined)
   readonly #workspace = shallowRef<Workspace | undefined>(undefined)
@@ -31,11 +36,13 @@ export class Pipeline {
     this.#writer.replace(message.design, message.revision)
     this.#routing.value = deepFreeze(message.routing)
     this.#fingerprints.value = deepFreeze(message.fingerprints)
+    this.#pause.enter(this.#pins)
     this.#post(endpoint, message)
   }
 
   #receivePatches(endpoint: Endpoint, message: PatchesMessage): void {
     this.#writer.apply(message.patches, message.revision)
+    this.#pause.enter(this.#pins)
     this.#post(endpoint, message)
   }
 
