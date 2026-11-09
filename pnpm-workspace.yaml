@@ -23,6 +23,7 @@ catalog:
   dexie: ^4.4.7
   nanoevents: ^10.0.0
   nanoid: ^6.0.2
+  quickjs-wasi: 3.6.3
   tailwindcss: 4.3.3
   '@tailwindcss/vite': 4.3.3
   ts-pattern: ^5.9.0

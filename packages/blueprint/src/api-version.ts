@@ -1,0 +1,1 @@
+export const BLUEPRINT_API_VERSION = 1

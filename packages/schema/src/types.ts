@@ -95,7 +95,7 @@ export type Rejection =
   | { kind: 'stale'; seq: number; latest: number }
   | { kind: ModelRejectionKind; ids: ItemId[]; message: string }
 
-export type ViolationKind = never
+export type ViolationKind = 'blueprint-api-too-new' | 'lane-failed'
 
 export type Fix = v.InferOutput<typeof fixSchema>
 

@@ -168,6 +168,7 @@ const MAIN_ENTRY = String.raw`^app/src/main\.ts$`
 const MODEL_WORKER_ENTRY = String.raw`^app/src/(model\.worker|start-model-worker)\.ts$`
 const CASE_WORKER_ENTRY = String.raw`^app/src/case\.worker\.ts$`
 const WORKER_ENTRIES = String.raw`^app/src/(model|case|routing)\.worker\.ts$`
+const AUTHORING = String.raw`^packages/blueprint/src/authoring(\.ts$|/)`
 const STAGES = ['plates', 'pcb', 'firmware', 'case', 'routing', 'exports']
 
 /** Only files under `owner` may import `target`. */
@@ -362,6 +363,21 @@ const config: IConfiguration = {
       npm('dexie'),
       "Only storage's browser backend imports dexie.",
     ),
+    onlyImports(
+      'only-blueprint-imports-quickjs-wasi',
+      // main's entry belongs to main-entry-reaches-no-pipeline-stage-or-sandbox, so nothing double-reports.
+      ['^packages/blueprint/', MAIN_ENTRY],
+      npm('quickjs-wasi'),
+      'Only blueprint imports quickjs-wasi.',
+    ),
+    {
+      name: 'blueprint-authoring-imports-nothing-at-run-time',
+      comment:
+        'blueprint/authoring reaches library sources at build time, so it imports only types.',
+      severity: 'error',
+      from: { path: AUTHORING },
+      to: { pathNot: AUTHORING, dependencyTypesNot: ['type-only'] },
+    },
     onlyImports(
       'only-design-imports-immer',
       '^packages/design/',

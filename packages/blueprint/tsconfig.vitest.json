@@ -1,0 +1,9 @@
+{
+  // The specs: those on the real engine run in Vitest browser mode, every other on Node.
+  "extends": "./tsconfig.lib.json",
+  "include": ["src/**/*.spec.ts"],
+  "exclude": [],
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo"
+  }
+}

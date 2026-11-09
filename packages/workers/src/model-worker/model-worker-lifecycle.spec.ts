@@ -18,6 +18,7 @@ import {
   aRoutingFile,
   aStageId,
   aWorkspace,
+  aViolation,
 } from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
@@ -110,11 +111,6 @@ function derivedFilesAt(epoch: number, seq: number, revision: string) {
     fingerprints: aFingerprintsFile({ revision: aRevision('accepted') }),
     revision,
   }
-}
-
-// No violation kind exists yet; the lifecycle only holds what the worker posts.
-function aViolation(message: string) {
-  return { kind: 'test-kind', severity: 'warning', ids: [], message, fixes: [] }
 }
 
 describe('ModelWorkerLifecycle', () => {
@@ -553,23 +549,29 @@ describe('ModelWorkerLifecycle', () => {
       const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
       lifecycle.start(spawn)
       const { seq } = committed(store)
-      latest(spawned).post(issuesAt(1, seq, [aViolation('first'), aViolation('second')]))
+      latest(spawned).post(
+        issuesAt(1, seq, [aViolation({ message: 'first' }), aViolation({ message: 'second' })]),
+      )
 
-      latest(spawned).post(issuesAt(1, seq, [aViolation('third')]))
+      latest(spawned).post(issuesAt(1, seq, [aViolation({ message: 'third' })]))
 
-      expect(lifecycle.issues).toEqual(Option.some({ seq, violations: [aViolation('third')] }))
+      expect(lifecycle.issues).toEqual(
+        Option.some({ seq, violations: [aViolation({ message: 'third' })] }),
+      )
     })
 
     it('keeps its issues on a post below the latest seq', async () => {
       const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true, renamable: true })
       lifecycle.start(spawn)
       const { seq } = committed(store)
-      latest(spawned).post(issuesAt(1, seq, [aViolation('first')]))
+      latest(spawned).post(issuesAt(1, seq, [aViolation({ message: 'first' })]))
       expectOk(store.run(RenameDesign, { name: 'Corne v2' }))
 
-      latest(spawned).post(issuesAt(1, seq, [aViolation('stale')]))
+      latest(spawned).post(issuesAt(1, seq, [aViolation({ message: 'stale' })]))
 
-      expect(lifecycle.issues).toEqual(Option.some({ seq, violations: [aViolation('first')] }))
+      expect(lifecycle.issues).toEqual(
+        Option.some({ seq, violations: [aViolation({ message: 'first' })] }),
+      )
     })
   })
 
