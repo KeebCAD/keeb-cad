@@ -152,6 +152,7 @@ Files the plan didn't list, each needed by a row or a decision: `packages/librar
 - Decision (build): `schema` depends on `@keeb-cad/result`, because the spine says `schema` `imports only `expr` and `result`` and `LibraryData` returns `AsyncResult`.
 - Decision (build): `packages/blueprint/src/authoring/types.ts:64` declares a global `use`, not an exported stub, because 13.17's plan has `use` as `a frozen global` and a stub import would be bundled into the script and shadow it.
 - Decision (build): `packages/pipeline/tsconfig.vitest.json` adds `ES2024.Promise`, not a hand-written deferred, because the repo's lint rule requires `Promise.withResolvers` in the held-pause spec; specs only.
+- Decision (Sergii, 2026-11-09): `disableTypeChecks` in `stryker.config.json` covers `packages/*/src/**/*.ts`, not the default of every file and not a fixture written at run time, because the default's `// @ts-nocheck` made the type-error fixture pass (reproduced locally); mutation score after: 99.36.
 Real-host run: no fake of a third-party host: the runner's engine rows run the real quickjs-wasi 3.6.3 in Chromium and Firefox, and `check:dist` runs the real Vite 8.3.5 build. `aLibraryData` fakes the repo's own `LibraryData`.
 
 ## Plan Change Log
