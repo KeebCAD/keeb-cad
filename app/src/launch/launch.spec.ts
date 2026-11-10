@@ -23,6 +23,7 @@ import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { page, userEvent } from 'vitest/browser'
 
 import { Autosave } from '../autosave/autosave'
+import { devSeedModule } from '../dev-seed/dev-seed-module'
 import { mainModules } from '../main-modules'
 import { Launch } from './launch'
 
@@ -102,18 +103,36 @@ interface Arrangement {
   hash: string
   stored?: Stored[]
   storage?: StorageChoice
+  seed?: { requested: string | undefined }
+}
+
+// The page's own query stays, so only `seed` changes, and it goes back after the test.
+function setSeedParameter(value: string | undefined): void {
+  const before = location.href
+  const url = new URL(before)
+  if (value === undefined) url.searchParams.delete('seed')
+  else url.searchParams.set('seed', value)
+  history.replaceState(null, '', url)
+  onTestFinished(() => {
+    history.replaceState(null, '', before)
+  })
 }
 
 async function arrange({
   hash,
   stored = [],
   storage = { backend: new MemoryBackend() },
+  seed,
 }: Arrangement) {
   // Firefox delivers the popstate of a `location.hash` write a task later, after the router
   // listens, and that late navigation would undo launch's own. replaceState fires none.
   history.replaceState(null, '', hash === '' ? location.pathname + location.search : hash)
   const container = new Container()
   for (const module of mainModules) container.addModule(module)
+  if (seed !== undefined) {
+    setSeedParameter(seed.requested)
+    container.addModule(devSeedModule)
+  }
   if ('backend' in storage) {
     container.override(storageBackend).useValue(storage.backend)
   } else {
@@ -382,6 +401,23 @@ describe('Launch', () => {
       await expect
         .poll(() => arranged.workers[0]?.received.at(-1))
         .toMatchObject({ kind: 'focus', workspace: 'pcb' })
+    })
+  })
+
+  describe('with the dev seed module registered', () => {
+    it.each([
+      ['no seed parameter', undefined],
+      ['a seed parameter naming no seed', 'other'],
+    ])('opens the newest stored design for %s', async (_role, requested) => {
+      const arranged = await arrange({
+        hash: '',
+        stored: [intact(older), intact(newer)],
+        seed: { requested },
+      })
+
+      await arranged.launch()
+
+      expect(opened(arranged).id).toBe(anId('newer'))
     })
   })
 

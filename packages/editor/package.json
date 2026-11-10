@@ -14,6 +14,8 @@
     "@keeb-cad/commands": "workspace:*",
     "@keeb-cad/design": "workspace:*",
     "@keeb-cad/di": "workspace:*",
+    "@keeb-cad/model": "workspace:*",
+    "@keeb-cad/protocol": "workspace:*",
     "@keeb-cad/result": "workspace:*",
     "@keeb-cad/schema": "workspace:*",
     "@keeb-cad/ui": "workspace:*",

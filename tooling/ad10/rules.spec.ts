@@ -197,6 +197,11 @@ describe('the rules on cruised trees', async () => {
             'packages/model/src/index.ts',
             '@keeb-cad/reference-designs',
           ),
+          v(
+            'reference-designs-only-in-tests',
+            'app/src/other.ts',
+            '@keeb-cad/reference-designs/scripts',
+          ),
           v('geometry-imports-only-drawn-edges', 'packages/geometry/src/index.ts', '@keeb-cad/di'),
           v(
             'geometry-imports-only-drawn-edges',
@@ -361,6 +366,12 @@ describe('the rules on cruised trees', async () => {
       const from = 'packages/result/src/testing/expect-ok.ts'
       expect(violations.filter((v) => v.from === from)).toEqual([])
       expect(edgesOf(result, from)).toEqual([expect.stringMatching(/\/node_modules\/vitest\//)])
+    })
+
+    it('allows the dev seed file to import reference-designs', () => {
+      const from = 'app/src/dev-seed/corney-seed.ts'
+      expect(violations.filter((v) => v.from === from)).toEqual([])
+      expect(edgesOf(result, from)).toContain('@keeb-cad/reference-designs/scripts')
     })
 
     it('allows a model test to import reference-designs', () => {

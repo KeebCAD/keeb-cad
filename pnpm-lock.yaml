@@ -599,6 +599,12 @@ importers:
       '@keeb-cad/di':
         specifier: workspace:*
         version: link:../di
+      '@keeb-cad/model':
+        specifier: workspace:*
+        version: link:../model
+      '@keeb-cad/protocol':
+        specifier: workspace:*
+        version: link:../protocol
       '@keeb-cad/result':
         specifier: workspace:*
         version: link:../result

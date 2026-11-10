@@ -1,5 +1,8 @@
+import { aDesign, aLayout, anId, aSlot } from '@keeb-cad/schema/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { page } from 'vitest/browser'
+
+import { Selection } from '../selection/selection'
 
 import { emulateColorScheme } from '../testing/color-scheme'
 import { mountShell } from '../testing/mount-shell'
@@ -106,6 +109,23 @@ describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
       pressKey(ESCAPE)
 
       await expect.element(page.getByRole('main', { name: 'Canvas' })).toHaveFocus()
+    })
+
+    it.each([
+      ['the selected row', ['b'], 'b'],
+      ['the first row with nothing selected', [], 'a'],
+    ])('takes focus on %s as it opens', async (_role, selected, expected) => {
+      const design = aDesign({
+        layout: aLayout({ children: [aSlot({ id: anId('a') }), aSlot({ id: anId('b') })] }),
+      })
+      const { injector } = await mountShell({ path: '/design/corne/layout', design })
+      injector.resolve(Selection).select(selected.map((id) => anId(id)))
+
+      press('T')
+
+      await expect
+        .element(page.getByRole('treeitem', { name: expected, exact: true }))
+        .toHaveFocus()
     })
   })
 })

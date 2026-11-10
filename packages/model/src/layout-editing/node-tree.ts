@@ -1,4 +1,4 @@
-import type { Group, Id, Mutable, Node } from '@keeb-cad/schema'
+import type { Frozen, Group, Id, Mutable, Node } from '@keeb-cad/schema'
 
 import type { Found } from './types'
 
@@ -23,6 +23,6 @@ export function isGroup<N extends { readonly id: Id }>(
   return 'arrangement' in node
 }
 
-export function subtreeIds(node: Mutable<Node>): Id[] {
+export function subtreeIds(node: Frozen<Node>): Id[] {
   return isGroup(node) ? [node.id, ...node.children.flatMap(subtreeIds)] : [node.id]
 }

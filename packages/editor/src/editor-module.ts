@@ -5,14 +5,17 @@ import { FocusNextLandmark } from './landmarks/focus-next-landmark'
 import { FocusPreviousLandmark } from './landmarks/focus-previous-landmark'
 import { Landmarks } from './landmarks/landmarks'
 import { DesignLocation } from './router/design-location'
+import { Selection } from './selection/selection'
 import { ShortcutRegistry } from './shortcuts/shortcut-registry'
 import { CloseSlideOut } from './slide-out/close-slide-out'
 import { OpenTree } from './slide-out/open-tree'
 import { SlideOut } from './slide-out/slide-out'
 import { registerUiAction } from './ui-actions/register-ui-action'
+import { Viewport } from './viewport/viewport'
 import { ShowCase } from './workspace/case/show-case'
 import { ShowFirmware } from './workspace/firmware/show-firmware'
 import { ShowLayout } from './workspace/layout/show-layout'
+import { SwitchGrace } from './workspace/layout/switch-grace'
 import { ShowOutline } from './workspace/outline/show-outline'
 import { ShowPcb } from './workspace/pcb/show-pcb'
 
@@ -23,6 +26,9 @@ export const editorModule: Module = {
     container.register(DesignLocation).useClass(DesignLocation)
     container.register(Landmarks).useClass(Landmarks)
     container.register(SlideOut).useClass(SlideOut)
+    container.register(Selection).useClass(Selection)
+    container.register(Viewport).useClass(Viewport)
+    container.register(SwitchGrace).useClass(SwitchGrace)
     registerUiAction(container, ShowLayout)
     registerUiAction(container, ShowOutline)
     registerUiAction(container, ShowPcb)

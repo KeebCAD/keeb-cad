@@ -769,6 +769,21 @@ describe('ModelWorkerLifecycle', () => {
       })
     })
 
+    it('holds no outputs after any whole commit', async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+      latest(spawned).post(layoutSetAt(1, committed(store).seq))
+      const accepted = lifecycle.layout.isSome()
+
+      load(store)
+
+      expect({ accepted, parts: lifecycle.parts, layout: lifecycle.layout }).toEqual({
+        accepted: true,
+        parts: Option.none(),
+        layout: Option.none(),
+      })
+    })
+
     it("keeps both outputs on a layout-set below main's latest seq", async () => {
       const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true, renamable: true })
       lifecycle.start(spawn)

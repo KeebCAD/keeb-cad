@@ -102,6 +102,11 @@ export class ModelWorkerLifecycle {
   #running: Running | undefined
 
   #commit(event: CommitEvent): void {
+    // A set posted before a whole commit belongs to another design, so it counts as no set.
+    if (event.kind === 'whole') {
+      this.#layout.value = undefined
+      this.#parts.value = undefined
+    }
     const running = this.#running
     if (running === undefined) {
       // The first Committed spawns the worker, which is sent that whole bundle; a failed worker

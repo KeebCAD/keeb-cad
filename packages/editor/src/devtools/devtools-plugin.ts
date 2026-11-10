@@ -3,6 +3,7 @@ import { inject } from '@keeb-cad/di'
 import type { Result } from '@keeb-cad/result'
 import { watchDebounced } from '@vueuse/core'
 import { match, P } from 'ts-pattern'
+import { toRaw } from 'vue'
 
 import { Invoke } from '../invoke/invoke'
 import type { InvokeEvent } from '../invoke/types'
@@ -70,12 +71,22 @@ export class DevtoolsPlugin implements Disposable {
     })
   }
 
+  // The panel edits a list item or an object's member by its full path, so the kit's own editor
+  // applies the edit to a copy and the field's schema judges the whole value that results.
   #edit(payload: EditPayload): void {
     const [key, ...nested] = payload.path
-    if (key === undefined || nested.length > 0 || payload.state.remove === true) return
+    if (key === undefined || (nested.length === 0 && payload.state.remove === true)) return
     const field = this.#inspectable(payload.nodeId)?.fields[key]
     if (field === undefined || !('set' in field)) return
-    parse(field.schema, payload.state.value).tap((value) => {
+    const draft: Record<string, unknown> = {}
+    try {
+      draft[key] = structuredClone(toRaw(field.get()))
+      payload.set(draft)
+    } catch {
+      // A value that can't be copied, or a path through a primitive, has nothing to edit.
+      return
+    }
+    parse(field.schema, draft[key]).tap((value) => {
       field.set(value)
     })
   }

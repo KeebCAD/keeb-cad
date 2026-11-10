@@ -9,6 +9,8 @@ import {
   type ResolvedParts,
 } from '@keeb-cad/schema'
 
+import { sideQualifiedId } from '../ids/side-qualified-id'
+import type { PlacementSide } from '../ids/types'
 import { isGroup } from '../layout-editing/node-tree'
 import { extent } from './extent'
 import { literalValue } from './literal-value'
@@ -25,7 +27,7 @@ import type {
 } from './types'
 
 const IDENTITY: Matrix = [1, 0, 0, 1, 0, 0]
-const SIDE = 'left'
+const SIDE: PlacementSide = 'left'
 
 // The authored side's placements; the right side is derived from them.
 export function placeLayout(
@@ -44,7 +46,7 @@ export function placeLayout(
     fit: 'fitted',
   }
   const nodes = [root, ...arrangeGroup(layout, context).map((node) => inFrame(frame, node))]
-  const rows = new Map(nodes.map((node) => [`${SIDE}/${node.id}`, rowOf(node)]))
+  const rows = new Map(nodes.map((node) => [sideQualifiedId(SIDE, node.id), rowOf(node)]))
   const ids = [...rows.keys()].toSorted(compareId)
   return { ids, rows: ids.map((id) => rows.get(id) as LayoutRow) }
 }

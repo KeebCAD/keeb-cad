@@ -7,8 +7,11 @@ import { editorModule } from '../editor-module'
 import { Invoke } from '../invoke/invoke'
 import { Landmarks } from '../landmarks/landmarks'
 import { DesignLocation } from '../router/design-location'
+import { Selection } from '../selection/selection'
 import { ShortcutRegistry } from '../shortcuts/shortcut-registry'
 import { SlideOut } from '../slide-out/slide-out'
+import { Viewport } from '../viewport/viewport'
+import { SwitchGrace } from '../workspace/layout/switch-grace'
 import { devtoolsModule } from './devtools-module'
 import { devtoolsPluginId } from './plugin-id'
 import { inspectables } from './tokens'
@@ -23,6 +26,9 @@ const classified: readonly (readonly [new () => unknown, Classification])[] = [
   [Landmarks, { notShown: 'focus order, read off the DOM by the browser devtools' }],
   [DesignLocation, { shownAs: `${devtoolsPluginId}.design-location` }],
   [SlideOut, { shownAs: `${devtoolsPluginId}.slide-out` }],
+  [Selection, { shownAs: `${devtoolsPluginId}.selection` }],
+  [Viewport, { shownAs: `${devtoolsPluginId}.viewport` }],
+  [SwitchGrace, { notShown: 'grayed is derived from a timer and the lifecycle, like Landmarks' }],
 ]
 
 // The base constructor registers its builtins before this class's fields exist, so `recorded`

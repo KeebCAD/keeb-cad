@@ -94,7 +94,8 @@ export const GRAPH: Readonly<Record<string, readonly string[]>> = {
     'blueprint',
     'case',
     'routing',
-    // Tests only, through its data-only scripts subpath (reference-designs-only-in-tests).
+    // Tests only, through its data-only scripts subpath, and the one dev seed file
+    // app/src/dev-seed/corney-seed.ts (reference-designs-only-in-tests).
     'reference-designs',
   ],
   'reference-designs': ['schema'],
@@ -433,9 +434,13 @@ const config: IConfiguration = {
     },
     {
       name: 'reference-designs-only-in-tests',
-      comment: 'reference-designs is imported only by tests.',
+      comment:
+        'reference-designs is imported only by tests and the one dev seed file, which only the dev server loads.',
       severity: 'error',
-      from: { path: '^(packages|app)/', pathNot: TEST_FILE },
+      from: {
+        path: '^(packages|app)/',
+        pathNot: [TEST_FILE, String.raw`^app/src/dev-seed/corney-seed\.ts$`],
+      },
       to: { path: REFERENCE_DESIGNS },
     },
   ],

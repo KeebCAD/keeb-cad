@@ -16,6 +16,7 @@ import { describe, expect, it, onTestFinished, vi } from 'vitest'
 import { createApp, nextTick, shallowRef } from 'vue'
 
 import { Invoke } from '../invoke/invoke'
+import { applyPanelEdit } from '../testing/apply-panel-edit'
 import { DevtoolsPlugin } from './devtools-plugin'
 import { editableField, readOnlyField } from './inspectable-field'
 import { stateRefreshDelayMs } from './state-refresh-delay'
@@ -100,13 +101,42 @@ function fakeHost() {
         app: createApp({}),
         inspectorId: ownInspectorId,
         nodeId: testNodeId,
-        path: ['open'],
         type: 'boolean',
         state: { value: true },
-        set: () => {},
+        set: (target: Record<string, unknown>) => {
+          applyPanelEdit(target, payload.path, payload.state)
+        },
         ...overrides,
+        // The kit consumes the path it is given, and the table's rows outlive one run.
+        path: [...(overrides.path ?? ['open'])],
       }
       for (const handler of editHandlers) handler(payload)
+    },
+  }
+}
+
+function aNestedInspectable(held: {
+  items: string[]
+  point: { x: number; y: number }
+}): Inspectable {
+  return {
+    id: testNodeId,
+    label: 'Test',
+    fields: {
+      items: editableField({
+        schema: v.array(v.string()),
+        get: () => held.items,
+        set: (value) => {
+          held.items = value
+        },
+      }),
+      point: editableField({
+        schema: v.strictObject({ x: v.number(), y: v.number() }),
+        get: () => held.point,
+        set: (value) => {
+          held.point = value
+        },
+      }),
     },
   }
 }
@@ -417,7 +447,7 @@ describe('DevtoolsPlugin', () => {
     it.each([
       ['an unknown key', { path: ['other'] }],
       ['an empty path', { path: [] }],
-      ['a nested path', { path: ['open', 'x'] }],
+      ['a path into the value, which is no object', { path: ['open', 'x'] }],
       ['another inspector', { inspectorId: otherInspectorId }],
       ['an unknown node', { nodeId: 'keeb-cad.devtools.unknown' }],
     ])('leaves the service unchanged for %s', async (_role, overrides) => {
@@ -426,6 +456,44 @@ describe('DevtoolsPlugin', () => {
       fake.edit(overrides)
 
       expect(open.value).toBe(false)
+    })
+
+    // The panel edits a list item or an object member by its full path.
+    it.each<[string, Partial<EditPayload>, { items: string[]; point: { x: number; y: number } }]>([
+      [
+        'replaces a list item',
+        { path: ['items', '0'], state: { value: 'z' } },
+        { items: ['z', 'b'], point: { x: 1, y: 2 } },
+      ],
+      [
+        'adds a list item',
+        { path: ['items', '2'], state: { value: 'c', newKey: '2' } },
+        { items: ['a', 'b', 'c'], point: { x: 1, y: 2 } },
+      ],
+      [
+        'removes a list item',
+        { path: ['items', '0'], state: { value: undefined, remove: true } },
+        { items: ['b'], point: { x: 1, y: 2 } },
+      ],
+      [
+        'keeps the list on an item the schema refuses',
+        { path: ['items', '0'], state: { value: 7 } },
+        { items: ['a', 'b'], point: { x: 1, y: 2 } },
+      ],
+      [
+        'sets an object member',
+        { path: ['point', 'x'], state: { value: 3 } },
+        { items: ['a', 'b'], point: { x: 3, y: 2 } },
+      ],
+    ])('%s at a nested path', async (_role, overrides, expected) => {
+      const held = { items: ['a', 'b'], point: { x: 1, y: 2 } }
+      const { plugin } = await arrange({ entries: [aNestedInspectable(held)] })
+      const fake = fakeHost()
+      plugin.setup(fake.host)
+
+      fake.edit(overrides)
+
+      expect(held).toEqual(expected)
     })
 
     it('leaves the service unchanged for a removal the schema would accept', async () => {
