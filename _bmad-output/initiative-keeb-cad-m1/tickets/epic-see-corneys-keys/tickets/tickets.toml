@@ -6,8 +6,9 @@
 # Re-planned 2026-11-02 after the spine package split (b9b4ec5, 411dd17): owners in 17, 18, 21, 22 updated.
 # Re-sliced 2026-11-10 at 13.7's build: 23 (viewport) and 24 (editing on the canvas) split from 7.
 # Re-sliced 2026-11-10 after spine 8edc279: 25 (G and S add flow) split from 24.
+# Re-sliced 2026-11-10 at 13.7's planning: 26 (group frames following their keys) split from 7.
 
-next_id = 26
+next_id = 27
 
 [[entry]]
 id = 9
@@ -128,12 +129,24 @@ risk = "medium"
 id = 7
 type = "story"
 title = "Layout canvas draws resolved keys with selection"
-description = "The Layout workspace's 2D canvas, inline SVG drawn by Vue templates (AD-22), draws only the design and story 22's posted Layout set (parts and layout) at one seq, computing no geometry; focus names the Layout workspace. This story builds the viewport service (AD-22: centre in model mm, y up, and zoom), whose transform holds the one model-to-screen y-flip; the canvas opens fitted to the whole board with 24 px padding (Sergii 2026-11-10, epic Notes; padding from EXPERIENCE.md's F); zoom, pan, F and keeping the viewport are 13.23's. Each part rectangle is placed at its slot's frame with translate(x, y) rotate(rot) scale(mirrored ? -1 : 1, 1), in model mm inside the viewport's y-flipped group, strokes non-scaling (AD-22); handles sit only at posted frame and anchorAt points; rows posted unplaced are not drawn (the violation shows the cycle, 14.6). After a workspace switch the last snapshot draws as is and grays, with the status strip showing updating, if the set hasn't arrived within the switch grace (~200 ms). It draws placed keys as keycaps with group frames and anchor links in both themes; click selects, and 23.8's tree slide-out lists the nodes on a Tree wrapper over Reka's tree in ui and stays synced. The selection is a di service holding node ids only (Id[], in selection order), session-only: a click on a key selects its slot's id, and a node's kind, parent and side are read from the design; after each commit it drops every id the design no longer holds, from the design store's commit event (spine Editor state, 8edc279). For checking by hand, the dev server opened with ?seed=corney starts a new design (NewDesign through store.run) and runs Corney's layout-command script through the design store's runById, as app/src/layout-set.spec.ts does; launch opens that design in place of its usual pick (app/src/launch/launch.ts #open), before it sets the route and starts the model worker; autosave keeps it. The seed loads only in the dev server (app gates devtools on import.meta.env.MODE === 'development' in start-main.ts) through a dynamic import, so the production build holds no reference design. The spine's 'tests only' wording for app and reference-designs (AD-10's app bullet, the package diagram's edge, the Reference designs row 'run by app's tests'), the reference-designs-only-in-tests fence and its GRAPH comment in .dependency-cruiser.mts gain that one dev file, with a tooling/ad10 fixture case (Sergii 2026-11-10). Its canvas, selection and viewport service are what every later 2D story builds on."
+description = "The Layout workspace's 2D canvas, inline SVG drawn by Vue templates (AD-22), draws only the design and story 22's posted Layout set (parts and layout) at one seq, computing no geometry; focus names the Layout workspace. This story builds the viewport service (AD-22: centre in model mm, y up, and zoom), whose transform holds the one model-to-screen y-flip; the canvas opens fitted to the whole board with 24 px padding (Sergii 2026-11-10, epic Notes; padding from EXPERIENCE.md's F); zoom, pan, F and keeping the viewport are 13.23's. Each part rectangle is placed at its slot's frame with translate(x, y) rotate(rot) scale(mirrored ? -1 : 1, 1), in model mm inside the viewport's y-flipped group, strokes non-scaling (AD-22); handles sit only at posted frame and anchorAt points; rows posted unplaced are not drawn (the violation shows the cycle, 14.6). After a workspace switch the last snapshot draws as is and grays, with the status strip showing updating, if the set hasn't arrived within the switch grace (~200 ms). It draws placed keys as keycaps and anchor links in both themes (group frames are 13.26's, Sergii 2026-11-10); click selects, and 23.8's tree slide-out lists the nodes on a Tree wrapper over Reka's tree in ui and stays synced. The selection is a di service holding node ids only (Id[], in selection order), session-only: a click on a key selects its slot's id, and a node's kind, parent and side are read from the design; after each commit it drops every id the design no longer holds, from the design store's commit event (spine Editor state, 8edc279). For checking by hand, the dev server opened with ?seed=corney starts a new design (NewDesign through store.run) and runs Corney's layout-command script through the design store's runById, as app/src/layout-set.spec.ts does; launch opens that design in place of its usual pick (app/src/launch/launch.ts #open), before it sets the route and starts the model worker; autosave keeps it. The seed loads only in the dev server (app gates devtools on import.meta.env.MODE === 'development' in start-main.ts) through a dynamic import, so the production build holds no reference design. The spine's 'tests only' wording for app and reference-designs (AD-10's app bullet, the package diagram's edge, the Reference designs row 'run by app's tests'), the reference-designs-only-in-tests fence and its GRAPH comment in .dependency-cruiser.mts gain that one dev file, with a tooling/ad10 fixture case (Sergii 2026-11-10). Its canvas, selection and viewport service are what every later 2D story builds on."
 verify = "On the dev server with ?seed=corney: the keys of Corney's script are drawn and the canvas opens fitted to the whole board with 24 px padding, and a reload without the parameter shows the same design; the production build holds no reference-designs module; tooling/ad10's rules spec allows the one dev seed file to import reference-designs and still refuses any other app file; a key at +15 deg tilts counter-clockwise on screen; selecting a key on the canvas selects it in the tree, and selecting it in the tree selects it on the canvas; a row posted unplaced is not drawn; a switch whose set is late shows the snapshot grayed after the grace; an automated check on current snapshots finds every canvas mark at 3:1 contrast in both themes. Tests: a selected key deleted by DeleteNode through the design store leaves the selection without its id."
 covers = ["R6"]
 after = ["23.8", 22]
 hitl = false
 risk = "medium"
+
+[[entry]]
+id = 26
+type = "story"
+title = "Group frames follow their keys"
+description = "Each group on the Layout canvas is drawn as a group frame that follows its keys' stagger, not a rectangle (Sergii 2026-11-10, at 13.7's planning). The outline is geometry, so model posts each group's outline in the Layout set and protocol's codec carries it; the canvas draws it, computing nothing (AD-10, AD-22), as the dashed group-frame outline with its grab tab '⠿ <group id>'; a click on the frame or its tab selects the group (story 7's selection), and a selected group's frame is drawn 2px in the selection colour with the tab filled (DESIGN.md Canvas marks). Every placed group row gets its frame and a row posted unplaced draws none, as story 7 draws no unplaced row; the right half's frames come with 13.8's rows. The frame joins story 7's automated 3:1 contrast check in both themes."
+verify = "On the dev server with ?seed=corney: each group is drawn with a dashed frame that follows its columns' stagger and a tab naming the group; clicking a frame or its tab selects the group on the canvas and in the tree, and the frame turns 2px in the selection colour; a group row posted unplaced draws no frame; the automated contrast check finds the frame at 3:1 in both themes."
+covers = ["R6"]
+after = [7]
+hitl = true
+risk = "medium"
+unknown = "LayoutOutput has no field for a group's outline (spine Data Schema; schema/src/layout-output.ts). A bmad-architecture pass defines it: its shape (hull or union of the keys), margin, rotation, and how a variable-length outline packs in protocol's struct-of-arrays codec; and DESIGN.md's Group frame, a dashed rectangle today, is redrawn from a side-by-side preview Sergii picks (bmad-ux). Owner Sergii; 13.26 is not ready until both land."
 
 [[entry]]
 id = 23
@@ -187,6 +200,6 @@ title = "Refactor sweep"
 description = "Cleanup only, scoped at its start from the epic's plans and the review findings it deferred. Scope pushed out of another story becomes a new story, not part of this one."
 verify = "pnpm check and every test of the slice pass, and each cleanup item from the scope list is closed or recorded as deferred."
 covers = []
-after = [9, 16, 17, 21, 18, 2, 22, 3, 4, 6, 7, 23, 24, 25, 8]
+after = [9, 16, 17, 21, 18, 2, 22, 3, 4, 6, 7, 26, 23, 24, 25, 8]
 hitl = false
 risk = "low"

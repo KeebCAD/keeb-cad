@@ -40,7 +40,7 @@ title = "Keys and groups drag by the chain rule"
 description = "Left-drag on a key, or on a group frame's tab, previews through 15.1's service and on drop runs 15.2's move command once; Alt-drag compensates, Ctrl-drag where Alt collides; box select and Shift box select; a multi-selection moves only its roots; Esc cancels a drag and runs nothing. A drag starts only once the snapshot at main's latest seq has arrived; a stale drop snaps back with the toast. Alt-drag and the Ctrl chords are checked by hand in Chromium and Firefox."
 verify = "Dragging Corney's thumb-home moves thumb-reachy with it and writes + 0.37mm into its offset; Alt-drag leaves thumb-reachy still; one Ctrl+Z undoes each; Esc mid-drag leaves the design unchanged; a drag begun while a newer snapshot is pending waits for it; a drop refused as stale snaps the keys back and shows 'the layout changed, drop again'; the manual chord check is recorded for both browsers."
 covers = ["R1", "R8"]
-after = ["13.7", 2, "16.4"]
+after = [1, "13.7", "13.26", 2, "16.4"]
 hitl = true
 risk = "high"
 

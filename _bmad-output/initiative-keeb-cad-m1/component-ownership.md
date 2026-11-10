@@ -12,13 +12,13 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | Left rail + slide-out (Tree tab) | a new design opens (23), filled by see Corney's keys (13) | 23.8, filled by 13.7 |
 | Left rail + slide-out (Parameters tab) | change a parameter (14) | to plan |
 | Left rail + slide-out (Parts tab) | change a parameter (14) | to plan |
-| Canvas, viewport, selection; Canvas keys, Right half, Mirror axis, Group frame, Unfitted slot | see Corney's keys (13) | 13.7 (canvas, selection, viewport service), 13.23 (viewport controls), 13.24 (Delete, Ctrl+D), 13.25 (G, S), 13.8 (2026-11-10 split) |
+| Canvas, viewport, selection; Canvas keys, Right half, Mirror axis, Group frame, Anchor link, Unfitted slot | see Corney's keys (13) | 13.7 (canvas, selection, viewport service, Anchor link), 13.23 (viewport controls), 13.24 (Delete, Ctrl+D), 13.25 (G, S), 13.8 (2026-11-10 split), Group frame 13.26 (split from 13.7, 2026-11-10) |
 | Banner, Toast | keep my work (16) | 16.1, 16.3 |
 | Start screen, File menu, Design info | keep my work (16) | to plan |
 | Inspector, Design settings, Fitted toggle (moved from 13.8 on 2026-10-30), This slot section (2026-11-01) | change a parameter (14) | 14.5 |
 | Expression field, Autocomplete dropdown | change a parameter (14) | to plan |
 | Violations panel, Violation marker, Overlap area | change a parameter (14) | 14.4, 14.6 |
-| Rotation handle, Anchor link, Pick marks, Nudge-step control | drag keys (15) | 15.5, 15.6 |
+| Rotation handle, Pick marks, Nudge-step control | drag keys (15) | 15.5, 15.6 (Anchor link moved to 13.7, 2026-11-10; 15.6's anchor picker extends it) |
 | Anchor picker | drag keys (15) | 15.6 |
 | Command palette, Context menu, Cheat sheet | drag keys (15) | to plan |
 | Outline context line, Outline marks (shapes, vertices, construction points) | outline follows the keys (17), extended by draw custom shapes (18) | to plan |
