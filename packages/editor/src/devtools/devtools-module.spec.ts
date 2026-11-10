@@ -84,7 +84,8 @@ function connected(container: Container) {
         app: createApp({}),
         inspectorId: ownInspectorId,
         nodeId,
-        path,
+        // The kit consumes the path it is given, and the table's rows outlive one run.
+        path: [...path],
         type: typeof state.value,
         state,
         set: (target: Record<string, unknown>) => {

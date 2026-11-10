@@ -101,13 +101,14 @@ function fakeHost() {
         app: createApp({}),
         inspectorId: ownInspectorId,
         nodeId: testNodeId,
-        path: ['open'],
         type: 'boolean',
         state: { value: true },
         set: (target: Record<string, unknown>) => {
           applyPanelEdit(target, payload.path, payload.state)
         },
         ...overrides,
+        // The kit consumes the path it is given, and the table's rows outlive one run.
+        path: [...(overrides.path ?? ['open'])],
       }
       for (const handler of editHandlers) handler(payload)
     },
