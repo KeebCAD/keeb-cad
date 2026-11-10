@@ -21,6 +21,8 @@ import {
   aPartRef,
   anId,
   aSlot,
+  aSplitForm,
+  aUnibodyForm,
   aVersion,
 } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
@@ -401,6 +403,56 @@ describe('createDerivations', () => {
       mirror.value = { ...mirror.value, meta: { ...mirror.value.meta, gap } }
 
       expect(placements.value).not.toBe(before)
+    })
+  })
+
+  describe('the form', () => {
+    const threeSlots = () => onSlots({ id: anId('a') }, { id: anId('b') }, { id: anId('c') })
+    const zeroRows = () => ({ ids: [], rows: [] })
+
+    it('gives zero-row parts and placements for an unsupported form', async () => {
+      const { parts, placements } = await arrange(
+        withLayout(threeSlots(), { meta: aMeta({ form: aUnibodyForm() }) }),
+      )
+
+      expect({ parts: parts.value.output, placements: placements.value }).toEqual({
+        parts: zeroRows(),
+        placements: zeroRows(),
+      })
+    })
+
+    it('places every slot for split with board reversible', async () => {
+      const { parts, placements } = await arrange(
+        withLayout(threeSlots(), { meta: aMeta({ form: aSplitForm({ board: 'reversible' }) }) }),
+      )
+
+      expect({ parts: parts.value.output.ids, placements: placements.value.ids }).toEqual({
+        parts: [KEY_RUN],
+        placements: ['left/a', 'left/b', 'left/c', 'left/root'],
+      })
+    })
+
+    it('runs no lane for an unsupported form', async () => {
+      const { parts, placements, runner } = await arrange(
+        withLayout(threeSlots(), { meta: aMeta({ form: aUnibodyForm() }) }),
+      )
+
+      void parts.value
+      void placements.value
+
+      expect(runner.runs).toEqual([])
+    })
+
+    it('drops every placement when a whole design replaces the form with an unsupported one', async () => {
+      const { placements, mirror } = await arrange(withLayout(threeSlots()))
+      const before = placements.value.ids
+
+      mirror.value = withLayout(threeSlots(), { meta: aMeta({ form: aUnibodyForm() }) })
+
+      expect({ before, after: placements.value }).toEqual({
+        before: ['left/a', 'left/b', 'left/c', 'left/root'],
+        after: zeroRows(),
+      })
     })
   })
 })

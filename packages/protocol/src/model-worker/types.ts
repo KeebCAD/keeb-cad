@@ -11,6 +11,9 @@ import type {
   Workspace,
 } from '@keeb-cad/schema'
 
+import type { PackedLayoutOutput } from '../layout-output/types'
+import type { PackedPartsOutput } from '../parts-output/types'
+
 export type ModelWorkerMessage = Stamp &
   (
     | {
@@ -26,6 +29,7 @@ export type ModelWorkerMessage = Stamp &
     | { kind: 'focus'; workspace: Workspace }
     | { kind: 'issues'; violations: Frozen<Violation[]> }
     | { kind: 'stage-started'; stage: StageId }
+    | { kind: 'layout-set'; parts: PackedPartsOutput; layout: PackedLayoutOutput }
     | {
         kind: 'derived-files'
         routing: Frozen<RoutingFile>
@@ -38,7 +42,7 @@ export type ToModelWorker = Extract<ModelWorkerMessage, { kind: 'design' | 'patc
 
 export type FromModelWorker = Extract<
   ModelWorkerMessage,
-  { kind: 'issues' | 'stage-started' | 'derived-files' }
+  { kind: 'issues' | 'stage-started' | 'layout-set' | 'derived-files' }
 >
 
 export type DesignKind = Extract<ModelWorkerMessage['kind'], 'design' | 'patches'>

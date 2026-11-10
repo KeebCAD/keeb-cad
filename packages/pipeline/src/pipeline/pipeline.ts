@@ -1,7 +1,13 @@
 import { deepFreeze, DesignMirror, DesignMirrorWriter } from '@keeb-cad/design/worker'
 import { inject } from '@keeb-cad/di'
 import { Dispatcher, type Endpoint } from '@keeb-cad/messaging'
-import type { FromModelWorker, ToModelWorker } from '@keeb-cad/protocol'
+import {
+  buffersOf,
+  type FromModelWorker,
+  packLayoutOutput,
+  packPartsOutput,
+  type ToModelWorker,
+} from '@keeb-cad/protocol'
 import { shallowRef } from '@keeb-cad/reactive'
 import { InvariantError } from '@keeb-cad/result'
 import type { FingerprintsFile, Frozen, RoutingFile, Workspace } from '@keeb-cad/schema'
@@ -85,7 +91,20 @@ export class Pipeline {
       seq,
       stage: 'parts',
     })
-    const { violations } = this.#listening().parts.value
+    const { output, violations } = this.#listening().parts.value
+    const parts = packPartsOutput(output)
+    this.#dispatcher.send<FromModelWorker>(endpoint, {
+      kind: 'stage-started',
+      epoch,
+      seq,
+      stage: 'layout',
+    })
+    const layout = packLayoutOutput(this.#listening().placements.value)
+    this.#dispatcher.send<FromModelWorker>(
+      endpoint,
+      { kind: 'layout-set', epoch, seq, parts, layout },
+      [...buffersOf(parts), ...buffersOf(layout)],
+    )
     this.#dispatcher.send<FromModelWorker>(endpoint, { kind: 'issues', epoch, seq, violations })
     this.#dispatcher.send<FromModelWorker>(endpoint, {
       kind: 'derived-files',

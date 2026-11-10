@@ -3,14 +3,14 @@ title: 'The Layout set reaches main'
 type: 'feature'
 ticket: 22
 created: '2026-11-10'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '192129d399a11ad1c425363443bfc86e8390bb31'
 route: 'full'
 route_source: 'auto'
 risk: 'high'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md'
@@ -100,17 +100,17 @@ Rows 1–6 run in protocol, 7–9 model, 10–15 pipeline, 16–22 workers, 23�
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `packages/protocol/src/parts-output/{parts-output-codec,types}.ts` -- `packPartsOutput` and `readPartsRow` (function); `PackedPartsOutput = { ids; w; h }` and `PartsRow = PartsOutput['rows'][number]` in its `types.ts`.
-- [ ] `packages/protocol/src/layout-output/{layout-output-codec,types}.ts` -- `packLayoutOutput` and `readLayoutRow` (function); `PackedLayoutOutput = { ids; kind; x; y; rot; mirrored; anchorX; anchorY; part; fit; placed }` and `LayoutRow = LayoutOutput['rows'][number]` in its `types.ts`.
-- [ ] `packages/protocol/src/transfer/buffers-of.ts` -- `buffersOf(packed)` (function) lists each column's buffer of either packed output. Numbers are `Float64Array`, `part` `Int32Array`, the rest `Uint8Array`. Export from `index.ts`.
-- [ ] `packages/protocol/src/model-worker/types.ts` -- `{ kind: 'layout-set'; parts: PackedPartsOutput; layout: PackedLayoutOutput }` in `ModelWorkerMessage` and `FromModelWorker`; `messages.types.spec.ts` gains its type rows.
-- [ ] `packages/protocol/src/{parts-output,layout-output,transfer}/*.spec.ts` -- rows 1–6.
-- [ ] `packages/model/src/form/is-supported-form.ts` -- `isSupportedForm(form)` (function): true only for split with board `reversible`, with its own spec over the three forms.
-- [ ] `packages/model/src/parts/create-derivations.ts` -- a `form` selector computed (inside `createDerivations`, a function); `parts` and `placements` give zero rows, with no lane run, when `isSupportedForm` is false, as literals inline in the two computeds. No other helper goes in this file. Spec rows 7–9 in `create-derivations.spec.ts`, using its `FakeRunner`'s `runs`.
-- [ ] `packages/pipeline/src/pipeline/{pipeline,types}.ts` -- `PipelineDerivations` gains `placements`; `#runStages` posts stage-started `parts`, reads `parts`, posts stage-started `layout`, reads `placements`, then posts `layout-set` with both packed and `buffersOf` both as the transfer list, then `issues` and `derived-files` as now. Spec rows 10–15.
-- [ ] `packages/workers/src/stage-snapshots/{find-row,types}.ts` -- `findRow(ids, id): Option<number>` (function), binary search by `compareId`. `Posted<T> = { seq: number; output: T }` in `types.ts`. Spec row 16.
-- [ ] `packages/workers/src/model-worker/model-worker-lifecycle.ts` (service) -- `parts` and `layout` getters, each `Option<Posted<…>>` over its own `shallowRef`, set in the one `layout-set` handler, which also resets `#crashes` and clears `#runningStage`; `layoutSetArrived` (both at the store's current seq); `layoutRow(id): Option<LayoutRow>` (`findRow`, then `protocol`'s `readLayoutRow`). Export `findRow` and `Posted` from `index.ts`. Spec rows 17–22. `testing/recording-model-worker-lifecycle.ts` is unchanged. The new getters carry no comment restating them (the `issues` getter's L23 comment is not copied).
-- [ ] `app/src/layout-set.spec.ts` -- rows 23–25 through the real model worker.
+- [x] `packages/protocol/src/parts-output/{parts-output-codec,types}.ts` -- `packPartsOutput` and `readPartsRow` (function); `PackedPartsOutput = { ids; w; h }` and `PartsRow = PartsOutput['rows'][number]` in its `types.ts`.
+- [x] `packages/protocol/src/layout-output/{layout-output-codec,types}.ts` -- `packLayoutOutput` and `readLayoutRow` (function); `PackedLayoutOutput = { ids; kind; x; y; rot; mirrored; anchorX; anchorY; part; fit; placed }` and `LayoutRow = LayoutOutput['rows'][number]` in its `types.ts`.
+- [x] `packages/protocol/src/transfer/buffers-of.ts` -- `buffersOf(packed)` (function) lists each column's buffer of either packed output. Numbers are `Float64Array`, `part` `Int32Array`, the rest `Uint8Array`. Export from `index.ts`.
+- [x] `packages/protocol/src/model-worker/types.ts` -- `{ kind: 'layout-set'; parts: PackedPartsOutput; layout: PackedLayoutOutput }` in `ModelWorkerMessage` and `FromModelWorker`; `messages.types.spec.ts` gains its type rows.
+- [x] `packages/protocol/src/{parts-output,layout-output,transfer}/*.spec.ts` -- rows 1–6.
+- [x] `packages/model/src/form/is-supported-form.ts` -- `isSupportedForm(form)` (function): true only for split with board `reversible`, with its own spec over the three forms.
+- [x] `packages/model/src/parts/create-derivations.ts` -- a `form` selector computed (inside `createDerivations`, a function); `parts` and `placements` give zero rows, with no lane run, when `isSupportedForm` is false, as literals inline in the two computeds. No other helper goes in this file. Spec rows 7–9 in `create-derivations.spec.ts`, using its `FakeRunner`'s `runs`.
+- [x] `packages/pipeline/src/pipeline/{pipeline,types}.ts` -- `PipelineDerivations` gains `placements`; `#runStages` posts stage-started `parts`, reads `parts`, posts stage-started `layout`, reads `placements`, then posts `layout-set` with both packed and `buffersOf` both as the transfer list, then `issues` and `derived-files` as now. Spec rows 10–15.
+- [x] `packages/workers/src/stage-snapshots/{find-row,types}.ts` -- `findRow(ids, id): Option<number>` (function), binary search by `compareId`. `Posted<T> = { seq: number; output: T }` in `types.ts`. Spec row 16.
+- [x] `packages/workers/src/model-worker/model-worker-lifecycle.ts` (service) -- `parts` and `layout` getters, each `Option<Posted<…>>` over its own `shallowRef`, set in the one `layout-set` handler, which also resets `#crashes` and clears `#runningStage`; `layoutSetArrived` (both at the store's current seq); `layoutRow(id): Option<LayoutRow>` (`findRow`, then `protocol`'s `readLayoutRow`). Export `findRow` and `Posted` from `index.ts`. Spec rows 17–22. `testing/recording-model-worker-lifecycle.ts` is unchanged. The new getters carry no comment restating them (the `issues` getter's L23 comment is not copied).
+- [x] `app/src/layout-set.spec.ts` -- rows 23–25 through the real model worker.
 
 **Acceptance Criteria:**
 - Given the boundary table, when `pnpm test` runs, then each row has a passing test at its level.
@@ -118,9 +118,58 @@ Rows 1–6 run in protocol, 7–9 model, 10–15 pipeline, 16–22 workers, 23�
 
 ## Implementation Notes
 
+- Toggled bug: dropping the `layout-set` send from `Pipeline.#runStages` turned rows 23–25 (`app/src/layout-set.spec.ts`) red in Chromium and Firefox; restored.
+- `packages/pipeline/src/pause/blueprint-pause.spec.ts` also builds `PipelineDerivations` and gained `placements`; the Code Map missed it.
+- Decision (build): `packages/protocol/tsconfig.vitest.json`'s comment now says the specs run on Node too, not left as "type-only", because protocol is a configless runtime project. Evidence: root `vitest.config.ts` makes every `packages/*` without its own `vitest.config.ts` a runtime project (`configlessProjects`); `pnpm test` ran the codec specs. Comment only, no setting changed.
+- Decision (build): a row outside a packed output throws `RangeError` in `valueAt`, not `undefined` or NaN, because main reaches a row only through an id `findRow` found, so an outside row is a caller's bug (plan: `layoutRow` = `findRow`, then `readLayoutRow`).
+- Decision (build): an unknown enum code throws `RangeError` in `optionOfCode`, not a fallback option, because `packLayoutOutput` writes only codes from `kindCodes`/`fitCodes` (`Record<Kind, number>`, exhaustive by `tsc`). Tested directly in `option-of-code.spec.ts` (code 9), since no packed output can hold one.
+- Decision (build): a fractional row throws `RangeError` in `valueAt` too, not a truncated read, because a row index comes only from `findRow`, which returns whole numbers; `value-at.spec.ts` row 0.5. Its message says "outside", which is loose for a fraction (logged low, pass 2).
+- Decision (build): `packed.ids` is the output's own array, not a copy, because only typed-array buffers are transferred and structured clone copies `ids` (AD-11 Fresh buffers names buffers only).
+- Decision (build): the enum read is a reverse search over the one `Record`, not a second reverse table, because the plan's Decision makes the schema's order the one order.
+- Decision (build): app rows assert a slot's run as `key@${argumentHash({})}`, not only a row in range, because NewDesign's `defaultPart` is `key` with no inputs and the run id is '<part id>@<hash of its resolved inputs>' (Data Schema `PartsOutput`).
+- Review patches (pass 1): `valueAt` moved to `packages/protocol/src/packed-column/`, `optionOfCode` to `layout-output/option-of-code.ts`.
+- Real-host run: `pnpm vitest run app/src/layout-set.spec.ts` → `Test Files 2 passed (2)`, `Tests 6 passed (6)` (real `Worker`, Chromium and Firefox); agrees with `FakeWorker` in `model-worker-lifecycle.spec.ts`. `pipeline-stages.spec.ts` runs a real `MessageChannel`.
+- Verification: `pnpm test` 475 files, 3781 tests passed, no type errors; `pnpm typecheck` clean; `pnpm depcruise` no violations.
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+### Pass 1 (quick, test-reviewer), 2026-11-10: high 0, medium 2, low 10, false 3, maybe-false 0
+
+| Finding | Verdict | Route | Evidence / action |
+|---|---|---|---|
+| layout codec fresh-buffer test checks 3 of 10 columns (row 6) | medium | patch | spec L81-83 compares x, part, kind only; all ten columns compared |
+| row 13 test builds expected with the production packers and reads nothing back (both lenses) | medium | patch | spec L298-301 `layoutSetAt(...)`; read back through the row readers against literal rows |
+| row 13 can't catch a transferred cache buffer (quick) | false | reject | no derivation holds a typed array: `parts`/`placements` are plain objects and `pack*` builds new arrays per call; the risk has no state to arise from |
+| `isSupportedForm` titles say "supports" on false rows | low | patch | title template `'supports %s: %s'` omits `expected` |
+| `valueAt` tested only through codecs; thresholds incomplete | low | patch | own spec with −1, 0, last, count, empty, 0.5 |
+| fractional row throws with no test or decision | low | patch | row 0.5 in `valueAt`'s spec |
+| `valueAt` in `transfer/` (folders by concept) | low | patch | moved to its own concept folder |
+| `layout-codes.ts` holds tables and a function | low | patch | `optionOfCode` gets its own file |
+| `optionOfCode` throw untested | low | patch | row `optionOfCode(kindCodes, 9)` |
+| codes not tied to schema's picklist order by any check | low | reject | pack and read share one table, so any order round-trips; a tie needs `valibot` in protocol's specs, more than a direct correction |
+| unibody app test: parts half can't fail | low | patch | `aDesign()` layout has no slots; arranged with a slot |
+| lifecycle tests lean on helper-default ids | low | patch | ids passed explicitly |
+| shared `threeSlots`/`zeroRows` in a describe callback | low | patch | built per test |
+| transfer test spies on `postMessage`, `?? {}` hides a missing post | false | reject | the sender's posted object is reachable only through the call; the expected value names every column, so `{}` from a missing post fails `toEqual` |
+| "runs no lane" lacks a positive control | false | reject | `create-derivations.spec.ts:131` asserts `runs` has length 1 for a supported design |
+| `POSTS_PER_SEQ` and `objectContaining` in pipeline.spec | low | reject | reviewer judged acceptable; content is asserted in pipeline-stages.spec |
+
+### Pass 2 (quick, test-reviewer, on the diff since pass 1), 2026-11-10: high 0, medium 0, low 8, false 0, maybe-false 0
+
+Nothing above low and no frozen line broken: the review loop ends here; these lows are logged, not patched.
+
+| Finding | Verdict | Route | Evidence / action |
+|---|---|---|---|
+| `value-at.spec.ts` shares a module-level `Float64Array` (both lenses) | low | logged | Nothing writes to it; AGENTS "no mutable state at module level in a spec" |
+| lifecycle "holds each output" compares the posted object by identity (`FakeWorker.post` doesn't clone) | low | logged | `seq` half asserted; content is read back in rows 17 (`layoutRow`) and 23–25 (real worker) |
+| row 13 read-back uses one row per output | low | logged | Row 13 is a one-row case as written |
+| row 13 read-back forces the post's shape with `as unknown as` | low | logged | Typing `posts` as `FromModelWorker` would drop the cast |
+| row 13 "values unchanged" asserts `parts.output`, not the whole `ResolvedParts` | low | logged | Only `output` is packed; `slots`/`violations` never reach the codec |
+| `isSupportedForm` title word and `expected` are separate columns | low | logged | Current rows agree; deriving the word from `expected` would tie them |
+| plan note said `optionOfCode`'s throw is untested | low | logged | Implementation Notes corrected (documentation, no code) |
+| fractional-row throw had no decision; its message says "outside" | low | logged | Decision (build) added to Implementation Notes; message wording left |
 
 ## Design Notes
 

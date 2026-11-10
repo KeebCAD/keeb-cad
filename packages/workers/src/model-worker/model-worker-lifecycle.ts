@@ -1,11 +1,20 @@
 import { type Committed, type CommitEvent, DesignStore } from '@keeb-cad/design'
 import { inject } from '@keeb-cad/di'
 import { Dispatcher } from '@keeb-cad/messaging'
-import type { FromModelWorker, ToModelWorker } from '@keeb-cad/protocol'
+import {
+  type FromModelWorker,
+  type LayoutRow,
+  type PackedLayoutOutput,
+  type PackedPartsOutput,
+  readLayoutRow,
+  type ToModelWorker,
+} from '@keeb-cad/protocol'
 import { shallowRef } from '@keeb-cad/reactive'
 import { InvariantError, Option } from '@keeb-cad/result'
 import type { Workspace } from '@keeb-cad/schema'
 
+import { findRow } from '../stage-snapshots/find-row'
+import type { Posted } from '../stage-snapshots/types'
 import type {
   ModelWorkerStatus,
   PostedIssues,
@@ -28,6 +37,25 @@ export class ModelWorkerLifecycle {
 
   get runningStage(): Option<RunningStage> {
     return Option.fromNullable(this.#runningStage.value)
+  }
+
+  get parts(): Option<Posted<PackedPartsOutput>> {
+    return Option.fromNullable(this.#parts.value)
+  }
+
+  get layout(): Option<Posted<PackedLayoutOutput>> {
+    return Option.fromNullable(this.#layout.value)
+  }
+
+  get layoutSetArrived(): boolean {
+    const seq = this.#store.current.map((current) => current.seq).getOrUndefined()
+    return seq !== undefined && this.#parts.value?.seq === seq && this.#layout.value?.seq === seq
+  }
+
+  layoutRow(id: string): Option<LayoutRow> {
+    return this.layout.flatMap(({ output }) =>
+      findRow(output.ids, id).map((row) => readLayoutRow(output, row)),
+    )
   }
 
   start(spawn: Spawn, workspace: Workspace = 'layout'): void {
@@ -64,6 +92,8 @@ export class ModelWorkerLifecycle {
   readonly #status = shallowRef<ModelWorkerStatus>('idle')
   readonly #issues = shallowRef<PostedIssues | undefined>(undefined)
   readonly #runningStage = shallowRef<RunningStage | undefined>(undefined)
+  readonly #parts = shallowRef<Posted<PackedPartsOutput> | undefined>(undefined)
+  readonly #layout = shallowRef<Posted<PackedLayoutOutput> | undefined>(undefined)
   readonly #dispatcher = inject(Dispatcher)
   #spawn: Spawn | undefined
   #workspace: Workspace = 'layout'
@@ -132,6 +162,12 @@ export class ModelWorkerLifecycle {
         this.#crashes = 0
         this.#runningStage.value = undefined
         this.#issues.value = { seq, violations }
+      },
+      'layout-set': ({ seq, parts, layout }) => {
+        this.#crashes = 0
+        this.#runningStage.value = undefined
+        this.#parts.value = { seq, output: parts }
+        this.#layout.value = { seq, output: layout }
       },
       'stage-started': ({ stage }) => {
         this.#runningStage.value = { stage, arrivedAt: performance.now() }
