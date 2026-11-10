@@ -715,7 +715,7 @@ graph LR
     - Halves round away from zero on the decimal value (`1.005` → `1.01`); a value that rounds to zero prints `0`, never `-0`.
     - `≈` goes before the number (`≈ 1.23`); the formatter takes `(value, unit)` and appends the unit (`19 mm`), with an optional options argument.
     - A readout of a pointer sample (the cursor, `x 12.34 y −5.67`) shows no `≈` and no unit: the options' `readout` form, because a pointer sample's sub-pixel remainder means nothing (Sergii 2026-11-10).
-    - Zoom shows as a whole percent through the `percent` unit (`100%`, no space); 100% is 96/25.4 px per mm, the CSS `mm`.
+    - Zoom shows as a whole percent through the `percent` unit (`100%`, no space); 100% is 96/25.4 CSS px per mm, the browser's `mm`, which matches physical size only on a screen whose scaling makes a CSS inch a real inch.
     - Results are always in mm.
     - Stored values keep full precision.
   - **Long lists** are not virtualized until a frame-budget check fails (Verification layer 7). The switch is Reka's virtualizers, inside `ui`'s list widgets.
