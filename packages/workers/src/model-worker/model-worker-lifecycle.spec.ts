@@ -7,13 +7,16 @@ import {
   type Writable,
 } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
+import { packLayoutOutput, packPartsOutput } from '@keeb-cad/protocol'
 import { InvariantError, Option } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
-import type { Design, StageId, Workspace } from '@keeb-cad/schema'
+import type { Design, LayoutOutput, PartsOutput, StageId, Workspace } from '@keeb-cad/schema'
 import {
   aDesign,
   aFingerprintsFile,
+  aLayoutOutput,
   aMeta,
+  aPartsOutput,
   aRevision,
   aRoutingFile,
   aStageId,
@@ -100,6 +103,30 @@ function issuesAt(epoch: number, seq: number, violations: unknown[] = []) {
 
 function stageStartedAt(epoch: number, seq: number, stage: StageId = aStageId()) {
   return { kind: 'stage-started', epoch, seq, stage }
+}
+
+const SLOT_ROW: LayoutOutput['rows'][number] = {
+  kind: 'slot',
+  frame: { x: 0, y: 19, rot: 0, mirrored: false },
+  anchorAt: { x: 0, y: 19 },
+  part: 0,
+  fit: 'fitted',
+  placed: true,
+}
+
+function layoutSetAt(
+  epoch: number,
+  seq: number,
+  parts: PartsOutput = aPartsOutput(),
+  layout: LayoutOutput = aLayoutOutput({ ids: ['left/a'], rows: [SLOT_ROW] }),
+) {
+  return {
+    kind: 'layout-set',
+    epoch,
+    seq,
+    parts: packPartsOutput(parts),
+    layout: packLayoutOutput(layout),
+  }
 }
 
 function derivedFilesAt(epoch: number, seq: number, revision: string) {
@@ -320,6 +347,21 @@ describe('ModelWorkerLifecycle', () => {
       expectOk(store.run(RenameDesign, { name: 'Corne v2' }))
 
       expect(spawned.map((worker) => worker.received.length)).toEqual(before)
+    })
+
+    it('starts counting again after a layout-set its gate accepts', async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+      latest(spawned).crash()
+      latest(spawned).crash()
+
+      latest(spawned).post(layoutSetAt(3, committed(store).seq))
+      latest(spawned).crash()
+
+      expect({ spawned: spawned.length, status: lifecycle.status }).toEqual({
+        spawned: 4,
+        status: 'running',
+      })
     })
 
     it('starts counting again after an issues post its gate accepts', async () => {
@@ -624,6 +666,17 @@ describe('ModelWorkerLifecycle', () => {
       expect(lifecycle.runningStage).toEqual(Option.none())
     })
 
+    it('clears on an accepted layout-set', async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+      const { seq } = committed(store)
+      latest(spawned).post(stageStartedAt(1, seq))
+
+      latest(spawned).post(layoutSetAt(1, seq))
+
+      expect(lifecycle.runningStage).toEqual(Option.none())
+    })
+
     it('stays on an issues post below the latest seq', async () => {
       const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true, renamable: true })
       lifecycle.start(spawn)
@@ -637,6 +690,101 @@ describe('ModelWorkerLifecycle', () => {
       expect(lifecycle.runningStage).toEqual(
         Option.some({ stage: 'plates', arrivedAt: expect.any(Number) }),
       )
+    })
+  })
+
+  describe('the layout set', () => {
+    it("holds each output of a layout-set at main's latest seq, with that seq", async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+      const { seq } = committed(store)
+      const posted = layoutSetAt(
+        1,
+        seq,
+        aPartsOutput({ ids: ['key@h'], rows: [{ w: 18, h: 18 }] }),
+        aLayoutOutput({ ids: ['left/a'], rows: [SLOT_ROW] }),
+      )
+
+      latest(spawned).post(posted)
+
+      expect({ parts: lifecycle.parts, layout: lifecycle.layout }).toEqual({
+        parts: Option.some({ seq, output: posted.parts }),
+        layout: Option.some({ seq, output: posted.layout }),
+      })
+    })
+
+    it.each([
+      ['a posted id', 'left/a', Option.some(SLOT_ROW)],
+      ['an id the post lacks', 'left/b', Option.none()],
+    ])('reads the layout row of %s', async (_role, id, expected) => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+
+      latest(spawned).post(
+        layoutSetAt(
+          1,
+          committed(store).seq,
+          aPartsOutput({ ids: ['key@h'], rows: [{ w: 18, h: 18 }] }),
+          aLayoutOutput({ ids: ['left/a'], rows: [SLOT_ROW] }),
+        ),
+      )
+
+      expect(lifecycle.layoutRow(id)).toEqual(expected)
+    })
+
+    it('reads no layout row before any layout-set', async () => {
+      const { lifecycle } = await arrange({ loaded: true })
+
+      expect(lifecycle.layoutRow('left/a')).toEqual(Option.none())
+    })
+
+    it('has not arrived before any layout-set', async () => {
+      const { lifecycle, spawn } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+
+      expect(lifecycle.layoutSetArrived).toBe(false)
+    })
+
+    it("has arrived with a layout-set at main's latest seq", async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
+      lifecycle.start(spawn)
+
+      latest(spawned).post(layoutSetAt(1, committed(store).seq))
+
+      expect(lifecycle.layoutSetArrived).toBe(true)
+    })
+
+    it('has not arrived after a commit, until the next layout-set', async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true, renamable: true })
+      lifecycle.start(spawn)
+      latest(spawned).post(layoutSetAt(1, committed(store).seq))
+
+      expectOk(store.run(RenameDesign, { name: 'Corne v2' }))
+      const afterCommit = lifecycle.layoutSetArrived
+      latest(spawned).post(layoutSetAt(1, committed(store).seq))
+
+      expect({ afterCommit, afterNextSet: lifecycle.layoutSetArrived }).toEqual({
+        afterCommit: false,
+        afterNextSet: true,
+      })
+    })
+
+    it("keeps both outputs on a layout-set below main's latest seq", async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true, renamable: true })
+      lifecycle.start(spawn)
+      const { seq } = committed(store)
+      const kept = layoutSetAt(1, seq)
+      latest(spawned).post(kept)
+      expectOk(store.run(RenameDesign, { name: 'Corne v2' }))
+
+      latest(spawned).post(
+        layoutSetAt(1, seq, aPartsOutput({ ids: [], rows: [] }), aLayoutOutput()),
+      )
+
+      expect({ parts: lifecycle.parts, layout: lifecycle.layout }).toEqual({
+        parts: Option.some({ seq, output: kept.parts }),
+        layout: Option.some({ seq, output: kept.layout }),
+      })
     })
   })
 })

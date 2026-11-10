@@ -1,7 +1,9 @@
 import type { DesignPatch, StageId, Workspace } from '@keeb-cad/schema'
 import { describe, expectTypeOf, it } from 'vitest'
 
-import type { ModelWorkerMessage } from './types'
+import type { PackedLayoutOutput } from '../layout-output/types'
+import type { PackedPartsOutput } from '../parts-output/types'
+import type { FromModelWorker, ModelWorkerMessage } from './types'
 
 type Of<K extends ModelWorkerMessage['kind']> = Extract<ModelWorkerMessage, { kind: K }>
 
@@ -10,6 +12,16 @@ describe('ModelWorkerMessage', () => {
     expectTypeOf<Of<'patches'>['patches']>().toEqualTypeOf<readonly DesignPatch[]>()
     expectTypeOf<Of<'focus'>['workspace']>().toEqualTypeOf<Workspace>()
     expectTypeOf<Of<'stage-started'>['stage']>().toEqualTypeOf<StageId>()
+  })
+
+  it('carries the layout set packed, from the model worker', () => {
+    expectTypeOf<Of<'layout-set'>['parts']>().toEqualTypeOf<PackedPartsOutput>()
+    expectTypeOf<Of<'layout-set'>['layout']>().toEqualTypeOf<PackedLayoutOutput>()
+    expectTypeOf<Of<'layout-set'>>().toExtend<FromModelWorker>()
+  })
+
+  it('refuses a layout-set without its parts', () => {
+    expectTypeOf<Omit<Of<'layout-set'>, 'parts'>>().not.toExtend<ModelWorkerMessage>()
   })
 
   it('accepts issues with no violations', () => {

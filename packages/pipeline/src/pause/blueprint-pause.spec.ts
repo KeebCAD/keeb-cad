@@ -8,6 +8,7 @@ import {
   aBlueprintId,
   aDesign,
   aFingerprintsFile,
+  aLayoutOutput,
   aResolvedParts,
   aRevision,
   aRoutingFile,
@@ -234,7 +235,11 @@ describe('BlueprintPause', () => {
   ])('enters the pause when %s arrives', async (_role, messages) => {
     const { pipeline, runner } = await arrange()
     const { port1, port2 } = new MessageChannel()
-    pipeline.listen(port1, { parts: { value: aResolvedParts() }, pins: { value: [] } })
+    pipeline.listen(port1, {
+      parts: { value: aResolvedParts() },
+      placements: { value: aLayoutOutput() },
+      pins: { value: [] },
+    })
 
     for (const message of messages) port2.postMessage(message)
 

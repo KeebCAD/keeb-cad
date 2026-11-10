@@ -7,6 +7,7 @@ import {
   type Frozen,
   type Id,
   type ItemId,
+  type LayoutOutput,
   type LibraryData,
   type PartsOutput,
   type ReadonlyRef,
@@ -14,6 +15,7 @@ import {
   type Violation,
 } from '@keeb-cad/schema'
 
+import { isSupportedForm } from '../form/is-supported-form'
 import { placeLayout } from '../placement/place-layout'
 import { partViolationMessage } from './part-violation-message'
 import { partsLaneCalls, rectangleOutputOf } from './parts-lane-calls'
@@ -36,10 +38,13 @@ export function createDerivations(
   const designParts = computed(() => design.value.parts)
   const layout = computed(() => design.value.layout)
   const gap = computed(() => design.value.meta.gap)
+  const form = computed(() => design.value.meta.form)
   const slotRuns = computed(() => slotPartRuns(layout.value, defaultPart.value))
   const pins = computed(() => pinsOf(libraryVersions.value))
 
   const parts = computed((): ResolvedParts => {
+    if (!isSupportedForm(form.value))
+      return { output: { ids: [], rows: [] }, slots: {}, violations: [] }
     // Read for its dependency: a bump means a pause changed what a run answers.
     void runner.lanesReady.value
     const lookups = {
@@ -116,7 +121,11 @@ export function createDerivations(
     return { output: partsOutputOf(rectangles), slots, violations }
   })
 
-  const placements = computed(() => placeLayout(layout.value, gap.value, parts.value))
+  const placements = computed((): LayoutOutput =>
+    isSupportedForm(form.value)
+      ? placeLayout(layout.value, gap.value, parts.value)
+      : { ids: [], rows: [] },
+  )
 
   return { parts, pins, placements }
 }
