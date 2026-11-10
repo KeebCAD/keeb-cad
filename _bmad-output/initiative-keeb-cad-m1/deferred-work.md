@@ -410,3 +410,11 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
   summary: Precedent fix: packages/commands/src/parts/delete-part.ts casts the draft with "as Mutable<Design>", which hides AD-2's compile check that Writable<Design> is assignable to Mutable<Design>; drop the cast.
   evidence: spine AD-2 "Writable<Design> must be assignable to Mutable<Design>, checked by the compiler"; found by 13.2's final conformance pass.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
+  summary: Flaky under full-suite load, untouched by 13.2: tooling/lint/no-focused-tests.spec.ts "allows a plain it" failed once in pnpm test and passed alone three times; it loads the ESLint config cold under COLD_CONFIG_TIMEOUT. Run flaky-triage on it.
+  evidence: 2026-11-10, 13.2 branch, full run 1 after review patches; 3 isolated passes; git diff since baseline touches nothing under tooling/lint.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
+  summary: Flaky under full-suite load, untouched by 13.2: packages/editor/src/slide-out/slide-out.spec.ts (Firefox) "opens and closes from the rail button, which says whether it is expanded" failed once in pnpm test and passed alone twice. Run flaky-triage on it.
+  evidence: 2026-11-10, 13.2 branch, full run 2 after review patches; 2 isolated passes; the branch changes nothing in packages/editor.

@@ -72,6 +72,14 @@ export class DesignStore {
       .exhaustive()
   }
 
+  // For a command named as data (a reference-design script, a posted fix): actions are not run by id.
+  runById(command: string, input: unknown): Result<void, Rejection> {
+    const handle = this.#commands.find((entry) => entry.id === command)
+    return handle === undefined
+      ? Result.err({ kind: 'unknown-command', command })
+      : this.#runCommand(handle, input)
+  }
+
   available(handle: CommandHandle | ActionHandle): boolean {
     return match(handle)
       .with(
@@ -153,7 +161,7 @@ export class DesignStore {
       .flatMap(({ design: next, patches }): Result<void, Rejection> => {
         if (patches.length === 0) return Result.ok()
         this.#ensureValidDesign(next, handle.id)
-        return checkStructure(next).map(() => {
+        return checkStructure(design, next).map(() => {
           const { seq, revision } = this.#write({
             ...current,
             design: next,

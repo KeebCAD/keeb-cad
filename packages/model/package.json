@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@keeb-cad/blueprint": "workspace:*",
+    "@keeb-cad/expr": "workspace:*",
+    "@keeb-cad/geometry": "workspace:*",
     "@keeb-cad/reactive": "workspace:*",
     "@keeb-cad/result": "workspace:*",
     "@keeb-cad/schema": "workspace:*",

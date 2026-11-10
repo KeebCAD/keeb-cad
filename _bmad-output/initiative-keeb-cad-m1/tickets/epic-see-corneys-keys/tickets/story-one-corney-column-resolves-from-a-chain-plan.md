@@ -3,14 +3,14 @@ title: 'One Corney column resolves from a chain'
 type: 'feature'
 ticket: 2
 created: '2026-11-10'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: 'a8d2637053bd1f247e2213664342089432d3a57d'
 route: 'full'
 route_source: 'auto'
 risk: 'high'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md'
@@ -115,26 +115,26 @@ Rows 1–3 run in geometry, 4–8 placement, 9–11 schema, 12–13 the store, 1
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `packages/schema/src/{quantity,length,delta,angle,vec2,offset,gap,layout-output}.ts`, one schema or factory per file: `quantity(unit)` (function), declared `v.GenericSchema<string, Quantity<U>>`, with the wrong-unit literal check; `lengthSchema`, `deltaSchema` and `angleSchema` each add `metadata({ quantity })`. `layoutOutputSchema` is `{ ids, rows }` per the Data Schema. Types go in `types.ts`, exports in `index.ts`.
-- [ ] `packages/schema/src/{layout,meta}.ts`, `types.ts` -- `offset?` on nodes, `gap` on meta. `ModelRejectionKind` gains `id-taken`, `root-required`, `unknown-target` and `index-out-of-range`; `Rejection` gains `unknown-command`.
-- [ ] `packages/schema/src/testing/{length,delta,angle,vec2,offset,gap,layout-output}.ts` and specs -- builders `aLength`, `aDelta`, `anAngle`, `aVec2`, `anOffset`, `aGap`, `aLayoutOutput` (function). The scalar builders (`aLength`, `aDelta`, `anAngle`) show they return their default, return their argument and refuse what their schema refuses. The object builders, `aMeta` with `gap` and the layout builders with `offset`, get one `it.each` row per field.
-- [ ] `packages/geometry/src/{affine,compose,frame-of,types}.ts`, `index.ts` -- `translation`, `rotation` (function) in `affine.ts`; `compose(a, b)` and `frameOf(matrix)` (function). `frameOf` returns `{ x, y, rot }` with rot = atan2 in degrees, and −180 becomes 180.
-- [ ] `packages/model/src/references/{walk-references,types}.ts` -- `walkReferences(design)` (function) walks schema and value through `v.getMetadata` (`refKind`, `expression`) and yields `{ path, kind, target }`, in one file with no per-section code.
-- [ ] `packages/model/src/check-structure.ts` -- `checkStructure(previous, next)` (function), using the walk: unknown-target for a design-local `ref()` target that `next` lacks or holds as another kind, and `previous` didn't. `lib:` targets are skipped.
-- [ ] `packages/model/src/layout-editing/{add-node,duplicate-node,delete-node,copy-id,types}.ts` -- `addNode` (function), `duplicateNode` (function) and `deleteNode` (function) over `Mutable<Design>`, and `copyId` (function) for the `-N` rule. Export them and `walkReferences` from `main.ts`, and `walkReferences` from `index.ts`. `packages/model/package.json` gains `@keeb-cad/geometry` and `@keeb-cad/expr`.
-- [ ] `packages/design/src/store/design-store.ts` -- `runById(command: string, input: unknown): Result<void, Rejection>` on DesignStore (service), commands only (the spine: "The store resolves a command id"). `checkStructure` gets the committed design as `previous`.
-- [ ] `packages/commands/src/layout/` -- `AddGroup`, `AddSlot`, `DuplicateNode` and `DeleteNode` command classes (service), each with its input schema file and its input type in `layout/types.ts`; and `layoutCommandsModule`, a plain `Module` object as `partsCommandsModule` is. `apply` passes the draft to the operation without the `as Mutable<Design>` cast that `parts/delete-part.ts` uses. If `tsc` refuses that, record the error as a `Decision (build):`. Inputs:
+- [x] `packages/schema/src/{quantity,length,delta,angle,vec2,offset,gap,layout-output}.ts`, one schema or factory per file: `quantity(unit)` (function), declared `v.GenericSchema<string, Quantity<U>>`, with the wrong-unit literal check; `lengthSchema`, `deltaSchema` and `angleSchema` each add `metadata({ quantity })`. `layoutOutputSchema` is `{ ids, rows }` per the Data Schema. Types go in `types.ts`, exports in `index.ts`.
+- [x] `packages/schema/src/{layout,meta}.ts`, `types.ts` -- `offset?` on nodes, `gap` on meta. `ModelRejectionKind` gains `id-taken`, `root-required`, `unknown-target` and `index-out-of-range`; `Rejection` gains `unknown-command`.
+- [x] `packages/schema/src/testing/{length,delta,angle,vec2,offset,gap,layout-output}.ts` and specs -- builders `aLength`, `aDelta`, `anAngle`, `aVec2`, `anOffset`, `aGap`, `aLayoutOutput` (function). The scalar builders (`aLength`, `aDelta`, `anAngle`) show they return their default, return their argument and refuse what their schema refuses. The object builders, `aMeta` with `gap` and the layout builders with `offset`, get one `it.each` row per field.
+- [x] `packages/geometry/src/{affine,compose,frame-of,types}.ts`, `index.ts` -- `translation`, `rotation` (function) in `affine.ts`; `compose(a, b)` and `frameOf(matrix)` (function). `frameOf` returns `{ x, y, rot }` with rot = atan2 in degrees, and −180 becomes 180.
+- [x] `packages/model/src/references/{walk-references,types}.ts` -- `walkReferences(design)` (function) walks schema and value through `v.getMetadata` (`refKind`, `expression`) and yields `{ path, kind, target }`, in one file with no per-section code.
+- [x] `packages/model/src/check-structure.ts` -- `checkStructure(previous, next)` (function), using the walk: unknown-target for a design-local `ref()` target that `next` lacks or holds as another kind, and `previous` didn't. `lib:` targets are skipped.
+- [x] `packages/model/src/layout-editing/{add-node,duplicate-node,delete-node,copy-id,types}.ts` -- `addNode` (function), `duplicateNode` (function) and `deleteNode` (function) over `Mutable<Design>`, and `copyId` (function) for the `-N` rule. Export them and `walkReferences` from `main.ts`, and `walkReferences` from `index.ts`. `packages/model/package.json` gains `@keeb-cad/geometry` and `@keeb-cad/expr`.
+- [x] `packages/design/src/store/design-store.ts` -- `runById(command: string, input: unknown): Result<void, Rejection>` on DesignStore (service), commands only (the spine: "The store resolves a command id"). `checkStructure` gets the committed design as `previous`.
+- [x] `packages/commands/src/layout/` -- `AddGroup`, `AddSlot`, `DuplicateNode` and `DeleteNode` command classes (service), each with its input schema file and its input type in `layout/types.ts`; and `layoutCommandsModule`, a plain `Module` object as `partsCommandsModule` is. `apply` passes the draft to the operation without the `as Mutable<Design>` cast that `parts/delete-part.ts` uses. If `tsc` refuses that, record the error as a `Decision (build):`. Inputs:
   - `AddSlot`: `{ parent?, index?, id?, part?, inputs?, offset? }`.
   - `AddGroup`: a variant on `arrangement`, chain with `axis`, plus `{ parent?, index?, id?, defaultPart?, offset? }`.
   - `DuplicateNode`: `{ id }`. `DeleteNode`: `{ ids }`.
   - `index` is a whole number of 0 or more.
   Export from `commands/src/index.ts` and wire into `app/src/main-modules.ts`. `new-design.ts` sets `gap: { x: '1mm', y: '1mm' }`.
-- [ ] `packages/model/src/placement/{place-slot,place-layout,extent,types}.ts` -- `placeSlot` (function): anchor frame plus offset gives a world frame. `extent` (function): a node's `near`/`far` along an axis. `placeLayout(layout, gap, parts)` (function) returns left-side `LayoutOutput`.
-- [ ] `packages/model/src/parts/create-derivations.ts`, `parts/types.ts` -- add a `gap` selector computed and a `placements` computed (each a computed inside `createDerivations`, a function) calling `placeLayout`. `Derivations` gains `placements`. Every new helper lives in `placement/`, not this file.
-- [ ] `packages/design-file/src/round-trip.spec.ts`, `schema/src/testing/meta.ts` -- `gap` in the canonical design.
-- [ ] `reference-designs/src/scripts/{corney-island-layout,types}.ts`, `scripts/index.ts`, `package.json` -- `corneyIslandLayout: LayoutScript` (data, function-free), with `type LayoutScript = { command: string; input: unknown }[]` in `scripts/types.ts`. It is exported as the subpath `./scripts`, with no Node imports. Its commands: AddGroup `outer` (chain y, no parent), then AddSlot `outer-bottom`, `outer-home` and `outer-top` under it.
-- [ ] `.dependency-cruiser.mts` GRAPH `app` row, `app/package.json` -- add `reference-designs` as a dev dependency, test files only (the spine's AD-10 `app` bullet and mermaid, as updated).
-- [ ] `app/src/corney-column.spec.ts`, `app/src/layout-commands.spec.ts` -- rows 22 and 27–29.
+- [x] `packages/model/src/placement/{place-slot,place-layout,extent,types}.ts` -- `placeSlot` (function): anchor frame plus offset gives a world frame. `extent` (function): a node's `near`/`far` along an axis. `placeLayout(layout, gap, parts)` (function) returns left-side `LayoutOutput`.
+- [x] `packages/model/src/parts/create-derivations.ts`, `parts/types.ts` -- add a `gap` selector computed and a `placements` computed (each a computed inside `createDerivations`, a function) calling `placeLayout`. `Derivations` gains `placements`. Every new helper lives in `placement/`, not this file.
+- [x] `packages/design-file/src/round-trip.spec.ts`, `schema/src/testing/meta.ts` -- `gap` in the canonical design.
+- [x] `reference-designs/src/scripts/{corney-island-layout,types}.ts`, `scripts/index.ts`, `package.json` -- `corneyIslandLayout: LayoutScript` (data, function-free), with `type LayoutScript = { command: string; input: unknown }[]` in `scripts/types.ts`. It is exported as the subpath `./scripts`, with no Node imports. Its commands: AddGroup `outer` (chain y, no parent), then AddSlot `outer-bottom`, `outer-home` and `outer-top` under it.
+- [x] `.dependency-cruiser.mts` GRAPH `app` row, `app/package.json` -- add `reference-designs` as a dev dependency, test files only (the spine's AD-10 `app` bullet and mermaid, as updated).
+- [x] `app/src/corney-column.spec.ts`, `app/src/layout-commands.spec.ts` -- rows 22 and 27–29.
 
 **Acceptance Criteria:**
 - Given the boundary table, when `pnpm test` runs, then each row has a passing test at its level.
@@ -142,9 +142,58 @@ Rows 1–3 run in geometry, 4–8 placement, 9–11 schema, 12–13 the store, 1
 
 ## Implementation Notes
 
+- The layout commands' `apply` passes the draft without a cast; `tsc` accepted it.
+- Toggled bugs, each turned its rows red and was restored: dropping `layoutCommandsModule` from `mainModules` (rows 22's AddSlot, 27, 28, 29); `checkStructure` always ok (row 22, both); the KDL writer skipping `gap` (row 28).
+- Decision (build): `geometry` gains `apply(matrix, point)` beside `compose`, not corner maths in `model`, because the group extent turns rectangle corners by a frame and geometry owns the affine maths. Evidence: spine AD-10, "shared 2D operations come from it" (geometry).
+- Decision (build): `checkStructure` compares dangling references by (kind, target), not by path, because inserting a child shifts every later sibling's path and would make an old dangling reference look new. Evidence: frozen decision "a file loaded with one must not block every later edit": with path keys, AddSlot at index 0 under a parent holding a dangling slot.part shifts that path and is refused.
+- Decision (Sergii, 2026-11-10): `addNode` checks the parent, then the index, then the id, not the id first, because the index and id are only meaningful once the parent exists; `deleteNode` checks the root before missing ids.
+- Decision (Sergii, 2026-11-10): a minted id is not checked against taken ids, not re-minted in a loop, because `mintId`'s uniqueness rests on randomness (its own comment).
+- Decision (Sergii, 2026-11-10): placement throws `InvariantError` for a slot with no part run, not a stand-in, because parts and placement read the same layout selector.
+- Decision (build): the root row's `anchorAt` is the root's own frame origin, as the Data Schema comment says, not the world origin. Evidence: Data Schema `anchorAt`: "the root group's own frame".
+- Decision (Sergii, 2026-11-10): `walkReferences` is a generator, not an array, so a who-points-at lookup can stop at its first hit. `checkStructure` and the walk's spec spread it.
+- Decision (build): `tooling/ad10/rules.spec.ts` probes app's `reference-designs` edge from a spec file, not `allowed.ts`, because the edge is test-only and `reference-designs-only-in-tests` fires on a non-test probe. Evidence: `.dependency-cruiser.mts` rule `from: { path: '^(packages|app)/', pathNot: TEST_FILE }`. A structural change the plan didn't name; not asked, since this evidence refutes the alternative.
+- Decision (build): `packages/geometry` gets `tsconfig.lib.json`/`tsconfig.vitest.json` and Vitest dev dependencies like `expr`, not its old composite config, because it now has specs. Evidence: plan rows 1–3 are `unit geometry`; `packages/expr/tsconfig.{lib,vitest}.json` is the same setup. A structural change the plan didn't name; not asked, since this evidence refutes the alternative.
+- Decision (build): DuplicateNode and DeleteNode labels are "Duplicate" and "Delete", not "Duplicate node", because "node" is a model term the menu needn't show. Evidence: EXPERIENCE.md Shortcuts, `| Ctrl+D | Duplicate |` and `| Delete | Delete what has keyboard focus … |`.
+- Decision (Sergii, 2026-11-10): builder defaults: `aLength` 19mm, `aDelta` 0mm, `anAngle` 0deg, `aGap` 1mm both ways (NewDesign's), `anOffset` empty, `aLayoutOutput` empty, not other values, because each is the identity or the app's own default.
+- Real-host run: not needed. No spec in the diff fakes a third-party host or boundary. `create-derivations.spec.ts`'s FakeRunner fakes the repo's own LaneRunner (exempt), and rows 27–28 run the real sandbox.
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+### Pass 1 (quick, test-reviewer), 2026-11-10: high 0, medium 0, low 15, false 1, maybe-false 0
+
+| Finding | Verdict | Route | Evidence / action |
+|---|---|---|---|
+| `Placement` type collides with glossary "placement" | low | patch | Renamed `InsertAt` |
+| `evaluateOffset` reads literals, doesn't evaluate | low | patch | Renamed `readOffset`/`ReadOffset` |
+| second `Rectangle` type in model | low | patch | Placement imports `parts/types` `Rectangle` |
+| inline types outside `types.ts` (place-layout, walk metadata cast) | low | patch | `Previous`, `Step`, `SlotPart`, `ReferenceMetadata` named in types.ts |
+| `'arrangement' in child` duplicates `isGroup` | low | patch | Uses `isGroup` |
+| duplicate-node spec rows narrow with `toContain` (both lenses) | low | patch | Whole id lists with `toEqual` |
+| depcruise doesn't enforce the `scripts` subpath | low | reject | A root import fails loudly in the browser test; the fix adds a tooling rule |
+| script comment says "left half" | low | patch | Says "outer column" |
+| comments restating code | low | patch | Six deleted |
+| error-handling choices not recorded (literalValue, walk's unknown kind, union no-match) | low | reject | Fix edits this build's plan; listed in the end-of-task decisions |
+| files not named in Tasks with no decision | low | reject | Fix edits this build's plan; listed in the end-of-task decisions |
+| DuplicateNode shallow copy under Immer shares nested drafts | false | reject | Real Immer 11.2.9 run: copy frozen, patch `add` replays to the same design, read-before-copy too |
+| `refuses %s` asserts only `success` false | low | patch | Asserts issue paths |
+| forwarding test name claims nothing; shared offset | low | patch | Renamed; offset is frozen data, sharing harmless |
+| meta/quantity test names omit the outcome | low | patch | Outcome in titles |
+| Corney test doesn't assert the group's children; `before` unstated | low | patch | Group and children asserted; `before.ids` asserted |
+
+### Pass 2 (quick, test-reviewer, on the diff since pass 1), 2026-11-10: high 0, medium 0, low 4, false 1, maybe-false 0
+
+Nothing above low and no frozen line broken: the review loop ends here; these lows are logged, not patched.
+
+| Finding | Verdict | Route | Evidence / action |
+|---|---|---|---|
+| corney-column round-trip test asserts ids sorted by `compareId`, row 26's rule, a second time | low | logged | Row 28 only needs the ids present; double assertion of placement's order |
+| `Step` (`{ anchor, far }`) reuses the glossary's "step" (a distance); `Previous` named for loop position | low | logged | Glossary: step is "the distance from one chain child to the next"; the value is a default anchor plus far edge |
+| `ReadOffset` names a verb, not the value; explaining comment deleted | low | logged | Naming only |
+| quantity/meta spec outcome column is hand-typed, untied to `expected` | low | logged | A mislabeled row would pass; split into accepts/refuses `it.each` would tie them |
+| ids order not stated by the requirement (test reviewer) | false | reject | Row 26: "ids `left/<id>` sorted by compareId"; spine LayoutOutput "sorted by compareId in the worker" |
+| row 27 asserts x 0, rot 0, fit, mirrored, placed beyond the stated y values (test reviewer) | low | reject | Row 26 states fit/mirrored/placed; x 0 and rot 0 follow from a y chain with no offsets (AD-4) |
 
 ## Design Notes
 

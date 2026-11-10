@@ -2,12 +2,14 @@ import * as v from 'valibot'
 
 import { idSchema } from './id'
 import { blueprintInputsSchema } from './input-value'
+import { offsetSchema } from './offset'
 import { partRefSchema } from './part-ref'
 import type { Group, Node } from './types'
 
 export const slotSchema = v.pipe(
   v.strictObject({
     id: idSchema,
+    offset: v.optional(offsetSchema),
     part: v.optional(partRefSchema),
     inputs: v.optional(blueprintInputsSchema),
   }),
@@ -16,6 +18,7 @@ export const slotSchema = v.pipe(
 
 export const chainGroupFieldsSchema = v.strictObject({
   id: idSchema,
+  offset: v.optional(offsetSchema),
   defaultPart: v.optional(partRefSchema),
   arrangement: v.literal('chain'),
   axis: v.picklist(['x', 'y']),
@@ -23,6 +26,7 @@ export const chainGroupFieldsSchema = v.strictObject({
 
 export const freeGroupFieldsSchema = v.strictObject({
   id: idSchema,
+  offset: v.optional(offsetSchema),
   defaultPart: v.optional(partRefSchema),
   arrangement: v.literal('free'),
 })

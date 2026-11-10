@@ -9,6 +9,7 @@ const lines = (...text: string[]) => text.map((line) => `${line}\n`).join('')
 const sections = [
   'meta id="corne" name="Corne" default-part="key" {',
   '    form type="split" board="reversible"',
+  '    gap x="1mm" y="1mm"',
   '}',
   'library-versions {',
   '    library-version id="lib:blueprint/choc-key" version=1',
@@ -137,7 +138,7 @@ describe('migrateBundle', () => {
       expect(result.error).toEqual({
         kind: 'file-unreadable',
         file: 'design',
-        message: 'The node "meta" appears more than once, on lines 2 and 14.',
+        message: 'The node "meta" appears more than once, on lines 2 and 15.',
       })
     })
   })

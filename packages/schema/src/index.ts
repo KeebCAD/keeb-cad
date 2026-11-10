@@ -40,8 +40,17 @@ export { declaredInputSchema } from './declared-input'
 export { laneDeclarationSchema } from './lane-declaration'
 export { upgradeMappingSchema } from './upgrade-mapping'
 export { blueprintDeclarationSchema } from './blueprint-declaration'
+export { quantity } from './quantity'
+export { lengthSchema } from './length'
+export { deltaSchema } from './delta'
+export { angleSchema } from './angle'
+export { vec2Schema } from './vec2'
+export { offsetSchema } from './offset'
+export { gapSchema } from './gap'
+export { layoutOutputSchema } from './layout-output'
 
 export type {
+  Angle,
   BlueprintDeclaration,
   BlueprintDesignPart,
   BlueprintId,
@@ -49,6 +58,7 @@ export type {
   BundleFile,
   ChainGroup,
   DeclaredInput,
+  Delta,
   DerivedFile,
   DesignPart,
   Design,
@@ -64,12 +74,15 @@ export type {
   FormatVersion,
   FreeGroup,
   Frozen,
+  Gap,
   Group,
   Hash,
   Id,
   InputValue,
   ItemId,
   LaneDeclaration,
+  LayoutOutput,
+  Length,
   LibraryData,
   LibraryId,
   LibraryVersion,
@@ -79,11 +92,13 @@ export type {
   ModelRejectionKind,
   Mutable,
   Node,
+  Offset,
   OptionInput,
   PartId,
   PartRef,
   PartsOutput,
   PlainInput,
+  Quantity,
   QuantityInput,
   QuantityInputValue,
   ReadonlyRef,
@@ -98,6 +113,7 @@ export type {
   StorageError,
   Unit,
   UpgradeMapping,
+  Vec2,
   Version,
   VersionReason,
   Violation,

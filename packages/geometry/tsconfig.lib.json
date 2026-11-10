@@ -1,0 +1,10 @@
+{
+  // The 2D kernel. No DOM lib: geometry runs on every thread.
+  "extends": "../../tsconfig.base.json",
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.spec.ts"],
+  "compilerOptions": {
+    "noEmit": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo"
+  }
+}

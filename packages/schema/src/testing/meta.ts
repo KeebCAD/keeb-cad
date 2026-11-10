@@ -1,5 +1,6 @@
 import type { Meta } from '../types'
 import { aSplitForm } from './form'
+import { aGap } from './gap'
 import { anId } from './id'
 import { aPartRef } from './part-ref'
 
@@ -8,6 +9,7 @@ export function aMeta({
   name = 'Corne',
   form = aSplitForm(),
   defaultPart = aPartRef(),
+  gap = aGap(),
 }: Partial<Meta> = {}): Meta {
-  return { id, name, form, defaultPart }
+  return { id, name, form, defaultPart, gap }
 }

@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { chainGroupSchema, freeGroupSchema, slotSchema } from '../layout'
 import { anId } from './id'
 import { aChainGroup, aFreeGroup, aGroup, aLayout, aSlot } from './layout'
+import { anAngle } from './angle'
+import { anOffset } from './offset'
 import { aPartRef } from './part-ref'
 
 describe('aSlot', () => {
@@ -15,6 +17,7 @@ describe('aSlot', () => {
     ['id', () => ({ id: anId('other') })],
     ['part', () => ({ part: aPartRef('other') })],
     ['inputs', () => ({ inputs: { size: '1u' } })],
+    ['offset', () => ({ offset: anOffset({ rotation: anAngle('15deg') }) })],
   ])('keeps the %s it is given', (_field, makeFields) => {
     const fields = makeFields()
 
@@ -31,6 +34,7 @@ describe('aFreeGroup', () => {
     ['id', () => ({ id: anId('other') })],
     ['children', () => ({ children: [aSlot()] })],
     ['defaultPart', () => ({ defaultPart: aPartRef('other') })],
+    ['offset', () => ({ offset: anOffset({ rotation: anAngle('15deg') }) })],
   ])('keeps the %s it is given', (_field, makeFields) => {
     const fields = makeFields()
 
@@ -48,6 +52,7 @@ describe('aChainGroup', () => {
     ['axis', () => ({ axis: 'y' as const })],
     ['children', () => ({ children: [aSlot()] })],
     ['defaultPart', () => ({ defaultPart: aPartRef('other') })],
+    ['offset', () => ({ offset: anOffset({ rotation: anAngle('15deg') }) })],
   ])('keeps the %s it is given', (_field, makeFields) => {
     const fields = makeFields()
 
@@ -72,6 +77,7 @@ describe('aLayout', () => {
   it.each([
     ['id', () => ({ id: anId('other') })],
     ['children', () => ({ children: [aSlot()] })],
+    ['offset', () => ({ offset: anOffset({ rotation: anAngle('15deg') }) })],
   ])('keeps the %s it is given', (_field, makeFields) => {
     const fields = makeFields()
 

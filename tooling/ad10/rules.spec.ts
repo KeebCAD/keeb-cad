@@ -68,12 +68,15 @@ const forbiddenTarget = (row: string) => {
 
 /**
  * The probe file that imports a row's allowed target. app reaches its ENTRY_ONLY targets only
- * through worker subpaths that only its model worker entry may import, so those go there.
+ * through worker subpaths that only its model worker entry may import, so those go there, and
+ * reference-designs only from tests, so that goes in a spec file.
  */
 const allowedProbe = (row: string, target: string) =>
   row === 'app' && ENTRY_ONLY[row]?.[target] !== undefined
     ? `${probeDir(row)}/model.worker.ts`
-    : `${probeDir(row)}/allowed.ts`
+    : target === 'reference-designs'
+      ? `${probeDir(row)}/allowed.spec.ts`
+      : `${probeDir(row)}/allowed.ts`
 
 const allowedProbes = (row: string) => {
   const probes = new Map<string, string[]>()

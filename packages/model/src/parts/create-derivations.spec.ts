@@ -12,8 +12,10 @@ import {
   aDesign,
   aDesignPart,
   aFreeGroup,
+  aGap,
   aLayout,
   aLibraryId,
+  aLength,
   aLibraryVersion,
   aMeta,
   aPartRef,
@@ -73,7 +75,13 @@ async function arrange(design: Design, library: LibraryData = aLibrary()) {
   const runner = container.resolve(LaneRunner) as FakeRunner
   const mirror = shallowRef(design)
   const derivations = createDerivations(mirror, library, runner)
-  return { runner, mirror, parts: derivations.parts, pins: derivations.pins }
+  return {
+    runner,
+    mirror,
+    parts: derivations.parts,
+    pins: derivations.pins,
+    placements: derivations.placements,
+  }
 }
 
 const onSlots = (...slots: Parameters<typeof aSlot>[0][]) =>
@@ -373,5 +381,26 @@ describe('createDerivations', () => {
     )
 
     expect(pins.value).toEqual([{ id: CHOC_KEY, version: aVersion() }])
+  })
+
+  describe('placements', () => {
+    it('keeps the same output for an edit to the name alone', async () => {
+      const { placements, mirror } = await arrange(withLayout(onSlots({ id: slotId })))
+      const before = placements.value
+
+      mirror.value = { ...mirror.value, meta: { ...mirror.value.meta, name: 'Other' } }
+
+      expect(placements.value).toBe(before)
+    })
+
+    it('recomputes for an edit to the gap', async () => {
+      const { placements, mirror } = await arrange(withLayout(onSlots({ id: slotId })))
+      const before = placements.value
+      const gap = aGap({ y: aLength('2mm') })
+
+      mirror.value = { ...mirror.value, meta: { ...mirror.value.meta, gap } }
+
+      expect(placements.value).not.toBe(before)
+    })
   })
 })

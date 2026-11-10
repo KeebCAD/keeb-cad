@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest'
 
 import { metaSchema } from '../meta'
 import { aUnibodyForm } from './form'
+import { aGap } from './gap'
 import { anId } from './id'
+import { aLength } from './length'
 import { aMeta } from './meta'
 import { aPartRef } from './part-ref'
 
@@ -17,6 +19,7 @@ describe('aMeta', () => {
     ['name', () => ({ name: 'Other' })],
     ['form', () => ({ form: aUnibodyForm() })],
     ['defaultPart', () => ({ defaultPart: aPartRef('other') })],
+    ['gap', () => ({ gap: aGap({ y: aLength('2mm') }) })],
   ])('keeps the %s it is given', (_field, makeFields) => {
     const fields = makeFields()
 

@@ -1,5 +1,6 @@
 import {
   designActionsModule,
+  layoutCommandsModule,
   loadModule,
   modelWorkerActionsModule,
   partsCommandsModule,
@@ -17,6 +18,7 @@ export const mainModules: readonly Module[] = [
   designModule,
   designActionsModule,
   partsCommandsModule,
+  layoutCommandsModule,
   modelWorkerActionsModule,
   editorModule,
   workersModule,
