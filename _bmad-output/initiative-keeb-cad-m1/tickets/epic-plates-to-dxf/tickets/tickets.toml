@@ -6,10 +6,10 @@ next_id = 4
 id = 2
 type = "story"
 title = "Part picker places parts"
-description = "P adds a slot as a child of the selected group (or the selected slot's group, else the root), appended after its last sibling with no offset, through the add flow's optional id field pre-filled with a minted id (13.24), with the Part picker open beside it; picking the part is a separate undo step (AddSlot, then 14.7's setPart). It extends 14.5's Part field so it opens the same picker, searchable by name; it lists library parts (name and version) and design-local parts (a dash for version), each row previewing the part's rectangle only (the M1 envelope); cutouts join the preview when the plates story types them, footprints with epic-parts-and-pcb; Enter picks; changing a part is one undo step. Uses 14.7's library parts and setPart."
+description = "P adds a slot as a child of the selected group (or the selected slot's group, else the root), appended after its last sibling with no offset, through the add flow's optional id field pre-filled with a minted id (13.25), with the Part picker open beside it; picking the part is a separate undo step (AddSlot, then 14.7's setPart). It extends 14.5's Part field so it opens the same picker, searchable by name; it lists library parts (name and version) and design-local parts (a dash for version), each row previewing the part's rectangle only (the M1 envelope); cutouts join the preview when the plates story types them, footprints with epic-parts-and-pcb; Enter picks; changing a part is one undo step. Uses 14.7's library parts and setPart."
 verify = "With a group selected, P then typing 'choc' and Enter adds a Choc v2 slot as that group's last child with no offset, in two undo steps (the first undo clears the part, the second removes the slot); with nothing selected the slot lands in the root; a design-local part is listed with a dash for version; switching the slot to the M2 screw and undoing restores Choc v2."
 covers = ["R6", "R8"]
-after = ["14.5", "14.7", "13.24"]
+after = ["14.5", "14.7", "13.25"]
 hitl = false
 risk = "low"
 
