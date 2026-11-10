@@ -418,3 +418,11 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
   summary: Flaky under full-suite load, untouched by 13.2: packages/editor/src/slide-out/slide-out.spec.ts (Firefox) "opens and closes from the rail button, which says whether it is expanded" failed once in pnpm test and passed alone twice. Run flaky-triage on it.
   evidence: 2026-11-10, 13.2 branch, full run 2 after review patches; 2 isolated passes; the branch changes nothing in packages/editor.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-layout-set-reaches-main-plan.md`
+  summary: Focus reordering in pipeline (AD-11 Newer seqs): sets ordered by the workspace table, a yield between stages, and a focus arriving during the hidden phase getting its set next, with its test; goes to the first story that fills a second workspace set (shapes or plates for Outline, pcb placement for PCB, firmware).
+  evidence: Sergii 2026-11-10, 13.22 planning: with the Layout set the only set any stage fills, every focus posts the same message in the same order, so no test of the reordering can fail when it breaks. Tree search: no not-done ticket names the reordering; 13.7 (tickets.toml line 129) names "story 22's posted Layout set" for the posting, not the reordering.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-layout-set-reaches-main-plan.md`
+  summary: Precedent fix: packages/workers/src/model-worker/model-worker-lifecycle.ts comments restate the code ("// The whole list of the last post the gate accepted, with that post's seq.", "// Returns the call that stops watching the worker and terminates it."); delete them.
+  evidence: AGENTS.md "Write a comment only for a why the code can't say"; found by 13.22's final conformance pass.
