@@ -277,6 +277,8 @@ Devtools fix after the look (quick, test-reviewer; 0 dropped):
 | 53 | quick | module-spec nested rows repeat the plugin's mechanism | low | log | They also check each inspectable's own refusal (unknown id, non-number x). |
 | 54 | quick | nested rows have no row in the frozen boundary table | low | log | Expected values are the kit's contract (Implementation Notes); Sergii asked for the fix. |
 
+Pre-merge pass on `8028001` (quick): no findings; the review ends.
+
 ## Design Notes
 
 - Decision (plan): side-qualified ids are built and parsed by one `model` file, not by a template in `editor`, because "Put code in the package that owns the concept" (AGENTS) and `model` already builds them (`place-layout.ts:47`).
