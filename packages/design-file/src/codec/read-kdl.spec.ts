@@ -18,6 +18,7 @@ function read(schema: v.GenericSchema, text: string) {
 const meta = [
   'meta id="corne" name="Corne" default-part="key" {',
   '    form type="split" board="reversible"',
+  '    gap x="1mm" y="1mm"',
   '}',
 ]
 const metaValue = aMeta()

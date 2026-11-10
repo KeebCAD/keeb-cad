@@ -5,6 +5,7 @@ import type {
   BlueprintId,
   DesignPart,
   Id,
+  LayoutOutput,
   LibraryVersion,
   LibraryData,
   PartRef,
@@ -21,6 +22,7 @@ export type Rectangle = PartsOutput['rows'][number]
 export interface Derivations {
   parts: ReadonlyRef<ResolvedParts>
   pins: ReadonlyRef<{ id: BlueprintId; version: Version }[]>
+  placements: ReadonlyRef<LayoutOutput>
 }
 
 export interface SlotPartRun {

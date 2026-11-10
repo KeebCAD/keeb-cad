@@ -573,6 +573,40 @@ describe('DesignStore', () => {
     })
   })
 
+  describe('runById', () => {
+    it('refuses an id no command has with unknown-command naming it, committing nothing', async () => {
+      const store = await arrange({ commands: [RenameDesign], design: aDesign() })
+      const before = store.current
+      const events = recordCommits(store)
+
+      const result = store.runById('meta.missing', { name: 'Corne v2' })
+
+      expectErr(result)
+      expect(result.error).toEqual({ kind: 'unknown-command', command: 'meta.missing' })
+      expectNothingCommitted(store, before, events)
+    })
+
+    it('runs a registered command named by its id', async () => {
+      const store = await arrange({ commands: [RenameDesign], design: aDesign() })
+
+      expectOk(store.runById(RenameDesign.id, { name: 'Corne v2' }))
+
+      expect(committed(store).design.meta.name).toBe('Corne v2')
+    })
+
+    it('refuses input the named command’s schema refuses with input-invalid', async () => {
+      const store = await arrange({ commands: [RenameDesign], design: aDesign() })
+      const before = store.current
+      const events = recordCommits(store)
+
+      const result = store.runById(RenameDesign.id, { name: '' })
+
+      expectErr(result)
+      expect(result.error).toMatchObject({ kind: 'input-invalid', command: RenameDesign.id })
+      expectNothingCommitted(store, before, events)
+    })
+  })
+
   describe('run, for an action', () => {
     it('runs with no design loaded and commits what it hands to replaceDesign', async () => {
       const store = await arrange({ actions: [LoadDesign] })

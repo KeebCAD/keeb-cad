@@ -14,6 +14,7 @@ import {
   type Violation,
 } from '@keeb-cad/schema'
 
+import { placeLayout } from '../placement/place-layout'
 import { partViolationMessage } from './part-violation-message'
 import { partsLaneCalls, rectangleOutputOf } from './parts-lane-calls'
 import { pinsOf } from './pins-of'
@@ -34,6 +35,7 @@ export function createDerivations(
   const libraryVersions = computed(() => design.value.libraryVersions)
   const designParts = computed(() => design.value.parts)
   const layout = computed(() => design.value.layout)
+  const gap = computed(() => design.value.meta.gap)
   const slotRuns = computed(() => slotPartRuns(layout.value, defaultPart.value))
   const pins = computed(() => pinsOf(libraryVersions.value))
 
@@ -114,7 +116,9 @@ export function createDerivations(
     return { output: partsOutputOf(rectangles), slots, violations }
   })
 
-  return { parts, pins }
+  const placements = computed(() => placeLayout(layout.value, gap.value, parts.value))
+
+  return { parts, pins, placements }
 }
 
 function rectangleOf(

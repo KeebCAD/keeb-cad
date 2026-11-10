@@ -8,7 +8,7 @@ describe('writeDesignFile', () => {
     const design = aDesign()
 
     expect(writeDesignFile(design)).toBe(
-      'format-version 1\nmeta id=corne name=Corne default-part=key {\n\tform type=split board=reversible\n}\nlibrary-versions {\n\tlibrary-version id="lib:blueprint/choc-key" version=1\n}\nparts {\n\tpart type=blueprint id=key blueprint="lib:blueprint/choc-key" {\n\t\tinputs\n\t}\n}\nlayout id=root arrangement=free\n',
+      'format-version 1\nmeta id=corne name=Corne default-part=key {\n\tform type=split board=reversible\n\tgap x="1mm" y="1mm"\n}\nlibrary-versions {\n\tlibrary-version id="lib:blueprint/choc-key" version=1\n}\nparts {\n\tpart type=blueprint id=key blueprint="lib:blueprint/choc-key" {\n\t\tinputs\n\t}\n}\nlayout id=root arrangement=free\n',
     )
   })
 })

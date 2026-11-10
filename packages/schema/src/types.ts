@@ -13,6 +13,7 @@ import type { fingerprintSchema } from './fingerprint'
 import type { fingerprintsFileSchema } from './fingerprints-file'
 import type { formSchema } from './form'
 import type { formatVersionSchema } from './format-version'
+import type { gapSchema } from './gap'
 import type { hashSchema } from './hash'
 import type { idSchema } from './id'
 import type {
@@ -21,10 +22,12 @@ import type {
   quantityInputValueSchema,
 } from './input-value'
 import type { laneDeclarationSchema } from './lane-declaration'
+import type { layoutOutputSchema } from './layout-output'
 import type { chainGroupFieldsSchema, freeGroupFieldsSchema, slotSchema } from './layout'
 import type { libraryIdSchema } from './library-id'
 import type { libraryVersionSchema } from './library-version'
 import type { metaSchema } from './meta'
+import type { offsetSchema } from './offset'
 import type { partIdSchema } from './part-id'
 import type { partRefSchema } from './part-ref'
 import type { partsOutputSchema } from './parts-output'
@@ -32,6 +35,7 @@ import type { revisionSchema } from './revision'
 import type { routingFileSchema } from './routing-file'
 import type { stageIdSchema } from './stage-id'
 import type { upgradeMappingSchema } from './upgrade-mapping'
+import type { vec2Schema } from './vec2'
 import type { versionSchema } from './version'
 import type { workspaceSchema } from './workspace'
 
@@ -73,6 +77,18 @@ export type UpgradeMapping = v.InferOutput<typeof upgradeMappingSchema>
 export type BlueprintDeclaration = v.InferOutput<typeof blueprintDeclarationSchema>
 
 export type { Unit }
+
+declare const unit: unique symbol
+
+// Hand-declared: the unit is a phantom, so a length never passes for an angle.
+export type Quantity<U extends Unit> = Expression & { readonly [unit]?: U }
+export type Delta = Quantity<'mm'>
+export type Length = Quantity<'mm'>
+export type Angle = Quantity<'deg'>
+export type Vec2 = v.InferOutput<typeof vec2Schema>
+export type Offset = v.InferOutput<typeof offsetSchema>
+export type Gap = v.InferOutput<typeof gapSchema>
+export type LayoutOutput = v.InferOutput<typeof layoutOutputSchema>
 
 export interface ScriptLoadFailed {
   kind: 'script-load-failed'
@@ -145,12 +161,14 @@ export interface SchemaIssue {
   message: string
 }
 
-export type ModelRejectionKind = 'default-part-required'
+export type ModelRejectionKind =
+  'default-part-required' | 'id-taken' | 'root-required' | 'unknown-target' | 'index-out-of-range'
 
 // The design store's own kinds carry no message: the editor writes their text from the kind.
 export type Rejection =
   | { kind: 'input-invalid'; command: string; issues: SchemaIssue[] }
   | { kind: 'unavailable'; command: string }
+  | { kind: 'unknown-command'; command: string }
   | { kind: 'stale'; seq: number; latest: number }
   | { kind: ModelRejectionKind; ids: ItemId[]; message: string }
 

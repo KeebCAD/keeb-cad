@@ -94,6 +94,8 @@ export const GRAPH: Readonly<Record<string, readonly string[]>> = {
     'blueprint',
     'case',
     'routing',
+    // Tests only, through its data-only scripts subpath (reference-designs-only-in-tests).
+    'reference-designs',
   ],
   'reference-designs': ['schema'],
 }

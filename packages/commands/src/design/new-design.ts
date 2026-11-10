@@ -26,6 +26,7 @@ export class NewDesign implements Action<EmptyInput, DesignInvalid> {
         name: 'Untitled design',
         form: { type: 'split', board: 'reversible' },
         defaultPart: 'key',
+        gap: { x: '1mm', y: '1mm' },
       },
       libraryVersions: [{ id: 'lib:blueprint/choc-key', version: 1 }],
       parts: [{ type: 'blueprint', id: 'key', blueprint: 'lib:blueprint/choc-key', inputs: {} }],
