@@ -463,3 +463,9 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-draws-resolved-keys-with-selection-plan.md`
   summary: `packages/editor/src/status-strip/use-running-stage.ts` holds a constant, a helper and a composable in one file.
   evidence: 13.7 conformance final pass; AGENTS 'Give each file one kind of thing'.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-viewport-zooms-pans-and-fits-plan.md`
+  summary: The automated check that canvas handles keep the `canvas-hit-radius` (8 px) hit radius at 50%, 100% and 400% moves from 13.23's verify to the first story that draws a handle (rotation handle or grab tab, epic-drag-keys); Sofia drops the clause from 13.23 and adds it there.
+  evidence: Sergii 2026-11-10 at 13.23's planning; DESIGN.md `canvas-hit-radius: 8px  # canvas handles at any zoom (vertex, grab tab, rotation handle)`; after 13.7 and 13.23 the canvas draws keys (which scale by design) and anchor links ("not draggable", EXPERIENCE.md), so no handle exists to check (AGENTS 'Arrange only a state real commands could reach').
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-viewport-zooms-pans-and-fits-plan.md`
+  summary: `packages/ui/src/theme/use-theme-choice.ts` holds a type guard (`const isThemeChoice = (value: string): value is ThemeChoice => THEME_CHOICES.includes(value)`) beside its composable.
+  evidence: 13.23 conformance pass 1; AGENTS 'Give each file one kind of thing'. 13.23 follows its `useStorage` serializer pattern with the schema in its own file.

@@ -713,7 +713,9 @@ graph LR
     - mm and deg show at most 2 decimals, without trailing zeros.
     - `≈` marks a display that rounding moved off the true value.
     - Halves round away from zero on the decimal value (`1.005` → `1.01`); a value that rounds to zero prints `0`, never `-0`.
-    - `≈` goes before the number (`≈ 1.23`); the formatter takes `(value, unit)` and appends the unit (`19 mm`).
+    - `≈` goes before the number (`≈ 1.23`); the formatter takes `(value, unit)` and appends the unit (`19 mm`), with an optional options argument.
+    - A readout of a pointer sample (the cursor, `x 12.34 y −5.67`) shows no `≈` and no unit: the options' `readout` form, because a pointer sample's sub-pixel remainder means nothing (Sergii 2026-11-10).
+    - Zoom shows as a whole percent through the `percent` unit (`100%`, no space); 100% is 96/25.4 px per mm, the CSS `mm`.
     - Results are always in mm.
     - Stored values keep full precision.
   - **Long lists** are not virtualized until a frame-budget check fails (Verification layer 7). The switch is Reka's virtualizers, inside `ui`'s list widgets.
@@ -1118,6 +1120,7 @@ Verified 2026-10-24 (`stack-research.md`), 2026-10-25 (gate re-check), 2026-10-2
 | reka-ui (MIT; widget primitives, `ui` only, AD-26) | 2.11.0 |
 | @zag-js/hotkeys (MIT; shortcuts, `ui` only, AD-26; standalone, depends only on `@zag-js/dom-query`) | 1.47.0 |
 | @vueuse/core (Vue composition utilities; `ui` and `editor`) | 14.4.0 |
+| @use-gesture/vanilla (canvas input: wheel, pinch and drag on the 2D canvases; `editor` only) | 10.3.1 |
 | vite-plugin-vue-devtools (MIT; the Vue DevTools overlay, `app`'s Vite config, dev server only) | 8.2.1 |
 | @vue/devtools-api (MIT; `editor`'s dev-only services inspector and commands timeline, through `setupDevToolsPlugin`; 9.x is a release candidate) | 8.2.1 |
 | tailwindcss / @tailwindcss/vite (`ui` tokens in `@theme`, AD-26) | 4.3.3 / 4.3.3 |
