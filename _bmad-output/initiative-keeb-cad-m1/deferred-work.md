@@ -382,3 +382,31 @@
   summary: Pass quantity inputs to lanes as numbers once `expr` has an evaluator.
   evidence: `createDerivations` hands lanes the resolved inputs as written, a quantity as `{ type: 'quantity', value }`; BP-8 `quantities as numbers in mm or deg`; `expr` exports only `parseExpression`.
   owner: 13.4.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
+  summary: Sofia updates 13.22's ticket: model's layout rows already carry `part` as the PartsOutput row index, so the LayoutOutput codec no longer turns a run id into a row.
+  evidence: Sergii's answer on 13.2 (2026-11-10); the spine's Data Schema `LayoutOutput.part` line was updated to match; the build workflow never writes ticket files.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
+  summary: Sofia adds to 13.3's ticket that DuplicateNode remaps references inside the copy through the reference walk, with its tests, now that anchors make a node-to-node reference reachable.
+  evidence: Sergii, 2026-11-10: nothing in 13.2's schema points at a node, so the remap can't be tested there; spine AD-2 updated to say it lands with 13.3's anchors.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
+  summary: Precedent fix: packages/model/src/parts/create-derivations.ts holds rectangleOf, partsOutputOf, unresolved and failure beside createDerivations; move each helper to its own file.
+  evidence: AGENTS.md "Give each file one kind of thing"; found by 13.2's conformance review.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
+  summary: Precedent fix: DeletePartInput sits in packages/commands/src/types.ts; move it to packages/commands/src/parts/types.ts.
+  evidence: AGENTS.md "type RenameDesignInput = v.InferOutput<typeof renameDesignInputSchema> in the folder's types.ts"; found by 13.2's conformance review.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
+  summary: Precedent fix: app/src/default-key-part.spec.ts arrange() returns lifecycle, which the parts.deletePart test never uses.
+  evidence: AGENTS.md "Arrange only what the test uses, passed as arguments to an arrange helper"; found by 13.2's conformance review (low).
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
+  summary: Precedent fix: packages/commands/src/parts/delete-part.spec.ts wires DesignStore and modules inside commands; move that wiring to an app integration test and keep a unit test of DeletePart.apply.
+  evidence: AGENTS.md "test wiring between packages as integration in pipeline or app"; found by 13.2's final conformance pass.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
+  summary: Precedent fix: packages/commands/src/parts/delete-part.ts casts the draft with "as Mutable<Design>", which hides AD-2's compile check that Writable<Design> is assignable to Mutable<Design>; drop the cast.
+  evidence: spine AD-2 "Writable<Design> must be assignable to Mutable<Design>, checked by the compiler"; found by 13.2's final conformance pass.
