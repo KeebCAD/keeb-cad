@@ -4,8 +4,9 @@
 # Refreshed 2026-11-02 from the spine update f57bdbc: 22 added.
 # Split 2026-11-02: 19, 10, 1, 20, 14, 11, 12, 15 moved to epic-a-new-design-opens as 23.1-23.8.
 # Re-planned 2026-11-02 after the spine package split (b9b4ec5, 411dd17): owners in 17, 18, 21, 22 updated.
+# Re-sliced 2026-11-10 at 13.7's build: 23 (viewport) and 24 (editing on the canvas) split from 7.
 
-next_id = 23
+next_id = 25
 
 [[entry]]
 id = 9
@@ -81,8 +82,8 @@ risk = "medium"
 id = 22
 type = "story"
 title = "The Layout set reaches main"
-description = "protocol's struct-of-arrays codecs for schema's LayoutOutput and PartsOutput (Data Schema), packing into fresh transferred buffers per post, each output's ids as one plain string[] sorted by schema's compareId (UTF-16 code-unit order). pipeline posts the Layout set, parts and layout, as one message at one seq, hidden phase included (an output holding row numbers into another travels with it); model already writes each slot row's part as its run's row in the PartsOutput posted beside it (13.2, Sergii 2026-11-10), so LayoutOutput's codec packs part as given; a focus arriving during the hidden phase lets the current stage finish, then the focused set is computed and posted before the remaining hidden stages; a design that produces no outputs (unsupported-form) gets zero-row outputs at each seq. workers stores and swaps the pair together in its stage snapshots' shallowRefs, reads typed views straight from the buffers and finds ids by binary search; a set has arrived when every output in it is at main's latest seq (AD-11). Story 7 draws it."
-verify = "Tests: each codec round-trips; posting the same output twice leaves the worker's values intact (fresh buffers); main's binary search finds every id the worker sorted; a focus during the hidden phase gets its set next; a unibody design's Layout set arrives empty; a slot row's part indexes its run's row in the PartsOutput of the same post; a layout row never points at a PartsOutput from another seq."
+description = "protocol's struct-of-arrays codecs for schema's LayoutOutput and PartsOutput (Data Schema), packing into fresh transferred buffers per post, each output's ids as one plain string[] sorted by schema's compareId (UTF-16 code-unit order). pipeline posts the Layout set, parts and layout, as one message at one seq, hidden phase included (an output holding row numbers into another travels with it); model already writes each slot row's part as its run's row in the PartsOutput posted beside it (13.2, Sergii 2026-11-10), so LayoutOutput's codec packs part as given; focus reordering waits for the first story that fills a second workspace set (Sergii 2026-11-10, 13.22's plan; deferred-work.md); a design that produces no outputs (unsupported-form) gets zero-row outputs at each seq. workers stores and swaps the pair together in its stage snapshots' shallowRefs, reads typed views straight from the buffers and finds ids by binary search; a set has arrived when every output in it is at main's latest seq (AD-11). Story 7 draws it."
+verify = "Tests: each codec round-trips; posting the same output twice leaves the worker's values intact (fresh buffers); main's binary search finds every id the worker sorted; a unibody design's Layout set arrives empty; a slot row's part indexes its run's row in the PartsOutput of the same post; a layout row never points at a PartsOutput from another seq."
 covers = ["R6"]
 after = [2]
 hitl = false
@@ -125,22 +126,45 @@ risk = "medium"
 [[entry]]
 id = 7
 type = "story"
-title = "Layout canvas shows resolved keys and adds groups and slots"
-description = "The Layout workspace's 2D canvas, inline SVG drawn by Vue templates (AD-22), draws only the design and story 22's posted Layout set (parts and layout) at one seq, computing no geometry; focus names the Layout workspace. Each part rectangle is placed at its slot's frame with translate(x, y) rotate(rot) scale(mirrored ? -1 : 1, 1), in model mm inside the viewport's y-flipped group, strokes non-scaling (AD-22); handles sit only at posted frame and anchorAt points; rows posted unplaced are not drawn (the violation shows the cycle, 14.6). After a workspace switch the last snapshot draws as is and grays, with the status strip showing updating, if the set hasn't arrived within the switch grace (~200 ms). It draws placed keys as keycaps with group frames and anchor links in both themes; G adds a free group and S a slot through an add flow that shows an optional id field, pre-filled with a minted id and editable before commit (13.2's id input; ids never change afterwards); Ctrl+D duplicates the selection after the original and Delete deletes it (one DeleteNode with the selected ids), each through the design store; click selects, and 23.8's tree slide-out lists the nodes on a Tree wrapper over Reka's tree in ui and stays synced; wheel zoom toward the cursor, x1.1 per notch, between 10% and 2000%; middle or Space drag and trackpad pan; F fits the selection, else the whole board, with 24 px padding; the viewport is a service stored per design id in localStorage and shared across 2D workspaces, and it feeds the status strip's cursor coordinates (model mm through 23.6's formatter, 'x 12.34 y -5.67') and zoom as a whole percent, added to 23.8's strip; the tunable constants (zoom range and step, fit padding) sit in one place (EXPERIENCE.md 2026-11-05). Its canvas, selection and viewport are what every later 2D story builds on."
-verify = "In the locally served build: G then S adds a key that appears on the canvas and in the tree; the add flow's id field holds a minted id, an edited id is the one committed, and an id already in the design is refused; the status strip shows the cursor's model coordinates as 'x 12.34 y -5.67' and the zoom as a whole percent, which follows wheel zoom; one wheel notch zooms x1.1 keeping the point under the cursor fixed; zoom stops at 10% and at 2000%; F with a selection fits it, and with none fits the whole board, each with 24 px padding; selecting either selects both, Delete removes it; a switch to Outline and back keeps zoom and pan, and so does a reload; a key at +15 deg tilts counter-clockwise on screen; a row posted unplaced is not drawn; a switch whose set is late shows the snapshot grayed after the grace; an automated check on current snapshots finds every canvas mark at 3:1 contrast in both themes and handles at the canvas hit radius at 50%, 100% and 400%."
-covers = ["R1", "R6"]
+title = "Layout canvas draws resolved keys with selection"
+description = "The Layout workspace's 2D canvas, inline SVG drawn by Vue templates (AD-22), draws only the design and story 22's posted Layout set (parts and layout) at one seq, computing no geometry; focus names the Layout workspace. This story builds the viewport service (AD-22: centre in model mm, y up, and zoom), whose transform holds the one model-to-screen y-flip; the canvas opens fitted to the whole board with 24 px padding (Sergii 2026-11-10, epic Notes; padding from EXPERIENCE.md's F); zoom, pan, F and keeping the viewport are 13.23's. Each part rectangle is placed at its slot's frame with translate(x, y) rotate(rot) scale(mirrored ? -1 : 1, 1), in model mm inside the viewport's y-flipped group, strokes non-scaling (AD-22); handles sit only at posted frame and anchorAt points; rows posted unplaced are not drawn (the violation shows the cycle, 14.6). After a workspace switch the last snapshot draws as is and grays, with the status strip showing updating, if the set hasn't arrived within the switch grace (~200 ms). It draws placed keys as keycaps with group frames and anchor links in both themes; click selects, and 23.8's tree slide-out lists the nodes on a Tree wrapper over Reka's tree in ui and stays synced. For checking by hand, the dev server opened with ?seed=corney starts a new design (NewDesign through store.run) and runs Corney's layout-command script through the design store's runById, as app/src/layout-set.spec.ts does; launch opens that design in place of its usual pick (app/src/launch/launch.ts #open), before it sets the route and starts the model worker; autosave keeps it. The seed loads only in the dev server (app gates devtools on import.meta.env.MODE === 'development' in start-main.ts) through a dynamic import, so the production build holds no reference design. The spine's 'tests only' wording for app and reference-designs (AD-10's app bullet, the package diagram's edge, the Reference designs row 'run by app's tests'), the reference-designs-only-in-tests fence and its GRAPH comment in .dependency-cruiser.mts gain that one dev file, with a tooling/ad10 fixture case (Sergii 2026-11-10). Its canvas, selection and viewport service are what every later 2D story builds on."
+verify = "On the dev server with ?seed=corney: the keys of Corney's script are drawn and the canvas opens fitted to the whole board with 24 px padding, and a reload without the parameter shows the same design; the production build holds no reference-designs module; tooling/ad10's rules spec allows the one dev seed file to import reference-designs and still refuses any other app file; a key at +15 deg tilts counter-clockwise on screen; selecting a key on the canvas selects it in the tree, and selecting it in the tree selects it on the canvas; a row posted unplaced is not drawn; a switch whose set is late shows the snapshot grayed after the grace; an automated check on current snapshots finds every canvas mark at 3:1 contrast in both themes."
+covers = ["R6"]
 after = ["23.8", 22]
 hitl = false
 risk = "medium"
 
 [[entry]]
+id = 23
+type = "story"
+title = "Layout canvas viewport zooms, pans and fits"
+description = "Story 7's viewport service gains its controls: wheel zoom toward the cursor, x1.1 per notch, between 10% and 2000%; middle or Space drag and trackpad pan; F fits the selection, else the whole board, with 24 px padding. The viewport is stored per design id in localStorage and shared across 2D workspaces (EXPERIENCE.md: zoom, pan and design coordinates persist across switches); a stored viewport replaces story 7's opening fit. It feeds the status strip's cursor coordinates and zoom as a whole percent, added to 23.8's strip. The cursor readout is model mm through 23.6's formatter in a readout form, 'x 12.34 y −5.67': no ≈ and no unit, U+2212 for minus, at most 2 decimals without trailing zeros, because a pointer sample's sub-pixel remainder means nothing; the formatter gains that form with its own tests, and the spine's Numbers rule gains that line (Sergii 2026-11-10; EXPERIENCE.md updated to match). The tunable constants (zoom range and step, fit padding) sit in one place (EXPERIENCE.md 2026-11-05). 14.6 fits a violation's ids through this fit."
+verify = "On the dev server with ?seed=corney (13.7): the status strip shows the cursor's model coordinates as 'x 12.34 y −5.67' and the zoom as a whole percent, which follows wheel zoom; one wheel notch zooms x1.1 keeping the point under the cursor fixed; zoom stops at 10% and at 2000%; F with a selection fits it, and with none fits the whole board, each with 24 px padding; a switch to Outline and back keeps zoom and pan, and so does a reload; an automated check finds handles at the canvas hit radius at 50%, 100% and 400%."
+covers = ["R6"]
+after = [7]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 24
+type = "story"
+title = "Groups and slots are added, duplicated and deleted on the canvas"
+description = "On the Layout canvas, G adds a free group and S a slot through an add flow that shows an optional id field, pre-filled with a minted id and editable before commit (13.2's id input; ids never change afterwards); Ctrl+D duplicates the one selected node after the original (DuplicateNode takes one id), and the UI answers it unavailable unless exactly one node is selected, an availability check over UI state, not the command's check over the design (Sergii 2026-11-10; where that check lives is this entry's unknown; duplicating a multi-selection waits for the story that brings multi-selection, deferred-work.md); Delete deletes the selection (one DeleteNode with the selected ids); each runs through the design store, on story 7's selection; its hotkeys join the canvas keys 13.23 adds (F)."
+verify = "In the locally served build: G then S adds a key that appears on the canvas and in the tree; the add flow's id field holds a minted id, an edited id is the one committed, and an id already in the design is refused; Ctrl+D on a selected key adds its copy after the original, and with nothing selected Ctrl+D is unavailable and the design unchanged; Delete removes the selection from the canvas and the tree."
+covers = ["R1", "R6"]
+after = [7, 23]
+hitl = false
+risk = "medium"
+unknown = "Where an availability check over UI state (the selection) lives: the invoke path answers available(handle) only from a UiAction's, an action's or a command's own check, and a command sees only the design (packages/editor/src/invoke/invoke.ts:61-69; spine AD-26 Shortcuts). Candidates: an optional check on the per-entry input builder, a UiAction that checks the selection and runs DuplicateNode, a check in the invoke path. Settled by a bmad-architecture pass on the spine (Sergii 2026-11-10); 13.24 is not ready until then."
+
+[[entry]]
 id = 8
 type = "story"
 title = "Both halves drawn"
-description = "The canvas draws the derived right half, from the posted per-side placements, beside the left with a dashed mirror axis, at lower opacity until selected, selectable on the canvas and in the tree; a slot removed on one side keeps its place, drawn as unfitted; ids are the ones Corney's script chose (13.2's id input), side-qualified. The Fitted toggle and the read-only derived-from fields are 14.5's. Adds the slice's e2e journey: browser storage seeded with the autosaved design bundle of a design built by Corney's script in a Node test, the app reopens it, both halves are drawn, a key is added and deleted, a reload is unchanged. Sergii approves the screenshot baseline."
+description = "The canvas draws the derived right half, from the posted per-side placements, beside the left with a dashed mirror axis, at lower opacity until selected, selectable on the canvas and in the tree; a slot removed on one side keeps its place, drawn as unfitted; ids are the ones Corney's script chose (13.2's id input), side-qualified. The Fitted toggle and the read-only derived-from fields are 14.5's. Adds the slice's e2e journey: browser storage seeded with the autosaved design bundle of a design built by Corney's script in a Node test, the app reopens it, both halves are drawn, a key is added and deleted through 13.24's G, S and Delete, a reload is unchanged. Sergii approves the screenshot baseline."
 verify = "Selecting right/thumb-home on the canvas selects it in the tree; a right slot removed by 13.6's test-only override step file draws as unfitted while its left stays fitted; the e2e journey passes in Chromium and Firefox, with its screenshot baseline approved by Sergii."
 covers = ["R3", "R6"]
-after = [6, 7]
+after = [6, 7, 24]
 hitl = true
 risk = "medium"
 
@@ -151,6 +175,6 @@ title = "Refactor sweep"
 description = "Cleanup only, scoped at its start from the epic's plans and the review findings it deferred. Scope pushed out of another story becomes a new story, not part of this one."
 verify = "pnpm check and every test of the slice pass, and each cleanup item from the scope list is closed or recorded as deferred."
 covers = []
-after = [9, 16, 17, 21, 18, 2, 22, 3, 4, 6, 7, 8]
+after = [9, 16, 17, 21, 18, 2, 22, 3, 4, 6, 7, 23, 24, 8]
 hitl = false
 risk = "low"

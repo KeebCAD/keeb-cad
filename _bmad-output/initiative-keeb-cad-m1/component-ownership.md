@@ -6,13 +6,13 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | --- | --- | --- |
 | Primitives: Button, Kbd, Tooltip (2026-11-06: Button's disabled reason) (and the Tabs and Tree wrappers) | a new design opens (23), Tree wrapper by see Corney's keys (13) | 23.6 (Tree wrapper 13.7) |
 | Chip | outline follows the keys (17) | to plan |
-| Top bar, Workspace tabs, Status strip | a new design opens (23), cursor and zoom by see Corney's keys (13) | 23.8 (counts 23.23, 2026-11-08; cursor and zoom 13.7; undo and redo buttons 16.4, 2026-11-05) |
+| Top bar, Workspace tabs, Status strip | a new design opens (23), cursor and zoom by see Corney's keys (13) | 23.8 (counts 23.23, 2026-11-08; cursor and zoom 13.23 (split from 13.7, 2026-11-10); undo and redo buttons 16.4, 2026-11-05) |
 | Status strip running-stage entry (stage name, elapsed time, Restart; 2026-11-02) and failed entry | a new design opens (23) | 23.23 (split from 23.8, 2026-11-08) |
 | Tab badge, status strip output-state entries | route and fab (7) | 7.2 |
 | Left rail + slide-out (Tree tab) | a new design opens (23), filled by see Corney's keys (13) | 23.8, filled by 13.7 |
 | Left rail + slide-out (Parameters tab) | change a parameter (14) | to plan |
 | Left rail + slide-out (Parts tab) | change a parameter (14) | to plan |
-| Canvas, viewport, selection; Canvas keys, Right half, Mirror axis, Group frame, Unfitted slot | see Corney's keys (13) | 13.7, 13.8 |
+| Canvas, viewport, selection; Canvas keys, Right half, Mirror axis, Group frame, Unfitted slot | see Corney's keys (13) | 13.7 (canvas, selection, viewport service), 13.23 (viewport controls), 13.24 (G, S, Ctrl+D, Delete), 13.8 (2026-11-10 split) |
 | Banner, Toast | keep my work (16) | 16.1, 16.3 |
 | Start screen, File menu, Design info | keep my work (16) | to plan |
 | Inspector, Design settings, Fitted toggle (moved from 13.8 on 2026-10-30), This slot section (2026-11-01) | change a parameter (14) | 14.5 |

@@ -1342,3 +1342,4 @@ Raised in `directions-2026-10-30.md` (Open), `code-decisions-list-2026-10-30.md`
 | Editor behaviour and visuals not fixed by an AD (views, drag semantics, expression field, design-local part editor) | Owned by the ux-editor spines: `epic-platform-baseline/ux-editor/EXPERIENCE.md` and `DESIGN.md` | When a UX change touches an AD's contract |
 | Ergogen config import | Non-goal | After milestone 1 |
 | Turborepo, TS 7 (7.0.2 stable on 2026-10-30) | Not needed yet | When speed hurts / create-vue supports them |
+| Focus reordering (AD-11 Newer seqs: a `focus` arriving during the hidden phase gets its set computed and posted before the remaining hidden stages), with a yield between stages | The Layout set is the only workspace set any stage fills, so every focus posts the same message in the same order and no test of the reordering can fail when it breaks (Sergii 2026-11-10, 13.22) | The first story that fills a second workspace set |

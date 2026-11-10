@@ -77,7 +77,7 @@ slug = "epic-plates-to-dxf"
 title = "Plates to DXF"
 description = "Corney's switch plate, backplate and MCU cover are shapes minus part cutouts (Choc v2 switch, M2 screws from the part schema, placed with the Part picker), update live as parts move, and export as DXF and SVG through the export registry, which reports each export available or blocked."
 covers = ["R8", "R9", "R10"]
-after = [{ epic = 18, needs = "drawn shapes for the MCU cover and any exact outline" }, { epic = 23, needs = "the design file and the design store" }, { epic = 14, needs = "the part schema and the inspector" }]
+after = [{ epic = 18, needs = "drawn shapes for the MCU cover and any exact outline" }, { epic = 23, needs = "the design file and the design store" }, { epic = 14, needs = "the part schema and the inspector" }, { epic = 13, needs = "the Layout canvas add flow" }]
 
 [[epic]]
 id = 6

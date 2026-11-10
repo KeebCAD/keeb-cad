@@ -74,6 +74,6 @@ title = "Violations on the canvas and in the panel"
 description = "Layout violations from epic 13 and 14.4 show on the canvas (overlap's posted region outlined solid for an error, dashed for a warning; the dependency-cycle path drawn from its ordered ids; ●/▲ on ids) and in the violations panel (V, or the status strip counts), ordered by workspace, errors before warnings, kind, then compareId on the first id, each tagged with the revision of the seq whose issues carried it; a click switches workspace, selects the named ids, fits and flashes them; F8 / Shift+F8 step in panel order, wrap and skip stale groups; nothing is dismissed. The panel is the shared one later workspaces add their kinds to."
 verify = "Rotating the thumb fan into its neighbour outlines the overlap region and lists it in the panel; clicking it selects both keys and fits them; F8 steps to it with the panel closed, and past the last violation wraps to the first; an error lists before a warning of the same workspace; a loaded cycle draws its path in id order; undo removes it from both."
 covers = ["R7", "R8"]
-after = [4, "13.3", "13.7"]
+after = [4, "13.3", "13.7", "13.23"]
 hitl = false
 risk = "medium"
