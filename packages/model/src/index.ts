@@ -1,3 +1,5 @@
 export { mintId } from './ids/mint-id'
+export { nodeIdOf, sideQualifiedId } from './ids/side-qualified-id'
+export type { PlacementSide } from './ids/types'
 export { walkReferences } from './references/walk-references'
 export type { Reference } from './references/types'

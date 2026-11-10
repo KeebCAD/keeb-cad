@@ -1,5 +1,6 @@
 import type { DesignStore } from '@keeb-cad/design'
-import type { Design } from '@keeb-cad/schema'
+import type { Injector } from '@keeb-cad/di'
+import type { Design, LayoutOutput, PartsOutput } from '@keeb-cad/schema'
 import type { FakeWorker, RecordingModelWorkerLifecycle } from '@keeb-cad/workers/testing'
 import type { Router } from 'vue-router'
 
@@ -20,8 +21,15 @@ export type RecordingShellArrangement = ShellArrangement & { recordFocus: true }
 
 export type SpawningShellArrangement = ShellArrangement & { spawn: true }
 
-export type MountedShell = { router: Router; invoke: Invoke }
+export type MountedShell = { router: Router; invoke: Invoke; injector: Injector }
 
 export type RecordingShell = MountedShell & { lifecycle: RecordingModelWorkerLifecycle }
 
 export type SpawningShell = MountedShell & { store: DesignStore; spawned: FakeWorker[] }
+
+export type LayoutSetPost = {
+  seq: number
+  layout: LayoutOutput
+  parts: PartsOutput
+  epoch?: number
+}

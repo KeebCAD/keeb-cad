@@ -442,3 +442,24 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-draws-resolved-keys-with-selection-plan.md`
   summary: Split from 13.7 — group frames on the Layout canvas: each group drawn as an outline that follows its children's stagger (not a rectangle), with its ⠿ tab and a 2px selection frame when selected; model posts the outline, since canvases compute no geometry (AD-10, AD-22), so a spine pass first defines it in LayoutOutput (hull or union, margin, rotation), and DESIGN.md's Group frame is redrawn with a side-by-side preview for Sergii's pick.
   evidence: Sergii 2026-11-10, 13.7 plan Open Question 1: the board fit may use the browser's SVG getBBox, but a group frame should follow staggered columns, not be a plain rectangle; that outline is geometry, which no posted output carries (schema/src/layout-output.ts). Picked 'split frames out': 13.7 draws keycaps and anchor links, and groups stay selectable in the tree. Tree search for 13.7 and this goal's terms: 13.7 itself (epic-see-corneys-keys/tickets/tickets.toml:131, "draws placed keys as keycaps with group frames and anchor links"); 15.4 (epic-drag-keys/tickets/tickets.toml:40, "Left-drag on a key, or on a group frame's tab, previews through 15.1's service", after ["13.7", 2, "16.4"]) drags by the group frame's tab, which this goal adds. epic-layout-editor mentions group frames but is dropped.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-draws-resolved-keys-with-selection-plan.md`
+  summary: `app/src/layout-set.spec.ts` computes an expected value the way production does (`const KEY_RUN = `key@${argumentHash({})}``).
+  evidence: 13.7 conformance review; AGENTS 'no expected value computed the way production computes it, except by calling a function the requirement names'.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-draws-resolved-keys-with-selection-plan.md`
+  summary: A stand-in slot's ▲/● `unresolvable-reference` badge on the Layout canvas (EXPERIENCE.md Canvas keys row; DESIGN.md Unfitted slot) has no owning story.
+  evidence: Sergii 2026-11-10 at 13.7's planning: 13.7 draws the dashed outline only; no tickets.toml names canvas violation glyphs. Sofia to place it with the canvas violation display.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-draws-resolved-keys-with-selection-plan.md`
+  summary: `app/src/layout-set.spec.ts` builds side-qualified ids by hand (`.layoutRow(`left/${node}`)`) and loops `expectOk` over the script (`for (const { command, input } of corneyIslandLayout) expectOk(store.runById(command, input))`).
+  evidence: 13.7 conformance final pass; 13.7 adds `sideQualifiedId` to `model`'s root, which `app` can't reach (`.dependency-cruiser.mts:112` `app: { model: 'worker', … }`); AGENTS 'No `if` or loop around `expect`'.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-draws-resolved-keys-with-selection-plan.md`
+  summary: `app/src/launch/launch.spec.ts` asserts `expect(arranged.storedIds).not.toContain(opened(arranged).id)` with no stored designs, so it cannot fail; 'never trying the older' asserts nothing about trying.
+  evidence: 13.7 conformance final pass; AGENTS 'Give every test an `expect` that fails when the behaviour breaks.'
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-draws-resolved-keys-with-selection-plan.md`
+  summary: `tooling/check-dist/devtools-problems.ts:3` deep-imports `../../packages/editor/src/devtools/plugin-id.ts` past the package's `exports`; 13.7's `reference-designs-problems.ts` does the same because the root package can't resolve workspace packages under Node.
+  evidence: 13.7 conformance final pass; spine AD-25 'Each closes its public surface through package `exports`.'
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-draws-resolved-keys-with-selection-plan.md`
+  summary: `packages/editor/src/status-strip/use-running-stage.ts` holds a constant, a helper and a composable in one file.
+  evidence: 13.7 conformance final pass; AGENTS 'Give each file one kind of thing'.

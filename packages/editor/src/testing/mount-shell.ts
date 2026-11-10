@@ -1,4 +1,4 @@
-import { modelWorkerActionsModule } from '@keeb-cad/commands'
+import { layoutCommandsModule, modelWorkerActionsModule } from '@keeb-cad/commands'
 import { DesignStore, designModule } from '@keeb-cad/design'
 import { Container, InjectorToken } from '@keeb-cad/di'
 import { expectOk } from '@keeb-cad/result/testing'
@@ -35,6 +35,7 @@ export async function mountShell({
     .addModule(designModule)
     .addModule(workersModule)
     .addModule(modelWorkerActionsModule)
+    .addModule(layoutCommandsModule)
     .addModule(editorModule)
   if (recordFocus) {
     container.register(RecordingModelWorkerLifecycle).useClass(RecordingModelWorkerLifecycle)
@@ -71,7 +72,11 @@ export async function mountShell({
   const router = scope.run(() => mountEditor('#app', container.resolve(InjectorToken)))
   if (router === undefined) throw new Error('The scope ran nothing.')
   await router.isReady()
-  const shell = { router, invoke: container.resolve(Invoke) }
+  const shell = {
+    router,
+    invoke: container.resolve(Invoke),
+    injector: container.resolve(InjectorToken),
+  }
   if (recordFocus) {
     return { ...shell, lifecycle: container.resolve(RecordingModelWorkerLifecycle) }
   }

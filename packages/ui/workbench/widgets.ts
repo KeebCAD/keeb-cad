@@ -5,13 +5,17 @@ import UiRailButton from '../src/rail-button/UiRailButton.vue'
 import UiSeverityCount from '../src/severity-count/UiSeverityCount.vue'
 import UiTabs from '../src/tabs/UiTabs.vue'
 import UiTooltip from '../src/tooltip/UiTooltip.vue'
+import UiTree from '../src/tree/UiTree.vue'
+import CanvasToggleFrame from './CanvasToggleFrame.vue'
 import { buttonStates } from './states/button-states'
+import { canvasToggleStates } from './states/canvas-toggle-states'
 import { iconStates } from './states/icon-states'
 import { kbdStates } from './states/kbd-states'
 import { railButtonStates } from './states/rail-button-states'
 import { severityCountStates } from './states/severity-count-states'
 import { tabsStates } from './states/tabs-states'
 import { tooltipStates } from './states/tooltip-states'
+import { treeStates } from './states/tree-states'
 import type { Widget } from './types'
 
 export const widgets: readonly Widget[] = [
@@ -22,4 +26,6 @@ export const widgets: readonly Widget[] = [
   { title: 'Icon', component: UiIcon, states: iconStates },
   { title: 'Rail button', component: UiRailButton, states: railButtonStates },
   { title: 'Severity count', component: UiSeverityCount, states: severityCountStates },
+  { title: 'Canvas toggle', component: CanvasToggleFrame, states: canvasToggleStates },
+  { title: 'Tree', component: UiTree, states: treeStates },
 ]

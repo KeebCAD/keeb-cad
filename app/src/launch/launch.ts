@@ -8,6 +8,8 @@ import { DesignStorage } from '@keeb-cad/storage'
 import { ModelWorkerLifecycle, type Spawn } from '@keeb-cad/workers'
 import * as v from 'valibot'
 
+import { devSeeds } from './tokens'
+
 export class Launch {
   async run(selector: string, spawn: Spawn): Promise<void> {
     const router = mountEditor(selector, this.#injector)
@@ -27,8 +29,14 @@ export class Launch {
   readonly #store = inject(DesignStore)
   readonly #storage = inject(DesignStorage)
   readonly #lifecycle = inject(ModelWorkerLifecycle)
+  readonly #seeds = inject(devSeeds)
 
   async #open(requested: Id | undefined): Promise<Id> {
+    const seed = this.#seeds.find((candidate) => candidate.requested())
+    if (seed !== undefined) {
+      await seed.open()
+      return this.#openId()
+    }
     if (requested !== undefined) {
       const opened = await this.#store.run(OpenStoredDesign, { id: requested })
       if (opened.isOk()) return this.#openId()
