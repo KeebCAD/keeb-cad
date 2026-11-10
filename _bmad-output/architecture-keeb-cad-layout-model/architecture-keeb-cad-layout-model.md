@@ -148,6 +148,7 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | **model worker** | The one Web Worker that holds the design mirror, the reactive graph, the live stages and `pipeline` (AD-11) |
 | **live** | Computed in the model worker after each applied command, the visible set first; posted to main whole, tagged with its seq (AD-11) |
 | **visible set** | The stages of the workspace the editor shows (AD-11's workspace table); the model worker computes them first after each applied command and posts them as one message at one seq |
+| **workspace set** | The posted outputs AD-11's workspace table gives one workspace, posted as one message at one seq whether that workspace is focused or not; the **Layout set** is the Layout workspace's (parts and layout). The visible set is the focused workspace's |
 | **background** | Computed in the case or routing worker from an input slice `pipeline` sends, with progress; cancelled by a newer seq |
 | **preview** | The editor's 2D rendering of posted stage outputs (resolved placements and shapes included), in SVG |
 | **viewport** | The one 2D view position shared by the 2D workspaces (not isolated part mode): centre (mm, y up) and zoom |
