@@ -1,3 +1,5 @@
+import { Result } from '@keeb-cad/result'
+import { expectResult } from '@keeb-cad/result/testing'
 import { DesignStore } from '@keeb-cad/design'
 import type { Id } from '@keeb-cad/schema'
 import { anId } from '@keeb-cad/schema/testing'
@@ -101,10 +103,11 @@ describe('Delete on the selection', () => {
 
     pressKey(DELETE)
 
-    expect({
-      design: shell.design(),
-      available: shell.invoke.available(DeleteSelection),
-    }).toEqual({ design: before, available: false })
+    expectResult(
+      shell.invoke.available(DeleteSelection),
+      Result.err({ kind: 'unavailable', command: DeleteSelection.id }),
+    )
+    expect(shell.design()).toEqual(before)
   })
 
   it('is unavailable with focus on the canvas off Layout, changing nothing', async () => {
@@ -114,10 +117,11 @@ describe('Delete on the selection', () => {
 
     pressKey(DELETE)
 
-    expect({
-      design: shell.design(),
-      available: shell.invoke.available(DeleteSelection),
-    }).toEqual({ design: before, available: false })
+    expectResult(
+      shell.invoke.available(DeleteSelection),
+      Result.err({ kind: 'unavailable', command: DeleteSelection.id }),
+    )
+    expect(shell.design()).toEqual(before)
   })
 
   it("reports one press as its command's event, then its own, each when it settles", async () => {

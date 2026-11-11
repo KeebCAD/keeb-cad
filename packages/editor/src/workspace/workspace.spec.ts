@@ -1,3 +1,5 @@
+import { Result } from '@keeb-cad/result'
+import { expectResult } from '@keeb-cad/result/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { page } from 'vitest/browser'
 
@@ -41,11 +43,14 @@ describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
 
       pressKey(digit('1'))
 
-      expect({
-        available: invoke.available(ShowLayout),
-        hash: location.hash,
-        focused: lifecycle.focused,
-      }).toEqual({ available: false, hash: `#${AT_LAYOUT}`, focused: [] })
+      expectResult(
+        invoke.available(ShowLayout),
+        Result.err({ kind: 'unavailable', command: ShowLayout.id }),
+      )
+      expect({ hash: location.hash, focused: lifecycle.focused }).toEqual({
+        hash: `#${AT_LAYOUT}`,
+        focused: [],
+      })
     })
 
     it('switch on a clicked tab, putting it in the URL and focusing the worker on it', async () => {
