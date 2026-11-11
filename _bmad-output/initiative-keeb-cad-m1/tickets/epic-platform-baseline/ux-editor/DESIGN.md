@@ -2,7 +2,7 @@
 name: keeb-cad editor
 description: Browser-only visual keyboard CAD for one expert builder. Catppuccin Frappé dark by default, Latte light; calm density; canvas first, chrome quiet.
 status: final
-updated: 2026-11-01
+updated: 2026-11-11
 colors:
   # Unsuffixed = dark (Catppuccin Frappé, primary). `-light` = Catppuccin Latte.
   # Comment = Catppuccin color name. Latte uses the same name unless a decided fix says otherwise.
@@ -436,6 +436,7 @@ General states: hover fills `{colors.hover}` (no Mauve bar); pressed/on fills `{
 - **Inspector** — node heading (mono id and muted kind, for example `slot · group thumb`), then collapsible sections (Anchor, Offset, Chain, Fitted, Part, …) with `{typography.section-label}` headers and chevrons at least `{spacing.target-min}`.
 - **Design settings** — the inspector with nothing selected in Layout: form (read-only text), `gap x`, `gap y`, default part. Group overrides (default part only) show `inherits <value>` as placeholder text in `{colors.text-muted}`. → `mockups/pitch-settings-1.html`.
 - **Fitted toggle** — `Fitted: [x] left [x] right` checkboxes in the inspector (`{components.fitted-toggle.box-size}` box; ticked = `{colors.fill-on}`, Mauve edge and ✓). Derived geometry fields on the right half render read-only (Text on `{colors.chrome}`, no border) with `derived from left/<id>` and a lock glyph.
+- **Text field** — mono text, `{colors.border-interactive}` edge, `{rounded.sm}`; focus: `{colors.focus}` border; invalid: `{colors.error}` underline and the message below. The Expression field, Part picker search and palette query build on it.
 - **Expression field** — mono text, evaluated result as a `{colors.text-muted}` suffix (`= 5.12 mm`). Focus: `{colors.focus}` border. Invalid: `{colors.error}` underline and a message below. Pick mode: dashed Teal border, Text value, `picking…` label.
 - **Anchor picker** — anchor field and a 3×3 attach-point grid (cells at least `{spacing.target-min}`); the chosen point fills `{colors.selection}` `[ASSUMPTION]`.
 - **Part field** — field-styled trigger with ▾; opens the Part picker (see Overlays).
@@ -456,6 +457,7 @@ File menu, Export menu, Design info, Autocomplete dropdown and Context menu use 
 - **Context menu** — at the pointer or the focused item. → `mockups/key-panels.html` (c).
 - **Cheat sheet** — command and `kbd` shortcut per row, grouped by workspace.
 - **Part picker** (`part-picker`) — popover anchored beside the Part field, to the left of the inspector; search field on top (`{components.part-picker.search-height}`, focus ring); rows `{components.part-picker.row-height}` with a `{components.part-picker.preview-width}` × `{components.part-picker.preview-height}` footprint preview (`{colors.component-outline}` outline, pads in `{colors.f-cu}`) and mono `name · version`; active row `{colors.hover}` fill + Mauve bar. → `mockups/key-panels.html` (e).
+- **Add flow** — `command-palette` styling (`{colors.panel}`, `{rounded.lg}`, `{components.overlay.shadow}`), narrower, centred on the screen; title in `{typography.ui}` with the parent id in `{typography.mono}`; a Text field labelled `Id`; the reason below it; a `kbd` Esc hint and an `Add` `button`, disabled with its reason, at the bottom right. → `mockups/add-flow-1.html` (option B's card, placed centred).
 - **Violations panel** — `{components.violations-panel.width}` overlay anchored above the status-strip counts. Header row: **Violations**, mono ● / ▲ counts, `F8` / `Shift+F8` kbd hints at the right. Group header per workspace: section label and mono `rev <hash>` at the right. Rows `{spacing.row}`, mono: ● / ▲ glyph, kind, side-qualified ids, message. Stale groups: header hatched in `{colors.stale-hatch}` with a dashed-edge mono `stale` tag. Collapsed unrouted row: progress ring and `N unrouted · routing N/M`. → `mockups/key-panels.html` (a).
 
 ### Canvas views

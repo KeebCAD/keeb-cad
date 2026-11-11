@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Add flow — placement</title>
+<style>
+  :root {
+    --chrome:#292c3c; --panel:#303446; --border:#51576d; --bi:#838ba7; --hover:#414559;
+    --text:#c6d0f5; --muted:#a5adce; --faint:#737994; --mauve:#ca9ee6; --red:#e78284;
+    --canvas:#414559; --key:#949cbb; --legend:#232634;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:20px; background:#232634; color:var(--text); font:13px system-ui, sans-serif; }
+  h1 { font-size:15px; font-weight:600; margin:0 0 4px; }
+  p.lead { color:var(--muted); margin:0 0 16px; }
+  .row { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; }
+  .opt h2 { font-size:13px; margin:0 0 4px; }
+  .opt .why { color:var(--muted); margin:0 0 8px; min-height:48px; }
+  .frame { position:relative; height:330px; border:1px solid var(--border); border-radius:6px; overflow:hidden; background:var(--canvas); }
+  .top { height:28px; background:var(--chrome); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 8px; gap:10px; color:var(--muted); font-size:12px; }
+  .top b { color:var(--text); font-weight:600; border-bottom:2px solid var(--mauve); padding-bottom:2px; }
+  .rail { position:absolute; top:28px; left:0; bottom:22px; width:28px; background:var(--chrome); border-right:1px solid var(--border); }
+  .strip { position:absolute; left:0; right:0; bottom:0; height:22px; background:var(--chrome); border-top:1px solid var(--border); }
+  .key { position:absolute; width:34px; height:34px; border-radius:4px; background:var(--key); border:1px solid #737994; color:var(--legend); font:9px 'JetBrains Mono', ui-monospace, monospace; display:flex; align-items:center; justify-content:center; }
+  .key.sel { outline:2px solid var(--mauve); outline-offset:1px; }
+  .mono { font-family:'JetBrains Mono', ui-monospace, monospace; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:10px; }
+  .title { font-size:12px; margin-bottom:6px; }
+  .title .mono { color:var(--text); }
+  .field { display:flex; align-items:center; height:28px; border:1px solid var(--bi); border-bottom:2px solid var(--red); border-radius:4px; padding:0 6px; background:var(--panel); }
+  .field .mono { flex:1; }
+  .reason { color:var(--red); font-size:12px; margin:4px 0 8px; }
+  .reason::before { content:'▲ '; }
+  .actions { display:flex; justify-content:flex-end; gap:8px; align-items:center; color:var(--muted); font-size:12px; }
+  kbd { font:12px 'JetBrains Mono', ui-monospace, monospace; border:1px solid var(--border); border-bottom-width:2px; border-radius:3px; padding:0 4px; color:var(--muted); }
+  .btn { height:28px; padding:0 12px; border:1px solid var(--border); border-radius:4px; color:var(--faint); background:var(--panel); display:inline-flex; align-items:center; }
+  .slide { position:absolute; top:28px; left:28px; bottom:22px; width:150px; background:var(--chrome); border-right:1px solid var(--border); border-radius:0 8px 8px 0; padding:6px 0; font:12px 'JetBrains Mono', ui-monospace, monospace; }
+  .slide .r { height:22px; display:flex; align-items:center; padding-left:8px; color:var(--text); }
+  .slide .r.sel { background:var(--hover); box-shadow:inset 3px 0 var(--mauve); }
+  .scrim { position:absolute; inset:28px 0 22px 0; background:rgba(35,38,52,.45); }
+  .pick { margin-top:16px; color:var(--muted); }
+  .pick b { color:var(--mauve); }
+</style>
+</head>
+<body>
+  <h1>13.25 · Add flow — look and placement</h1>
+  <p class="lead">Same contents in each: title naming where the node goes, mono id field (pre-filled with a minted id, here edited to a taken one), reason below in the invalid-field style, disabled <i>Add</i>, Esc cancels. Group <span class="mono">matrix</span> is selected; G was pressed.</p>
+
+  <div class="row">
+    <div class="opt">
+      <h2>A · Popover beside the selection</h2>
+      <p class="why">Anchored to the selected node on the canvas (or its Tree row). Shows <i>where</i> spatially; needs an anchor for “nothing selected” and moves with the viewport.</p>
+      <div class="frame">
+        <div class="top"><b>Layout</b> Outline PCB Case Firmware</div>
+        <div class="rail"></div>
+        <div class="key sel" style="left:80px;top:90px">a</div>
+        <div class="key sel" style="left:80px;top:128px">b</div>
+        <div class="card" style="position:absolute;left:124px;top:80px;width:200px">
+          <div class="title">Add group in <span class="mono">matrix</span></div>
+          <div class="field"><span class="mono">a</span></div>
+          <div class="reason">The design already has an item with the id "a".</div>
+          <div class="actions"><kbd>Esc</kbd><span class="btn">Add</span></div>
+        </div>
+        <div class="strip"></div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <h2>B · Small dialog under the top bar</h2>
+      <p class="why">Command-palette position and look (Base, rounded-lg, centred under the top bar), smaller. One place for canvas and Tree focus; modal, focus returns where it was.</p>
+      <div class="frame">
+        <div class="top"><b>Layout</b> Outline PCB Case Firmware</div>
+        <div class="rail"></div>
+        <div class="key sel" style="left:80px;top:150px">a</div>
+        <div class="key sel" style="left:80px;top:188px">b</div>
+        <div class="scrim"></div>
+        <div class="card" style="position:absolute;left:50%;transform:translateX(-50%);top:44px;width:250px">
+          <div class="title">Add group in <span class="mono">matrix</span></div>
+          <div class="field"><span class="mono">a</span></div>
+          <div class="reason">The design already has an item with the id "a".</div>
+          <div class="actions"><kbd>Esc</kbd><span class="btn">Add</span></div>
+        </div>
+        <div class="strip"></div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <h2>C · Inline row in the Tree</h2>
+      <p class="why">An editable row at the insertion point (last child of <span class="mono">matrix</span>); G or S on the canvas opens the Tree first. Exact <i>where</i>, but the reason squeezes into a 150&nbsp;px panel.</p>
+      <div class="frame">
+        <div class="top"><b>Layout</b> Outline PCB Case Firmware</div>
+        <div class="rail"></div>
+        <div class="slide">
+          <div class="r">▾ matrix</div>
+          <div class="r" style="padding-left:22px">▫ a</div>
+          <div class="r" style="padding-left:22px">▫ b</div>
+          <div style="margin:2px 6px 0 18px">
+            <div class="field" style="height:24px"><span class="mono">a</span></div>
+            <div class="reason" style="font:11px system-ui">The design already has an item with the id "a".</div>
+          </div>
+        </div>
+        <div class="key sel" style="left:220px;top:110px">a</div>
+        <div class="key sel" style="left:220px;top:148px">b</div>
+        <div class="strip"></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="pick">Recommendation: <b>B</b> — one placement whatever has focus, reuses the palette's look (no new visual language), and the title names the parent so <i>where</i> is still said.</p>
+</body>
+</html>
