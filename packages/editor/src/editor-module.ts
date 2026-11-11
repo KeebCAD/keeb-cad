@@ -11,6 +11,9 @@ import { CloseSlideOut } from './slide-out/close-slide-out'
 import { OpenTree } from './slide-out/open-tree'
 import { SlideOut } from './slide-out/slide-out'
 import { registerUiAction } from './ui-actions/register-ui-action'
+import { CanvasCursor } from './viewport/canvas-cursor'
+import { CanvasItems } from './viewport/canvas-items'
+import { FitViewport } from './viewport/fit-viewport'
 import { Viewport } from './viewport/viewport'
 import { ShowCase } from './workspace/case/show-case'
 import { ShowFirmware } from './workspace/firmware/show-firmware'
@@ -27,7 +30,9 @@ export const editorModule: Module = {
     container.register(Landmarks).useClass(Landmarks)
     container.register(SlideOut).useClass(SlideOut)
     container.register(Selection).useClass(Selection)
+    container.register(CanvasItems).useClass(CanvasItems)
     container.register(Viewport).useClass(Viewport)
+    container.register(CanvasCursor).useClass(CanvasCursor)
     container.register(SwitchGrace).useClass(SwitchGrace)
     registerUiAction(container, ShowLayout)
     registerUiAction(container, ShowOutline)
@@ -38,5 +43,6 @@ export const editorModule: Module = {
     registerUiAction(container, FocusPreviousLandmark)
     registerUiAction(container, OpenTree)
     registerUiAction(container, CloseSlideOut)
+    registerUiAction(container, FitViewport)
   },
 }

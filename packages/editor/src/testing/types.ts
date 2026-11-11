@@ -33,3 +33,5 @@ export type LayoutSetPost = {
   parts: PartsOutput
   epoch?: number
 }
+
+export type LayoutRowOf = LayoutOutput['rows'][number]

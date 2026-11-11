@@ -352,6 +352,12 @@ const config: IConfiguration = {
       'Only editor and ui import @vueuse/core.',
     ),
     onlyImports(
+      'only-editor-imports-use-gesture',
+      '^packages/editor/',
+      npm('@use-gesture/vanilla'),
+      'Only editor imports @use-gesture/vanilla: canvas input belongs to the canvases.',
+    ),
+    onlyImports(
       'only-reactive-imports-vue-reactivity',
       '^packages/reactive/',
       VUE_REACTIVITY,

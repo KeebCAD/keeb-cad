@@ -1,4 +1,4 @@
-import type { DisplayUnit } from './types'
+import type { DisplayUnit, FormatOptions } from './types'
 
 const DECIMALS = 2
 const MINUS = '−'
@@ -6,16 +6,21 @@ const UNIT_SUFFIX: Readonly<Record<DisplayUnit, string>> = {
   mm: ' mm',
   deg: '°',
   s: ' s',
+  percent: '%',
   none: '',
 }
 
 /** It rounds the shortest decimal string, because binary `toFixed` turns `1.005` into `1.00`. */
-export function formatNumber(value: number, unit: DisplayUnit): string {
+export function formatNumber(
+  value: number,
+  unit: DisplayUnit,
+  { readout = false }: FormatOptions = {},
+): string {
   if (!Number.isFinite(value)) throw new RangeError(`Cannot format ${value} as a number.`)
   const { whole, fraction } = decimalDigits(Math.abs(value))
   const rounded = roundHalfUp(whole, fraction)
   const text = rounded.fraction === '' ? rounded.whole : `${rounded.whole}.${rounded.fraction}`
-  const moved = rounded.whole !== whole || rounded.fraction !== fraction
+  const moved = !readout && (rounded.whole !== whole || rounded.fraction !== fraction)
   const sign = value < 0 && text !== '0' ? MINUS : ''
   return `${moved ? '≈ ' : ''}${sign}${text}${UNIT_SUFFIX[unit]}`
 }

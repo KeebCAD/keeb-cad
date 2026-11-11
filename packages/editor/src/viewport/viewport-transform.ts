@@ -15,3 +15,14 @@ export function modelToScreen(
     y: size.height / 2 - zoom * (point.y - centre.y),
   }
 }
+
+export function screenToModel(
+  point: Point,
+  { centre, zoom }: ViewportValue,
+  size: CanvasSize,
+): Point {
+  return {
+    x: centre.x + (point.x - size.width / 2) / zoom,
+    y: centre.y - (point.y - size.height / 2) / zoom,
+  }
+}

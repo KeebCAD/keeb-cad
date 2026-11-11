@@ -294,7 +294,7 @@ export default defineConfigWithVueTs(
       'packages/commands/src/**/*.ts',
       'packages/design/src/**/*.spec.ts',
       // editor's UiActions are entries too.
-      'packages/editor/src/{workspace,landmarks,slide-out}/**/*.ts',
+      'packages/editor/src/{workspace,landmarks,slide-out,viewport}/**/*.ts',
     ],
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],

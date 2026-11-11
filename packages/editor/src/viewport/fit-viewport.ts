@@ -1,23 +1,31 @@
-import { Option } from '@keeb-cad/result'
+import { emptyInputSchema, type EmptyInput } from '@keeb-cad/commands'
+import { inject } from '@keeb-cad/di'
 
-import type { Bounds, CanvasSize, ViewportValue } from './types'
+import { DesignLocation } from '../router/design-location'
+import { Selection } from '../selection/selection'
+import type { UiAction } from '../ui-actions/types'
+import { CanvasItems } from './canvas-items'
+import { Viewport } from './viewport'
 
-// None for bounds with no extent, or a canvas side no larger than both paddings, which would give
-// an infinite, zero or negative zoom.
-export function fitViewport(
-  bounds: Bounds,
-  size: CanvasSize,
-  padding: number,
-): Option<ViewportValue> {
-  const room = { width: size.width - 2 * padding, height: size.height - 2 * padding }
-  if (room.width <= 0 || room.height <= 0) return Option.none()
-  const zooms = [
-    ...(bounds.width > 0 ? [room.width / bounds.width] : []),
-    ...(bounds.height > 0 ? [room.height / bounds.height] : []),
-  ]
-  if (zooms.length === 0) return Option.none()
-  return Option.some({
-    centre: { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 },
-    zoom: Math.min(...zooms),
-  })
+export class FitViewport implements UiAction<EmptyInput> {
+  static readonly kind = 'ui-action'
+  static readonly id = 'viewport.fitViewport'
+  static readonly label = 'Fit the viewport'
+  static readonly input = emptyInputSchema
+  static readonly hotkeys = ['F'] as const
+
+  // Only Layout draws so far, and with nothing drawn there is nothing to fit.
+  available(): boolean {
+    const onLayout = this.#location.workspace.map((open) => open === 'layout').getOr(false)
+    return onLayout && this.#items.drawsAny
+  }
+
+  apply(_input: EmptyInput): void {
+    this.#viewport.fitNodes(this.#selection.ids)
+  }
+
+  readonly #location = inject(DesignLocation)
+  readonly #items = inject(CanvasItems)
+  readonly #selection = inject(Selection)
+  readonly #viewport = inject(Viewport)
 }

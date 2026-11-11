@@ -26,3 +26,11 @@ export function isGroup<N extends { readonly id: Id }>(
 export function subtreeIds(node: Frozen<Node>): Id[] {
   return isGroup(node) ? [node.id, ...node.children.flatMap(subtreeIds)] : [node.id]
 }
+
+// A node inside another one asked for is already in that one's subtree, so it is not listed twice.
+export function subtreeIdsOf(root: Frozen<Node>, ids: readonly Id[]): Id[] {
+  const wanted = new Set<string>(ids)
+  const walk = (node: Frozen<Node>): Id[] =>
+    wanted.has(node.id) ? subtreeIds(node) : isGroup(node) ? node.children.flatMap(walk) : []
+  return walk(root)
+}

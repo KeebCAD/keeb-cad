@@ -232,6 +232,11 @@ describe('the rules on cruised trees', async () => {
           v('di-root-reaches-no-vue', 'packages/di/src/index.ts', '@keeb-cad/di/vue'),
           v('di-root-reaches-no-vue', 'packages/di/src/wiring.ts', '@keeb-cad/di/vue'),
           v('only-editor-and-ui-import-vueuse', 'packages/di/src/vue/index.ts', '@vueuse/core'),
+          v(
+            'only-editor-imports-use-gesture',
+            'packages/ui/src/gesture.ts',
+            '@use-gesture/vanilla',
+          ),
           v('only-editor-imports-di-vue', 'packages/storage/src/index.ts', '@keeb-cad/di/vue'),
           v('only-editor-ui-and-di-vue-import-vue', 'packages/di/src/wiring.ts', 'vue'),
           v('only-editor-ui-and-di-vue-import-vue', 'packages/storage/src/index.ts', 'vue'),
@@ -422,9 +427,16 @@ describe('the rules on cruised trees', async () => {
       ],
       [
         'editor',
-        'model/main, Vue, VueUse, ui and di/vue',
+        'model/main, Vue, VueUse, use-gesture, ui and di/vue',
         'packages/editor/src/index.ts',
-        ['@keeb-cad/model/main', 'vue', '@vueuse/core', '@keeb-cad/ui', '@keeb-cad/di/vue'],
+        [
+          '@keeb-cad/model/main',
+          'vue',
+          '@vueuse/core',
+          '@use-gesture/vanilla',
+          '@keeb-cad/ui',
+          '@keeb-cad/di/vue',
+        ],
       ],
       [
         'model/worker',

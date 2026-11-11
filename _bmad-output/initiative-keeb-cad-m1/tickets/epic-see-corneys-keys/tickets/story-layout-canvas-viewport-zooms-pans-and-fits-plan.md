@@ -3,15 +3,15 @@ title: 'Layout canvas viewport zooms, pans and fits'
 type: 'feature'
 ticket: 23
 created: '2026-11-10'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: 'd2c6cdf9160fa0e9a62f40ffac06b1151b7b8a5e'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
-review_loop_iteration: 0
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
+review_loop_iteration: 5
 context:
   - '{project-root}/_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md'
   - '{project-root}/_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/EXPERIENCE.md'
@@ -28,7 +28,7 @@ context:
 ## Boundaries & Constraints
 
 **Always:**
-- Decision (Sergii 2026-11-10): 100% zoom is 96/25.4 px per mm, the CSS `mm` (1in = 96px = 25.4mm), so 100% shows the board at nominal real size; not 1 px/mm (a key is 18 px at 100%, and 10% is unusable) and not 13.7's 4 px/mm (an opening value never meant to be shown).
+- Decision (Sergii 2026-11-10): 100% zoom is 96/25.4 CSS px per mm, the browser's `mm` (1in = 96px = 25.4mm); it matches physical size only on a screen whose scaling makes a CSS inch a real inch (KiCad's Z 1.0 has the same limit and adds calibration separately; a calibration would be its own story); not 1 px/mm (a key is 18 px at 100%, and 10% is unusable) and not 13.7's 4 px/mm (an opening value never meant to be shown).
 - Decision (Sergii 2026-11-10): `@use-gesture/vanilla` (10.3.1, `editor` dependency; the spine's Stack table gains it as canvas input, beside "2D canvas: inline SVG via Vue templates (no library)", which stays about drawing) is the input layer: `onPinch` (Ctrl+wheel and Safari gesture events) zooms continuously toward the pointer, `onDrag` filtered to the middle button or Space held pans, `onWheel` applies the notch rule below. Not hand-written listeners (Sergii: use a library for the plumbing), not d3-zoom (keeps its own transform on the element, a second copy of the viewport, and zooms on trackpad scroll), not panzoom (writes its own CSS transform, against AD-22's one y-flip). No library tells a mouse from a trackpad (W3C pointerevents #596), so the notch rule stays ours and Sergii's look is its real-hardware check.
 - Notch rule (Sergii 2026-11-10, part of the input-layer pick above): a plain (no Ctrl) wheel event is one mouse notch when `deltaMode` is lines or pages and `deltaY` ≠ 0, or when `deltaMode` is pixels, `deltaX` is 0 and `|deltaY|` is a whole number ≥ 50; `deltaY` < 0 zooms in ×1.1, > 0 out ÷1.1, toward the cursor. Any other plain pixel-mode event pans as a page scrolls (MDN: positive `deltaY` scrolls down): the centre moves by (`deltaX`, −`deltaY`) / zoom mm. A lines or pages event with `deltaY` 0 changes nothing.
 - Decision (Sergii 2026-11-10): the verify's hit-radius check (handles at 8 px at 50%, 100%, 400%) is not built here; it moves to the first story that draws a handle (deferred-work.md), not a keycap check (keys scale by design) and not a helper with nothing to check, because no handle exists on the canvas after 13.7 and 13.23. Sofia drops the clause from 13.23.
@@ -127,21 +127,21 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] Spine, on main first -- the Stack and Numbers lines above.
-- [ ] `packages/editor/package.json` -- `@use-gesture/vanilla` 10.3.1 (one user, so no catalog entry: `tooling/catalog.spec.ts` asks `catalog:` only of shared deps).
-- [ ] `viewport/viewport-limits.ts` -- `minZoomPercent` 10, `maxZoomPercent` 2000, `wheelStep` 1.1, `notchMinDeltaPx` 50, `fitPaddingPx` 24, `viewportWriteIntervalMs` 250, `pxPerMmAt100` 96/25.4; delete `fit-padding.ts`.
-- [ ] `viewport/{zoom-at.ts,pan-by.ts,clamp-zoom.ts,zoom-percent.ts,fitted-viewport.ts,viewport-transform.ts}` (function) -- `zoomAt(value, screenPoint, factor, size)`, `panBy(value, screenDelta)`, `clampZoom`, `zoomPercent`, `viewportForBounds`, `screenToModel`. Rows 1–11a, 25c–25d.
-- [ ] `viewport/read-wheel.ts` (function) -- `readWheel(event): WheelReading` (`{ kind: 'notch'; direction: 'in' | 'out' } | { kind: 'pan'; delta: Point } | { kind: 'none' }` in `viewport/types.ts`). Rows 29–31.
-- [ ] `viewport/viewport-value-schema.ts` -- the stored and devtools schema: `{ centre: { x, y }, zoom }`, zoom in the range.
-- [ ] `viewport/viewport.ts` (service) -- injects `DesignStore` for the open design's id; `useStorage(() => key, null, undefined, { serializer, writeDefaults: false })` in a detached scope stopped by `[Symbol.dispose]` (as `switch-grace.ts`); `zoomAt`, `panBy`, `setCentre`, `setZoom` (clamped), `fitOnce(bounds, size)`, `fitNodes(ids)` (expands each id with `subtreeIds` of its node in the open design, takes `CanvasItems.bounds`, else every slot on the canvas; a fit that can't run changes nothing); with no design open the value is `Viewport.initial` in memory and nothing is written. Rows 13–17c.
-- [ ] `viewport/use-viewport-controls.ts` (function) -- the one `Gesture` on the `<svg>`: `onMove`/`onHover` → `CanvasCursor`, `onPinch` → `zoomAt`, `onDrag` (middle button, or Space held) → `panBy`, `onWheel` → `readWheel`; destroyed on unmount. Space held comes from VueUse `onKeyStroke(' ', …)` keydown/keyup, counted only with focus in the canvas landmark or on `body` and `preventDefault`ed there; a click that ends a pan drag is stopped in the capture phase so it selects nothing. Rows 18–22, 20a.
-- [ ] `viewport/{canvas-items.ts,use-canvas-item.ts,use-canvas-items-root.ts}` (service, function, function) -- `CanvasItems`: the canvas registers its `<svg>` and keys group; each `CanvasSlot` registers its element under its node id (several per id, for 13.8's right half); `bounds(ids): Option<Bounds>` unions every registered element of those ids; `size()`.
-- [ ] `viewport/fit-viewport.ts` (service; UiAction `FitViewport`, id `viewport.fitViewport`, label `Fit the viewport`, hotkey `F`, `emptyInputSchema`; `apply` returns `void` per today's `ui-actions/types.ts`, which 13.24 changes for every UiAction) -- available on Layout with a drawn key; `apply` calls `fitNodes` with the selection. Rows 23–25b, 32–33.
-- [ ] `viewport/canvas-cursor.ts` (service) -- holds the pointer's screen point and canvas size (`Option`), set by the controls, none on leave and on unmount; `model` is `screenToModel` of it through the current viewport, so a pan or fit under a still pointer updates the readout. Rows 26a, 28.
-- [ ] `status-strip/{CursorReadout.vue,ZoomReadout.vue}`, `use-cursor-readout.ts`, `use-zoom-readout.ts` (function, function) -- added to `StatusStripLandmark.vue`; each `min-w-40` (Tailwind's 4px grid, 160 px; AD-26 "Spacing is Tailwind's 4px grid", no arbitrary value). Rows 11, 11a, 26, 28.
-- [ ] `ui/src/format/{format-number.ts,types.ts}` + spec -- `'percent'` (`%`, no space) and `formatNumber(value, unit, { readout: true })`. Row 12.
-- [ ] `.dependency-cruiser.mts` -- `onlyImports('only-editor-imports-use-gesture', '^packages/editor/', …)` beside `only-editor-and-ui-import-vueuse`; a refused fixture under `tooling/ad10/violations/packages/ui/src/` and a `rules.spec.ts` row.
-- [ ] `devtools/viewport-inspectable.ts` (zoom on `viewportValueSchema`'s range; row 27), `services-classified.spec.ts`, `editor-module.ts` -- register `CanvasItems`, `CanvasCursor`, `FitViewport`; classify the first two `notShown`.
+- [x] Spine, on main first -- the Stack and Numbers lines above (done in d2c6cdf).
+- [x] `packages/editor/package.json` -- `@use-gesture/vanilla` 10.3.1 (one user, so no catalog entry: `tooling/catalog.spec.ts` asks `catalog:` only of shared deps).
+- [x] `viewport/viewport-limits.ts` -- `minZoomPercent` 10, `maxZoomPercent` 2000, `wheelStep` 1.1, `notchMinDeltaPx` 50, `fitPaddingPx` 24, `viewportWriteIntervalMs` 250, `pxPerMmAt100` 96/25.4; delete `fit-padding.ts`.
+- [x] `viewport/{zoom-at.ts,pan-by.ts,clamp-zoom.ts,zoom-percent.ts,fitted-viewport.ts,viewport-transform.ts}` (function) -- `zoomAt(value, screenPoint, factor, size)`, `panBy(value, screenDelta)`, `clampZoom`, `zoomPercent`, `viewportForBounds`, `screenToModel`. Rows 1–11a, 25c–25d.
+- [x] `viewport/read-wheel.ts` (function) -- `readWheel(event): WheelReading` (`{ kind: 'notch'; direction: 'in' | 'out' } | { kind: 'pan'; delta: Point } | { kind: 'none' }` in `viewport/types.ts`). Rows 29–31.
+- [x] `viewport/viewport-value-schema.ts` -- the stored and devtools schema: `{ centre: { x, y }, zoom }`, zoom in the range.
+- [x] `viewport/viewport.ts` (service) -- injects `DesignStore` for the open design's id; `useStorage(() => key, null, undefined, { serializer, writeDefaults: false })` in a detached scope stopped by `[Symbol.dispose]` (as `switch-grace.ts`); `zoomAt`, `panBy`, `setCentre`, `setZoom` (clamped), `fitOnce(bounds, size)`, `fitNodes(ids)` (expands each id with `subtreeIds` of its node in the open design, takes `CanvasItems.bounds`, else every slot on the canvas; a fit that can't run changes nothing); with no design open the value is `Viewport.initial` in memory and nothing is written. Rows 13–17c.
+- [x] `viewport/use-viewport-controls.ts` (function) -- the one `Gesture` on the `<svg>`: `onMove`/`onHover` → `CanvasCursor`, `onPinch` → `zoomAt`, `onDrag` (middle button, or Space held) → `panBy`, `onWheel` → `readWheel`; destroyed on unmount. Space held comes from VueUse `onKeyStroke(' ', …)` keydown/keyup, counted only with focus in the canvas landmark or on `body` and `preventDefault`ed there; a click that ends a pan drag is stopped in the capture phase so it selects nothing. Rows 18–22, 20a.
+- [x] `viewport/{canvas-items.ts,use-canvas-item.ts,use-canvas-items-root.ts}` (service, function, function) -- `CanvasItems`: the canvas registers its `<svg>` and keys group; each `CanvasSlot` registers its element under its node id (several per id, for 13.8's right half); `bounds(ids): Option<Bounds>` unions every registered element of those ids; `size()`.
+- [x] `viewport/fit-viewport.ts` (service; UiAction `FitViewport`, id `viewport.fitViewport`, label `Fit the viewport`, hotkey `F`, `emptyInputSchema`; `apply` returns `void` per today's `ui-actions/types.ts`, which 13.24 changes for every UiAction) -- available on Layout with a drawn key; `apply` calls `fitNodes` with the selection. Rows 23–25b, 32–33.
+- [x] `viewport/canvas-cursor.ts` (service) -- holds the pointer's screen point and canvas size (`Option`), set by the controls, none on leave and on unmount; `model` is `screenToModel` of it through the current viewport, so a pan or fit under a still pointer updates the readout. Rows 26a, 28.
+- [x] `status-strip/{CursorReadout.vue,ZoomReadout.vue}`, `use-cursor-readout.ts`, `use-zoom-readout.ts` (function, function) -- added to `StatusStripLandmark.vue`; each `min-w-40` (Tailwind's 4px grid, 160 px; AD-26 "Spacing is Tailwind's 4px grid", no arbitrary value). Rows 11, 11a, 26, 28.
+- [x] `ui/src/format/{format-number.ts,types.ts}` + spec -- `'percent'` (`%`, no space) and `formatNumber(value, unit, { readout: true })`. Row 12.
+- [x] `.dependency-cruiser.mts` -- `onlyImports('only-editor-imports-use-gesture', '^packages/editor/', …)` beside `only-editor-and-ui-import-vueuse`; a refused fixture under `tooling/ad10/violations/packages/ui/src/` and a `rules.spec.ts` row.
+- [x] `devtools/viewport-inspectable.ts` (zoom on `viewportValueSchema`'s range; row 27), `services-classified.spec.ts`, `editor-module.ts` -- register `CanvasItems`, `CanvasCursor`, `FitViewport`; classify the first two `notShown`.
 
 **Acceptance Criteria:**
 - Given the boundary table, when `pnpm test` runs, then each row passes at its level.
@@ -149,9 +149,94 @@ context:
 
 ## Implementation Notes
 
+- Decision (build): `useStorage`'s `flush: 'sync'`, not its documented default `'pre'`, because a pending write must land under its own design's key before the key moves to the next design; with `'pre'` the write watcher runs after the key has changed and writes design A's view under B. Tried: `flush: 'pre'` fails 8 tests in `viewport.spec.ts` (stored min/max used, reopen at stored pan, pending writes on switch and dispose).
+- `useStorage`'s `shallow` option is left at VueUse's default: `shallow: true` was tried and dropped, since all 60 viewport tests pass either way, so it was a choice no requirement made.
+- Decision (build): `@use-gesture`'s drag `pointer.capture: false`, not its default `setPointerCapture` (`config.d.ts`: "Doesn't use setPointerCapture when false and delegate drag handling to window"), because capture throws in Firefox for a pointer the browser didn't press ("Invalid pointer id"), which the browser-mode tests' synthetic drags are; window delegation still follows a drag that leaves the canvas. Tried: `capture: true` fails the middle-drag and both Space+drag tests (rows 19, 20, 20a).
+- Decision (build): the pinch zooms by the ratio of each step's gesture scale to the last (`from: [1, 0]` per gesture), not the library's offset across gestures, so the viewport's own clamp decides the limits (row 18a; a library `scaleBounds` would hide the "no clamp" toggled bug). A step whose scale is not positive is ignored; a notch-shaped Ctrl+wheel step no longer reaches it (Sergii's Ctrl-notch decision below).
+- Decision (build): a plain wheel event is `preventDefault`ed (`wheel.eventOptions.passive: false`), not left passive, so a sideways trackpad swipe over the canvas pans instead of navigating back; a middle-button press is `preventDefault`ed, not left, so it starts no autoscroll.
+- Decision (build): `CanvasSlot` registers its body `<rect>` in `CanvasItems`, not the `UiCanvasToggle` root, because the component's `$el` is not the drawn `<g>` (Reka's `Primitive`), and the rect is the key's drawn extent without its stroke.
+- Decision (build): `FitViewport` is available on Layout while `CanvasItems` holds a canvas and at least one item (`drawsAny`), not by reading the posted set, because "a drawn key" is what the browser drew.
+- Decision (build): "a value is stored for the open design" counts an edit not yet written (the throttle's pending one), not only `localStorage`, so a pan inside a throttle window still keeps the opening fit away.
+- Decision (build): Space is released on any keyup of Space and on window blur, not only where it was pressed, so a held Space never sticks after focus moves.
+- Decision (build): the canvas test helpers (`designWith`, `layoutOf`, `arrangeLayoutCanvas`, sizing) moved from `LayoutCanvas.spec.ts` into `testing/layout-canvas.ts`, not copied into each new spec, because four specs now arrange the same canvas.
+- Note: `@use-gesture/vanilla` joins the pre-bundled deps in `packages/editor/vitest.config.ts` and `app/vitest.config.ts` (their comments: a dep found mid-run re-bundles and loads two Vitest runners), and `eslint.config.ts`'s entry-parameters glob gains `viewport` for `FitViewport.apply(_input)`.
+- Note: row 26a's expected (12.34 + 7.5, −5.67 + 5) is what a trackpad scroll of (30, −20) px gives (the centre moves by (`deltaX`, −`deltaY`) / zoom); a drag pan of (30, −20) px, by row 8, gives (12.34 − 7.5, −5.67 − 5). The test drives 26a with the scroll, so both rows hold as written.
+- Note: the specs wait two ticks after a write before writing again at once (`writeSettled`): VueUse's own storage event pauses its write watch until the next tick (`listenToStorageChanges`, kept at its default `true`). In the app an edit and a design switch in the same tick would lose the switch's flush; a person's input never lands in the same tick.
+- Resolved (Sergii's 1366×696 decision below): `app/src/launch/launch.spec.ts`'s two "status strip Restart" tests fail. The app's browser tests run at Vitest's default 414 px viewport, where the two never-compressing 160 px readouts push the worker failure text and the Restart button out of the strip (editor's specs run at the 1366 px floor and pass). Fixing it is a person's call: run app's browser tests at the 1366 × 696 floor as `packages/editor/vitest.config.ts` does (runner config), or let the readouts compress on overflow (reverses the frozen strip decision).
+
+- Decision (Sergii 2026-11-10): `app/vitest.config.ts` runs its browser specs at 1366×696, as `packages/editor/vitest.config.ts:48` does ("DESIGN.md's laptop floor"), not Vitest's default 414 px width, at which the two 160 px readouts pushed the worker-failure Restart out of the strip (`launch.spec.ts`'s two Restart tests, 4 failures in both browsers); not compressing the readouts (reverses his strip decision for a width DESIGN.md doesn't support).
+- Decision (build): `@use-gesture/vanilla` joins both Vitest configs' `optimizeDeps.include`, not left for Vite to find, because their comment says "if Vite discovers them mid-run it re-bundles, and a browser that already loaded the old chunks ends up with two copies of Vitest's runner".
+- Decision (build): `eslint.config.ts`'s entry-parameter glob gains `viewport`, because its comment says "editor's UiActions are entries too" and `FitViewport` lives in `viewport/`.
+
+- Decision (Sergii 2026-11-10): a Ctrl+wheel event shaped like a notch (by `readWheel`) zooms one notch ×1.1 toward the cursor, as without Ctrl; trackpad pinches keep the library's continuous zoom. Not the library's pinch scale for it, which multiplies by `1 - deltaY / 100` (`@use-gesture/core` 10.3.1 `actions-fe213e88.esm.js:1217`) and so reaches zero or below for a mouse notch of 100 px or more, zooming nothing; not a continuous formula of our own (a new tuning constant, and a notch would no longer be ×1.1). The pinch-limit test now uses a fractional step (−30.5), since −50 would read as a notch. Toggled bug: the notch branch disabled → the two Ctrl-notch tests red in both browsers (4), green once restored.
+
+- Real-host run (2026-11-11): Playwright 1.64.1's trusted `mouse.wheel`, `mouse.down({ button: 'middle' })`, `keyboard.down('Space')` and `keyboard.press('f')` against `vite --port 5199`, `/?seed=corney`, in Chromium 156 and Firefox 157 (script: scratchpad `real-host.cjs`). Before the fixes below, both browsers went from 306% to 370% on one Ctrl+wheel notch (two notches), and Chromium logged "Unable to preventDefault inside passive event listener invocation." twice, once per drag. After them, both browsers: notch 306% → 337% → 306% with the point under the pointer fixed; scroll (10, 20) px pans by (10, 20) / zoom; middle-drag (60, −40) moves the model point under a fixed screen spot by (−5.19, −3.46) mm at 306%; Space+drag from a key presses no key; Ctrl+wheel notch 306% → 337%; F refits to 306%; no console errors. The specs' synthetic events stay; real mouse and trackpad hardware (the notch rule) remain Sergii's look.
+- Decision (build): `onPinch` returns at once when the gesture is not `active`, not left to zoom on every emit, because a wheel pinch's end emits once more with its last event (`@use-gesture/core` 10.3.1 `actions-fe213e88.esm.js:1224-1229`, `wheelEnd` calls `compute()` with no event, so `state.event` is the last wheel event) and the real-host run zoomed two notches. The four wheel tests now let the library's 140 ms gesture-end timer (`use-gesture-core.esm.js:154`) run on Vitest's fake timers before asserting; the two Ctrl-notch tests went red in both browsers (4) before the fix.
+- Decision (build): the drag binds its listeners with `eventOptions: { passive: false }`, not the library's shared default `passive: true` (`use-gesture-core.esm.js:46-53`), because the drag starts on the `pointerdown` itself (`actions-fe213e88.esm.js:665-671`) and a passive listener can't prevent it; Chromium logged the passive warning, so the middle press could still autoscroll. Toggled bug: `passive: true` → "prevents the default of the middle press that starts a pan" red in both browsers (2), green once restored.
+- Decision (Sergii 2026-11-11): a plain wheel event over the canvas is `preventDefault`ed, not left passive and not passive with `overscroll-behavior: none`, because EXPERIENCE.md's 2D pointer map says "trackpad two-finger scroll pans" and a sideways swipe that navigates Back breaks it; his look on a real trackpad is the check.
+- Decision (Sergii 2026-11-11): Space is released on any Space keyup and on window blur, not only on a keyup with focus on the canvas or `body`, because the narrower release leaves Space stuck after focus moves mid-hold, and the next left-drag would pan.
+- Decision (Sergii 2026-11-11): an edit still pending in the write throttle counts as stored for the opening fit, not only `localStorage`, so a re-run of the fit watch inside the first 250 ms never undoes a pan.
+- Decision (build): `CanvasSlot` registers its body `<rect>`, not the `UiCanvasToggle` group: the face `<rect>` (`CanvasSlot.vue:52-60`, `keycapProportions`) lies inside the body (`:43-51`), so the group's bounds equal the body's, and the rect is reachable by template ref without the component exposing its root.
+
+- Test gap closed: rows 9–10 now also run through `Viewport.fitOnce` (`viewport.spec.ts`, "clamps a fitted zoom …"); before, only `clampZoom` was tested and removing it from `#fit` left every test green. Toggled bug: `#fit` without `clampZoom` → the two rows past a limit red in both browsers (4), green once restored.
+- Decision (Sergii 2026-11-11): `subtreeIdsOf` returns tree order, not request order, listing a node inside another asked-for group once, as `subtreeIds` is tree order and a reordered selection then fits the same; not order left out of the contract (a set comparison).
+
 ## Plan Change Log
 
+- 2026-11-11, review pass 1 (Sergii's pick, not the `bad_plan` loopback's revert): the quick lens found `withDescendants` below the `Viewport` class, walking the layout by hand with `'children' in node` beside model's `isGroup` (`'arrangement' in node`, `node-tree.ts:20-24`). Amended: `subtreeIdsOf(root, ids)` joins `packages/model/src/layout-editing/node-tree.ts` (function) with `node-tree.spec.ts`, exported from `@keeb-cad/model/main` beside `subtreeIds`; `Viewport.fitNodes` calls it. Known-bad state avoided: a second group test in `editor` that drifts when a group kind changes. KEEP: everything else in the diff; no code was reverted.
+
 ## Review Triage Log
+
+Pass 1 (quick, test-reviewer; 0 dropped for a missing quote):
+- quick: `withDescendants` in the class file, duplicating model's tree walk -- medium, real (`viewport.ts:144-148`); routed by Sergii to a patch with a model export (Plan Change Log).
+- quick + test-reviewer: notch tests expect `before.zoom * wheelStep`, so any `wheelStep` passes -- medium, real (`zoomAt` takes the factor; only `zoomByNotch` reads `wheelStep`); patched: `NOTCH = 1.1` from EXPERIENCE.md in `zoom-at.spec.ts` and `use-viewport-controls.spec.ts`.
+- quick + test-reviewer: row 32 expects `EVERY_SLOT_FITTED` while slot `c` is outside -- low, real (name only; the value is a ∪ b); patched: `KEYS_A_AND_B_FITTED`.
+- quick: `onPinch`'s notch branch returns `previous` while the library's offset moved by the notch's `1 - deltaY/100` -- low, real (`actions-fe213e88.esm.js:1217`; a later fractional step in the same gesture zoomed ×2); patched: returns `scale`; test "keeps a pinch step after a notch-shaped step …", red in both browsers with `previous` (2). A notch-out step of 100 px still zeroes the library's offset for the rest of that gesture: rejected, low, needs a mouse notch inside a trackpad pinch, and no direct fix (the offset is the library's).
+- quick: the cursor readout keeps the size and rect offset of the last pointer event, so a resize under a still pointer shows a stale point -- low, real; rejected: rare (the next move corrects it) and the fix adds a size source to `CanvasCursor`.
+- quick: test names cite 13.7 -- low, real; patched: "the initial 4 px per mm".
+- quick: `minZoom`/`maxZoom` constants in the function file `clamp-zoom.ts` -- low, real (one kind of thing per file); patched: `zoom-range.ts` (not `viewport-limits.ts`: `zoomForPercent` imports from it, a cycle).
+- quick: comments restating code in `use-canvas-item.ts`, `use-canvas-items-root.ts`, `use-viewport-controls.ts`, `viewport.ts`, `viewport-limits.ts` -- low, real; patched: deleted.
+- test-reviewer: reopen, throttle and pending-write tests expect values read back from the subject -- low, real (a no-op `panBy` would pass the reopen row); patched: `panBy(ONE_KEY_FITTED, PAN)` and `panBy(panBy(Viewport.initial, PAN), PAN)` (`panBy` is row 8's function with its own spec).
+- test-reviewer: the no-design test reads only the centre -- low, real; patched: whole `viewport.value`.
+- test-reviewer: row 17a's reload clears storage in `arrange` -- low; rejected: `written: undefined` already proves storage was empty, so the clear changes nothing the assertion depends on, and the fix adds an `arrange` option.
+- test-reviewer: zoom-at row named "just above the minimum" lands on it -- low, real; patched: rows named on / would pass / above.
+- test-reviewer: `isNone()).toBe(true)` narrows -- low, real; patched: `toEqual(Option.none())`.
+- test-reviewer: rows 11, 11a ("unit, editor") tested only through the mounted shell -- low, real (breaks the frozen level column); patched: `status-strip/zoom-readout.ts` (function) with `zoom-readout.spec.ts`; the strip spec keeps one wiring test.
+- test-reviewer: row 25a passes because no canvas root registers, leaving `drawsAny`'s item count untested -- false: a registered root with no items is unreachable (the keys group renders only when a slot is placed, `LayoutCanvas.vue` `v-if="!showsHint"`), and AGENTS.md says "Arrange only a state real commands could reach".
+- test-reviewer: finite-centre refusal in `viewport-value-schema.ts` and `corners-in.ts` skipping an element with no CTM are unstated -- low, real; rejected as findings (the fix is a plan edit); listed as decisions at the look.
+
+
+Pass 2 (quick, test-reviewer, on the diff since pass 1; 0 dropped):
+- quick: the strip's one wiring test set zoom 4, which is `Viewport.initial`'s (`viewport.ts:19`), so a readout that never updates passed -- medium, real; patched: sets 96/25.4 and expects `100%`. Toggled bug: a non-reactive readout → red in both browsers (2), green once restored.
+- quick: no `subtreeIdsOf` row asks for a node inside a group not asked for -- low, real (a root-children-only walk survived); patched: rows `['g-child']` and `['g-child', 'a']` → tree order.
+- quick: `node-tree.spec.ts` writes out the builder's default root id -- low, real; patched: dropped.
+- quick: the notch comment said the library scales by −deltaY / 100; it multiplies by 1 − deltaY / 100 (`actions-fe213e88.esm.js` `wheelChange`) -- low, real; patched: comment corrected.
+- test-reviewer: `KEYS_A_AND_B_FITTED` aliased `EVERY_SLOT_FITTED` -- low, real; patched: the a ∪ b literal carries the name, `EVERY_SLOT_FITTED` aliases it for the two-key layout.
+- test-reviewer: `subtreeIdsOf`'s tree order and de-duplication are unstated -- low; rejected as a finding (the fix is a plan edit); listed as a decision at the look.
+
+Pass 3 (quick, test-reviewer, on the diff since pass 2; 0 dropped):
+- quick: "shows the zoom in the strip as it changes" asserts only the value after the change, relying on the initial 4 px/mm unasserted -- low, real; patched: asserts `106%` at 4, then `100%`.
+- quick + test-reviewer: `subtreeIdsOf`'s tree-order row takes its expected value from the code -- low, real; asked (AGENTS.md "When nothing says what a boundary returns, ask"): Sergii chose tree order with each id once (Implementation Notes).
+- Reopened (pass 1's stale-cursor finding, flagged to Sergii by a side note): it breaks the frozen cursor decision ("not the last position (looks live and isn't)"), so it is not a low to reject, and the side-panel case is false (`TreeSlideOut` is an absolute overlay, `EditorShell.vue:24`); the window-resize case is real. Patched: the controls keep the pointer's last client point and re-sample the cursor on a canvas size change. Test "shows the model point now under a still pointer after the canvas resizes" lets the library's move end (a 140 ms timer that re-samples with the current size, which first hid the toggled bug) on fake timers before resizing. Toggled bug: the size watch removed → red in both browsers (2), green once restored.
+
+Pass 4 (quick, test-reviewer, on the diff since pass 3; 0 dropped):
+- quick: no findings.
+- test-reviewer: the resize test has no boundary-table row (row 26a is a pan) -- low, real; rejected as a finding (the fix is a plan edit; the frozen table takes no rows); the test follows the frozen cursor decision.
+- test-reviewer: a canvas that shrinks out from under a still pointer kept showing a model point -- low, real, and against the frozen cursor decision (dashes "while the pointer is off the canvas"); patched: the size watch shows dashes when the held point falls outside the canvas. Test "shows dashes once the canvas shrinks out from under a still pointer" (whole-pixel sizes: layout rounds to 1/64 px). Toggled bug: the on-canvas check removed → red in both browsers (2), green once restored.
+
+Pass 5 (quick, test-reviewer, on the diff since pass 4; 0 dropped):
+- quick: `onMove` had no `active` guard, so the move's end emit (`actions-fe213e88.esm.js:1305`, `:1324-1329`, 140 ms after the last move) put a model point back after the size watch showed dashes -- low, real, against the frozen cursor decision; patched: `onMove` returns when not `active`. Test "shows dashes once the canvas shrinks off the pointer before its move has ended" (fake `setTimeout` only, so the size poll still runs). Toggled bug: guard removed → red in both browsers (2), green once restored.
+- quick + test-reviewer: the shrink test moved both axes at once, so dropping either axis's check passed -- low, real; patched: `it.each` rows narrower only and shorter only. Toggled bug: height check dropped → the shorter row red in both browsers (2), the narrower row green.
+- quick: the timer-draining preamble was duplicated without its reason -- low, real; patched: `pointStillAtModel` helper with the reason.
+- quick + test-reviewer: the canvas edge counts as on the canvas (`<=`), unstated, and has no on-edge row -- low; rejected as a finding (a plan edit; an exact on-edge row is out of reach because layout rounds sizes to 1/64 px while the pointer sits at fractional pixels); listed as a decision at the look.
+
+Pass 6 (quick, test-reviewer, on the diff since pass 5; 0 dropped) -- nothing above low, no frozen line broken: the review ends; its lows are logged, not patched:
+- quick + test-reviewer: `pointStillAtModel` restores real timers only when it finishes, so a throw inside it leaves later tests on fake timers -- low (only after a test has already failed).
+- test-reviewer: the shrink rows sit 1.36 and 1.68 px short of the pointer, with no on-edge or just-past row -- low (an exact on-edge row is out of reach while layout rounds to 1/64 px).
+- test-reviewer: the inclusive canvas edge is unstated -- low; listed as a decision at the look.
+- test-reviewer: "shows dashes once the canvas shrinks off the pointer before its move has ended" names its arrange; the act is the move's end -- low.
+
+Final: `pnpm test` 533 files, 4257 tests, no type errors. Real-host run repeated on the final code in Chromium 156 and Firefox 157: the same readings as above, no console errors.
 
 ## Design Notes
 
