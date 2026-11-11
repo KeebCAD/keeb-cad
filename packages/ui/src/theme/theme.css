@@ -65,6 +65,8 @@
   --color-via: #c6d0f5;
   --color-via-hole: #232634;
   --color-glyph-stroke: transparent;
+  /* One value for both themes, as the overlay shadow is, so the theme blocks don't repeat it. */
+  --color-scrim: rgba(35, 38, 52, 0.45);
 
   --spacing: 4px;
   --spacing-row: 30px;

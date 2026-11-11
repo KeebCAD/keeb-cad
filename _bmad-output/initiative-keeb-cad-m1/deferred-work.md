@@ -481,3 +481,6 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-g-and-s-add-groups-and-slots-through-the-add-flow-plan.md`
   summary: `packages/editor/src/selection/delete-selection.spec.ts:132` waits with a real timer (`await new Promise((settle) => setTimeout(settle, 0))`), and its `arrange` has a hidden default (`selected = [anId('a')]`).
   evidence: 13.25 conformance pass 1 (both readers); AGENTS 'Set time with Vitest's fake timers' and 'Arrange only what the test uses, passed as arguments to an `arrange` helper'. 13.25's rows wait with `expect.poll` and pass their arrangement instead.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-a-modal-owns-the-keyboard-plan.md`
+  summary: `packages/ui/workbench/CanvasToggleFrame.vue` takes the glossary's **frame** for a workbench wrapper that gives a canvas toggle its SVG; rename it (13.27 named its own wrapper `DialogHost`).
+  evidence: 13.27 conformance review (precedent check); spine glossary "**frame** | A position + rotation in the plane"; AGENTS 'Name a thing for what it does, checked against the spine's glossary'.

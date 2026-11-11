@@ -6,6 +6,7 @@ import { assertValidHotkey, HotkeyLayer } from '@keeb-cad/ui'
 import { Invoke } from '../invoke/invoke'
 import { uiActions } from '../ui-actions/tokens'
 import { DuplicateHandleIdError } from './duplicate-handle-id-error'
+import { isBehindModal } from './is-behind-modal'
 import type { Shortcut, ShortcutTarget } from './types'
 
 export class ShortcutRegistry implements Disposable {
@@ -27,11 +28,15 @@ export class ShortcutRegistry implements Disposable {
     }
   }
 
-  listen(target: ShortcutTarget): void {
+  listen(target: ShortcutTarget, root: Element): void {
     if (this.#layer !== undefined) {
       throw new InvariantError('The shortcut registry is already listening.')
     }
-    const layer = new HotkeyLayer(target, (id) => this.#run(id))
+    const layer = new HotkeyLayer(
+      target,
+      (id) => this.#run(id),
+      () => isBehindModal(root),
+    )
     layer.replaceHotkeys([...this.#shortcuts].map(([id, { hotkey }]) => ({ id, hotkey })))
     this.#layer = layer
   }
