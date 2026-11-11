@@ -1,14 +1,9 @@
 import type { Design, Id, Mutable, Rejection } from '@keeb-cad/schema'
 
-import { reject } from '../reject/reject'
+import { checkDeletePart } from './check-delete-part'
 
 export function deletePart(design: Mutable<Design>, id: Id): void | Rejection {
-  if (design.meta.defaultPart === id) {
-    return reject(
-      'default-part-required',
-      [id],
-      `The part "${id}" is the design's default part and can't be deleted.`,
-    )
-  }
+  const checked = checkDeletePart(design, id)
+  if (checked.isErr()) return checked.error
   design.parts = design.parts.filter((part) => part.id !== id)
 }

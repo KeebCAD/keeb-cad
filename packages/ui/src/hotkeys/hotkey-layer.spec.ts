@@ -8,8 +8,8 @@ const T = { id: 'tree', hotkey: 'T' }
 const K = { id: 'keys', hotkey: 'K' }
 const Q = { id: 'quit-pick', hotkey: 'Q' }
 
-function arrange(entries: readonly HotkeyEntry[]) {
-  const onHotkey = vi.fn<(id: string) => void>()
+function arrange(entries: readonly HotkeyEntry[], ran = true) {
+  const onHotkey = vi.fn<(id: string) => boolean>(() => ran)
   const layer = new HotkeyLayer(document, onHotkey)
   onTestFinished(() => layer.destroy())
   layer.replaceHotkeys(entries)
@@ -95,6 +95,52 @@ describe('HotkeyLayer', () => {
     press({ key: 'r', code: 'KeyR' })
 
     expect(onHotkey).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['leaves a plain key to the focused element when the handler did not run it', false, false],
+    ['claims a plain key when the handler ran it', true, true],
+  ])('%s', (_role, ran, expectedPrevented) => {
+    arrange([{ id: 'delete', hotkey: 'Delete' }], ran)
+
+    const event = press({ key: 'Delete', code: 'Delete' })
+
+    expect(event.defaultPrevented).toBe(expectedPrevented)
+  })
+
+  it.each([
+    ['a Ctrl chord', 'mod+D', { key: 'd', code: 'KeyD', ctrlKey: true }, true],
+    ['a Meta chord', 'meta+D', { key: 'd', code: 'KeyD', metaKey: true }, true],
+    ['an Alt+arrow', 'alt+ArrowLeft', { key: 'ArrowLeft', code: 'ArrowLeft', altKey: true }, true],
+    [
+      'a Shift chord, no Ctrl or Meta one',
+      'shift+F6',
+      { key: 'F6', code: 'F6', shiftKey: true },
+      false,
+    ],
+  ])(
+    'with an entry that did not run, prevents %s as told',
+    (_role, hotkey, init, expectedPrevented) => {
+      const { onHotkey } = arrange([{ id: 'entry', hotkey }], false)
+
+      const event = press(init)
+
+      expect({ called: onHotkey.mock.calls, prevented: event.defaultPrevented }).toEqual({
+        called: [['entry']],
+        prevented: expectedPrevented,
+      })
+    },
+  )
+
+  it("leaves another layout's chord on the same physical key alone (Dvorak's Ctrl+E)", () => {
+    const { onHotkey } = arrange([{ id: 'duplicate', hotkey: 'mod+D' }])
+
+    const event = press({ key: 'e', code: 'KeyD', ctrlKey: true })
+
+    expect({ called: onHotkey.mock.calls, prevented: event.defaultPrevented }).toEqual({
+      called: [],
+      prevented: false,
+    })
   })
 
   it("prevents a matched chord's default", () => {

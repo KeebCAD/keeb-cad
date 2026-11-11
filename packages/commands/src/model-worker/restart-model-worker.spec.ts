@@ -5,6 +5,7 @@ import { ModelWorkerLifecycle, type ModelWorkerStatus, workersModule } from '@ke
 import { RecordingModelWorkerLifecycle } from '@keeb-cad/workers/testing'
 import { describe, expect, it } from 'vitest'
 
+import { settled } from '../testing/settled'
 import { modelWorkerActionsModule } from './model-worker-actions-module'
 import { RestartModelWorker } from './restart-model-worker'
 
@@ -26,15 +27,15 @@ async function arrange() {
 }
 
 describe('RestartModelWorker', () => {
-  it.each<[string, ModelWorkerStatus, boolean]>([
-    ['unavailable while idle', 'idle', false],
-    ['available while running', 'running', true],
-    ['available while failed', { message: 'boom' }, true],
+  it.each<[string, ModelWorkerStatus, ReturnType<typeof settled>]>([
+    ['unavailable while idle', 'idle', { kind: 'unavailable', command: RestartModelWorker.id }],
+    ['available while running', 'running', 'ok'],
+    ['available while failed', { message: 'boom' }, 'ok'],
   ])('is %s', async (_role, status, expected) => {
     const { store, lifecycle } = await arrange()
     lifecycle.setStatus(status)
 
-    expect(store.available(RestartModelWorker)).toBe(expected)
+    expect(settled(store.available(RestartModelWorker, {}))).toEqual(expected)
   })
 
   it('restarts the lifecycle once', async () => {

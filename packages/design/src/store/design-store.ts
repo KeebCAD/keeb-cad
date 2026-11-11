@@ -80,21 +80,26 @@ export class DesignStore {
       : this.#runCommand(handle, input)
   }
 
-  available(handle: CommandHandle | ActionHandle): boolean {
+  // Parses before it checks, as run does, so a check only ever sees input its schema accepts.
+  available(handle: CommandHandle | ActionHandle, input: unknown): Result<void, Rejection> {
     return match(handle)
       .with(
         P.when((entry): entry is CommandHandle => entry.kind === 'command'),
         (command) => {
           this.#ensureRegistered(this.#commands, command)
           const current = this.#current.value
-          return current !== undefined && this.#commandAvailable(command, current.design)
+          return current === undefined
+            ? this.#unavailable(command)
+            : this.#parse(command, input).flatMap((parsed) =>
+                this.#commandAvailable(command, current.design, parsed),
+              )
         },
       )
       .with(
         P.when((entry): entry is ActionHandle => entry.kind === 'action'),
         (action) => {
           this.#ensureRegistered(this.#actions, action)
-          return this.#actionAvailable(action)
+          return this.#parse(action, input).flatMap(() => this.#actionAvailable(action))
         },
       )
       .exhaustive()
@@ -152,12 +157,14 @@ export class DesignStore {
     const copied = this.#copyInput(input)
     const current = this.#committed()
     const { design } = current
-    if (!this.#commandAvailable(handle, design))
-      return Result.err<Rejection>({ kind: 'unavailable', command: handle.id })
-    const command = this.#injector.resolve(handle)
-    return parse(handle.input, copied)
-      .mapErr((issues): Rejection => ({ kind: 'input-invalid', command: handle.id, issues }))
-      .flatMap((parsed) => this.#patcher.change(design, (draft) => command.apply(draft, parsed)))
+    return this.#parse(handle, copied)
+      .flatMap((parsed) =>
+        this.#commandAvailable(handle, design, parsed).flatMap(() =>
+          this.#patcher.change(design, (draft) =>
+            this.#injector.resolve(handle).apply(draft, parsed),
+          ),
+        ),
+      )
       .flatMap(({ design: next, patches }): Result<void, Rejection> => {
         if (patches.length === 0) return Result.ok()
         this.#ensureValidDesign(next, handle.id)
@@ -175,21 +182,38 @@ export class DesignStore {
   #runAction(handle: ActionHandle, input: unknown): AsyncResult<void, unknown> {
     this.#ensureRegistered(this.#actions, handle)
     const copied = this.#copyInput(input)
-    return this.#actionAvailable(handle)
-      ? parse(handle.input, copied).match<AsyncResult<void, unknown>>({
-          ok: (parsed) => this.#injector.resolve(handle).apply(parsed),
-          err: (issues) =>
-            AsyncResult.err<Rejection>({ kind: 'input-invalid', command: handle.id, issues }),
-        })
-      : AsyncResult.err<Rejection>({ kind: 'unavailable', command: handle.id })
+    return this.#parse(handle, copied)
+      .flatMap((parsed) => this.#actionAvailable(handle).map(() => parsed))
+      .match<AsyncResult<void, unknown>>({
+        ok: (parsed) => this.#injector.resolve(handle).apply(parsed),
+        err: (rejection) => AsyncResult.err(rejection),
+      })
   }
 
-  #commandAvailable(handle: CommandHandle, design: Frozen<Design>): boolean {
-    return this.#injector.resolve(handle).available(design)
+  #parse(handle: CommandHandle | ActionHandle, input: unknown): Result<unknown, Rejection> {
+    return parse(handle.input, input).mapErr((issues): Rejection => ({
+      kind: 'input-invalid',
+      command: handle.id,
+      issues,
+    }))
   }
 
-  #actionAvailable(handle: ActionHandle): boolean {
+  #commandAvailable(
+    handle: CommandHandle,
+    design: Frozen<Design>,
+    parsed: unknown,
+  ): Result<void, Rejection> {
+    return this.#injector.resolve(handle).available(design, parsed)
+  }
+
+  #actionAvailable(handle: ActionHandle): Result<void, Rejection> {
     return this.#injector.resolve(handle).available(this.current)
+      ? Result.ok()
+      : this.#unavailable(handle)
+  }
+
+  #unavailable(handle: CommandHandle | ActionHandle): Result<never, Rejection> {
+    return Result.err({ kind: 'unavailable', command: handle.id })
   }
 
   #ensureRegistered<H extends CommandHandle | ActionHandle>(

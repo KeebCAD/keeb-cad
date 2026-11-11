@@ -1,10 +1,13 @@
+import { Option } from '@keeb-cad/result'
 import type { Frozen, Group, Id, Mutable, Node } from '@keeb-cad/schema'
 
 import type { Found } from './types'
 
-export function findNode(root: Mutable<Group>, id: string): Found | undefined {
+export function findNode(root: Mutable<Group>, id: string): Found | undefined
+export function findNode(root: Frozen<Group>, id: string): Frozen<Found> | undefined
+export function findNode(root: Frozen<Group>, id: string): Frozen<Found> | undefined {
   if (root.id === id) return { node: root, parent: undefined, index: 0 }
-  const search = (group: Mutable<Group>): Found | undefined => {
+  const search = (group: Frozen<Group>): Frozen<Found> | undefined => {
     for (const [index, child] of group.children.entries()) {
       if (child.id === id) return { node: child, parent: group, index }
       if (isGroup(child)) {
@@ -15,6 +18,11 @@ export function findNode(root: Mutable<Group>, id: string): Found | undefined {
     return undefined
   }
   return search(root)
+}
+
+export function nextSiblingId(root: Frozen<Group>, id: Id): Option<Id> {
+  const found = findNode(root, id)
+  return Option.fromNullable(found?.parent?.children[found.index + 1]?.id)
 }
 
 export function isGroup<N extends { readonly id: Id }>(

@@ -1,7 +1,7 @@
 import { Container, inject } from '@keeb-cad/di'
 import { hash } from '@keeb-cad/hashing'
 import { isProxy, reactive } from '@keeb-cad/reactive'
-import { AsyncResult, InvariantError, Option } from '@keeb-cad/result'
+import { AsyncResult, InvariantError, Option, Result } from '@keeb-cad/result'
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
 import {
   type Design,
@@ -42,8 +42,8 @@ class RenameDesign implements Command<RenameDesignInput> {
   static readonly label = 'Rename design'
   static readonly input = renameDesignInputSchema
 
-  available(_design: Frozen<Design>): boolean {
-    return true
+  available(_design: Frozen<Design>): Result<void, Rejection> {
+    return Result.ok()
   }
 
   apply(draft: Writable<Design>, input: RenameDesignInput): void {
@@ -60,8 +60,8 @@ class SetForm implements Command<SetFormInput> {
   static readonly label = 'Set form'
   static readonly input = setFormInputSchema
 
-  available(_design: Frozen<Design>): boolean {
-    return true
+  available(_design: Frozen<Design>): Result<void, Rejection> {
+    return Result.ok()
   }
 
   apply(draft: Writable<Design>, input: SetFormInput): void {
@@ -79,8 +79,8 @@ class SpreadRename implements Command<SpreadRenameInput> {
   static readonly label = 'Spread rename'
   static readonly input = spreadRenameInputSchema
 
-  available(_design: Frozen<Design>): boolean {
-    return true
+  available(_design: Frozen<Design>): Result<void, Rejection> {
+    return Result.ok()
   }
 
   apply(draft: Writable<Design>, input: SpreadRenameInput): void {
@@ -100,8 +100,8 @@ class StoreForm implements Command<StoreFormInput> {
   static readonly label = 'Store form'
   static readonly input = storeFormInputSchema
 
-  available(_design: Frozen<Design>): boolean {
-    return true
+  available(_design: Frozen<Design>): Result<void, Rejection> {
+    return Result.ok()
   }
 
   apply(draft: Writable<Design>, input: StoreFormInput): void {
@@ -118,8 +118,8 @@ class LooseRename implements Command<LooseRenameInput> {
   static readonly label = 'Loose rename'
   static readonly input = looseRenameInputSchema
 
-  available(_design: Frozen<Design>): boolean {
-    return true
+  available(_design: Frozen<Design>): Result<void, Rejection> {
+    return Result.ok()
   }
 
   apply(draft: Writable<Design>, input: LooseRenameInput): void {
@@ -177,14 +177,14 @@ function recordInputAction(received: unknown[]) {
 }
 
 // Test entries whose availability check is the test's own, so a row can make it say no.
-function renameWith(available: (design: Frozen<Design>) => boolean) {
+function renameWith(available: (design: Frozen<Design>) => Result<void, Rejection>) {
   return class RenameWith implements Command<RenameDesignInput> {
     static readonly kind = 'command'
     static readonly id = 'meta.renameWith'
     static readonly label = 'Rename with'
     static readonly input = renameDesignInputSchema
 
-    available(design: Frozen<Design>): boolean {
+    available(design: Frozen<Design>): Result<void, Rejection> {
       return available(design)
     }
 
@@ -230,10 +230,6 @@ async function arrange(arrangement: Arrangement = {}): Promise<DesignStore> {
     expectOk(store.replaceDesign({ design: arrangement.design, unreadable: [] }))
   }
   return store
-}
-
-function unibodyDesign() {
-  return aDesign({ meta: aMeta({ form: { type: 'unibody' } }) })
 }
 
 // The derived files a design starts with, written out as the requirement states them.
@@ -422,8 +418,8 @@ describe('DesignStore', () => {
         static readonly label = 'Locked rename'
         static readonly input = lockedRenameInputSchema
 
-        available(_design: Frozen<Design>): boolean {
-          return false
+        available(_design: Frozen<Design>): Result<void, Rejection> {
+          return Result.err({ kind: 'unavailable', command: 'meta.lockedRename' })
         }
 
         apply(draft: Writable<Design>, input: LockedRenameInput): void {
@@ -456,8 +452,8 @@ describe('DesignStore', () => {
         static readonly label = 'Reject rename'
         static readonly input = rejectRenameInputSchema
 
-        available(_design: Frozen<Design>): boolean {
-          return true
+        available(_design: Frozen<Design>): Result<void, Rejection> {
+          return Result.ok()
         }
 
         apply(draft: Writable<Design>, input: RejectRenameInput): Rejection {
@@ -494,37 +490,34 @@ describe('DesignStore', () => {
       expectNothingCommitted(store, before, events)
     })
 
-    it.each([
-      ['valid input', { board: 'mirrored' }],
-      ['input its schema refuses', { board: 'tented' }],
-    ])('refuses a command that is unavailable, given %s', async (_name, input) => {
-      const setBoardInputSchema = v.object({
-        board: v.pipe(v.string(), v.picklist(['reversible', 'mirrored'])),
-      })
-      type SetBoardInput = v.InferOutput<typeof setBoardInputSchema>
-
-      class SetBoard implements Command<SetBoardInput> {
-        static readonly kind = 'command'
-        static readonly id = 'meta.setBoard'
-        static readonly label = 'Set board'
-        static readonly input = setBoardInputSchema
-
-        available(design: Frozen<Design>): boolean {
-          return design.meta.form.type === 'split'
-        }
-
-        apply(draft: Writable<Design>, input: SetBoardInput): void {
-          draft.meta.form = { type: 'split', board: input.board }
-        }
-      }
-      const store = await arrange({ commands: [SetBoard], design: unibodyDesign() })
+    it('refuses with the rejection its check returns, as it is, committing nothing', async () => {
+      const RenameWith = renameWith(() => Result.err({ kind: 'stale', seq: 1, latest: 2 }))
+      const store = await arrange({ commands: [RenameWith], design: aDesign() })
       const before = store.current
       const events = recordCommits(store)
 
-      const result = store.run(SetBoard, input)
+      const result = store.run(RenameWith, { name: 'Corne v2' })
 
       expectErr(result)
-      expect(result.error).toEqual({ kind: 'unavailable', command: 'meta.setBoard' })
+      expect(result.error).toEqual({ kind: 'stale', seq: 1, latest: 2 })
+
+      expectNothingCommitted(store, before, events)
+    })
+
+    it('refuses input its schema refuses before asking a check that would refuse', async () => {
+      const RenameWith = renameWith(() => Result.err({ kind: 'stale', seq: 1, latest: 2 }))
+      const store = await arrange({ commands: [RenameWith], design: aDesign() })
+      const before = store.current
+      const events = recordCommits(store)
+
+      const result = store.run(RenameWith, { name: '' })
+
+      expectErr(result)
+      expect(result.error).toEqual({
+        kind: 'input-invalid',
+        command: 'meta.renameWith',
+        issues: [{ path: ['name'], message: expect.any(String) }],
+      })
 
       expectNothingCommitted(store, before, events)
     })
@@ -640,11 +633,23 @@ describe('DesignStore', () => {
     })
 
     it.each([
-      ['valid input', { fileName: 'corne.kdl' }],
-      ['input its schema refuses', { fileName: '' }],
+      [
+        'valid input as unavailable',
+        { fileName: 'corne.kdl' },
+        { kind: 'unavailable', command: 'file.saveDesign' },
+      ],
+      [
+        'input its schema refuses as input-invalid',
+        { fileName: '' },
+        {
+          kind: 'input-invalid',
+          command: 'file.saveDesign',
+          issues: [{ path: ['fileName'], message: expect.any(String) }],
+        },
+      ],
     ])(
       'refuses an action that is unavailable, given %s, without applying',
-      async (_name, input) => {
+      async (_name, input, expected) => {
         const saved: unknown[] = []
         const saveDesignInputSchema = v.object({ fileName: v.pipe(v.string(), v.minLength(1)) })
         type SaveDesignInput = v.InferOutput<typeof saveDesignInputSchema>
@@ -669,7 +674,7 @@ describe('DesignStore', () => {
         const result = await store.run(SaveDesign, input)
 
         expectErr(result)
-        expect(result.error).toEqual({ kind: 'unavailable', command: 'file.saveDesign' })
+        expect(result.error).toEqual(expected)
         expect(saved).toEqual([])
       },
     )
@@ -735,46 +740,121 @@ describe('DesignStore', () => {
 
   describe('available', () => {
     it('says a command is unavailable before any design is loaded', async () => {
-      const RenameWith = renameWith(() => true)
+      const RenameWith = renameWith(() => Result.ok())
       const store = await arrange({ commands: [RenameWith] })
 
-      expect(store.available(RenameWith)).toBe(false)
+      const result = store.available(RenameWith, { name: 'Corne v2' })
+
+      expectErr(result)
+      expect(result.error).toEqual({ kind: 'unavailable', command: 'meta.renameWith' })
     })
 
-    it.each([
-      ['unavailable when its check says no', false, false],
-      ['available when its check says yes', true, true],
-    ])('says a command with a design loaded is %s', async (_name, checkSays, expected) => {
-      const RenameWith = renameWith(() => checkSays)
+    it('refuses input its schema refuses before asking a check that would refuse', async () => {
+      const RenameWith = renameWith(() => Result.err({ kind: 'stale', seq: 1, latest: 2 }))
       const store = await arrange({ commands: [RenameWith], design: aDesign() })
 
-      expect(store.available(RenameWith)).toBe(expected)
+      const result = store.available(RenameWith, { name: '' })
+
+      expectErr(result)
+      expect(result.error).toEqual({
+        kind: 'input-invalid',
+        command: 'meta.renameWith',
+        issues: [{ path: ['name'], message: expect.any(String) }],
+      })
     })
 
-    it.each([
-      ['unavailable when its check says no', false, false],
-      ['available when its check says yes', true, true],
-    ])('says an action with no design loaded is %s', async (_name, checkSays, expected) => {
-      const SaveWith = saveWith(() => checkSays)
+    it("gives a command's own rejection as it is", async () => {
+      const RenameWith = renameWith(() => Result.err({ kind: 'stale', seq: 1, latest: 2 }))
+      const store = await arrange({ commands: [RenameWith], design: aDesign() })
+
+      const result = store.available(RenameWith, { name: 'Corne v2' })
+
+      expectErr(result)
+      expect(result.error).toEqual({ kind: 'stale', seq: 1, latest: 2 })
+    })
+
+    it('says a command is available when its check says ok', async () => {
+      const RenameWith = renameWith(() => Result.ok())
+      const store = await arrange({ commands: [RenameWith], design: aDesign() })
+
+      expectOk(store.available(RenameWith, { name: 'Corne v2' }))
+    })
+
+    it("hands a command's check the parsed input", async () => {
+      const seen: unknown[] = []
+      const trimRenameInputSchema = v.object({ name: v.pipe(v.string(), v.trim()) })
+      type TrimRenameInput = v.InferOutput<typeof trimRenameInputSchema>
+
+      class TrimRename implements Command<TrimRenameInput> {
+        static readonly kind = 'command'
+        static readonly id = 'meta.trimRename'
+        static readonly label = 'Trim rename'
+        static readonly input = trimRenameInputSchema
+
+        available(_design: Frozen<Design>, input: TrimRenameInput): Result<void, Rejection> {
+          seen.push(input)
+          return Result.ok()
+        }
+
+        apply(draft: Writable<Design>, input: TrimRenameInput): void {
+          draft.meta.name = input.name
+        }
+      }
+      const store = await arrange({ commands: [TrimRename], design: aDesign() })
+
+      store.available(TrimRename, { name: ' Corne ' })
+
+      expect(seen).toEqual([{ name: 'Corne' }])
+    })
+
+    it('refuses action input its schema refuses before asking a check that says no', async () => {
+      const SaveWith = saveWith(() => false)
       const store = await arrange({ actions: [SaveWith] })
 
-      expect(store.available(SaveWith)).toBe(expected)
+      const result = store.available(SaveWith, null)
+
+      expectErr(result)
+      expect(result.error).toEqual({
+        kind: 'input-invalid',
+        command: 'file.saveWith',
+        issues: [{ path: [], message: expect.any(String) }],
+      })
+    })
+
+    it('says an action is unavailable when its check says no', async () => {
+      const SaveWith = saveWith(() => false)
+      const store = await arrange({ actions: [SaveWith] })
+
+      const result = store.available(SaveWith, {})
+
+      expectErr(result)
+      expect(result.error).toEqual({ kind: 'unavailable', command: 'file.saveWith' })
+    })
+
+    it('says an action with no design loaded is available when its check says yes', async () => {
+      const SaveWith = saveWith(() => true)
+      const store = await arrange({ actions: [SaveWith] })
+
+      expectOk(store.available(SaveWith, {}))
     })
 
     it("gives an action's check the design once one is loaded", async () => {
       const SaveWith = saveWith((current) => current.isSome())
       const store = await arrange({ actions: [SaveWith] })
-      const before = store.available(SaveWith)
+      const before = store.available(SaveWith, {})
 
       expectOk(store.replaceDesign({ design: aDesign(), unreadable: [] }))
 
-      expect([before, store.available(SaveWith)]).toEqual([false, true])
+      const after = store.available(SaveWith, {})
+      expectErr(before)
+      expect(before.error).toEqual({ kind: 'unavailable', command: 'file.saveWith' })
+      expectOk(after)
     })
 
     it('throws on a command that is not registered', async () => {
       const store = await arrange()
 
-      expect(() => store.available(RenameDesign)).toThrow(
+      expect(() => store.available(RenameDesign, { name: 'Corne v2' })).toThrow(
         new InvariantError('Command "meta.renameDesign" is not registered.'),
       )
     })
@@ -800,8 +880,8 @@ describe('DesignStore', () => {
           constructed += 1
         }
 
-        available(_design: Frozen<Design>): boolean {
-          return true
+        available(_design: Frozen<Design>): Result<void, Rejection> {
+          return Result.ok()
         }
 
         apply(draft: Writable<Design>, input: NameDesignInput): void {
@@ -891,8 +971,8 @@ describe('DesignStore', () => {
         static readonly label = 'Retitle design'
         static readonly input = retitleDesignInputSchema
 
-        available(_design: Frozen<Design>): boolean {
-          return true
+        available(_design: Frozen<Design>): Result<void, Rejection> {
+          return Result.ok()
         }
 
         apply(draft: Writable<Design>, input: RetitleDesignInput): void {

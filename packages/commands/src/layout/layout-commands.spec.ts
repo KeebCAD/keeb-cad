@@ -1,6 +1,14 @@
 import { DesignStore, designModule } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
-import { addNode, deleteNode, duplicateNode } from '@keeb-cad/model/main'
+import {
+  addNode,
+  checkAddNode,
+  checkDeleteNode,
+  checkDuplicateNode,
+  deleteNode,
+  duplicateNode,
+} from '@keeb-cad/model/main'
+import type { Result } from '@keeb-cad/result'
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
 import {
   aChainGroup,
@@ -13,6 +21,7 @@ import {
   aSlot,
   aVec2,
 } from '@keeb-cad/schema/testing'
+import type { Rejection } from '@keeb-cad/schema'
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
@@ -20,6 +29,7 @@ import { AddGroup } from './add-group'
 import { AddSlot } from './add-slot'
 import { DeleteNode } from './delete-node'
 import { DuplicateNode } from './duplicate-node'
+import { settled } from '../testing/settled'
 import { layoutCommandsModule } from './layout-commands-module'
 
 function aLayoutDesign() {
@@ -113,6 +123,130 @@ describe('the layout commands forward to their operation', () => {
   )
 })
 
+describe('the layout commands answer availability with their check', () => {
+  it.each([
+    [
+      'AddSlot, a new id',
+      () => {
+        const design = aLayoutDesign()
+        const input = { parent: anId('column'), index: 0, id: anId('top') }
+        return [
+          new AddSlot().available(design, input),
+          checkAddNode(design, anId('top'), { parent: anId('column'), index: 0 }),
+        ]
+      },
+    ],
+    [
+      'AddSlot, a taken id',
+      () => {
+        const design = aLayoutDesign()
+        const input = { parent: anId('column'), index: 0, id: anId('home') }
+        return [
+          new AddSlot().available(design, input),
+          checkAddNode(design, anId('home'), { parent: anId('column'), index: 0 }),
+        ]
+      },
+    ],
+    [
+      'AddSlot, an index above the child count',
+      () => {
+        const design = aLayoutDesign()
+        const input = { parent: anId('column'), index: 2 }
+        return [
+          new AddSlot().available(design, input),
+          checkAddNode(design, undefined, { parent: anId('column'), index: 2 }),
+        ]
+      },
+    ],
+    [
+      'AddGroup, a new id',
+      () => {
+        const design = aLayoutDesign()
+        const input = {
+          arrangement: 'free' as const,
+          parent: anId('column'),
+          index: 0,
+          id: anId('inner'),
+        }
+        return [
+          new AddGroup().available(design, input),
+          checkAddNode(design, anId('inner'), { parent: anId('column'), index: 0 }),
+        ]
+      },
+    ],
+    [
+      'AddGroup, a taken id',
+      () => {
+        const design = aLayoutDesign()
+        const input = {
+          arrangement: 'free' as const,
+          parent: anId('column'),
+          index: 0,
+          id: anId('home'),
+        }
+        return [
+          new AddGroup().available(design, input),
+          checkAddNode(design, anId('home'), { parent: anId('column'), index: 0 }),
+        ]
+      },
+    ],
+    [
+      'AddGroup, an index above the child count',
+      () => {
+        const design = aLayoutDesign()
+        const input = { arrangement: 'free' as const, parent: anId('column'), index: 2 }
+        return [
+          new AddGroup().available(design, input),
+          checkAddNode(design, undefined, { parent: anId('column'), index: 2 }),
+        ]
+      },
+    ],
+    [
+      'DuplicateNode, an id the design has',
+      () => {
+        const design = aLayoutDesign()
+        return [
+          new DuplicateNode().available(design, { id: anId('home') }),
+          checkDuplicateNode(design, anId('home')),
+        ]
+      },
+    ],
+    [
+      'DuplicateNode, a missing id',
+      () => {
+        const design = aLayoutDesign()
+        return [
+          new DuplicateNode().available(design, { id: anId('missing') }),
+          checkDuplicateNode(design, anId('missing')),
+        ]
+      },
+    ],
+    [
+      'DeleteNode, an id the design has',
+      () => {
+        const design = aLayoutDesign()
+        const ids = [anId('home')]
+        return [new DeleteNode().available(design, { ids }), checkDeleteNode(design, ids)]
+      },
+    ],
+    [
+      'DeleteNode, a missing id',
+      () => {
+        const design = aLayoutDesign()
+        const ids = [anId('home'), anId('missing')]
+        return [new DeleteNode().available(design, { ids }), checkDeleteNode(design, ids)]
+      },
+    ],
+  ] satisfies [string, () => readonly [Result<void, Rejection>, Result<void, Rejection>]][])(
+    '%s gives what its check gives',
+    (_name, results) => {
+      const [viaCommand, viaCheck] = results()
+
+      expect(settled(viaCommand)).toEqual(settled(viaCheck))
+    },
+  )
+})
+
 describe('the layout input schemas', () => {
   it.each([
     [
@@ -183,5 +317,21 @@ describe('AddSlot through the store', () => {
     expectOk(store.run(AddSlot, { index: 0, id: 'first' }))
 
     expect(store.current.getOrUndefined()?.design.layout.children.at(0)).toEqual({ id: 'first' })
+  })
+})
+
+describe('DeleteNode run by id', () => {
+  it('refuses the root with root-required, committing nothing', async () => {
+    const container = new Container().addModule(designModule).addModule(layoutCommandsModule)
+    await container.autoLoad()
+    const store = container.resolve(DesignStore)
+    expectOk(store.replaceDesign({ design: aLayoutDesign(), unreadable: [] }))
+    const before = store.current.getOrUndefined()
+
+    const result = store.runById('layout.deleteNode', { ids: ['root'] })
+
+    expectErr(result)
+    expect(result.error).toMatchObject({ kind: 'root-required', ids: ['root'] })
+    expect(store.current.getOrUndefined()).toBe(before)
   })
 })

@@ -112,9 +112,10 @@ export class DevtoolsPlugin implements Disposable {
       layerId: invocationsLayerId,
       event: {
         time: api.now(),
-        title: label,
+        // The id, not the label: a UiAction and the command it runs often share one label.
+        title: id,
         subtitle: this.#outcome(result),
-        data: { id, input, result: result.match({ ok: () => 'ok', err: (error) => error }) },
+        data: { label, input, result: result.match({ ok: () => 'ok', err: (error) => error }) },
       },
     })
   }

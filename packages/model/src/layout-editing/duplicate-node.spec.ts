@@ -59,20 +59,10 @@ describe('duplicateNode', () => {
     ])
   })
 
-  it('refuses the root with root-required naming it', () => {
+  it("returns its check's rejection for the root, copying nothing", () => {
     const design = arrange(slots('a'))
 
     expect(duplicateNode(design, ROOT)).toMatchObject({ kind: 'root-required', ids: [ROOT] })
-    expect(design).toEqual(arrange(slots('a')))
-  })
-
-  it('refuses an id the design lacks with unknown-target naming it', () => {
-    const design = arrange(slots('a'))
-
-    expect(duplicateNode(design, anId('missing'))).toMatchObject({
-      kind: 'unknown-target',
-      ids: ['missing'],
-    })
     expect(design).toEqual(arrange(slots('a')))
   })
 })

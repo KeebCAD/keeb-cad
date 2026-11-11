@@ -15,10 +15,14 @@ export class Landmarks {
     return Option.fromNullable(this.#roots.get(name))
   }
 
+  focusedPlace(): Option<LandmarkPlace> {
+    return Option.fromNullable(Landmarks.#places[this.#focusedIndex()])
+  }
+
   // From outside every place, the first landmark.
   focusNext(): void {
     const targets = this.#targets()
-    const at = this.#focusedPlace()
+    const at = this.#focusedIndex()
     const next = at === -1 ? undefined : targets.find(({ index }) => index > at)
     const target = next ?? targets[0]
     target?.root.focus()
@@ -27,7 +31,7 @@ export class Landmarks {
   // From outside every place, the last landmark.
   focusPrevious(): void {
     const targets = this.#targets()
-    const at = this.#focusedPlace()
+    const at = this.#focusedIndex()
     const previous = at === -1 ? undefined : targets.findLast(({ index }) => index < at)
     const target = previous ?? targets.at(-1)
     target?.root.focus()
@@ -52,7 +56,7 @@ export class Landmarks {
     })
   }
 
-  #focusedPlace(): number {
+  #focusedIndex(): number {
     const focused = document.activeElement
     return Landmarks.#places.findIndex(
       (place) => this.#roots.get(place)?.contains(focused) === true,

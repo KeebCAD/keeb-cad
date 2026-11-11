@@ -7,9 +7,9 @@ import {
 } from '@keeb-cad/design'
 import { Container, InjectorToken } from '@keeb-cad/di'
 import { provideInjectorOnApp } from '@keeb-cad/di/vue'
-import { Option } from '@keeb-cad/result'
+import { Option, Result } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
-import type { Design } from '@keeb-cad/schema'
+import type { Design, Rejection } from '@keeb-cad/schema'
 import { aDesign } from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
 import { describe, expect, it, onTestFinished } from 'vitest'
@@ -28,8 +28,8 @@ class RenameDesign implements Command<NameInput> {
   static readonly label = 'Rename design'
   static readonly input = nameInputSchema
 
-  available(): boolean {
-    return true
+  available(): Result<void, Rejection> {
+    return Result.ok()
   }
 
   apply(draft: Writable<Design>, input: NameInput): void {

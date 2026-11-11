@@ -1,9 +1,11 @@
+import { Option } from '@keeb-cad/result'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { page } from 'vitest/browser'
 
 import { emulateColorScheme } from '../testing/color-scheme'
 import { mountShell } from '../testing/mount-shell'
 import { press, pressKey } from '../testing/press'
+import { Landmarks } from './landmarks'
 
 const F6 = { key: 'F6', code: 'F6' }
 const SHIFT_F6 = { key: 'F6', code: 'F6', shift: true }
@@ -143,5 +145,28 @@ describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
         await expect.element(topBar()).toHaveFocus()
       })
     })
+  })
+})
+
+describe('focusedPlace', () => {
+  it('names the canvas while focus is inside its root', async () => {
+    const { injector } = await arrange()
+    canvas().element().focus()
+
+    expect(injector.resolve(Landmarks).focusedPlace()).toEqual(Option.some('canvas'))
+  })
+
+  it('names the slide-out while focus is inside its root', async () => {
+    const { injector } = await arrange()
+    await openSlideOut()
+
+    expect(injector.resolve(Landmarks).focusedPlace()).toEqual(Option.some('slide-out'))
+  })
+
+  it('names no place while focus is on the body', async () => {
+    const { injector } = await arrange()
+    blur()
+
+    expect(injector.resolve(Landmarks).focusedPlace()).toEqual(Option.none())
   })
 })

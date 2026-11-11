@@ -472,3 +472,6 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-delete-and-ctrl-d-act-on-the-selection-plan.md`
   summary: `packages/commands/src/layout/layout-commands.spec.ts:34` shares one module-level `const offset = anOffset({ position: aVec2({ x: aDelta('2mm') }) })` across the forwarding table's cases.
   evidence: 13.24 conformance pass 1 (both readers); AGENTS 'Keep no mutable state at module level in a spec; create spies and recordings inside the test.' 13.24's row 18 builds its values inside each case instead.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-delete-and-ctrl-d-act-on-the-selection-plan.md`
+  summary: `packages/editor/src/devtools/devtools-plugin.spec.ts` has no row for a refused invocation, so the err branch of `#addInvocation` and `#outcome` (`devtools-plugin.ts:109-131`: subtitle the rejection's `kind`, else `'error'`, and `data.result` the error) can break with no test failing.
+  evidence: 13.24 post-look review pass (quick lens); AGENTS 'Give every test an `expect` that fails when the behaviour breaks'. Pre-existing; 13.24 only changed the event's title and data keys.

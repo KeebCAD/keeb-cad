@@ -1,5 +1,6 @@
 import type { Command, Writable } from '@keeb-cad/design'
-import { duplicateNode } from '@keeb-cad/model/main'
+import { checkDuplicateNode, duplicateNode } from '@keeb-cad/model/main'
+import type { Result } from '@keeb-cad/result'
 import type { Design, Frozen, Rejection } from '@keeb-cad/schema'
 
 import { duplicateNodeInputSchema } from './duplicate-node-input-schema'
@@ -11,8 +12,8 @@ export class DuplicateNode implements Command<DuplicateNodeInput> {
   static readonly label = 'Duplicate'
   static readonly input = duplicateNodeInputSchema
 
-  available(_design: Frozen<Design>): boolean {
-    return true
+  available(design: Frozen<Design>, { id }: DuplicateNodeInput): Result<void, Rejection> {
+    return checkDuplicateNode(design, id)
   }
 
   apply(draft: Writable<Design>, { id }: DuplicateNodeInput): void | Rejection {

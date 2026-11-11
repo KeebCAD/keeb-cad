@@ -6,8 +6,9 @@ import {
   type Writable,
 } from '@keeb-cad/design'
 import { Container, InjectorToken } from '@keeb-cad/di'
+import { Result } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
-import type { Design } from '@keeb-cad/schema'
+import type { Design, Rejection } from '@keeb-cad/schema'
 import { aDesign, aMeta } from '@keeb-cad/schema/testing'
 import { workersModule } from '@keeb-cad/workers'
 import * as v from 'valibot'
@@ -32,8 +33,8 @@ class RenameDesign implements Command<RenameDesignInput> {
   static readonly input = renameDesignInputSchema
   static readonly hotkeys = ['A']
 
-  available(): boolean {
-    return true
+  available(): Result<void, Rejection> {
+    return Result.ok()
   }
 
   apply(draft: Writable<Design>, input: RenameDesignInput): void {

@@ -4,12 +4,12 @@ import { assertValidHotkey } from './assert-valid-hotkey'
 import { matchesTypedLetter } from './matches-typed-letter'
 import type { HotkeyEntry } from './types'
 
-/** One zag hotkey store that reports each matched entry's id. */
+/**
+ * One zag hotkey store that reports each matched entry's id. The handler answers whether it ran
+ * the entry, and only then does the layer claim the key.
+ */
 export class HotkeyLayer {
-  readonly #store: hotkeys.HotkeyStore
-  readonly #onHotkey: (id: string) => void
-
-  constructor(target: hotkeys.HotkeyTarget, onHotkey: (id: string) => void) {
+  constructor(target: hotkeys.HotkeyTarget, onHotkey: (id: string) => boolean) {
     this.#store = hotkeys.createHotkeyStore({ target })
     this.#onHotkey = onHotkey
   }
@@ -25,18 +25,34 @@ export class HotkeyLayer {
     this.#store.destroy()
   }
 
+  readonly #store: hotkeys.HotkeyStore
+  readonly #onHotkey: (id: string) => boolean
+
   #command({ id, hotkey }: HotkeyEntry, platform: hotkeys.Platform): hotkeys.CommandDefinition {
-    const [key = ''] = hotkeys.parseHotkey(hotkey, platform).keys
+    const parsed = hotkeys.parseHotkey(hotkey, platform)
+    const [key = ''] = parsed.keys
+    const alwaysClaimed = HotkeyLayer.#claimsBrowserShortcut(parsed, key)
     return {
       id,
       hotkey,
-      // zag would prevent the default of a keystroke the letter guard then drops.
+      // zag would prevent the default of a keystroke the letter guard then drops, and of one whose
+      // entry can't run.
       options: { preventDefault: false, enableOnFormTags: false },
       action: (event) => {
         if (!matchesTypedLetter(key, event)) return
-        event.preventDefault()
-        this.#onHotkey(id)
+        const ran = this.#onHotkey(id)
+        if (ran || alwaysClaimed) event.preventDefault()
       },
     }
+  }
+
+  // The browser's own meaning of these (Ctrl+D bookmarks, Alt+Left goes Back) would otherwise fire
+  // over the editor whenever the entry can't run.
+  static #claimsBrowserShortcut(parsed: hotkeys.ParsedHotkey, key: string): boolean {
+    return (
+      parsed.ctrl === true ||
+      parsed.meta === true ||
+      (parsed.alt === true && key.startsWith('Arrow'))
+    )
   }
 }

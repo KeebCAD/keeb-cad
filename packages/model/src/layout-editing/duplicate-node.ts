@@ -1,17 +1,18 @@
+import { InvariantError } from '@keeb-cad/result'
 import type { Design, Id, Mutable, Node, Rejection } from '@keeb-cad/schema'
 
 import { itemIds } from '../ids/item-ids'
-import { reject } from '../reject/reject'
+import { checkDuplicateNode } from './check-duplicate-node'
 import { copyId } from './copy-id'
 import { findNode, isGroup } from './node-tree'
 
 export function duplicateNode(design: Mutable<Design>, id: Id): void | Rejection {
-  if (id === design.layout.id) {
-    return reject('root-required', [id], `The root group "${id}" can't be duplicated.`)
-  }
+  const checked = checkDuplicateNode(design, id)
+  if (checked.isErr()) return checked.error
   const found = findNode(design.layout, id)
+  // The check refused the root and any id the layout lacks.
   if (found?.parent === undefined) {
-    return reject('unknown-target', [id], `The design has no node with the id "${id}".`)
+    throw new InvariantError(`Node "${id}" passed its check but has no parent.`)
   }
   const taken = itemIds(design)
   const copy = (node: Mutable<Node>): Mutable<Node> => {

@@ -3,14 +3,14 @@ title: 'Delete and Ctrl+D act on the selection'
 type: 'feature'
 ticket: 24
 created: '2026-11-11'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '6cc7f3f5944d8664ebe86c74a98344a0033e4056'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md'
@@ -114,18 +114,18 @@ context:
 
 **Execution:**
 - [x] Spine, on main first -- the `DeleteSelection` sentence covers the Tree tab on any workspace and the canvas on Layout, and so do the glossary's UiAction row ("`DeleteSelection` runs `DeleteNode` on the Layout canvas") and AD-26's "(EXPERIENCE.md: Delete acts on the selection only while the canvas has focus)"; the handled-answer sentence gains the Ctrl/Meta and Alt+arrow exception; "(the UiAction, then its command)" becomes "(its command, then the UiAction, each when it settles)". EXPERIENCE.md line 237 already names the Tree tab; its Delete row (line 255) gains `/ Backspace`.
-- [ ] `packages/model/src/layout-editing/{check-delete-node.ts,check-duplicate-node.ts,check-add-node.ts}`, `part-deletion/check-delete-part.ts` (function, each) -- `(design: Frozen<Design>, …input) => Result<void, Rejection>`, with the messages the operations use today. The operations call them first and return the error. Their refusal tests move into each check's spec (rows 10–16); the operations' specs keep the edits.
-- [ ] `packages/model/src/layout-editing/node-tree.ts` -- `findNode` gains its `Frozen<Group>` overload; `nextSiblingId(root: Frozen<Group>, id): Option<Id>` (function). Row 17.
-- [ ] `packages/design/src/entries/types.ts`, `store/design-store.ts` -- `Command.available(design, input)` returns a `Result`. Store `available(handle, input: unknown): Result<void, Rejection>`, in the order: unregistered throws, a command with no design is `unavailable`, parse (`input-invalid`), then the check (a command's own rejection; an action's `false` is `unavailable`). `#runCommand` keeps the copy and the no-design throw, then parse, check, apply. Update `register-command.types.spec.ts`, `design-store-run.types.spec.ts` and the spec's test commands. Rows 20–23.
-- [ ] `packages/commands/src/{layout/*.ts,parts/delete-part.ts}` -- each `available(design, input)` returns its check (AddGroup and AddSlot call `checkAddNode` with the input's parent, index and id). Rows 18–19 in `layout-commands.spec.ts` and `delete-part.spec.ts`.
-- [ ] `packages/editor/src/invoke/invoke.ts` -- `available(handle, input?)`. A command with no design open is false, without building input. Otherwise build the input (the caller's, else the builder's, else `{}`), then ask the store (commands and actions) or parse and ask the UiAction's `available()`. `input-invalid` answers true. `invoke` follows the same order and returns the store's result or the UiAction's apply result. Rows 24–27.
-- [ ] `packages/editor/src/ui-actions/types.ts` and the ten UiActions -- apply returns `AsyncResult<void, Rejection>`.
-- [ ] `packages/ui/src/hotkeys/hotkey-layer.ts` -- the handler returns `boolean`; prevent on `true`, and always for a chord whose parsed hotkey has `ctrl` or `meta`, or `alt` with an arrow. Rows 30–30c.
-- [ ] `packages/editor/src/shortcuts/{shortcut-registry.ts,types.ts}` -- `#run(id): boolean`: false when `invoke.available(handle)` is false, else `void invoke()` and true. Rows 28–29.
-- [ ] `packages/editor/src/landmarks/landmarks.ts` -- `focusedPlace(): Option<LandmarkPlace>`. Row 31.
-- [ ] `packages/editor/src/selection/{delete-selection.ts,duplicate-selection.ts}` (service, each; UiActions) -- `DeleteSelection`: id `selection.deleteSelection`, label `Delete`, hotkeys `['Delete', 'Backspace']`, `emptyInputSchema`. `DuplicateSelection`: id `selection.duplicateSelection`, label `Duplicate`, hotkeys `['mod+D']`, `emptyInputSchema`. Each has one private `#input(): Option<…Input>` (none with focus outside `canvas` and `slide-out`, with canvas focus off the Layout workspace, with nothing selected, and, for duplicate, unless exactly one id is selected). `available()` is `#input()` mapped through `invoke.available(Command, input)`, false on none. `apply` invokes the command with `#input()` (none: `unavailable` under its own id) and returns its result. On ok, `DuplicateSelection` selects `nextSiblingId` of the original in the committed design. Registered in `editor-module.ts`. Rows 1–9 (1a, 7a, 7b included; no row 6) in `delete-selection.spec.ts` and `duplicate-selection.spec.ts`, through `mountShell` and `pressKey`.
-- [ ] `packages/editor/src/testing/{press.ts,types.ts}` -- `KeyPress` gains `ctrl?: boolean`; `pressKey` returns the keydown event.
-- [ ] `eslint.config.ts` -- `selection` joins the entry-parameters glob.
+- [x] `packages/model/src/layout-editing/{check-delete-node.ts,check-duplicate-node.ts,check-add-node.ts}`, `part-deletion/check-delete-part.ts` (function, each) -- `(design: Frozen<Design>, …input) => Result<void, Rejection>`, with the messages the operations use today. The operations call them first and return the error. Their refusal tests move into each check's spec (rows 10–16); the operations' specs keep the edits.
+- [x] `packages/model/src/layout-editing/node-tree.ts` -- `findNode` gains its `Frozen<Group>` overload; `nextSiblingId(root: Frozen<Group>, id): Option<Id>` (function). Row 17.
+- [x] `packages/design/src/entries/types.ts`, `store/design-store.ts` -- `Command.available(design, input)` returns a `Result`. Store `available(handle, input: unknown): Result<void, Rejection>`, in the order: unregistered throws, a command with no design is `unavailable`, parse (`input-invalid`), then the check (a command's own rejection; an action's `false` is `unavailable`). `#runCommand` keeps the copy and the no-design throw, then parse, check, apply. Update `register-command.types.spec.ts`, `design-store-run.types.spec.ts` and the spec's test commands. Rows 20–23.
+- [x] `packages/commands/src/{layout/*.ts,parts/delete-part.ts}` -- each `available(design, input)` returns its check (AddGroup and AddSlot call `checkAddNode` with the input's parent, index and id). Rows 18–19 in `layout-commands.spec.ts` and `delete-part.spec.ts`.
+- [x] `packages/editor/src/invoke/invoke.ts` -- `available(handle, input?)`. A command with no design open is false, without building input. Otherwise build the input (the caller's, else the builder's, else `{}`), then ask the store (commands and actions) or parse and ask the UiAction's `available()`. `input-invalid` answers true. `invoke` follows the same order and returns the store's result or the UiAction's apply result. Rows 24–27.
+- [x] `packages/editor/src/ui-actions/types.ts` and the ten UiActions -- apply returns `AsyncResult<void, Rejection>`.
+- [x] `packages/ui/src/hotkeys/hotkey-layer.ts` -- the handler returns `boolean`; prevent on `true`, and always for a chord whose parsed hotkey has `ctrl` or `meta`, or `alt` with an arrow. Rows 30–30c.
+- [x] `packages/editor/src/shortcuts/{shortcut-registry.ts,types.ts}` -- `#run(id): boolean`: false when `invoke.available(handle)` is false, else `void invoke()` and true. Rows 28–29.
+- [x] `packages/editor/src/landmarks/landmarks.ts` -- `focusedPlace(): Option<LandmarkPlace>`. Row 31.
+- [x] `packages/editor/src/selection/{delete-selection.ts,duplicate-selection.ts}` (service, each; UiActions) -- `DeleteSelection`: id `selection.deleteSelection`, label `Delete`, hotkeys `['Delete', 'Backspace']`, `emptyInputSchema`. `DuplicateSelection`: id `selection.duplicateSelection`, label `Duplicate`, hotkeys `['mod+D']`, `emptyInputSchema`. Each has one private `#input(): Option<…Input>` (none with focus outside `canvas` and `slide-out`, with canvas focus off the Layout workspace, with nothing selected, and, for duplicate, unless exactly one id is selected). `available()` is `#input()` mapped through `invoke.available(Command, input)`, false on none. `apply` invokes the command with `#input()` (none: `unavailable` under its own id) and returns its result. On ok, `DuplicateSelection` selects `nextSiblingId` of the original in the committed design. Registered in `editor-module.ts`. Rows 1–9 (1a, 7a, 7b included; no row 6) in `delete-selection.spec.ts` and `duplicate-selection.spec.ts`, through `mountShell` and `pressKey`.
+- [x] `packages/editor/src/testing/{press.ts,types.ts}` -- `KeyPress` gains `ctrl?: boolean`; `pressKey` returns the keydown event.
+- [x] `eslint.config.ts` -- `selection` joins the entry-parameters glob.
 
 **Acceptance Criteria:**
 - Given the boundary table, when `pnpm test` runs, then each row passes at its level.
@@ -134,9 +134,51 @@ context:
 
 ## Implementation Notes
 
+- Decision (build): the store's `run` of an action parses before it checks, not checks first as before, because the store's `available(action, input)` parses first (row 23) and `run` must answer the same; the spec row "refuses an action that is unavailable, given input its schema refuses" now expects `input-invalid`.
+- Decision (build): the store's `available` parses the caller's input as given, not a `structuredClone` copy as `run` does, because nothing is applied, so neither Immer nor the design sees it.
+- Decision (build): `checkAddNode(design, id, at)`, not `(design, { parent, index, id })`, because it mirrors `addNode(design, node, at)`.
+- Decision (build): `addNode` and `duplicateNode` throw `InvariantError` when the node their check accepted isn't found, not return silently, because that is a bug.
+- Decision (build): each operation's spec keeps one refusal row ("returns its check's rejection, changing nothing"), not none, because returning the check's error untouched and leaving the draft is the operation's own part; the other refusal rows moved to the checks. The empty-parent index row (`index` 1 in a parent with no children) moved to `checkAddNode`'s spec, not dropped.
+- Decision (build): the focus and workspace rule both UiActions share is one function, `selection/acts-on-selection.ts`, not a copy in each class.
+- Decision (build): rows 18 and 22-type comparisons of two `Result`s go through a `settled` helper (a match to the plain value), not `toEqual` on the `Result`s, because a `Result` is iterable and Vitest's equality iterates an `Err` past its first yield and throws.
+- Decision (build): row 8 waits with `expect.poll` for the two events, not a fixed tick count, because the UiAction's event comes on a later microtask than the command's.
+- Toggled bugs (chromium): focus check dropped -> row 3 red; layer preventing every match -> rows 3, 30 (and the shift+F6 row) red; chord exception dropped -> 7b, 30a, 30b red; empty-selection guard dropped -> row 4 red; workspace check dropped -> row 7 red; copy not selected -> row 9 red. Each restored and green.
+
+- Real-host run (2026-11-11): Playwright 1.64.1's trusted `mouse.click` and `keyboard.press` against `vite --port 5199`, `/?seed=corney`, in Chromium and Firefox (script: scratchpad `real-host.cjs`), checking the specs' synthetic `KeyboardEvent`s against real ones. Both browsers: clicking `outer-bottom` focuses `MAIN[Canvas]` (the canvas landmark, so canvas focus needs no extra step) and presses it; Ctrl+D 3 → 4 slots, `outer-bottom-2` pressed, keydown prevented; Delete 4 → 3, selection empty, prevented; Ctrl+D with nothing selected changes nothing and is prevented; with focus on `HEADER[Top bar]` Delete changes nothing and is not prevented; Backspace on the canvas deletes (prevented); T, click the Tree row `outer`, Delete removes the group and its two slots (prevented), and focus falls to `BODY`; no console errors. The browser's own bookmark dialog is browser chrome no page script sees, so it stays Sergii's look.
+
+- Decision (Sergii 2026-11-11, at the look): the devtools invocations timeline titles each event with its handle id (`layout.deleteNode`, `selection.deleteSelection`), not its label, with the label moved into the event data; not label plus id (longer rows) and not renaming the UiActions' labels (user-facing, EXPERIENCE.md names them Delete and Duplicate), because both rows read `Delete` and only a click told them apart. The spine's "never shown" for a command id gains "(outside the dev-only devtools)" (docs, on main).
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+Pass 1 (2026-11-11; lenses quick, test-reviewer; 0 quotes dropped). Verdicts: high 0, medium 2, low 12, false 0, maybe-false 0; 3 rejected.
+- medium, patch -- quick: `add-node.spec.ts` lost the "a design part's id" (`'key'`) `id-taken` row and `check-add-node.spec.ts` tests only a node id (git diff shows the row deleted), so nothing proves `itemIds` counts design parts. Fix: add that row to `checkAddNode`'s spec.
+- medium, patch -- test-reviewer 1: `hotkey-layer.spec.ts:112` row "a Ctrl or Meta chord" presses only `ctrlKey`; the `parsed.meta` branch has no test (row 30a says Ctrl or Meta). Fix: a `meta+D` row pressed with `metaKey`.
+- low, patch -- quick + test-reviewer 6: `settled` written twice (`layout-commands.spec.ts`, `delete-part.spec.ts`), against "Write a shared assertion once". Fix: one testing helper.
+- low, patch -- quick: row 18 has only refusal cases for the four layout commands. Fix: one accepted case each.
+- low, patch -- quick: `duplicate-selection.spec.ts:25` focuses the canvas inside `arrange` (hidden step). Fix: focus in each test, as `delete-selection.spec.ts` does.
+- low, patch -- quick: row 8's `expect.poll` passes before a late third event. Fix: assert the whole list again after the poll settles.
+- low, patch -- quick: `shortcut-registry.spec.ts:234` binds its test entry to `Delete`, which `DeleteSelection` also binds in the real `editorModule`. Fix: a key no production entry uses.
+- low, patch -- quick: `restart-model-worker.spec.ts`, `design-store.spec.ts` narrow with `.isOk()`. Fix: assert the whole `Result`.
+- low, patch -- quick: comments restating code (`landmarks.ts` focusedPlace, `delete-selection.spec.ts` "Only b is left"). Fix: delete.
+- low, patch -- test-reviewer 2: two `invoke.spec.ts` names claim "so invoke reports it" with no such `expect`. Fix: drop the clause.
+- low, patch -- test-reviewer 4: Ctrl+D rows 4 and 5 sit in `delete-selection.spec.ts`. Fix: move the Ctrl+D half to `duplicate-selection.spec.ts`.
+- low, patch -- test-reviewer 5: module-level `WITHOUT_A` in `delete-selection.spec.ts`. Fix: build it in the test.
+- low, patch -- test-reviewer 6: `delete-part.spec.ts` relies on `aBlueprintDesignPart()` defaulting to `meta.defaultPart`'s `'key'`. Fix: write the ids out.
+- low, rejected -- test-reviewer 3: the layer's prevent-iff-ran rows repeat the handler's answer because that pass-through is the rule under test (row 30); naming is clear.
+- low, rejected -- test-reviewer 7: the `UiActionHandle` cast in an events table is correct at runtime; untangling the overload typing adds complexity for a test-only cast.
+- low, rejected -- test-reviewer 8: refusal order in `checkDeleteNode` and `checkAddNode` is carried over from the operations unchanged; its fix edits this plan, so it is listed among the decisions at the look instead.
+
+Pass 2 (2026-11-11; diff since pass 1; lenses quick, test-reviewer; 0 quotes dropped). Verdicts: high 0, medium 0, low 6, false 0, maybe-false 0. Nothing above low and no frozen row broken, so the loop ends; these lows are logged, not patched.
+- low, logged -- quick: `design-store.spec.ts:844-851` still narrows (`expectErr(before)` then `before.error`) where `restart-model-worker.spec.ts` now compares the whole value through `settled`.
+- low, logged -- quick: `commands/src/testing/settled.ts` is private to `commands` (exports only `.`), so `design` and `editor` (`invoke.spec.ts:619`) keep their own `match`; its natural home is `@keeb-cad/result/testing` beside `expectOk`.
+- low, logged -- quick + test-reviewer: row 8's re-assert after `expect.poll` waits one real-timer macrotask (`setTimeout(settle, 0)`), the repo's only real-timer sleep in a spec; it catches a same-tick third event only.
+- low, logged -- quick: `duplicate-selection.spec.ts:50-77` asserts "children unchanged with nothing selected" in two tests (rows 4 and 7b could share one whole-value assert).
+- low, fixed -- quick: the plan held an empty duplicate `## Review Triage Log` heading (a logging slip, not code); merged.
+
+Pass 3 (2026-11-11; Sergii's post-look timeline change, `devtools-plugin.ts` and its spec; lenses quick, test-reviewer; 0 quotes dropped). Verdicts: high 0, medium 0, low 1. Test-reviewer: checked 1 test, no findings.
+- low, defer -- quick: `devtools-plugin.spec.ts` covers only an accepted invocation; the refused branch of `#addInvocation`/`#outcome` (`devtools-plugin.ts:109-131`: subtitle the rejection's kind or `'error'`, `data.result` the error) has no row. Pre-existing gap, not caused by the title change.
 
 ## Design Notes
 
@@ -195,4 +237,4 @@ Final pass (one reader):
 - `pnpm lint` -- expected: clean.
 
 **Manual checks:**
-- `pnpm --filter app dev`, open `/?seed=corney`: click a key, press Delete, and it disappears from the canvas and the tree. Open the tree (T), select a row, press Delete. Click the top bar, press Delete: nothing changes. With nothing selected, and with the root set as the Selection's ids in the devtools inspector (the tree has no root row, `use-layout-tree.ts:7`), Delete and Ctrl+D change nothing; Ctrl+D with nothing selected opens no bookmark dialog. Ctrl+D on a key adds `<id>-2` after it and selects it, with no bookmark dialog, in Chromium and Firefox. The devtools timeline shows two `Delete` events for one key press, DeleteNode's first, then DeleteSelection's.
+- `pnpm --filter app dev`, open `/?seed=corney`: click a key, press Delete, and it disappears from the canvas and the tree. Open the tree (T), select a row, press Delete. Click the top bar, press Delete: nothing changes. With nothing selected, and with the root set as the Selection's ids in the devtools inspector (the tree has no root row, `use-layout-tree.ts:7`), Delete and Ctrl+D change nothing; Ctrl+D with nothing selected opens no bookmark dialog. Ctrl+D on a key adds `<id>-2` after it and selects it, with no bookmark dialog, in Chromium and Firefox. The devtools timeline shows `layout.deleteNode` then `selection.deleteSelection` for one key press.

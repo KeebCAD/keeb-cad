@@ -9,7 +9,7 @@ import {
   type TypedEmitter,
 } from '@keeb-cad/design'
 import { inject, InjectorToken } from '@keeb-cad/di'
-import { AsyncResult } from '@keeb-cad/result'
+import { AsyncResult, Result } from '@keeb-cad/result'
 import type { Rejection } from '@keeb-cad/schema'
 import { createNanoEvents } from 'nanoevents'
 import { match, P } from 'ts-pattern'
@@ -58,17 +58,14 @@ export class Invoke {
       .exhaustive()
   }
 
-  available(handle: EntryHandle): boolean {
-    return match(handle)
-      .with(
-        P.when((entry): entry is CommandHandle | ActionHandle => entry.kind !== 'ui-action'),
-        (entry) => this.#store.available(entry),
-      )
-      .with(
-        P.when((entry): entry is UiActionHandle => entry.kind === 'ui-action'),
-        (uiAction) => this.#injector.resolve(uiAction).available(),
-      )
-      .exhaustive()
+  // A parse failure answers true, so a malformed built input surfaces as an error when used
+  // instead of hiding as a greyed item.
+  available<H extends EntryHandle>(handle: H, input?: v.InferInput<H['input']>): boolean {
+    if (handle.kind === 'command' && this.#store.current.isNone()) return false
+    return this.#check(handle, this.#inputFor(handle, input)).match({
+      ok: () => true,
+      err: (rejection) => rejection.kind === 'input-invalid',
+    })
   }
 
   readonly #store = inject(DesignStore)
@@ -84,9 +81,9 @@ export class Invoke {
   }
 
   // Asking first keeps the store's no-design throw out of reach: with none committed, a command
-  // is unavailable.
+  // is unavailable before its input is built.
   #invokeCommand(handle: CommandHandle, input: unknown): AsyncResult<void, Rejection> {
-    if (!this.available(handle)) return this.#unavailable(handle, input)
+    if (this.#store.current.isNone()) return this.#unavailable(handle, input)
     const entryInput = this.#inputFor(handle, input)
     return this.#reported(
       handle,
@@ -95,29 +92,45 @@ export class Invoke {
     )
   }
 
-  // The store checks availability too, but only after its input argument is built, so asking
-  // first keeps the builder from running for an action that can't.
   #invokeAction(handle: ActionHandle, input: unknown): AsyncResult<void, unknown> {
-    if (!this.available(handle)) return this.#unavailable(handle, input)
     const entryInput = this.#inputFor(handle, input)
     return this.#reported(handle, entryInput, this.#store.run(handle, entryInput))
   }
 
   #invokeUiAction(handle: UiActionHandle, input: unknown): AsyncResult<void, Rejection> {
-    if (!this.available(handle)) return this.#unavailable(handle, input)
-    const uiAction = this.#injector.resolve(handle)
     const entryInput = this.#inputFor(handle, input)
     return this.#reported(
       handle,
       entryInput,
-      parse(handle.input, entryInput).match<AsyncResult<void, Rejection>>({
-        ok: (parsed) => {
-          uiAction.apply(parsed)
-          return AsyncResult.ok()
-        },
-        err: (issues) => AsyncResult.err({ kind: 'input-invalid', command: handle.id, issues }),
+      this.#checkUiAction(handle, entryInput).match<AsyncResult<void, Rejection>>({
+        ok: (parsed) => this.#injector.resolve(handle).apply(parsed),
+        err: (rejection) => AsyncResult.err(rejection),
       }),
     )
+  }
+
+  #check(handle: EntryHandle, entryInput: unknown): Result<unknown, Rejection> {
+    return match(handle)
+      .with(
+        P.when((entry): entry is CommandHandle | ActionHandle => entry.kind !== 'ui-action'),
+        (entry) => this.#store.available(entry, entryInput),
+      )
+      .with(
+        P.when((entry): entry is UiActionHandle => entry.kind === 'ui-action'),
+        (uiAction) => this.#checkUiAction(uiAction, entryInput),
+      )
+      .exhaustive()
+  }
+
+  // Parses before it checks, as the design store does, and gives the parsed input to apply.
+  #checkUiAction(handle: UiActionHandle, entryInput: unknown): Result<unknown, Rejection> {
+    return parse(handle.input, entryInput)
+      .mapErr((issues): Rejection => ({ kind: 'input-invalid', command: handle.id, issues }))
+      .flatMap((parsed) =>
+        this.#injector.resolve(handle).available()
+          ? Result.ok(parsed)
+          : Result.err<Rejection>({ kind: 'unavailable', command: handle.id }),
+      )
   }
 
   #unavailable(handle: EntryHandle, input: unknown): AsyncResult<void, Rejection> {

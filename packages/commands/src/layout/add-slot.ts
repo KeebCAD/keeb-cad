@@ -1,5 +1,6 @@
 import type { Command, Writable } from '@keeb-cad/design'
-import { addNode } from '@keeb-cad/model/main'
+import { addNode, checkAddNode } from '@keeb-cad/model/main'
+import type { Result } from '@keeb-cad/result'
 import type { Design, Frozen, Rejection } from '@keeb-cad/schema'
 
 import { addSlotInputSchema } from './add-slot-input-schema'
@@ -11,8 +12,8 @@ export class AddSlot implements Command<AddSlotInput> {
   static readonly label = 'Add slot'
   static readonly input = addSlotInputSchema
 
-  available(_design: Frozen<Design>): boolean {
-    return true
+  available(design: Frozen<Design>, { parent, index, id }: AddSlotInput): Result<void, Rejection> {
+    return checkAddNode(design, id, { parent, index })
   }
 
   apply(draft: Writable<Design>, { parent, index, ...slot }: AddSlotInput): void | Rejection {

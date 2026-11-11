@@ -1,10 +1,12 @@
+import type { AsyncResult } from '@keeb-cad/result'
+import type { Rejection } from '@keeb-cad/schema'
 import type * as v from 'valibot'
 
 // A method rather than a function property, so a UiAction with a narrower input still fits the
 // multi token's element type; registerUiAction checks the input itself.
 export interface UiAction<Input> {
   available(): boolean
-  apply(input: Input): void
+  apply(input: Input): AsyncResult<void, Rejection>
 }
 
 export interface UiActionHandle {
