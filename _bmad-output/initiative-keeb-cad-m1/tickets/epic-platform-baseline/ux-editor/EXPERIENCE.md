@@ -252,7 +252,7 @@ After undo, PCB shows `routing N/M`: routes are not on the undo stack, so copper
 | F6 / Shift+F6 | Next / previous region |
 | Shift+F10, Menu | Context menu |
 | F1, ? | Cheat sheet (`?` matches the character, wherever the layout puts it) |
-| Delete | Delete what has keyboard focus (layer tab, row, or canvas selection) |
+| Delete / Backspace | Delete what has keyboard focus (layer tab, row, or canvas selection) |
 | Ctrl+D | Duplicate |
 | Esc | Innermost step (see Esc precedence) |
 | Arrows (+Shift/Ctrl/Alt) | Nudge (Alt compensates); orbit/pan in a focused 3D viewer |

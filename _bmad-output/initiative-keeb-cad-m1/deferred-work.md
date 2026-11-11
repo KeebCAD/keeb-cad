@@ -469,3 +469,6 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-viewport-zooms-pans-and-fits-plan.md`
   summary: `packages/ui/src/theme/use-theme-choice.ts` holds a type guard (`const isThemeChoice = (value: string): value is ThemeChoice => THEME_CHOICES.includes(value)`) beside its composable.
   evidence: 13.23 conformance pass 1; AGENTS 'Give each file one kind of thing'. 13.23 follows its `useStorage` serializer pattern with the schema in its own file.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-delete-and-ctrl-d-act-on-the-selection-plan.md`
+  summary: `packages/commands/src/layout/layout-commands.spec.ts:34` shares one module-level `const offset = anOffset({ position: aVec2({ x: aDelta('2mm') }) })` across the forwarding table's cases.
+  evidence: 13.24 conformance pass 1 (both readers); AGENTS 'Keep no mutable state at module level in a spec; create spies and recordings inside the test.' 13.24's row 18 builds its values inside each case instead.
