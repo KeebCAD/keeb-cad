@@ -3,7 +3,7 @@ title: 'Delete and Ctrl+D act on the selection'
 type: 'feature'
 ticket: 24
 created: '2026-11-11'
-status: 'built'
+status: 'done'
 baseline_revision: '6cc7f3f5944d8664ebe86c74a98344a0033e4056'
 route: 'full'
 route_source: 'auto'
