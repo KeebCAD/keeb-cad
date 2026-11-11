@@ -3,7 +3,9 @@ import { useElementSize } from '@vueuse/core'
 import { computed, useTemplateRef, watch } from 'vue'
 
 import { useOpenDesign } from '../../design/use-open-design'
+import { useCanvasItemsRoot } from '../../viewport/use-canvas-items-root'
 import { useViewport } from '../../viewport/use-viewport'
+import { useViewportControls } from '../../viewport/use-viewport-controls'
 import AnchorLink from './AnchorLink.vue'
 import CanvasSlot from './CanvasSlot.vue'
 import { useLayoutSetArrived } from './use-layout-set-arrived'
@@ -21,6 +23,8 @@ const showsHint = useNewDesignHint(placed)
 const grayed = useSwitchGrace()
 const arrived = useLayoutSetArrived()
 const { transform, modelToScreen, fitOnce } = useViewport(size)
+useViewportControls(svg, size)
+useCanvasItemsRoot(svg, keys)
 
 const slots = computed(() => placed.value.flatMap((node) => (node.kind === 'slot' ? [node] : [])))
 const legends = computed(() =>
@@ -44,7 +48,7 @@ watch(
     if (!current || drawn.length === 0 || showsHint.value || designId === undefined) return
     const group = keys.value
     if (group === null) return
-    fitOnce(designId, group.getBBox())
+    fitOnce(group.getBBox())
   },
   { flush: 'post', immediate: true },
 )
@@ -52,7 +56,7 @@ watch(
 
 <template>
   <div class="relative h-full">
-    <svg ref="svg" class="absolute inset-0 block size-full">
+    <svg ref="svg" class="absolute inset-0 block size-full touch-none">
       <g v-if="!showsHint">
         <g :transform="transform">
           <g ref="keys">

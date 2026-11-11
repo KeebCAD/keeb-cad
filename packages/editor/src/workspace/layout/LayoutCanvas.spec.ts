@@ -1,103 +1,31 @@
 import { AddSlot } from '@keeb-cad/commands'
-import type { DesignStore } from '@keeb-cad/design'
 import { expectOk } from '@keeb-cad/result/testing'
-import { compareId, type Design, type LayoutOutput } from '@keeb-cad/schema'
-import {
-  aDesign,
-  aLayout,
-  aLayoutOutput,
-  aLayoutRow,
-  aMeta,
-  anId,
-  aPartsOutput,
-  aSlot,
-} from '@keeb-cad/schema/testing'
-import type { FakeWorker } from '@keeb-cad/workers/testing'
+import { aDesign, aLayout, aLayoutRow, aMeta, anId, aSlot } from '@keeb-cad/schema/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { page } from 'vitest/browser'
 
-import { Selection } from '../../selection/selection'
 import { emulateColorScheme } from '../../testing/color-scheme'
+import {
+  arrangeLayoutCanvas as arrange,
+  canvas,
+  designWith,
+  key,
+  layoutOf,
+  nextFrames,
+  sizeCanvasAndWait,
+} from '../../testing/layout-canvas'
 import { mountShell } from '../../testing/mount-shell'
-import { postLayoutSet } from '../../testing/post-layout-set'
 import type { ViewportValue } from '../../viewport/types'
-import { Viewport } from '../../viewport/viewport'
+import type { Viewport } from '../../viewport/viewport'
 
 const HINT = 'Add a group (G) or open the command palette (Ctrl+K).'
 const INITIAL_VIEWPORT = { centre: { x: 0, y: 0 }, zoom: 4 }
 const DIGITS = 6
-const PARTS = aPartsOutput({ ids: ['key@a'], rows: [{ w: 18, h: 18 }] })
-const ROOT_ROW = aLayoutRow({ kind: 'group', part: -1 })
 // Frappé's tokens.
 const KEY_BODY = 'rgb(98, 104, 128)'
 const SELECTION = 'rgb(202, 158, 230)'
 
-type Row = LayoutOutput['rows'][number]
-
-function designWith(...slots: string[]): Design {
-  return aDesign({
-    layout: aLayout({ id: anId('root'), children: slots.map((id) => aSlot({ id: anId(id) })) }),
-  })
-}
-
-// The root and the given slots, in the worker's id order.
-function layoutOf(slots: Readonly<Record<string, Row>>): LayoutOutput {
-  const rows = new Map<string, Row>([
-    ['left/root', ROOT_ROW],
-    ...Object.entries(slots).map(([id, row]): [string, Row] => [`left/${id}`, row]),
-  ])
-  const ids = [...rows.keys()].toSorted(compareId)
-  return aLayoutOutput({ ids, rows: ids.map((id) => rows.get(id) ?? ROOT_ROW) })
-}
-
-function seqOf(store: DesignStore): number {
-  return store.current.map(({ seq }) => seq).getOr(-1)
-}
-
-function only(spawned: FakeWorker[]): FakeWorker {
-  const [worker] = spawned
-  if (worker === undefined) throw new Error('Expected a spawned worker.')
-  return worker
-}
-
-async function arrange(design: Design) {
-  const shell = await mountShell({ path: '/design/corne/layout', design, spawn: true })
-  const worker = only(shell.spawned)
-  return {
-    ...shell,
-    viewport: shell.injector.resolve(Viewport),
-    selection: shell.injector.resolve(Selection),
-    post: (layout: LayoutOutput) => {
-      postLayoutSet(worker, { seq: seqOf(shell.store), layout, parts: PARTS })
-    },
-  }
-}
-
-const canvas = () => page.getByRole('main', { name: 'Canvas' })
-const key = (id: string) => page.getByRole('button', { name: id, exact: true })
 const treeRow = (id: string) => page.getByRole('treeitem', { name: id, exact: true })
-
-function svg(): SVGSVGElement {
-  const found = canvas().element().querySelector('svg')
-  if (found === null) throw new Error('The canvas drew no SVG.')
-  return found
-}
-
-function sizeCanvas(width: number, height: number): void {
-  svg().style.width = `${width}px`
-  svg().style.height = `${height}px`
-}
-
-function svgSize() {
-  const { width, height } = svg().getBoundingClientRect()
-  return { width, height }
-}
-
-async function sizeCanvasAndWait(width: number, height: number): Promise<void> {
-  sizeCanvas(width, height)
-  await expect.poll(() => svgSize()).toEqual({ width, height })
-  await nextFrames()
-}
 
 function expectNoKeyAndViewport(viewport: Viewport, expected: ViewportValue): void {
   expect({
@@ -106,7 +34,7 @@ function expectNoKeyAndViewport(viewport: Viewport, expected: ViewportValue): vo
   }).toEqual({ keys: 0, viewport: expected })
 }
 
-function twoKeys(): LayoutOutput {
+function twoKeys() {
   return layoutOf({
     a: aLayoutRow(),
     b: aLayoutRow({ frame: { x: 40, y: 0, rot: 0, mirrored: false } }),
@@ -132,13 +60,6 @@ function ownTransform(id: string): DOMMatrix {
   const outer = parent.getScreenCTM()
   if (own === null || outer === null) throw new Error('The key is not rendered.')
   return DOMMatrix.fromMatrix(outer).inverse().multiply(DOMMatrix.fromMatrix(own))
-}
-
-// A frame's resize observations come after its animation frame callbacks, so two frames see the
-// remounted canvas measured and any fit it would run.
-async function nextFrames(): Promise<void> {
-  await new Promise((resolve) => requestAnimationFrame(resolve))
-  await new Promise((resolve) => requestAnimationFrame(resolve))
 }
 
 describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
@@ -263,9 +184,8 @@ describe('the Layout canvas', () => {
       const shell = await arrange(designWith('a'))
       shell.post(layoutOf({ a: aLayoutRow({ frame: { x: 30, y: 40, rot: 0, mirrored: false } }) }))
       await expect.poll(() => shell.viewport.centre.x).toBeCloseTo(30, DIGITS)
-      const moved: ViewportValue = { centre: { x: -7, y: 12 }, zoom: 1 }
-      shell.viewport.setCentre(moved.centre)
-      shell.viewport.setZoom(moved.zoom)
+      shell.viewport.panBy({ x: 30, y: -20 })
+      const moved = shell.viewport.value
 
       await shell.router.push({ name: 'outline', params: { id: 'corne' } })
       await shell.router.push({ name: 'layout', params: { id: 'corne' } })

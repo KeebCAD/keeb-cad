@@ -11,6 +11,7 @@ import { Selection } from '../selection/selection'
 import { applyPanelEdit } from '../testing/apply-panel-edit'
 import { SlideOut } from '../slide-out/slide-out'
 import { Viewport } from '../viewport/viewport'
+import { zoomForPercent } from '../viewport/zoom-percent'
 import { devtoolsModule } from './devtools-module'
 import { DevtoolsPlugin } from './devtools-plugin'
 import { devtoolsPluginId } from './plugin-id'
@@ -197,7 +198,10 @@ describe('devtoolsModule', () => {
   it.each<[string, unknown, number]>([
     ['keeps the zoom on a negative zoom', -1, 2],
     ['keeps the zoom on a zero zoom', 0, 2],
-    ['sets a positive zoom', 1, 1],
+    ['keeps the zoom on one just below the minimum', zoomForPercent(9.999), 2],
+    ['sets a zoom on the minimum', zoomForPercent(10), zoomForPercent(10)],
+    ['sets a zoom on the maximum', zoomForPercent(2000), zoomForPercent(2000)],
+    ['keeps the zoom on one just above the maximum', zoomForPercent(2000.001), 2],
   ])('%s', async (_role, value, expected) => {
     const container = await arrange()
     container.resolve(Viewport).setZoom(2)

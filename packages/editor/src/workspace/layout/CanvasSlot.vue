@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { UiCanvasToggle } from '@keeb-cad/ui'
-import { computed } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 
 import { useSelection } from '../../selection/use-selection'
+import { useCanvasItem } from '../../viewport/use-canvas-item'
 import { keycapProportions } from './keycap-proportions'
 import type { CanvasSlotProps } from './types'
 
 const props = defineProps<CanvasSlotProps>()
 const { ids, select } = useSelection()
+const body = useTemplateRef<SVGRectElement>('body')
+useCanvasItem(() => props.placed.id, body)
 
 const selected = computed(() => ids.value.includes(props.placed.id))
 const fitted = computed(() => props.placed.fit === 'fitted')
@@ -38,6 +41,7 @@ const marks = computed(() => [
     @press="select([placed.id])"
   >
     <rect
+      ref="body"
       :x="-placed.w / 2"
       :y="-placed.h / 2"
       :width="placed.w"

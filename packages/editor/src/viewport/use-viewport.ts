@@ -10,8 +10,8 @@ export function useViewport(size: Readonly<Ref<CanvasSize>>): UseViewportResult 
   return {
     transform: computed(() => viewportTransform(viewport.value, size.value)),
     modelToScreen: (point) => modelToScreen(point, viewport.value, size.value),
-    fitOnce: (designId, bounds) => {
-      viewport.fitOnce(designId, bounds, size.value)
+    fitOnce: (bounds) => {
+      viewport.fitOnce(bounds, size.value)
     },
   }
 }

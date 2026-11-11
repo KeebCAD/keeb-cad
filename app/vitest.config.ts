@@ -15,6 +15,7 @@ export default defineConfig({
     include: [
       '@keeb-cad/editor > vue',
       '@keeb-cad/editor > vue-router',
+      '@keeb-cad/editor > @use-gesture/vanilla',
       '@keeb-cad/editor > @keeb-cad/ui > reka-ui',
       '@keeb-cad/editor > @keeb-cad/ui > @zag-js/hotkeys',
       '@keeb-cad/editor > @keeb-cad/ui > @lucide/vue',
@@ -35,6 +36,8 @@ export default defineConfig({
       enabled: true,
       provider: playwright(),
       headless: true,
+      // DESIGN.md's laptop floor as the height inside the browser, which is the page a test renders.
+      viewport: { width: 1366, height: 696 },
       instances: browserInstances,
     },
   },

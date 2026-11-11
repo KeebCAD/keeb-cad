@@ -70,11 +70,25 @@ describe('formatNumber', () => {
   it.each([
     ['whole seconds', 2, 's', '2 s'],
     ['a bare count', 0, 'none', '0'],
+    ['a whole percent', 100, 'percent', '100%'],
   ] as const)('prints %s as its display unit asks', (_, value, unit, expected) => {
     expect(formatNumber(value, unit)).toBe(expected)
   })
 
   it.each([NaN, Infinity, -Infinity])('throws on %s', (value) => {
     expect(() => formatNumber(value, 'mm')).toThrow(RangeError)
+  })
+
+  describe('as a readout', () => {
+    it.each([
+      ['two exact decimals', 12.34, '12.34'],
+      ['a negative value with U+2212', -5.67, '−5.67'],
+      ['a third decimal on the half, rounded up', 1.005, '1.01'],
+      ['a third decimal below the half, rounded down', 1.004, '1'],
+      ['a negative value that rounds to zero as 0', -0.004, '0'],
+      ['one decimal', 1.1, '1.1'],
+    ])('prints %s with no ≈ and no unit', (_role, value, expected) => {
+      expect(formatNumber(value, 'none', { readout: true })).toBe(expected)
+    })
   })
 })

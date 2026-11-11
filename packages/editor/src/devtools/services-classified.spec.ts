@@ -10,6 +10,8 @@ import { DesignLocation } from '../router/design-location'
 import { Selection } from '../selection/selection'
 import { ShortcutRegistry } from '../shortcuts/shortcut-registry'
 import { SlideOut } from '../slide-out/slide-out'
+import { CanvasCursor } from '../viewport/canvas-cursor'
+import { CanvasItems } from '../viewport/canvas-items'
 import { Viewport } from '../viewport/viewport'
 import { SwitchGrace } from '../workspace/layout/switch-grace'
 import { devtoolsModule } from './devtools-module'
@@ -28,6 +30,8 @@ const classified: readonly (readonly [new () => unknown, Classification])[] = [
   [SlideOut, { shownAs: `${devtoolsPluginId}.slide-out` }],
   [Selection, { shownAs: `${devtoolsPluginId}.selection` }],
   [Viewport, { shownAs: `${devtoolsPluginId}.viewport` }],
+  [CanvasItems, { notShown: 'DOM elements the canvas registers, read off the DOM like Landmarks' }],
+  [CanvasCursor, { notShown: 'the pointer, shown live in the status strip' }],
   [SwitchGrace, { notShown: 'grayed is derived from a timer and the lifecycle, like Landmarks' }],
 ]
 

@@ -2,9 +2,11 @@
 import { useTemplateRef } from 'vue'
 
 import { useLandmark } from '../landmarks/use-landmark'
+import CursorReadout from '../status-strip/CursorReadout.vue'
 import ModelWorkerState from '../status-strip/ModelWorkerState.vue'
 import UpdatingIndicator from '../status-strip/UpdatingIndicator.vue'
 import ViolationCounts from '../status-strip/ViolationCounts.vue'
+import ZoomReadout from '../status-strip/ZoomReadout.vue'
 
 const root = useTemplateRef<HTMLElement>('root')
 useLandmark('status-strip', root)
@@ -21,6 +23,8 @@ useLandmark('status-strip', root)
       <UpdatingIndicator />
       <ModelWorkerState />
       <ViolationCounts class="shrink-0" />
+      <CursorReadout />
+      <ZoomReadout />
     </div>
   </footer>
 </template>
