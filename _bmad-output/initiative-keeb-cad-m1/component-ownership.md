@@ -10,7 +10,7 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | Status strip running-stage entry (stage name, elapsed time, Restart; 2026-11-02) and failed entry | a new design opens (23) | 23.23 (split from 23.8, 2026-11-08) |
 | Tab badge, status strip output-state entries | route and fab (7) | 7.2 |
 | Left rail + slide-out (Tree tab) | a new design opens (23), filled by see Corney's keys (13) | 23.8, filled by 13.7; T toggles and Esc no longer closes it, 13.28 (2026-11-11) |
-| Dialog wrapper (`ui`, modal; 2026-11-11), Text field (`ui`), and the add flow built on them | see Corney's keys (13) | 13.27 (dialog wrapper; shortcuts stand down while a modal is open), 13.25 (Text field; add flow, the first modal) |
+| Dialog wrapper (`ui`, modal; 2026-11-11), Flow host (`editor`, 2026-11-11), Text field (`ui`), and the add flow built on them | see Corney's keys (13) | 13.27 (dialog wrapper; shortcuts stand down while a modal is open), 13.30 (Flows and the flow host; the dialog wrapper's dismiss), 13.25 (Text field; add flow, the first flow and the first modal) |
 | Left rail + slide-out (Parameters tab) | change a parameter (14) | to plan |
 | Left rail + slide-out (Parts tab) | change a parameter (14) | to plan |
 | Canvas, viewport, selection; Canvas keys, Right half, Mirror axis, Group frame, Anchor link, Unfitted slot | see Corney's keys (13) | 13.7 (canvas, selection, viewport service, Anchor link), 13.23 (viewport controls), 13.24 (Delete, Ctrl+D), 13.25 (G, S), 13.8 (2026-11-10 split), Group frame 13.26 (split from 13.7, 2026-11-10) |
