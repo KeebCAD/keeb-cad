@@ -148,7 +148,7 @@ describe('ShortcutRegistry', () => {
         commands: [renameDesign(['A'])],
         design: aDesign(),
       })
-      registry.listen(document)
+      registry.listen(document, document.body)
 
       press('A')
 
@@ -164,7 +164,7 @@ describe('ShortcutRegistry', () => {
         builders: [[command, BuildRenameInput]],
         design: aDesign(),
       })
-      registry.listen(document)
+      registry.listen(document, document.body)
 
       press('A')
 
@@ -179,7 +179,7 @@ describe('ShortcutRegistry', () => {
         actions: [recordAction('test.record', ['B'])],
         recorder,
       })
-      registry.listen(document)
+      registry.listen(document, document.body)
 
       press('B')
 
@@ -194,7 +194,7 @@ describe('ShortcutRegistry', () => {
         builders: [[uiAction, BuildNote]],
         recorder,
       })
-      registry.listen(document)
+      registry.listen(document, document.body)
 
       press('T')
 
@@ -214,7 +214,7 @@ describe('ShortcutRegistry', () => {
           uiActions: [recordUiAction('test.record', hotkeys)],
           recorder,
         })
-        registry.listen(document)
+        registry.listen(document, document.body)
 
         press('A')
         press('B')
@@ -234,7 +234,7 @@ describe('ShortcutRegistry', () => {
         uiActions: [recordUiAction('test.record', ['Insert'], available)],
         recorder,
       })
-      registry.listen(document)
+      registry.listen(document, document.body)
 
       const keydown = pressKey({ key: 'Insert', code: 'Insert' })
 
@@ -300,9 +300,9 @@ describe('ShortcutRegistry', () => {
   describe('listen', () => {
     it('throws while a layer is already listening', async () => {
       const { registry } = await arrange({})
-      registry.listen(document)
+      registry.listen(document, document.body)
 
-      expect(() => registry.listen(document)).toThrow(InvariantError)
+      expect(() => registry.listen(document, document.body)).toThrow(InvariantError)
     })
 
     it('listens again after stop', async () => {
@@ -311,10 +311,10 @@ describe('ShortcutRegistry', () => {
         uiActions: [recordUiAction('test.record', ['T'])],
         recorder,
       })
-      registry.listen(document)
+      registry.listen(document, document.body)
       registry.stop()
 
-      registry.listen(document)
+      registry.listen(document, document.body)
       press('T')
 
       expect(recorder.recorded).toEqual([{}])

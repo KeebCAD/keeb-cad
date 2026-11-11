@@ -7,8 +7,10 @@ import UiTabs from '../src/tabs/UiTabs.vue'
 import UiTooltip from '../src/tooltip/UiTooltip.vue'
 import UiTree from '../src/tree/UiTree.vue'
 import CanvasToggleFrame from './CanvasToggleFrame.vue'
+import DialogHost from './DialogHost.vue'
 import { buttonStates } from './states/button-states'
 import { canvasToggleStates } from './states/canvas-toggle-states'
+import { dialogStates } from './states/dialog-states'
 import { iconStates } from './states/icon-states'
 import { kbdStates } from './states/kbd-states'
 import { railButtonStates } from './states/rail-button-states'
@@ -28,4 +30,5 @@ export const widgets: readonly Widget[] = [
   { title: 'Severity count', component: UiSeverityCount, states: severityCountStates },
   { title: 'Canvas toggle', component: CanvasToggleFrame, states: canvasToggleStates },
   { title: 'Tree', component: UiTree, states: treeStates },
+  { title: 'Dialog', component: DialogHost, states: dialogStates },
 ]

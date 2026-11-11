@@ -4,14 +4,15 @@ import { assertValidHotkey } from './assert-valid-hotkey'
 import { matchesTypedLetter } from './matches-typed-letter'
 import type { HotkeyEntry } from './types'
 
-/**
- * One zag hotkey store that reports each matched entry's id. The handler answers whether it ran
- * the entry, and only then does the layer claim the key.
- */
 export class HotkeyLayer {
-  constructor(target: hotkeys.HotkeyTarget, onHotkey: (id: string) => boolean) {
+  constructor(
+    target: hotkeys.HotkeyTarget,
+    onHotkey: (id: string) => boolean,
+    isModalOpen: () => boolean,
+  ) {
     this.#store = hotkeys.createHotkeyStore({ target })
     this.#onHotkey = onHotkey
+    this.#isModalOpen = isModalOpen
   }
 
   replaceHotkeys(entries: readonly HotkeyEntry[]): void {
@@ -27,6 +28,7 @@ export class HotkeyLayer {
 
   readonly #store: hotkeys.HotkeyStore
   readonly #onHotkey: (id: string) => boolean
+  readonly #isModalOpen: () => boolean
 
   #command({ id, hotkey }: HotkeyEntry, platform: hotkeys.Platform): hotkeys.CommandDefinition {
     const parsed = hotkeys.parseHotkey(hotkey, platform)
@@ -36,9 +38,11 @@ export class HotkeyLayer {
       id,
       hotkey,
       // zag would prevent the default of a keystroke the letter guard then drops, and of one whose
-      // entry can't run.
-      options: { preventDefault: false, enableOnFormTags: false },
+      // entry can't run. It also turns form tags on for a modified chord unless told otherwise.
+      options: { preventDefault: false, enableOnFormTags: false, enableOnContentEditable: false },
       action: (event) => {
+        // An open modal keeps every key, Esc included, so nothing here may prevent it.
+        if (this.#isModalOpen()) return
         if (!matchesTypedLetter(key, event)) return
         const ran = this.#onHotkey(id)
         if (ran || alwaysClaimed) event.preventDefault()

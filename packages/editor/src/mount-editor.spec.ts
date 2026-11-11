@@ -1,5 +1,6 @@
 import { DesignStore, designModule } from '@keeb-cad/design'
 import { Container, InjectorToken } from '@keeb-cad/di'
+import { InvariantError } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
 import type { Design } from '@keeb-cad/schema'
 import { aDesign, aMeta, anId } from '@keeb-cad/schema/testing'
@@ -60,5 +61,12 @@ describe('mountEditor', () => {
     await expect
       .element(page.getByRole('banner', { name: 'Top bar' }).getByRole('heading', { level: 1 }))
       .toHaveTextContent('Lily58')
+  })
+
+  it('throws naming a selector that matches no element', async () => {
+    const injector = new Container().resolve(InjectorToken)
+
+    expect(() => mountEditor('#missing', injector)).toThrow(InvariantError)
+    expect(() => mountEditor('#missing', injector)).toThrow('#missing')
   })
 })

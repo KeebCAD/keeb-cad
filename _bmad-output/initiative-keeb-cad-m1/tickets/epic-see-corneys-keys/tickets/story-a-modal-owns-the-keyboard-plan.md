@@ -3,15 +3,15 @@ title: 'A modal owns the keyboard'
 type: 'feature'
 ticket: 27
 created: '2026-11-11'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: 'edb678acb1b0345e1ac3e24f3f8009a7775c2421'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
-review_loop_iteration: 0
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
+review_loop_iteration: 1
 context:
   - '{project-root}/_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md'
   - '{project-root}/_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md'
@@ -99,15 +99,15 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `packages/ui/src/hotkeys/hotkey-layer.ts` (service; built by `ShortcutRegistry.listen`, which owns it, not resolved from `di`, as today at `shortcut-registry.ts:34`) -- its class comment (`:7-10`, restating what the class does) is removed; constructor `(target, onHotkey, isModalOpen: () => boolean)`; `action` returns first when `this.#isModalOpen()`; options gain `enableOnContentEditable: false`. Rows 1–7 in `hotkey-layer.spec.ts`; its test `'with an entry that did not run, prevents %s as told'` (`:122`), whose Shift row expects no prevent, is renamed `'with an entry that did not run, prevents %s only when it is a Ctrl, Meta or Alt+arrow chord'`.
-- [ ] `packages/ui/src/dialog/{UiDialog.vue,types.ts}` -- `DialogProps = { open: boolean }`, `DialogEmits = { 'update:open': [open: boolean] }`, `DialogSlots = { title(): unknown; default(): unknown }`. `DialogRoot` → `DialogPortal` → `DialogOverlay` (`fixed inset-0 bg-scrim`) and `DialogContent` (`:aria-describedby="undefined"`; fixed, centred; `rounded-lg border border-border bg-panel p-pad text-text shadow-overlay`) → `DialogTitle` (`text-ui`, the `title` slot) and the default slot. Exported with its types from `ui`'s index. Rows 9–12a in `Dialog.spec.ts`; row 10 holds `open` in a `ref` that `update:open` sets.
-- [ ] `_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md`, `packages/ui/src/theme/theme.css` -- `components.overlay.scrim: 'rgba(35,38,52,.45)'` (Crust at 45%, both themes) and the Elevation paragraph names the scrim behind modal overlays; `--color-scrim` in `@theme`. On the code branch.
-- [ ] `packages/ui/workbench/{DialogHost.vue,states/dialog-states.ts,widgets.ts}` -- `DialogHost` takes no props, holds `open` as component state, renders an `Open dialog` button and a `UiDialog` bound to it, passing its `title` and default slots through; one state, `opens from its button`, slots `title` (`Add group in ` and a mono `root`) and `default` (a line of text). Esc closes it; no close button, since a state's slot can't reach `DialogHost`'s `open` (`WidgetCell.vue:16-18`). Row 8 mounts that state in `Dialog.spec.ts`.
-- [ ] `packages/editor/src/shortcuts/is-behind-modal.ts` (function) -- `isBehindModal(root: Element): boolean`. Row 13 in `is-behind-modal.spec.ts`.
-- [ ] `packages/editor/src/shortcuts/{shortcut-registry.ts,use-shortcuts.ts}` -- `ShortcutRegistry` (service): `listen(target, root)` builds `new HotkeyLayer(target, run, () => isBehindModal(root))`; `useShortcuts(root)` (function). `shortcut-registry.spec.ts` and `use-shortcuts.spec.ts` pass a root.
-- [ ] `packages/editor/src/{mount-editor.ts,App.vue,types.ts}` -- `mountEditor` (existing function, not added; it already mounts the app) resolves the selector (row 18 in `mount-editor.spec.ts`), `createApp(App, { root })`, `app.mount(root)`; `App.vue` takes `AppProps = { root: HTMLElement }` (new `src/types.ts`) and calls `useShortcuts(root)`.
-- [ ] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` -- one precedent entry: `packages/ui/workbench/CanvasToggleFrame.vue` takes the glossary's **frame** for a workbench wrapper (spine glossary: "**frame** | A position + rotation in the plane").
-- [ ] `packages/editor/src/shortcuts/modal-keeps-keys.spec.ts` -- rows 14–17 through `mountShell`, a `UiDialog` rendered beside it with `vitest-browser-vue` (open held in a `ref`, closed on `update:open`), and `pressKey`.
+- [x] `packages/ui/src/hotkeys/hotkey-layer.ts` (service; built by `ShortcutRegistry.listen`, which owns it, not resolved from `di`, as today at `shortcut-registry.ts:34`) -- its class comment (`:7-10`, restating what the class does) is removed; constructor `(target, onHotkey, isModalOpen: () => boolean)`; `action` returns first when `this.#isModalOpen()`; options gain `enableOnContentEditable: false`. Rows 1–7 in `hotkey-layer.spec.ts`; its test `'with an entry that did not run, prevents %s as told'` (`:122`), whose Shift row expects no prevent, is renamed `'with an entry that did not run, prevents %s only when it is a Ctrl, Meta or Alt+arrow chord'`.
+- [x] `packages/ui/src/dialog/{UiDialog.vue,types.ts}` -- `DialogProps = { open: boolean }`, `DialogEmits = { 'update:open': [open: boolean] }`, `DialogSlots = { title(): unknown; default(): unknown }`. `DialogRoot` → `DialogPortal` → `DialogOverlay` (`fixed inset-0 bg-scrim`) and `DialogContent` (`:aria-describedby="undefined"`; fixed, centred; `rounded-lg border border-border bg-panel p-pad text-text shadow-overlay`) → `DialogTitle` (`text-ui`, the `title` slot) and the default slot. Exported with its types from `ui`'s index. Rows 9–12a in `Dialog.spec.ts`; row 10 holds `open` in a `ref` that `update:open` sets.
+- [x] `_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md`, `packages/ui/src/theme/theme.css` -- `components.overlay.scrim: 'rgba(35,38,52,.45)'` (Crust at 45%, both themes) and the Elevation paragraph names the scrim behind modal overlays; `--color-scrim` in `@theme`. On the code branch.
+- [x] `packages/ui/workbench/{DialogHost.vue,states/dialog-states.ts,widgets.ts}` -- `DialogHost` takes no props, holds `open` as component state, renders an `Open dialog` button and a `UiDialog` bound to it, passing its `title` and default slots through; one state, `opens from its button`, slots `title` (`Add group in ` and a mono `root`) and `default` (a line of text). Esc closes it; no close button, since a state's slot can't reach `DialogHost`'s `open` (`WidgetCell.vue:16-18`). Row 8 mounts that state in `Dialog.spec.ts`.
+- [x] `packages/editor/src/shortcuts/is-behind-modal.ts` (function) -- `isBehindModal(root: Element): boolean`. Row 13 in `is-behind-modal.spec.ts`.
+- [x] `packages/editor/src/shortcuts/{shortcut-registry.ts,use-shortcuts.ts}` -- `ShortcutRegistry` (service): `listen(target, root)` builds `new HotkeyLayer(target, run, () => isBehindModal(root))`; `useShortcuts(root)` (function). `shortcut-registry.spec.ts` and `use-shortcuts.spec.ts` pass a root.
+- [x] `packages/editor/src/{mount-editor.ts,App.vue,types.ts}` -- `mountEditor` (existing function, not added; it already mounts the app) resolves the selector (row 18 in `mount-editor.spec.ts`), `createApp(App, { root })`, `app.mount(root)`; `App.vue` takes `AppProps = { root: HTMLElement }` (new `src/types.ts`) and calls `useShortcuts(root)`.
+- [x] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` -- one precedent entry: `packages/ui/workbench/CanvasToggleFrame.vue` takes the glossary's **frame** for a workbench wrapper (spine glossary: "**frame** | A position + rotation in the plane").
+- [x] `packages/editor/src/shortcuts/modal-keeps-keys.spec.ts` -- rows 14–17 through `mountShell`, a `UiDialog` rendered beside it with `vitest-browser-vue` (open held in a `ref`, closed on `update:open`), and `pressKey`.
 
 **Acceptance Criteria:**
 - Given the ui workbench, when the Dialog row's button is clicked, then a centred dialog titled `Add group in root` opens over the page in both themes, and Esc closes it with focus back on the button.
@@ -116,9 +116,49 @@ context:
 
 ## Implementation Notes
 
+- Toggled bugs, each applied alone and restored, both browsers: the `isModalOpen` early return removed turned rows 1–3 and 14–16 red; `enableOnContentEditable: true` turned 5 and 7 red; `enableOnFormTags` omitted turned 4 red; `closest` replaced by the root's own attribute turned 13 (the parent row) red; the portal removed turned 9 and 12a red, not 10: without the portal the content still sits in a body child, so `hideOthers` still marks row 10's sibling. Row 10 proves the `aria-hidden` round trip, not the portal.
+- Row 15 reads `location.hash` after awaiting the dialog button's focus; the unprevented keydowns are what tell a silenced layer from a run entry. Row 16 reads the slide-out with `includeHidden`, since the shell is `aria-hidden` while the dialog is open, after a `nextTick`.
+- `shortcut-registry.spec.ts` passes `document.body` as the root, which no test hides.
+- Real-host run: not applicable, no spec fakes a third-party host or boundary; every row runs the real Reka `Dialog`, the real zag store and real Chromium and Firefox (`pnpm test`: 556 files, 4454 tests passed, no type errors).
+- Structural changes: none (no `tsconfig*.json`, `package.json` dependency, `pnpm-workspace.yaml`, Vitest, ESLint, Stryker or dependency-cruiser config, `declare global` or `declare module` in `git diff --stat` since baseline).
+- Decision (build): `--color-scrim` is declared once in `@theme`, not repeated in the `[data-theme]` blocks, because the plan's Decision (Sergii 2026-11-11) gives it "one value for both themes, as the shadow is", and `--shadow-overlay` is declared once (`theme.css:113`).
+- Decision (Sergii 2026-11-11, at the look): the dialog stays above the editor through `isolate` on `EditorShell`'s outer div, not a z-index on `UiDialog`'s overlay and content, because the editor's z-indexes then stay inside the editor and anything portaled to `body` paints above it with no z-index scale DESIGN.md doesn't define; Reka's Dialog docs set none either (https://reka-ui.com/docs/components/dialog). Sergii looked at the workbench Dialog row: fine.
+- Decision (build): `DialogHost` opens the dialog with `UiButton`, not a bare `<button>`, because DESIGN.md's dialogs use its `button` component (› Overlays › Add flow: "an `Add` `button`").
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+### Pass 1 (quick, test-reviewer) -- high 1, medium 0, low 5, false 1, rejected 5
+
+| # | Lens | Finding | Verdict | Route | Evidence / action |
+|---|---|---|---|---|---|
+| 1 | quick | Scrim and dialog paint under the open Tree slide-out | high | patch | `EditorShell.vue:24` slide-out `z-10` in the root stacking context (no ancestor isolates; `styles.css` sets only height), portaled overlay and content have no z-index. Patched: `isolate` on the shell's outer div; new test 'lays its scrim over the open slide-out' fails without it in both browsers. |
+| 2 | quick, test-reviewer | Row 18 pins the message wording; `toThrow(instance)` may not check the class | low | patch | Row 18 asks for an `InvariantError` naming `#missing`. Patched: `toThrow(InvariantError)` and `toThrow('#missing')`. |
+| 3 | quick | Row 18's `arrange()` builds a container, root, scope it never uses | low | patch | AGENTS "Arrange only what the test uses". Patched: the test builds only an injector. |
+| 4 | test-reviewer | Row 10 reads `aria-hidden` once, no retry | low | patch | `useHideOthers` sets it from a watcher (`useHideOthers.js`), not with the render. Patched: retrying `toHaveAttribute` before and after. |
+| 5 | test-reviewer | Row 17 presses `2`, F6, Ctrl+D while open; an early `2` that ran would pass the final check | low | patch | Deleted the three presses. |
+| 6 | quick | AC says removing the portal turns row 10 red; it doesn't | low | reject | Fix edits this build's plan (rejected by rule); rows 9 and 12a go red on that toggle (Implementation Notes). Raised at the look. |
+| 7 | quick, test-reviewer | Row 15's `location.hash` read can't fail on its own | low | reject | Its `defaultPrevented` half fails when the layer runs the entry (a matched entry that ran is prevented); waiting can't strengthen a "still on Layout" read. |
+| 8 | test-reviewer | Row 8 copies the state's literals | low | reject | One state (`dialog-states.ts`); a second state is not planned. |
+| 9 | quick | Build decisions in Implementation Notes not in X/not Y form (row 15 timing) | low | reject | Same root as 7; the note records a test detail, not a choice of behaviour. |
+| 10 | quick | Review Triage Log empty though lenses ran | false | reject | The triage is written here, after both lenses reported. |
+| 11 | test-reviewer | `mock.calls` assertions in `hotkey-layer.spec.ts` | false | reject | The reviewer itself found the handler call is the behaviour under test (rows 1–6). |
+
+
+### Pass 2 (quick, test-reviewer, on the four patched files) -- high 0, medium 0, low 8, false 1; loop ends, lows logged
+
+| # | Lens | Finding | Verdict | Route | Evidence / action |
+|---|---|---|---|---|---|
+| 1 | quick, test-reviewer | `isolate` on `EditorShell` has no recorded rejected alternative (a z-index on `UiDialog`'s overlay and content); a host outside the shell with a z-indexed element would paint over the dialog again | low | logged; question at the look | Today the only z-index in `packages/` and `app/` is the slide-out's `z-10`, inside the shell. Reka's Dialog docs put no z-index on overlay or content (https://reka-ui.com/docs/components/dialog, fetched 2026-11-11), so the reviewer's recalled documented setup does not hold. The pick between the two is *judgement*: asked of Sergii at the look. |
+| 2 | quick | AC "the portal removed (9, 10)" still claims row 10 | low | carried | Pass 1 #6. |
+| 3 | quick | Row 15's focus half can't fail alone: Reka's focus trap pulls focus back to the button | low | logged | `defaultPrevented` half catches a run entry; same class as pass 1 #7. |
+| 4 | quick | `arrangeHeld()` returns `{ screen, open }` that row 10 never uses | low | logged | AGENTS "Arrange only what the test uses"; harmless return value. |
+| 5 | quick | Row 18 test is `async` with no `await`; calls `mountEditor` twice | low | logged | Throws before `createApp` (`mount-editor.ts:13-15`), so no side effect. |
+| 6 | test-reviewer | Scrim-over-slide-out test restores `body.style.pointerEvents` inline, not in `onTestFinished` | low | logged | Leaks only if `elementFromPoint` or `getBoundingClientRect` throws. |
+| 7 | test-reviewer | Row 12a probes without the pointer-events override the slide-out test needs | false | reject | `DialogOverlayImpl.js` sets `pointer-events: auto` on the overlay (quick lens checked), so the corner probe hits the scrim. |
+| 8 | test-reviewer | Row 8 copies the state's literals | low | carried | Pass 1 #8. |
+| 9 | test-reviewer | Row 15 hash half | low | carried | Pass 1 #7. |
 
 ## Design Notes
 

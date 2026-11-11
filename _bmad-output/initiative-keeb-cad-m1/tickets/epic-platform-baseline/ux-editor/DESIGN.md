@@ -295,6 +295,7 @@ components:
     body-opacity: 0.7            # [ASSUMPTION] key body + top face only; edges, legends, marks stay at 1
   overlay:
     shadow: '0 6px 18px rgba(0,0,0,.35)'   # [ASSUMPTION]
+    scrim: 'rgba(35,38,52,.45)'            # Crust at 45%, both themes: the page behind a modal overlay
   chip:
     border: '{colors.border-interactive}'
     foreground: '{colors.text-muted}'
@@ -403,7 +404,7 @@ Rows are `{spacing.row}`; fields `{spacing.field-height}`; panel padding `{spaci
 
 ## Elevation & Depth
 
-Docked surfaces are flat and separated by tone and a 1px `{colors.border}` hairline. Only floating overlays (slide-out, menus, command palette, context menu, violations panel, Part picker, toasts) cast `{components.overlay.shadow}`. Cards fixed to the canvas (Start card, 3D progress) and canvas chips stay flat. On the canvas, depth means physical height only: the key top face is lighter than the body in both themes. The 3D viewer uses real lighting; nothing else imitates 3D.
+Docked surfaces are flat and separated by tone and a 1px `{colors.border}` hairline. Only floating overlays (slide-out, menus, command palette, context menu, violations panel, Part picker, toasts) cast `{components.overlay.shadow}`. A modal overlay (the add flow, later the command palette) also lays `{components.overlay.scrim}` over the whole page behind it, top bar and status strip included, since the page there is inert. Cards fixed to the canvas (Start card, 3D progress) and canvas chips stay flat. On the canvas, depth means physical height only: the key top face is lighter than the body in both themes. The 3D viewer uses real lighting; nothing else imitates 3D.
 
 ## Shapes
 

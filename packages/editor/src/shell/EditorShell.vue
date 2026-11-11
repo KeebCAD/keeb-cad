@@ -16,7 +16,7 @@ const { isOpen } = useSlideOut()
 
 <template>
   <UiTabs v-model="workspace" class="h-full">
-    <div class="flex h-full flex-col text-ui text-text">
+    <div class="isolate flex h-full flex-col text-ui text-text">
       <TopBar />
       <div class="flex min-h-0 flex-1">
         <div class="relative flex shrink-0">

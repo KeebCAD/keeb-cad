@@ -3,8 +3,8 @@ import { onBeforeUnmount, onMounted } from 'vue'
 
 import { ShortcutRegistry } from './shortcut-registry'
 
-export function useShortcuts(): void {
+export function useShortcuts(root: Element): void {
   const registry = useService(ShortcutRegistry)
-  onMounted(() => registry.listen(document))
+  onMounted(() => registry.listen(document, root))
   onBeforeUnmount(() => registry.stop())
 }
