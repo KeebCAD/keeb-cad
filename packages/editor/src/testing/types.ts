@@ -6,7 +6,7 @@ import type { Router } from 'vue-router'
 
 import type { Invoke } from '../invoke/invoke'
 
-export type KeyPress = { key: string; code: string; shift?: boolean }
+export type KeyPress = { key: string; code: string; shift?: boolean; ctrl?: boolean }
 
 export type ColorScheme = 'dark' | 'light'
 

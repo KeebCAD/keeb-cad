@@ -1,9 +1,11 @@
 import { DesignStore, designModule } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
+import { checkDeletePart } from '@keeb-cad/model/main'
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
-import { aBlueprintDesignPart, aDesign, anId } from '@keeb-cad/schema/testing'
+import { aBlueprintDesignPart, aDesign, aMeta, anId, aPartRef } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
+import { settled } from '../testing/settled'
 import { DeletePart } from './delete-part'
 import { partsCommandsModule } from './parts-commands-module'
 
@@ -34,5 +36,24 @@ describe('DeletePart', () => {
     expectOk(store.run(DeletePart, { id: 'other' }))
 
     expect(store.current.getOrUndefined()?.design.parts).toEqual([aBlueprintDesignPart()])
+  })
+})
+
+describe('DeletePart availability', () => {
+  it.each([
+    ['the default part', 'key'],
+    ['another part', 'other'],
+  ])('gives what its check gives for %s', (_role, id) => {
+    const design = aDesign({
+      meta: aMeta({ defaultPart: aPartRef('key') }),
+      parts: [
+        aBlueprintDesignPart({ id: anId('key') }),
+        aBlueprintDesignPart({ id: anId('other') }),
+      ],
+    })
+
+    expect(settled(new DeletePart().available(design, { id: anId(id) }))).toEqual(
+      settled(checkDeletePart(design, anId(id))),
+    )
   })
 })

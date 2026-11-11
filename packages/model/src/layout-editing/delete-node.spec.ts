@@ -35,20 +35,13 @@ describe('deleteNode', () => {
     expect(design.layout.children).toEqual(expected)
   })
 
-  it('refuses a list naming a missing id with unknown-target naming it, deleting nothing', () => {
+  it("returns its check's rejection for the root, deleting nothing", () => {
     const design = arrange()
 
-    expect(deleteNode(design, [anId('a'), anId('missing')])).toMatchObject({
-      kind: 'unknown-target',
-      ids: ['missing'],
+    expect(deleteNode(design, [anId('a'), ROOT])).toMatchObject({
+      kind: 'root-required',
+      ids: [ROOT],
     })
-    expect(design).toEqual(arrange())
-  })
-
-  it('refuses the root with root-required naming it', () => {
-    const design = arrange()
-
-    expect(deleteNode(design, [ROOT])).toMatchObject({ kind: 'root-required', ids: [ROOT] })
     expect(design).toEqual(arrange())
   })
 })

@@ -1,4 +1,5 @@
-import type { Design } from '@keeb-cad/schema'
+import type { Result } from '@keeb-cad/result'
+import type { Design, Rejection } from '@keeb-cad/schema'
 import type * as v from 'valibot'
 import { describe, expectTypeOf, it } from 'vitest'
 
@@ -21,7 +22,7 @@ interface OmitsInputHandle {
   readonly id: string
   readonly label: string
   readonly input: v.ObjectSchema<Record<never, never>, undefined>
-  new (): { available(): boolean; apply(draft: Writable<Design>): void }
+  new (): { available(): Result<void, Rejection>; apply(draft: Writable<Design>): void }
 }
 
 interface HotkeysHandle<Hotkeys> {

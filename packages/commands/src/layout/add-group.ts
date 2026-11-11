@@ -1,5 +1,6 @@
 import type { Command, Writable } from '@keeb-cad/design'
-import { addNode } from '@keeb-cad/model/main'
+import { addNode, checkAddNode } from '@keeb-cad/model/main'
+import type { Result } from '@keeb-cad/result'
 import type { Design, Frozen, Rejection } from '@keeb-cad/schema'
 
 import { addGroupInputSchema } from './add-group-input-schema'
@@ -11,8 +12,8 @@ export class AddGroup implements Command<AddGroupInput> {
   static readonly label = 'Add group'
   static readonly input = addGroupInputSchema
 
-  available(_design: Frozen<Design>): boolean {
-    return true
+  available(design: Frozen<Design>, { parent, index, id }: AddGroupInput): Result<void, Rejection> {
+    return checkAddNode(design, id, { parent, index })
   }
 
   apply(draft: Writable<Design>, { parent, index, ...group }: AddGroupInput): void | Rejection {

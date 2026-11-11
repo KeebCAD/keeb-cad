@@ -1,5 +1,7 @@
 import { emptyInputSchema, type EmptyInput } from '@keeb-cad/commands'
 import { inject } from '@keeb-cad/di'
+import { AsyncResult } from '@keeb-cad/result'
+import type { Rejection } from '@keeb-cad/schema'
 
 import { DesignLocation } from '../router/design-location'
 import { Selection } from '../selection/selection'
@@ -20,8 +22,9 @@ export class FitViewport implements UiAction<EmptyInput> {
     return onLayout && this.#items.drawsAny
   }
 
-  apply(_input: EmptyInput): void {
+  apply(_input: EmptyInput): AsyncResult<void, Rejection> {
     this.#viewport.fitNodes(this.#selection.ids)
+    return AsyncResult.ok()
   }
 
   readonly #location = inject(DesignLocation)

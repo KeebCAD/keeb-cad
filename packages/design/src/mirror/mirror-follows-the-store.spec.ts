@@ -1,6 +1,7 @@
 import { Container } from '@keeb-cad/di'
+import { Result } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
-import type { Design, Frozen } from '@keeb-cad/schema'
+import type { Design, Frozen, Rejection } from '@keeb-cad/schema'
 import { aDesign } from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
@@ -26,8 +27,8 @@ class RenameDesign implements Command<RenameDesignInput> {
   static readonly label = 'Rename design'
   static readonly input = renameDesignInputSchema
 
-  available(_design: Frozen<Design>): boolean {
-    return true
+  available(_design: Frozen<Design>): Result<void, Rejection> {
+    return Result.ok()
   }
 
   apply(draft: Writable<Design>, input: RenameDesignInput): void {

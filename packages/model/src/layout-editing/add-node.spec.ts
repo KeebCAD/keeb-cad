@@ -29,25 +29,12 @@ describe('addNode', () => {
     expect(design.layout.children.at(-1)).toEqual({ id })
   })
 
-  it.each([
-    ["a design part's id", 'key'],
-    ["a node's id", 'thumb-home'],
-  ])('refuses %s with id-taken naming it', (_role, id) => {
+  it("returns its check's rejection for a taken id, adding nothing", () => {
     const design = arrange()
 
-    expect(addNode(design, { id: anId(id) }, {})).toMatchObject({ kind: 'id-taken', ids: [id] })
-    expect(design).toEqual(arrange())
-  })
-
-  it.each([
-    ['a missing id', 'missing'],
-    ['a slot', 'thumb-home'],
-  ])('refuses a parent that is %s with unknown-target naming it', (_role, parent) => {
-    const design = arrange()
-
-    expect(addNode(design, {}, { parent: anId(parent) })).toMatchObject({
-      kind: 'unknown-target',
-      ids: [parent],
+    expect(addNode(design, { id: anId('thumb-home') }, {})).toMatchObject({
+      kind: 'id-taken',
+      ids: ['thumb-home'],
     })
     expect(design).toEqual(arrange())
   })
@@ -87,16 +74,6 @@ describe('addNode', () => {
       expect(addNode(design, { id: anId('n') }, { index })).toBeUndefined()
       expect(design.layout.children.map(({ id }) => id)).toEqual(expectedIds)
     })
-
-    it('refuses 4, just above the child count, with index-out-of-range naming the parent', () => {
-      const design = arrange(three())
-
-      expect(addNode(design, { id: anId('n') }, { index: 4 })).toMatchObject({
-        kind: 'index-out-of-range',
-        ids: [ROOT],
-      })
-      expect(design).toEqual(arrange(three()))
-    })
   })
 
   describe('the index, in a parent with no children', () => {
@@ -105,15 +82,6 @@ describe('addNode', () => {
 
       expect(addNode(design, { id: anId('n') }, { index: 0 })).toBeUndefined()
       expect(design.layout.children).toEqual([{ id: 'n' }])
-    })
-
-    it('refuses 1 with index-out-of-range naming the parent', () => {
-      const design = arrange([])
-
-      expect(addNode(design, { id: anId('n') }, { index: 1 })).toMatchObject({
-        kind: 'index-out-of-range',
-        ids: [ROOT],
-      })
     })
   })
 })

@@ -1,4 +1,4 @@
-import type { AsyncResult, Option } from '@keeb-cad/result'
+import type { AsyncResult, Option, Result } from '@keeb-cad/result'
 import type { Design, Frozen, Rejection } from '@keeb-cad/schema'
 import type * as v from 'valibot'
 
@@ -9,7 +9,7 @@ import type { Committed } from '../store/types'
 // multi tokens' element type. That bivariance is also why the register functions check the
 // input both ways themselves.
 export interface Command<Input> {
-  available(design: Frozen<Design>): boolean
+  available(design: Frozen<Design>, input: Input): Result<void, Rejection>
   apply(draft: Writable<Design>, input: Input): void | Rejection
 }
 

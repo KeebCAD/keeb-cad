@@ -7,9 +7,9 @@ import {
   type Writable,
 } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
-import { Option } from '@keeb-cad/result'
+import { Option, Result } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
-import type { Design } from '@keeb-cad/schema'
+import type { Design, Rejection } from '@keeb-cad/schema'
 import { aFingerprintsFile, aRevision, aRoutingFile } from '@keeb-cad/schema/testing'
 import { DesignStorage, writeBundle } from '@keeb-cad/storage'
 import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
@@ -29,8 +29,8 @@ class RenameDesign implements Command<RenameDesignInput> {
   static readonly label = 'Rename design'
   static readonly input = renameDesignInputSchema
 
-  available(): boolean {
-    return true
+  available(): Result<void, Rejection> {
+    return Result.ok()
   }
 
   apply(draft: Writable<Design>, input: RenameDesignInput): void {

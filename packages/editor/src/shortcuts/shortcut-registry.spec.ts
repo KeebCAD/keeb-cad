@@ -10,9 +10,9 @@ import {
   type Writable,
 } from '@keeb-cad/design'
 import { Container, inject } from '@keeb-cad/di'
-import { AsyncResult, InvariantError } from '@keeb-cad/result'
+import { AsyncResult, InvariantError, Result } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
-import type { Design } from '@keeb-cad/schema'
+import type { Design, Rejection } from '@keeb-cad/schema'
 import { aDesign } from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
 import { describe, expect, it, onTestFinished } from 'vitest'
@@ -20,7 +20,7 @@ import { describe, expect, it, onTestFinished } from 'vitest'
 import { editorModule } from '../editor-module'
 import { registerInputBuilder } from '../invoke/register-input-builder'
 import type { EntryHandle, InputBuilder } from '../invoke/types'
-import { press } from '../testing/press'
+import { press, pressKey } from '../testing/press'
 import { Recorder } from '../testing/recorder'
 import { registerUiAction } from '../ui-actions/register-ui-action'
 import type { UiAction, UiActionHandle } from '../ui-actions/types'
@@ -44,8 +44,8 @@ function renameDesign(hotkeys?: readonly string[]): CommandHandle {
     static readonly input = renameDesignInputSchema
     static readonly hotkeys = hotkeys
 
-    available(): boolean {
-      return true
+    available(): Result<void, Rejection> {
+      return Result.ok()
     }
 
     apply(draft: Writable<Design>, input: RenameDesignInput): void {
@@ -84,7 +84,7 @@ function recordAction(id: string, hotkeys?: readonly string[]): ActionHandle {
   }
 }
 
-function recordUiAction(id: string, hotkeys?: readonly string[]): UiActionHandle {
+function recordUiAction(id: string, hotkeys?: readonly string[], available = true): UiActionHandle {
   return class RecordUiAction implements UiAction<RecordInput> {
     static readonly kind = 'ui-action'
     static readonly id = id
@@ -93,11 +93,12 @@ function recordUiAction(id: string, hotkeys?: readonly string[]): UiActionHandle
     static readonly hotkeys = hotkeys
 
     available(): boolean {
-      return true
+      return available
     }
 
-    apply(input: RecordInput): void {
+    apply(input: RecordInput): AsyncResult<void, Rejection> {
       this.#recorder.recorded.push(input)
+      return AsyncResult.ok()
     }
 
     readonly #recorder = inject(Recorder)
@@ -221,6 +222,27 @@ describe('ShortcutRegistry', () => {
         expect(recorder.recorded).toEqual(expected)
       },
     )
+  })
+
+  describe('the answer to the hotkey layer', () => {
+    it.each([
+      ['leaves the key unclaimed and does not run an unavailable entry', false, false, []],
+      ['claims the key and runs an available entry once', true, true, [{}]],
+    ])('%s', async (_role, available, expectedPrevented, expectedRuns) => {
+      const recorder = new Recorder()
+      const { registry } = await arrange({
+        uiActions: [recordUiAction('test.record', ['Insert'], available)],
+        recorder,
+      })
+      registry.listen(document)
+
+      const keydown = pressKey({ key: 'Insert', code: 'Insert' })
+
+      expect({ prevented: keydown.defaultPrevented, runs: recorder.recorded }).toEqual({
+        prevented: expectedPrevented,
+        runs: expectedRuns,
+      })
+    })
   })
 
   describe('startup', () => {

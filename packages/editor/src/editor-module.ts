@@ -5,6 +5,8 @@ import { FocusNextLandmark } from './landmarks/focus-next-landmark'
 import { FocusPreviousLandmark } from './landmarks/focus-previous-landmark'
 import { Landmarks } from './landmarks/landmarks'
 import { DesignLocation } from './router/design-location'
+import { DeleteSelection } from './selection/delete-selection'
+import { DuplicateSelection } from './selection/duplicate-selection'
 import { Selection } from './selection/selection'
 import { ShortcutRegistry } from './shortcuts/shortcut-registry'
 import { CloseSlideOut } from './slide-out/close-slide-out'
@@ -44,5 +46,7 @@ export const editorModule: Module = {
     registerUiAction(container, OpenTree)
     registerUiAction(container, CloseSlideOut)
     registerUiAction(container, FitViewport)
+    registerUiAction(container, DeleteSelection)
+    registerUiAction(container, DuplicateSelection)
   },
 }

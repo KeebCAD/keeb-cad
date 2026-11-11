@@ -8,8 +8,9 @@ import {
   type Writable,
 } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
+import { Result } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
-import type { Design } from '@keeb-cad/schema'
+import type { Design, Rejection } from '@keeb-cad/schema'
 import { aDesign } from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
@@ -41,8 +42,8 @@ class RenameDesign implements Command<v.InferOutput<typeof renameInputSchema>> {
   static readonly label = 'Rename design'
   static readonly input = renameInputSchema
 
-  available(): boolean {
-    return true
+  available(): Result<void, Rejection> {
+    return Result.ok()
   }
 
   apply(draft: Writable<Design>, input: v.InferOutput<typeof renameInputSchema>): void {
@@ -309,9 +310,9 @@ describe('DevtoolsPlugin', () => {
           {
             layerId: invocationsLayer,
             event: expect.objectContaining({
-              title: RenameDesign.label,
+              title: RenameDesign.id,
               subtitle: 'ok',
-              data: { id: RenameDesign.id, input: { name: 'Lily58' }, result: 'ok' },
+              data: { label: RenameDesign.label, input: { name: 'Lily58' }, result: 'ok' },
             }),
           },
         ],

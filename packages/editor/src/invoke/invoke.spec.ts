@@ -10,10 +10,10 @@ import {
   type Writable,
 } from '@keeb-cad/design'
 import { Container, inject } from '@keeb-cad/di'
-import { AsyncResult, Option, type Result } from '@keeb-cad/result'
+import { AsyncResult, Option, Result } from '@keeb-cad/result'
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
 import type { Design, Rejection } from '@keeb-cad/schema'
-import { aDesign, aMeta } from '@keeb-cad/schema/testing'
+import { aDesign, aMeta, anId } from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
 import { describe, expect, it, onTestFinished } from 'vitest'
 import { nextTick } from 'vue'
@@ -36,8 +36,8 @@ class RenameDesign implements Command<NameInput> {
   static readonly label = 'Rename design'
   static readonly input = nameInputSchema
 
-  available(): boolean {
-    return true
+  available(): Result<void, Rejection> {
+    return Result.ok()
   }
 
   apply(draft: Writable<Design>, input: NameInput): void {
@@ -45,15 +45,16 @@ class RenameDesign implements Command<NameInput> {
   }
 }
 
-function renameWith(available: boolean) {
+// With no rejection its check says ok.
+function renameWith(rejection?: Rejection) {
   return class RenameWith implements Command<NameInput> {
     static readonly kind = 'command'
     static readonly id = 'meta.renameWith'
     static readonly label = 'Rename with'
     static readonly input = nameInputSchema
 
-    available(): boolean {
-      return available
+    available(): Result<void, Rejection> {
+      return rejection === undefined ? Result.ok() : Result.err(rejection)
     }
 
     apply(draft: Writable<Design>, input: NameInput): void {
@@ -96,8 +97,9 @@ function recordNullableName() {
       return true
     }
 
-    apply(input: NullableNameInput): void {
+    apply(input: NullableNameInput): AsyncResult<void, Rejection> {
       this.#recorder.recorded.push(input)
+      return AsyncResult.ok()
     }
 
     readonly #recorder = inject(Recorder)
@@ -115,8 +117,9 @@ function recordName(id: string, available: boolean) {
       return available
     }
 
-    apply(input: NameInput): void {
+    apply(input: NameInput): AsyncResult<void, Rejection> {
       this.#recorder.recorded.push(input)
+      return AsyncResult.ok()
     }
 
     readonly #recorder = inject(Recorder)
@@ -226,7 +229,7 @@ describe('Invoke', () => {
       expect(nameOf(store)).toEqual(Option.some('Corne'))
     })
 
-    it('refuses an action its check says no to without asking its builder', async () => {
+    it('refuses an action its check says no to as unavailable, having asked its builder first', async () => {
       const action = recordAction('test.recordAction', false)
       const recorder = new Recorder()
       const { invoke } = await arrange({
@@ -238,10 +241,10 @@ describe('Invoke', () => {
       const result = await invoke.invoke(action)
 
       expectUnavailable(result, 'test.recordAction')
-      expect(recorder.recorded).toEqual([])
+      expect(recorder.recorded).toEqual([{ name: 'Corne' }])
     })
 
-    it('refuses a UiAction its check says no to without asking its builder', async () => {
+    it('refuses a UiAction its check says no to as unavailable, having asked its builder first', async () => {
       const uiAction = recordName('test.recordName', false)
       const recorder = new Recorder()
       const { invoke } = await arrange({
@@ -253,7 +256,36 @@ describe('Invoke', () => {
       const result = await invoke.invoke(uiAction)
 
       expectUnavailable(result, 'test.recordName')
-      expect(recorder.recorded).toEqual([])
+      expect(recorder.recorded).toEqual([{ name: 'Corne' }])
+    })
+
+    it("refuses a command with its check's own rejection, not as unavailable", async () => {
+      const command = renameWith({
+        kind: 'root-required',
+        ids: [anId('root')],
+        message: 'The root group "root" can\'t be deleted.',
+      })
+      const { invoke, store } = await arrange({ commands: [command], design: aDesign() })
+      const before = store.current
+
+      const result = await invoke.invoke(command, { name: 'Lily58' })
+
+      expectErr(result)
+      expect(result.error).toEqual({
+        kind: 'root-required',
+        ids: [anId('root')],
+        message: 'The root group "root" can\'t be deleted.',
+      })
+      expect(store.current).toEqual(before)
+    })
+
+    it('returns the error a UiAction gives from apply', async () => {
+      const { invoke } = await arrange({ uiActions: [FailingUiAction] })
+
+      const result = await invoke.invoke(FailingUiAction, { name: 'Lily58' })
+
+      expectErr(result)
+      expect(result.error).toEqual({ kind: 'stale', seq: 1, latest: 2 })
     })
 
     it("runs an action with the caller's input without asking its builder", async () => {
@@ -350,24 +382,64 @@ describe('Invoke', () => {
   })
 
   describe('available', () => {
-    it('says a command with a design committed is unavailable when its check says no, and refuses it as such', async () => {
-      const command = renameWith(false)
-      const { invoke, store } = await arrange({ commands: [command], design: aDesign() })
-      const before = store.current
+    it('says a command is unavailable before any design is committed without asking its builder', async () => {
+      const recorder = new Recorder()
+      const { invoke } = await arrange({
+        commands: [RenameDesign],
+        builders: [[RenameDesign, RecordedBuildName]],
+        recorder,
+      })
 
-      const available = invoke.available(command)
-      const result = await invoke.invoke(command, { name: 'Lily58' })
+      const available = invoke.available(RenameDesign)
 
-      expect(available).toBe(false)
-      expectUnavailable(result, command.id)
-      expect(store.current).toEqual(before)
+      expect({ available, asked: recorder.recorded }).toEqual({ available: false, asked: [] })
     })
 
-    it('says a command with a design committed is available when its check says yes', async () => {
-      const command = renameWith(true)
+    it('says a command is available for input its schema refuses', async () => {
+      const command = renameWith({ kind: 'stale', seq: 1, latest: 2 })
       const { invoke } = await arrange({ commands: [command], design: aDesign() })
 
-      expect(invoke.available(command)).toBe(true)
+      expect(invoke.available(command, { name: '' })).toBe(true)
+    })
+
+    it('says a command is unavailable when its check refuses', async () => {
+      const command = renameWith({ kind: 'stale', seq: 1, latest: 2 })
+      const { invoke } = await arrange({ commands: [command], design: aDesign() })
+
+      expect(invoke.available(command, { name: 'Lily58' })).toBe(false)
+    })
+
+    it('says a command is available when its check says ok', async () => {
+      const command = renameWith()
+      const { invoke } = await arrange({ commands: [command], design: aDesign() })
+
+      expect(invoke.available(command, { name: 'Lily58' })).toBe(true)
+    })
+
+    it("asks a command's check about its builder's input when the caller gives none", async () => {
+      const seen: unknown[] = []
+      class SeeName implements Command<NameInput> {
+        static readonly kind = 'command'
+        static readonly id = 'test.seeName'
+        static readonly label = 'See name'
+        static readonly input = nameInputSchema
+
+        available(_design: Design, input: NameInput): Result<void, Rejection> {
+          seen.push(input)
+          return Result.ok()
+        }
+
+        apply(): void {}
+      }
+      const { invoke } = await arrange({
+        commands: [SeeName],
+        builders: [[SeeName, buildName('Corne')]],
+        design: aDesign(),
+      })
+
+      invoke.available(SeeName)
+
+      expect(seen).toEqual([{ name: 'Corne' }])
     })
 
     it('says an action with no design is unavailable when its check says no, and refuses it as such', async () => {
@@ -375,7 +447,7 @@ describe('Invoke', () => {
       const recorder = new Recorder()
       const { invoke } = await arrange({ actions: [action], recorder })
 
-      const available = invoke.available(action)
+      const available = invoke.available(action, { name: 'Lily58' })
       const result = await invoke.invoke(action, { name: 'Lily58' })
 
       expect(available).toBe(false)
@@ -387,7 +459,7 @@ describe('Invoke', () => {
       const action = recordAction('test.recordAction', true)
       const { invoke } = await arrange({ actions: [action], recorder: new Recorder() })
 
-      expect(invoke.available(action)).toBe(true)
+      expect(invoke.available(action, { name: 'Lily58' })).toBe(true)
     })
 
     it('says a UiAction is unavailable when its check says no, and refuses it as such', async () => {
@@ -395,7 +467,7 @@ describe('Invoke', () => {
       const recorder = new Recorder()
       const { invoke } = await arrange({ uiActions: [uiAction], recorder })
 
-      const available = invoke.available(uiAction)
+      const available = invoke.available(uiAction, { name: 'Lily58' })
       const result = await invoke.invoke(uiAction, { name: 'Lily58' })
 
       expect(available).toBe(false)
@@ -407,7 +479,14 @@ describe('Invoke', () => {
       const uiAction = recordName('test.recordName', true)
       const { invoke } = await arrange({ uiActions: [uiAction], recorder: new Recorder() })
 
-      expect(invoke.available(uiAction)).toBe(true)
+      expect(invoke.available(uiAction, { name: 'Lily58' })).toBe(true)
+    })
+
+    it('says a UiAction is available for input its schema refuses', async () => {
+      const uiAction = recordName('test.recordName', false)
+      const { invoke } = await arrange({ uiActions: [uiAction], recorder: new Recorder() })
+
+      expect(invoke.available(uiAction, { name: '' })).toBe(true)
     })
   })
 
@@ -463,6 +542,21 @@ class FailingAction implements Action<NameInput, string> {
   }
 }
 
+class FailingUiAction implements UiAction<NameInput> {
+  static readonly kind = 'ui-action'
+  static readonly id = 'test.failingUiAction'
+  static readonly label = 'Failing UiAction'
+  static readonly input = nameInputSchema
+
+  available(): boolean {
+    return true
+  }
+
+  apply(): AsyncResult<void, Rejection> {
+    return AsyncResult.err({ kind: 'stale', seq: 1, latest: 2 })
+  }
+}
+
 function rejectingCommand(rejection: Rejection) {
   return class RejectingCommand implements Command<NameInput> {
     static readonly kind = 'command'
@@ -470,8 +564,8 @@ function rejectingCommand(rejection: Rejection) {
     static readonly label = 'Rejecting command'
     static readonly input = nameInputSchema
 
-    available(): boolean {
-      return true
+    available(): Result<void, Rejection> {
+      return Result.ok()
     }
 
     apply(): Rejection {
@@ -558,16 +652,37 @@ describe('Invoke events', () => {
     expect(events).toEqual([expect.objectContaining({ input: { name: 'Corne' } })])
   })
 
-  const refusedCommand = renameWith(false)
+  it('reports a command with no design as unavailable with no input, leaving its builder unasked', async () => {
+    const recorder = new Recorder()
+    const invoke = await arrangeEvents(
+      { commands: [RenameDesign], builders: [[RenameDesign, RecordedBuildName]] },
+      recorder,
+    )
+    const events = eventsOf(invoke)
+
+    await invoke.invoke(RenameDesign)
+
+    expect({ events, asked: recorder.recorded }).toEqual({
+      events: [
+        {
+          id: RenameDesign.id,
+          label: RenameDesign.label,
+          input: undefined,
+          result: { error: { kind: 'unavailable', command: RenameDesign.id } },
+        },
+      ],
+      asked: [],
+    })
+  })
+
   const refusedAction = recordAction('test.refused', false)
   const refusedUiAction = recordName('test.refused', false)
 
   it.each<[string, EntryHandle, Entries]>([
-    ['command', refusedCommand, { commands: [refusedCommand], design: aDesign() }],
     ['action', refusedAction, { actions: [refusedAction] }],
     ['UiAction', refusedUiAction, { uiActions: [refusedUiAction] }],
   ])(
-    'reports a refused %s as unavailable with no input, leaving its builder unasked',
+    "reports a refused %s as unavailable with its builder's input",
     async (_kind, handle, entries) => {
       const recorder = new Recorder()
       const invoke = await arrangeEvents(
@@ -576,19 +691,16 @@ describe('Invoke events', () => {
       )
       const events = eventsOf(invoke)
 
-      await invoke.invoke(handle as CommandHandle)
+      await invoke.invoke(handle as UiActionHandle)
 
-      expect({ events, asked: recorder.recorded }).toEqual({
-        events: [
-          {
-            id: handle.id,
-            label: handle.label,
-            input: undefined,
-            result: { error: { kind: 'unavailable', command: handle.id } },
-          },
-        ],
-        asked: [],
-      })
+      expect(events).toEqual([
+        {
+          id: handle.id,
+          label: handle.label,
+          input: { name: 'Corne' },
+          result: { error: { kind: 'unavailable', command: handle.id } },
+        },
+      ])
     },
   )
 

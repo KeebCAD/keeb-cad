@@ -1,5 +1,7 @@
 import { emptyInputSchema, type EmptyInput } from '@keeb-cad/commands'
 import { inject } from '@keeb-cad/di'
+import { AsyncResult } from '@keeb-cad/result'
+import type { Rejection } from '@keeb-cad/schema'
 
 import { DesignLocation } from '../../router/design-location'
 import type { UiAction } from '../../ui-actions/types'
@@ -16,8 +18,9 @@ export class ShowOutline implements UiAction<EmptyInput> {
     return this.#location.workspace.map((open) => open !== 'outline').getOr(false)
   }
 
-  apply(_input: EmptyInput): void {
+  apply(_input: EmptyInput): AsyncResult<void, Rejection> {
     void this.#location.openWorkspace('outline')
+    return AsyncResult.ok()
   }
 
   readonly #location = inject(DesignLocation)

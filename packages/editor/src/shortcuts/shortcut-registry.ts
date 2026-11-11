@@ -22,7 +22,7 @@ export class ShortcutRegistry implements Disposable {
       for (const [index, hotkey] of (handle.hotkeys ?? []).entries()) {
         assertValidHotkey(hotkey)
         // zag keys its entries by id, so each of a handle's hotkeys needs its own.
-        this.#shortcuts.set(`${handle.id}#${index}`, { hotkey, invoke })
+        this.#shortcuts.set(`${handle.id}#${index}`, { hotkey, handle, invoke })
       }
     }
   }
@@ -52,10 +52,13 @@ export class ShortcutRegistry implements Disposable {
   readonly #shortcuts = new Map<string, Shortcut>()
   #layer: HotkeyLayer | undefined
 
+  // Answers whether it ran the entry, so an unavailable one leaves its key to the focused element.
   // A refusal is dropped: notices for a refused hotkey are not shown yet.
-  #run(id: string): void {
+  #run(id: string): boolean {
     const shortcut = this.#shortcuts.get(id)
     if (shortcut === undefined) throw new InvariantError(`No shortcut is registered as "${id}".`)
+    if (!this.#invoke.available(shortcut.handle)) return false
     void shortcut.invoke()
+    return true
   }
 }
