@@ -156,7 +156,7 @@ flowchart LR
 | The data form's syntax | Decided with the outline primitives | First outline story |
 | In-app TS compilation | No user-authored blueprints in milestone 1 | Milestone 2 authored blueprints |
 | Out-of-memory results that depend on garbage left by earlier runs; data-form failure kinds and keys; tagging handles as 2D or 3D; when case lanes rerun (review-adversary-rerun-2026-11-01.md) | Each first matters in a later story | Story 17 (out of memory, handle tags); the first outline story (data form); the first tray-case story (case reruns) |
-| Absolute timings and memory probes in a browser worker on AC | The spikes ran on battery and the memory probes in Node; rankings hold | Story 17, before a number becomes a budget |
+| Absolute timings and memory probes in a browser worker on battery in power-saver, not on AC (Sergii 2026-11-08: battery is the state the app is really used in) | The spikes ran on battery and the memory probes in Node; rankings hold | Done by story 17 (`tickets/epic-see-corneys-keys/sandbox-verdict.md`), before a number became a budget |
 
 ## Working material
 
