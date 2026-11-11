@@ -1,0 +1,55 @@
+# Verification: simpler keyboard rule (AD-26 Shortcuts, glossary "modal")
+
+Date 2026-11-11. Read-only check against installed code. Paths: R = `node_modules/.pnpm/reka-ui@2.11.0_vue@3.5.44_typescript@6.0.3_/node_modules/reka-ui/dist`, A = `node_modules/.pnpm/aria-hidden@1.2.6/node_modules/aria-hidden/dist/es2015/index.js`, Z = `node_modules/.pnpm/@zag-js+hotkeys@1.47.0/node_modules/@zag-js/hotkeys/dist`.
+
+Verdict: the rule holds for the primary case (Dialog or modal Menu/Popover/Select/Drawer whose content is portaled to body, with no aria-live element inside `#app`). Three conditions the spine states as unconditional are conditional. Combobox does not hide `#app` at all. The "no mark, no registration" claim needs one thing from `editor`: the layer must learn the root.
+
+## 1. Reka hideOthers
+
+| Claim | Verdict | Evidence |
+|---|---|---|
+| Dialog, modal Menu, modal Popover, Select, Combobox, Drawer each call `useHideOthers` | holds | R/Dialog/DialogContentModal.js:53; R/Menu/MenuRootContentModal.js:116; R/Popover/PopoverContentModal.js:122; R/Select/SelectContentImpl.js:150; R/Combobox/ComboboxContentImpl.js:151; R/Drawer/DrawerContent.js:63 |
+| Menu and Dropdown are modal by default; Popover is not | holds, with a catch | MenuRoot.js:23-27 and DropdownMenuRoot.js:26 `default: true`; Drawer modal default true (DrawerRoot.js:23-27); **PopoverRoot.js:21-25 `default: false`**, so a plain Popover does not hide anything. The glossary says "a modal Menu or Popover", which is correct, but every Popover must be created with `modal`. Drawer with `modal: 'trap-focus'` does not hide (DrawerContent.js:62 only when `=== true`) |
+| `aria-hidden="true"` is set on `#app` | holds only if content is a body-level sibling | `hideOthers(el)` walks from `document.body` (A:`getDefaultParent`, `deep(parentNode)`), keeps the target's ancestor chain, sets `aria-hidden=true` on every other child (A: `applyAttributeToOthers`, `node.setAttribute(controlAttribute,'true')`). `#app` is a body child (app/index.html:10) |
+| Portal mounts into body | holds, but opt-in | `Teleport` defaults to `props.to ?? configContext.teleportTo ?? "body"` (R/Teleport/Teleport.js, `target` computed). `DialogContent` has no built-in portal (grep of DialogContent.js: none); `DialogPortal`/`PopoverPortal`/`SelectPortal` must wrap the content. Without it the content stays inside `#app`, `#app` is in the keep chain and is not hidden. `ConfigProvider teleportTo` set inside `#app` would break it the same way. Repo has no ConfigProvider or portal today (grep empty) |
+| Editor root can never be the ancestor of modal content | **fails as stated** | Three ways: (a) portal omitted; (b) `teleportTo` pointed inside `#app`; (c) **Combobox**: `ariaHiddenTarget = rootContext.parentElement` (ComboboxContentImpl.js:150), the Combobox root element, not the content. A Combobox rendered inside the editor keeps `#app` (its ancestor) unhidden and hides only siblings along the chain. Only a Combobox itself living inside a portaled Dialog (the palette case) hides `#app`, through the Dialog |
+| aria-hidden skips some elements | **fails the "everything outside" wording** | A:`hideOthers` adds `querySelectorAll('[aria-live], script')` to the targets. Any `[aria-live]` element anywhere under body is kept AND its ancestor chain is kept, so if one lives inside `#app` (a status/toast region), `#app` is not set aria-hidden; only its siblings of that chain are. `role="status"` without an `aria-live` attribute does not match. Repo today: no `aria-live` in packages/*/src, app/src (grep empty). The memlog's deferred "toast raised while a modal is up" is the same mechanism seen from the other side |
+| Attribute, not `inert` | holds | `useHideOthers` imports `hideOthers` (R/shared/useHideOthers.js:3), attribute `aria-hidden`, marker `data-aria-hidden`. `inertOthers` and `suppressOthers` exist but Reka does not use them. aria-hidden does not block focus or events, so the rule must be the layer's own check (as designed) |
+| Already `aria-hidden` ancestors | edge | If `#app` already carried `aria-hidden` (`alreadyHidden`), A leaves it and records it uncontrolled; the layer would then be permanently off. Nothing in the repo sets it (grep of app/index.html, App.vue: none) |
+
+Timing (R/shared/useHideOthers.js:12-22): a `watch` on the content element, default flush `pre`. Set: in the Vue flush after the content element exists (Dialog: `present` true -> `currentElement`, DialogContentModal.js:50). Same tick as the render commit, before any later keydown task. Removed: when `present` goes false (before unmount, so before an exit animation ends) or on unmount (`onUnmounted`). Quirk: if the element changes without going through undefined, the previous `undo` is dropped (minor leak, no effect on `#app` in practice). Also `isInsideClosedPopover` skip for `[popover]` content.
+
+Esc ordering: zag listens on `document` in capture phase (Z/store.mjs:23 `capture: true`); Reka's Escape handler is vueuse `onKeyStroke` on window, bubble (R/DismissableLayer/DismissableLayer.js:72). So on the closing Esc, zag runs first while `aria-hidden` is still set and the layer skips; the attribute is removed in a later microtask. Holds for the same-event case. The deferred "key repeat across open/close" remains a real window.
+
+## 2. Implementability in hotkey-layer.ts
+
+| Claim | Verdict | Evidence |
+|---|---|---|
+| The layer can test "editor root aria-hidden" with what it has | **fails today** | `HotkeyLayer` receives only `target` (`document`) and `onHotkey` (packages/ui/src/hotkeys/hotkey-layer.ts constructor); `ShortcutRegistry.listen(target)` is called with `document` (packages/editor/src/shortcuts/use-shortcuts.ts:7). zag's action gets only the event |
+| Who knows the root | `app`/`editor` | `#app` is a selector string in app/src/start-main.ts:15, passed to `mountEditor(selector, ...)` which calls `app.mount(selector)` (packages/editor/src/mount-editor.ts). `App.vue` renders `<RouterView/>` with no single root element. So a new input is required: a root element or a `suspended(): boolean` predicate passed to `listen`/the `HotkeyLayer` constructor (the check is `root.getAttribute('aria-hidden') === 'true'`, or `root.closest('[aria-hidden=true]')`) |
+| Skip must be before the entry runs and before `preventDefault` | holds, simple | In `action`, early return before `matchesTypedLetter` already exists as a pattern (hotkey-layer.ts:42-47). Because `preventDefault: false` is already set per command (line 41), returning early claims nothing, including the always-claimed Ctrl/Meta/Alt+arrow chords (`alwaysClaimed`). The check could also go in zag via per-command `enabled` (function, store.mjs:431 `typeof command.enabled === "function"`), which skips matching entirely |
+| Check the whole ancestor chain? | note | `hideOthers` hides only body children, so `#app`'s own attribute is the right and sufficient test; testing `document.body` descendants is unnecessary |
+
+## 3. zag form-tag and content-editable gates
+
+| Claim | Verdict | Evidence |
+|---|---|---|
+| `enableOnFormTags: false` stops chords in fields (store.mjs:141) | holds | Z/store.mjs:141 raises `enableOnFormTags` to true only when `command.options?.enableOnFormTags === void 0`; the layer sets it explicitly to `false` (hotkey-layer.ts:41), so :141 does not fire. Z/parser.mjs:195-198 `shouldTrigger` then returns false for form tags. This is a change from the current memlog text (the old "chords reach fields" decision) and matches the new rule |
+| `enableOnContentEditable: false` | holds, but is a zag default, not set by the layer | Z/store.mjs:22 default false; Z/parser.mjs:205 `isContentEditable && !options.enableOnContentEditable -> false`. hotkey-layer.ts does not set it (grep `enableOnContentEditable` in packages/ui/src: none), so it relies on the default. The spine sentence says "the layer turns zag's form-tag and content-editable gates off for every hotkey"; only the form-tag one is set explicitly. Setting it explicitly would make the claim literally true and survive a zag default change |
+| Any key still fires in a field | **fails: gaps** | (a) FORM_TAGS is only `input`, `textarea`, `select` (Z/utils.mjs `FORM_TAGS`); this includes checkbox, radio, button-type inputs, so Space-like or letter hotkeys are also off while one is focused (more than "text field", acceptable but note). (b) Non-native editors: an element with `role="textbox"`, `role="combobox"`, `role="spinbutton"` or a custom editor that is not `contenteditable` (isContentEditable false) is not gated. (c) Gate reads the event target via `getEventTarget` (Z/utils.mjs), `isHTMLElement` or null: a null target returns true (`if (!target) return true`, parser.mjs:192), so a non-HTMLElement target (an SVG element is an Element, but `isHTMLElement` tests HTMLElement: **a focused SVG `<foreignObject>` child or SVG text is not HTMLElement, so the gate is skipped**; unlikely for inputs but real for canvas SVG). (d) Shadow DOM: `getNearestEventTarget` from dom-query uses composedPath if available, otherwise unverified. (e) `<button>`, `<a>`, `role=listbox` keep keys by design |
+| Esc, Delete, arrows with a field focused | holds | Same gate, any key. A key in a field never reaches `action`, so `preventDefault` is never called and the browser/field keeps it |
+
+## 4. Non-modal Reka uses in this repo
+
+| Claim | Verdict | Evidence |
+|---|---|---|
+| Tooltip, Tabs, Tree, Toggle call `useHideOthers` | holds that none do | Reka imports in packages/ui/src: tabs/UiTabs.vue, UiTabList.vue, UiTabPanel.vue, tree/UiTree.vue, canvas-toggle/UiCanvasToggle.vue, tooltip/UiTooltip.vue. `useHideOthers` appears only in the six files in section 1 (`grep -rln useHideOthers $R` lists Dialog, Menu, Select, Popover, Combobox, Drawer plus shared and bundles). `grep useHideOthers` over R/Tooltip, R/Tabs, R/Tree returns nothing. Shortcuts keep working with these open |
+| A modal exists in the repo today | unverified / no | `packages/ui/src` has no Dialog, Popover, Menu, Select, Combobox or Drawer wrapper (only the six files above). The whole modal path, including the `ui` Dialog wrapper that must use `DialogPortal`, is untested; 13.25 builds it. Needs a browser-mode test (Chromium and Firefox) opening the real wrapper and asserting `#app` has `aria-hidden="true"` and the layer is silent |
+
+## Required adjustments to the rule text
+
+1. Say the check reads the root's own `aria-hidden`, and name the input: `editor` gives the layer the root element (or a predicate); `document` alone cannot answer it.
+2. State the conditions: content portaled to body (DialogPortal etc.) and no `aria-live` region inside `#app`; Popover only when `modal` is set; Drawer only with `modal: true`.
+3. Combobox: do not list it as hiding `#app` unless it is inside a portaled Dialog (it hides only `rootContext.parentElement`'s chain).
+4. Set `enableOnContentEditable: false` explicitly, or reword to "zag's defaults".
+5. Decide on non-native editors (`role=textbox`/`combobox`): none in repo today.
