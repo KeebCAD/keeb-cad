@@ -11,7 +11,7 @@ import {
 } from '@keeb-cad/design'
 import { Container, inject } from '@keeb-cad/di'
 import { AsyncResult, Option, Result } from '@keeb-cad/result'
-import { expectErr, expectOk } from '@keeb-cad/result/testing'
+import { expectErr, expectOk, expectResult } from '@keeb-cad/result/testing'
 import type { Design, Rejection } from '@keeb-cad/schema'
 import { aDesign, aMeta, anId } from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
@@ -27,7 +27,9 @@ import { Invoke } from './invoke'
 import { registerInputBuilder } from './register-input-builder'
 import type { EntryHandle, InputBuilder, InvokeEvent } from './types'
 
-const nameInputSchema = v.object({ name: v.pipe(v.string(), v.minLength(1)) })
+const nameInputSchema = v.object({
+  name: v.pipe(v.string(), v.minLength(1, 'A name is required.')),
+})
 type NameInput = v.InferOutput<typeof nameInputSchema>
 
 class RenameDesign implements Command<NameInput> {
@@ -60,6 +62,23 @@ function renameWith(rejection?: Rejection) {
     apply(draft: Writable<Design>, input: NameInput): void {
       draft.meta.name = input.name
     }
+  }
+}
+
+// Records each input its check sees, then refuses it as stale.
+function staleSeeing(seen: unknown[]) {
+  return class StaleSeeing implements Command<NameInput> {
+    static readonly kind = 'command'
+    static readonly id = 'test.staleSeeing'
+    static readonly label = 'Stale seeing'
+    static readonly input = nameInputSchema
+
+    available(_design: Design, input: NameInput): Result<void, Rejection> {
+      seen.push(input)
+      return Result.err({ kind: 'stale', seq: 1, latest: 2 })
+    }
+
+    apply(): void {}
   }
 }
 
@@ -182,8 +201,7 @@ function nameOf(store: DesignStore): Option<string> {
 }
 
 function expectUnavailable(result: Result<unknown, unknown>, command: string): void {
-  expectErr(result)
-  expect(result.error).toEqual({ kind: 'unavailable', command })
+  expectResult(result, Result.err({ kind: 'unavailable', command }))
 }
 
 describe('Invoke', () => {
@@ -194,7 +212,7 @@ describe('Invoke', () => {
       const available = invoke.available(RenameDesign)
       const result = await invoke.invoke(RenameDesign)
 
-      expect(available).toBe(false)
+      expectUnavailable(available, RenameDesign.id)
       expectUnavailable(result, RenameDesign.id)
       expect(store.current).toEqual(Option.none())
     })
@@ -337,12 +355,14 @@ describe('Invoke', () => {
 
       const result = await invoke.invoke(uiAction, { name: '' })
 
-      expectErr(result)
-      expect(result.error).toEqual({
-        kind: 'input-invalid',
-        command: 'test.recordName',
-        issues: [{ path: ['name'], message: expect.any(String) }],
-      })
+      expectResult(
+        result,
+        Result.err({
+          kind: 'input-invalid',
+          command: 'test.recordName',
+          issues: [{ path: ['name'], message: 'A name is required.' }],
+        }),
+      )
       expect(recorder.recorded).toEqual([])
     })
 
@@ -371,12 +391,14 @@ describe('Invoke', () => {
 
       const result = await invoke.invoke(uiAction)
 
-      expectErr(result)
-      expect(result.error).toEqual({
-        kind: 'input-invalid',
-        command: 'test.recordName',
-        issues: [{ path: ['name'], message: expect.any(String) }],
-      })
+      expectResult(
+        result,
+        Result.err({
+          kind: 'input-invalid',
+          command: 'test.recordName',
+          issues: [{ path: ['name'], message: 'A name is required.' }],
+        }),
+      )
       expect(recorder.recorded).toEqual([])
     })
   })
@@ -392,28 +414,70 @@ describe('Invoke', () => {
 
       const available = invoke.available(RenameDesign)
 
-      expect({ available, asked: recorder.recorded }).toEqual({ available: false, asked: [] })
+      expectUnavailable(available, RenameDesign.id)
+      expect(recorder.recorded).toEqual([])
     })
 
-    it('says a command is available for input its schema refuses', async () => {
+    it("says a command is unavailable before any design is committed, given the caller's valid input", async () => {
+      const { invoke } = await arrange({ commands: [RenameDesign] })
+
+      expectResult(
+        invoke.available(RenameDesign, { name: 'Lily58' }),
+        Result.err({ kind: 'unavailable', command: RenameDesign.id }),
+      )
+    })
+
+    it("refuses a caller's input its schema refuses as input-invalid, without asking its check", async () => {
       const command = renameWith({ kind: 'stale', seq: 1, latest: 2 })
       const { invoke } = await arrange({ commands: [command], design: aDesign() })
 
-      expect(invoke.available(command, { name: '' })).toBe(true)
+      expectResult(
+        invoke.available(command, { name: '' }),
+        Result.err({
+          kind: 'input-invalid',
+          command: command.id,
+          issues: [{ path: ['name'], message: 'A name is required.' }],
+        }),
+      )
     })
 
-    it('says a command is unavailable when its check refuses', async () => {
+    it("says a command is available when its builder's input fails its schema, without asking its check", async () => {
+      const seen: unknown[] = []
+      const command = staleSeeing(seen)
+      const { invoke } = await arrange({
+        commands: [command],
+        builders: [[command, buildName('')]],
+        design: aDesign(),
+      })
+
+      expectResult(invoke.available(command), Result.ok())
+      expect(seen).toEqual([])
+    })
+
+    it('says a command with no builder is available when {} fails its schema, without asking its check', async () => {
+      const seen: unknown[] = []
+      const command = staleSeeing(seen)
+      const { invoke } = await arrange({ commands: [command], design: aDesign() })
+
+      expectResult(invoke.available(command), Result.ok())
+      expect(seen).toEqual([])
+    })
+
+    it("answers a command's check's own rejection", async () => {
       const command = renameWith({ kind: 'stale', seq: 1, latest: 2 })
       const { invoke } = await arrange({ commands: [command], design: aDesign() })
 
-      expect(invoke.available(command, { name: 'Lily58' })).toBe(false)
+      expectResult(
+        invoke.available(command, { name: 'Lily58' }),
+        Result.err({ kind: 'stale', seq: 1, latest: 2 }),
+      )
     })
 
     it('says a command is available when its check says ok', async () => {
       const command = renameWith()
       const { invoke } = await arrange({ commands: [command], design: aDesign() })
 
-      expect(invoke.available(command, { name: 'Lily58' })).toBe(true)
+      expectResult(invoke.available(command, { name: 'Lily58' }), Result.ok())
     })
 
     it("asks a command's check about its builder's input when the caller gives none", async () => {
@@ -450,7 +514,7 @@ describe('Invoke', () => {
       const available = invoke.available(action, { name: 'Lily58' })
       const result = await invoke.invoke(action, { name: 'Lily58' })
 
-      expect(available).toBe(false)
+      expectUnavailable(available, 'test.recordAction')
       expectUnavailable(result, 'test.recordAction')
       expect(recorder.recorded).toEqual([])
     })
@@ -459,7 +523,7 @@ describe('Invoke', () => {
       const action = recordAction('test.recordAction', true)
       const { invoke } = await arrange({ actions: [action], recorder: new Recorder() })
 
-      expect(invoke.available(action, { name: 'Lily58' })).toBe(true)
+      expectResult(invoke.available(action, { name: 'Lily58' }), Result.ok())
     })
 
     it('says a UiAction is unavailable when its check says no, and refuses it as such', async () => {
@@ -470,7 +534,7 @@ describe('Invoke', () => {
       const available = invoke.available(uiAction, { name: 'Lily58' })
       const result = await invoke.invoke(uiAction, { name: 'Lily58' })
 
-      expect(available).toBe(false)
+      expectUnavailable(available, 'test.recordName')
       expectUnavailable(result, 'test.recordName')
       expect(recorder.recorded).toEqual([])
     })
@@ -479,14 +543,21 @@ describe('Invoke', () => {
       const uiAction = recordName('test.recordName', true)
       const { invoke } = await arrange({ uiActions: [uiAction], recorder: new Recorder() })
 
-      expect(invoke.available(uiAction, { name: 'Lily58' })).toBe(true)
+      expectResult(invoke.available(uiAction, { name: 'Lily58' }), Result.ok())
     })
 
-    it('says a UiAction is available for input its schema refuses', async () => {
+    it("refuses a caller's UiAction input its schema refuses as input-invalid, without asking its check", async () => {
       const uiAction = recordName('test.recordName', false)
       const { invoke } = await arrange({ uiActions: [uiAction], recorder: new Recorder() })
 
-      expect(invoke.available(uiAction, { name: '' })).toBe(true)
+      expectResult(
+        invoke.available(uiAction, { name: '' }),
+        Result.err({
+          kind: 'input-invalid',
+          command: 'test.recordName',
+          issues: [{ path: ['name'], message: 'A name is required.' }],
+        }),
+      )
     })
   })
 
@@ -747,7 +818,7 @@ describe('Invoke events', () => {
           error: {
             kind: 'input-invalid',
             command: uiAction.id,
-            issues: [{ path: ['name'], message: expect.any(String) }],
+            issues: [{ path: ['name'], message: 'A name is required.' }],
           },
         },
       }),

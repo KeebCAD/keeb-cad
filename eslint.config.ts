@@ -246,6 +246,7 @@ export default defineConfigWithVueTs(
             'expect',
             'expectOk',
             'expectErr',
+            'expectResult',
             'expectDeeplyFrozen',
             'expectNothingFrozen',
           ],

@@ -62,7 +62,7 @@ export class ShortcutRegistry implements Disposable {
   #run(id: string): boolean {
     const shortcut = this.#shortcuts.get(id)
     if (shortcut === undefined) throw new InvariantError(`No shortcut is registered as "${id}".`)
-    if (!this.#invoke.available(shortcut.handle)) return false
+    if (this.#invoke.available(shortcut.handle).isErr()) return false
     void shortcut.invoke()
     return true
   }

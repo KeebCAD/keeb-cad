@@ -1,3 +1,5 @@
+import { Result } from '@keeb-cad/result'
+import { expectResult } from '@keeb-cad/result/testing'
 import { DesignStore } from '@keeb-cad/design'
 import type { Id } from '@keeb-cad/schema'
 import { anId } from '@keeb-cad/schema/testing'
@@ -70,9 +72,10 @@ describe('Ctrl+D on the selection', () => {
 
     pressKey(CTRL_D)
 
-    expect({
-      children: shell.children(),
-      available: shell.invoke.available(DuplicateSelection),
-    }).toEqual({ children: before, available: false })
+    expectResult(
+      shell.invoke.available(DuplicateSelection),
+      Result.err({ kind: 'unavailable', command: DuplicateSelection.id }),
+    )
+    expect(shell.children()).toEqual(before)
   })
 })

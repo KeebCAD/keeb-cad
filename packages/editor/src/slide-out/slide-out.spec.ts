@@ -1,3 +1,5 @@
+import { Result } from '@keeb-cad/result'
+import { expectResult } from '@keeb-cad/result/testing'
 import { aDesign, aLayout, anId, aSlot } from '@keeb-cad/schema/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { page } from 'vitest/browser'
@@ -49,7 +51,10 @@ describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
     it('leaves Esc unavailable while closed', async () => {
       const { invoke } = await arrange()
 
-      expect(invoke.available(CloseSlideOut)).toBe(false)
+      expectResult(
+        invoke.available(CloseSlideOut),
+        Result.err({ kind: 'unavailable', command: CloseSlideOut.id }),
+      )
     })
 
     it('stays open on T while open, which is unavailable then', async () => {
@@ -59,7 +64,10 @@ describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
 
       press('T')
 
-      expect(invoke.available(OpenTree)).toBe(false)
+      expectResult(
+        invoke.available(OpenTree),
+        Result.err({ kind: 'unavailable', command: OpenTree.id }),
+      )
       await expect.element(slideOut()).toBeVisible()
     })
 

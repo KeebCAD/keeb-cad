@@ -26,7 +26,7 @@ export class DuplicateSelection implements UiAction<EmptyInput> {
 
   available(): boolean {
     return this.#input()
-      .map((input) => this.#invoke.available(DuplicateNode, input))
+      .map((input) => this.#invoke.available(DuplicateNode, input).isOk())
       .getOr(false)
   }
 

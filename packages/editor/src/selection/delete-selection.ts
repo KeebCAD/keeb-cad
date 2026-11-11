@@ -25,7 +25,7 @@ export class DeleteSelection implements UiAction<EmptyInput> {
 
   available(): boolean {
     return this.#input()
-      .map((input) => this.#invoke.available(DeleteNode, input))
+      .map((input) => this.#invoke.available(DeleteNode, input).isOk())
       .getOr(false)
   }
 

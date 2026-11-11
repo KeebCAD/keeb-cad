@@ -1,3 +1,5 @@
+import { Result } from '@keeb-cad/result'
+import { expectResult } from '@keeb-cad/result/testing'
 import { aFreeGroup, aLayoutRow, anId, aSlot } from '@keeb-cad/schema/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -128,13 +130,11 @@ describe('F, fitting the viewport', () => {
 
     press('F')
 
-    expect({
-      available: shell.invoke.available(FitViewport),
-      viewport: shell.viewport.value,
-    }).toEqual({
-      available: false,
-      viewport: MOVED,
-    })
+    expectResult(
+      shell.invoke.available(FitViewport),
+      Result.err({ kind: 'unavailable', command: FitViewport.id }),
+    )
+    expect(shell.viewport.value).toEqual(MOVED)
   })
 
   it('is unavailable on Layout with no drawn key', async () => {
@@ -142,6 +142,9 @@ describe('F, fitting the viewport', () => {
     shell.post(layoutOf({ a: aLayoutRow({ placed: false }) }))
     await nextFrames()
 
-    expect(shell.invoke.available(FitViewport)).toBe(false)
+    expectResult(
+      shell.invoke.available(FitViewport),
+      Result.err({ kind: 'unavailable', command: FitViewport.id }),
+    )
   })
 })

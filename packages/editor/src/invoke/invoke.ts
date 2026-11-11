@@ -58,13 +58,21 @@ export class Invoke {
       .exhaustive()
   }
 
-  // A parse failure answers true, so a malformed built input surfaces as an error when used
-  // instead of hiding as a greyed item.
-  available<H extends EntryHandle>(handle: H, input?: v.InferInput<H['input']>): boolean {
-    if (handle.kind === 'command' && this.#store.current.isNone()) return false
-    return this.#check(handle, this.#inputFor(handle, input)).match({
-      ok: () => true,
-      err: (rejection) => rejection.kind === 'input-invalid',
+  available<H extends EntryHandle>(
+    handle: H,
+    input?: v.InferInput<H['input']>,
+  ): Result<void, Rejection> {
+    if (handle.kind === 'command' && this.#store.current.isNone()) {
+      return Result.err({ kind: 'unavailable', command: handle.id })
+    }
+    return this.#check(handle, this.#inputFor(handle, input)).match<Result<void, Rejection>>({
+      ok: () => Result.ok(),
+      // A parse failure of built input answers ok, so a malformed built input surfaces as an error
+      // when used instead of hiding as a greyed item.
+      err: (rejection) =>
+        rejection.kind === 'input-invalid' && input === undefined
+          ? Result.ok()
+          : Result.err(rejection),
     })
   }
 
