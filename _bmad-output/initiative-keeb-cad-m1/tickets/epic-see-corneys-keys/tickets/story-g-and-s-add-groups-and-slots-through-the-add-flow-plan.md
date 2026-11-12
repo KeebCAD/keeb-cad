@@ -3,14 +3,14 @@ title: 'G and S add groups and slots through the add flow'
 type: 'feature'
 ticket: 25
 created: '2026-11-12'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: 'a185d03b6e4b2397c2286478020bb7014829a8b4'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md'
@@ -69,7 +69,7 @@ Level: E = unit in `editor` (browser mode, `mountShell`; G, S, T by `press`, Esc
 | 3 | as 1; type `a` | shows `The design already has an item with the id "a".`; field `a` | E |
 | 3a | as 3; Enter | design unchanged; dialog open; field `a`; shows the same | E |
 | 3b | as 3; type `b` (field `ab`) | clear | E |
-| 4 | as 1; type `x`, then clear the field; Enter | clear before Enter; then one new id, the root's last child | E |
+| 4 | as 1; type `x`, then clear the field; Enter | clear before Enter; then one new id, the root's last child; selection that id (Sergii 2026-11-12, at the build) | E |
 | 5 | as 1; type `Foo Bar` | shows `An id is kebab-case.`; field `Foo Bar`; Enter adds nothing | E |
 | 5a | as 1; type two spaces | shows `An id is kebab-case.`; Enter adds nothing | E |
 
@@ -139,9 +139,34 @@ Level: E = unit in `editor` (browser mode, `mountShell`; G, S, T by `press`, Esc
 
 ## Implementation Notes
 
+- Toggled bugs, each applied alone and restored (2026-11-12): every one turned its named rows red, except `lastChildId` returning the first child, which leaves row 4 green: row 4's expected values (one new id, the root's last child) don't read the selection, the only place `lastChildId` reaches in the editor. Rows 1a and 15a go red. Sergii (2026-11-12): row 4 also asserts the selection; done.
+- Decision (implementation): `finished`'s id lookup is one shared function, `add-flow/added-node-id.ts`, not a copy in each flow, because both flows select by the same rule; each flow throws `InvariantError` itself when no design is open, as `DuplicateSelection` does.
+- Decision (implementation): an empty field deletes `id` from a copy of the draft, not a rest destructure, because the rest form leaves an unused binding the lint refuses.
+- Decision (build): the Segmented control's segments use `px-2` (8 px), not the mockup's 10 px (`mockups/add-flow-2.html:61`), because the spine's Styling row makes spacing "Tailwind's 4px grid".
+- Decision (build): the checked segment keeps `bg-fill-on` on hover, not the hover fill, because DESIGN.md › General states says "pressed/on fills `{colors.fill-on}`" and the on state must stay visible.
+- Decision (build): the Segmented control names its group with `aria-label` and hides the visible label, not `aria-labelledby` on it; both are the WAI-ARIA radio group pattern's options ("labelled by aria-labelledby ... or aria-label"), logged low in review.
+
 ## Plan Change Log
 
+- Build, Sergii (2026-11-12): frozen row 4 renegotiated to also expect "selection that id", because the toggled bug `lastChildId` returning the first child left it green (implementer's report). Test widened; the toggle now turns it red in Chromium and Firefox. KEEP: everything else.
+
 ## Review Triage Log
+
+Pass 1 (quick, test-reviewer; 0 test-reviewer findings dropped for a missing quote). Verdicts: 0 high, 0 medium, 10 low, 2 false. Nothing above low and no frozen line broken: the loop ends, lows logged, not patched.
+- low -- test-reviewer 1 / quick 5 (one root cause): `TextField.spec.ts` 'renders the $name state as a textbox named by its label' asserts only `toHaveValue(state.props.modelValue)` and queries the constant `LABEL`, so its name claims more than its `expect`.
+- low -- test-reviewer 2: `SegmentedControl.spec.ts`'s states test takes the expected name from the fixture's own `label`.
+- low -- test-reviewer 3 / quick 4 (one root cause): rows 6 and 7 label the asserted group `children` / `last`; row 7 narrows with `toMatchObject` where row 6 uses `toEqual`.
+- low -- test-reviewer 4: rows 1b and 1c match partially (`{ arrangement: 'chain', axis: 'x' }`, `{ arrangement: 'free' }`); the rows ask only that.
+- low -- quick 3: row 4 asserts the new node's id, not the whole node as rows 1a and 2 do.
+- low -- test-reviewer 5: row 4 interleaves an assertion between two acts, as its table row reads ("clear before Enter; then ...").
+- low -- test-reviewer 6: row 8 destructures `newIds()` as `[group, slot]`, relying on `subtreeIds`' parent-first order.
+- low -- quick 6: `AddFlowView.onId` also drops `id` for `undefined` (the field's model type allows it) and `onAxis` ignores a value outside `AXES`; neither is a recorded decision.
+- low -- quick 7: segment padding 8 px vs the mockup's 10 px (decision recorded: the 4 px grid), and the `Axis` label without the mockup's 36 px width.
+- low -- quick 8: `node-tree.spec.ts` names its block 'the add flow tree queries' for two generic `model` queries.
+- low -- review (own): the Segmented control's `aria-label` beside an `aria-hidden` visible label instead of `aria-labelledby` (decision recorded).
+- false -- quick 1: the frozen row-4 change has no change-log entry; it is logged above (Plan Change Log, Sergii's renegotiation).
+- false -- quick 2: the Review Triage Log was empty because triage had not run yet; this is it.
+- note -- test-reviewer 7: the "opens nothing" rows press the same event `press('G')` sends; no change.
 
 ## Design Notes
 

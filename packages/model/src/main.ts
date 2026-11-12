@@ -8,7 +8,13 @@ export { checkDeleteNode } from './layout-editing/check-delete-node'
 export { checkDuplicateNode } from './layout-editing/check-duplicate-node'
 export { deleteNode } from './layout-editing/delete-node'
 export { duplicateNode } from './layout-editing/duplicate-node'
-export { nextSiblingId, subtreeIds, subtreeIdsOf } from './layout-editing/node-tree'
+export {
+  lastChildId,
+  nearestGroupId,
+  nextSiblingId,
+  subtreeIds,
+  subtreeIdsOf,
+} from './layout-editing/node-tree'
 export { checkDeletePart } from './part-deletion/check-delete-part'
 export { deletePart } from './part-deletion/delete-part'
 export { walkReferences } from './references/walk-references'

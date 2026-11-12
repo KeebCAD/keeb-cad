@@ -2,7 +2,7 @@ import { Option } from '@keeb-cad/result'
 import { aFreeGroup, aLayout, anId, aSlot } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
-import { nextSiblingId, subtreeIdsOf } from './node-tree'
+import { lastChildId, nearestGroupId, nextSiblingId, subtreeIdsOf } from './node-tree'
 
 function layout() {
   return aLayout({
@@ -40,5 +40,40 @@ describe('nextSiblingId', () => {
     ['none for the root', 'root', Option.none()],
   ])('gives %s', (_role, id, expected) => {
     expect(nextSiblingId(thumbs(), anId(id))).toEqual(expected)
+  })
+})
+
+describe('the add flow tree queries', () => {
+  const tree = () =>
+    aLayout({
+      id: anId('root'),
+      children: [
+        aFreeGroup({ id: anId('g'), children: [aSlot({ id: anId('a') })] }),
+        aSlot({ id: anId('b') }),
+      ],
+    })
+
+  it.each([
+    ['a group as itself', 'g', Option.some(anId('g'))],
+    ['a slot as its parent group', 'a', Option.some(anId('g'))],
+    ['the root as itself', 'root', Option.some(anId('root'))],
+    ['an id not in the tree as none', 'zz', Option.none()],
+  ])('nearestGroupId gives %s', (_role, id, expected) => {
+    expect(nearestGroupId(tree(), anId(id))).toEqual(expected)
+  })
+
+  it.each([
+    ['the only child of a group', 'g', Option.some(anId('a'))],
+    ['the last of the root children', 'root', Option.some(anId('b'))],
+    ['none for a slot', 'b', Option.none()],
+    ['none for an id not in the tree', 'zz', Option.none()],
+  ])('lastChildId gives %s', (_role, id, expected) => {
+    expect(lastChildId(tree(), anId(id))).toEqual(expected)
+  })
+
+  it('lastChildId gives none for an empty group', () => {
+    const root = aLayout({ id: anId('root'), children: [aFreeGroup({ id: anId('e') })] })
+
+    expect(lastChildId(root, anId('e'))).toEqual(Option.none())
   })
 })

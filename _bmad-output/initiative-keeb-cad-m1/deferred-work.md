@@ -227,7 +227,8 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-editor-frame-shows-the-design-plan.md`
   summary: The empty Layout hint writes `G` and `Ctrl+K` out by hand; 13.25 (Add group; split from 13.7 and 13.24, 2026-11-10) and the palette story render them from their handles' `hotkeys` through `formatHotkey`.
   evidence: 23.8's Decision (Sergii): no Add group or palette entry exists yet to read them from; AD-26 "Every `kbd` hint is formatted by its formatter".
-  owner: 13.25 (Add group) and the palette story.
+  owner: the palette story (`Ctrl+K`'s handle).
+  progress: 2026-11-12, by 13.25: both keys render as `UiKbd` chips; `G` reads `StartAddChainGroup.hotkeys[0]`, `Ctrl+K` stays `hotkey="mod+K"` in `LayoutCanvas.vue` until the palette story gives it a handle.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-editor-frame-shows-the-design-plan.md`
   summary: `packages/editor/src/invoke/invoke.spec.ts` repeats its `unavailable` assertion in about seven tests, and its `arrange` registers `container.register(Recorder).useClass(Recorder)` for every test.
   evidence: AGENTS.md "Write a shared assertion once" and "Arrange only what the test uses, passed as arguments to an `arrange` helper"; 23.8's conformance pass.
@@ -495,7 +496,10 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-flows-hold-the-open-flow-plan.md`
   summary: 13.25 proves that a flow's `finished` runs once with the parsed input (not the raw draft), on the add flow, whose `finished` selects the new node.
   evidence: Sergii 2026-11-12 at 13.30's look: test fixtures stay plain, so 13.30's test flow has no `finished` hook and the rule moved to the first real flow.
+  progress: 2026-11-12, by 13.25: rows 1a and 2 prove only that `finished` runs and selects the new node (Sergii 2026-11-12); that it runs once and gets the parsed input stays open for the first flow whose schema transforms its input, since `idSchema` only brands and selecting twice gives the same selection.
+  owner: the first flow whose input schema transforms its input.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-flows-hold-the-open-flow-plan.md`
   summary: a flow view's field must not keep text the person typed while a finish is pending (`Flows.update` drops it); 13.25's add flow view disables or resyncs its Id field while finishing.
   evidence: 13.30 review pass 3 (quick): `TestRenameView`'s one-way `:value` leaves dropped edits on screen, and a failed finish then retries a draft different from the field.
+  closed: 2026-11-12, by 13.25's decision: no pending-finish guard, because `AddGroup` and `AddSlot` are commands the store runs synchronously, so the finish settles in the same task's microtasks, before the browser dispatches another input event. A flow that finishes with an asynchronous action reopens it.

@@ -1,6 +1,12 @@
 import type { Module } from '@keeb-cad/di'
 
+import { AddGroupFlow } from './add-flow/add-group-flow'
+import { AddSlotFlow } from './add-flow/add-slot-flow'
+import { StartAddChainGroup } from './add-flow/start-add-chain-group'
+import { StartAddFreeGroup } from './add-flow/start-add-free-group'
+import { StartAddSlot } from './add-flow/start-add-slot'
 import { Flows } from './flows/flows'
+import { registerFlow } from './flows/register-flow'
 import { Invoke } from './invoke/invoke'
 import { FocusNextLandmark } from './landmarks/focus-next-landmark'
 import { FocusPreviousLandmark } from './landmarks/focus-previous-landmark'
@@ -50,5 +56,10 @@ export const editorModule: Module = {
     registerUiAction(container, FitViewport)
     registerUiAction(container, DeleteSelection)
     registerUiAction(container, DuplicateSelection)
+    registerFlow(container, AddGroupFlow)
+    registerFlow(container, AddSlotFlow)
+    registerUiAction(container, StartAddChainGroup)
+    registerUiAction(container, StartAddFreeGroup)
+    registerUiAction(container, StartAddSlot)
   },
 }
