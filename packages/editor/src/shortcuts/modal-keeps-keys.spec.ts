@@ -24,8 +24,8 @@ async function openDialog() {
         UiDialog,
         {
           open: open.value,
-          'onUpdate:open': (value: boolean) => {
-            open.value = value
+          onDismiss: () => {
+            open.value = false
           },
         },
         {

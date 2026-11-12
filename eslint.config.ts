@@ -296,6 +296,8 @@ export default defineConfigWithVueTs(
       'packages/design/src/**/*.spec.ts',
       // editor's UiActions are entries too.
       'packages/editor/src/{workspace,landmarks,slide-out,viewport,selection}/**/*.ts',
+      // So are the test entries the flow specs run.
+      'packages/editor/src/testing/test-*.ts',
     ],
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],

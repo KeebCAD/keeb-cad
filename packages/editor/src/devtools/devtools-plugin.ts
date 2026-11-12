@@ -5,9 +5,11 @@ import { watchDebounced } from '@vueuse/core'
 import { match, P } from 'ts-pattern'
 import { toRaw } from 'vue'
 
+import { Flows } from '../flows/flows'
+import type { FlowEvent } from '../flows/types'
 import { Invoke } from '../invoke/invoke'
 import type { InvokeEvent } from '../invoke/types'
-import { commitsLayerId, inspectorId, invocationsLayerId } from './devtools-ids'
+import { commitsLayerId, flowsLayerId, inspectorId, invocationsLayerId } from './devtools-ids'
 import { stateRefreshDelayMs } from './state-refresh-delay'
 import { inspectables } from './tokens'
 import type { EditPayload, Inspectable, InspectableField, PluginHost } from './types'
@@ -22,6 +24,7 @@ export class DevtoolsPlugin implements Disposable {
     api.addInspector({ id: inspectorId, label: 'Services' })
     api.addTimelineLayer({ id: invocationsLayerId, label: 'Invocations', color: 0x42_b8_83 })
     api.addTimelineLayer({ id: commitsLayerId, label: 'Commits', color: 0x4f_7c_ac })
+    api.addTimelineLayer({ id: flowsLayerId, label: 'Flows', color: 0xc0_7a_d8 })
     this.#answerInspector(api)
     this.#stops.push(
       watchDebounced(
@@ -37,6 +40,9 @@ export class DevtoolsPlugin implements Disposable {
       this.#store.events.on('commit', (event) => {
         this.#addCommit(api, event)
       }),
+      this.#flows.events.on('flow', (event) => {
+        this.#addFlow(api, event)
+      }),
     )
   }
 
@@ -47,6 +53,7 @@ export class DevtoolsPlugin implements Disposable {
   readonly #inspectables = inject(inspectables)
   readonly #invoke = inject(Invoke)
   readonly #store = inject(DesignStore)
+  readonly #flows = inject(Flows)
   readonly #stops: (() => void)[] = []
   #connected = false
 
@@ -149,5 +156,17 @@ export class DevtoolsPlugin implements Disposable {
       .with({ kind: 'patches' }, ({ seq, revision, patches }) => ({ seq, revision, patches }))
       .with({ kind: 'whole' }, ({ committed: { seq, revision } }) => ({ seq, revision }))
       .exhaustive()
+  }
+
+  #addFlow(api: PluginHost, event: FlowEvent): void {
+    api.addTimelineEvent({
+      layerId: flowsLayerId,
+      event: {
+        time: api.now(),
+        title: event.entry.handle.name,
+        subtitle: event.kind === 'cancelled' ? `cancelled: ${event.reason}` : event.kind,
+        data: { entry: event.entry.id },
+      },
+    })
   }
 }

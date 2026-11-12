@@ -16,8 +16,12 @@ import * as v from 'valibot'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
 import { createApp, nextTick, shallowRef } from 'vue'
 
+import { Flows } from '../flows/flows'
+import { registerFlow } from '../flows/register-flow'
 import { Invoke } from '../invoke/invoke'
 import { applyPanelEdit } from '../testing/apply-panel-edit'
+import { TestRenameDesign } from '../testing/test-rename-design'
+import { TestRenameFlow } from '../testing/test-rename-flow'
 import { DevtoolsPlugin } from './devtools-plugin'
 import { editableField, readOnlyField } from './inspectable-field'
 import { stateRefreshDelayMs } from './state-refresh-delay'
@@ -28,6 +32,7 @@ const ownInspectorId = 'keeb-cad.devtools.services'
 const otherInspectorId = 'someone-else.inspector'
 const invocationsLayer = 'keeb-cad.devtools.invocations'
 const commitsLayer = 'keeb-cad.devtools.commits'
+const flowsLayer = 'keeb-cad.devtools.flows'
 const testNodeId = 'keeb-cad.devtools.test'
 
 type Host = PluginHost['on']
@@ -163,21 +168,33 @@ async function arrange({
   entries = [],
   design,
   commands = [],
+  renameFlow = false,
 }: {
   entries?: readonly Inspectable[]
   design?: Design
   commands?: readonly CommandHandle[]
+  renameFlow?: boolean
 } = {}) {
   const container = new Container().addModule(designModule)
   container.register(Invoke).useClass(Invoke)
+  container.register(Flows).useClass(Flows)
   container.register(DevtoolsPlugin).useClass(DevtoolsPlugin)
   for (const command of commands) registerCommand(container, command)
+  if (renameFlow) {
+    registerCommand(container, TestRenameDesign)
+    registerFlow(container, TestRenameFlow)
+  }
   for (const entry of entries) container.register(inspectables).useValue(entry)
   onTestFinished(() => container.dispose())
   await container.autoLoad()
   const store = container.resolve(DesignStore)
   if (design !== undefined) expectOk(store.replaceDesign({ design, unreadable: [] }))
-  return { plugin: container.resolve(DevtoolsPlugin), store, invoke: container.resolve(Invoke) }
+  return {
+    plugin: container.resolve(DevtoolsPlugin),
+    store,
+    invoke: container.resolve(Invoke),
+    flows: container.resolve(Flows),
+  }
 }
 
 function committedOf(store: DesignStore): Committed {
@@ -196,7 +213,7 @@ async function arrangeOpen(initial: boolean) {
 
 describe('DevtoolsPlugin', () => {
   describe('setup', () => {
-    it('adds one inspector, two layers and each event once when run twice', async () => {
+    it('adds one inspector, three layers and each event once when run twice', async () => {
       const { plugin, store } = await arrange()
       const first = fakeHost()
       const second = fakeHost()
@@ -214,9 +231,26 @@ describe('DevtoolsPlugin', () => {
         layers: [
           expect.objectContaining({ id: invocationsLayer, label: 'Invocations' }),
           expect.objectContaining({ id: commitsLayer, label: 'Commits' }),
+          expect.objectContaining({ id: flowsLayer, label: 'Flows' }),
         ],
         events: 1,
       })
+    })
+
+    it('adds one flows event per start, cancel and finish, titled by the flow', async () => {
+      const { plugin, flows } = await arrange({ design: aDesign(), renameFlow: true })
+      const fake = fakeHost()
+      plugin.setup(fake.host)
+
+      flows.cancel(flows.start(TestRenameFlow, { name: 'Kyria' }))
+      await flows.finish(flows.start(TestRenameFlow, { name: 'Lily58' }))
+
+      expect(fake.timeline.filter(({ layerId }) => layerId === flowsLayer)).toEqual(
+        ['started', 'cancelled: cancel', 'started', 'finished'].map((subtitle) => ({
+          layerId: flowsLayer,
+          event: expect.objectContaining({ title: 'TestRenameFlow', subtitle }),
+        })),
+      )
     })
 
     it('adds no commits event for a design committed before setup', async () => {

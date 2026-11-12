@@ -9,7 +9,8 @@ defineSlots<DialogSlots>()
 </script>
 
 <template>
-  <DialogRoot :open="open" @update:open="(value) => emit('update:open', value)">
+  <!-- With no trigger, the root asks to change open only to close it. -->
+  <DialogRoot :open="open" @update:open="emit('dismiss')">
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 bg-scrim" />
       <DialogContent

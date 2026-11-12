@@ -26,14 +26,20 @@ async function arrangeHeld() {
         UiDialog,
         {
           open: open.value,
-          'onUpdate:open': (value: boolean) => {
-            open.value = value
+          onDismiss: () => {
+            open.value = false
           },
         },
         slots,
       ),
   })
   return { screen, open }
+}
+
+function elementAt(x: number, y: number): Element {
+  const element = document.elementFromPoint(x, y)
+  if (element === null) throw new Error(`Nothing lies at (${String(x)}, ${String(y)}).`)
+  return element
 }
 
 function aBodyChild(): HTMLElement {
@@ -77,13 +83,25 @@ describe('Dialog', () => {
     await expect.element(page.elementLocator(child)).not.toHaveAttribute('aria-hidden')
   })
 
-  it('asks to close once on Esc', async () => {
+  it('reports a dismiss once on Esc, and no change of open', async () => {
     const screen = await arrange(true)
     await expect.element(page.getByRole('dialog', { name: TITLE })).toBeVisible()
 
     await userEvent.keyboard('{Escape}')
 
-    expect(screen.emitted('update:open')).toEqual([[false]])
+    expect({
+      dismiss: screen.emitted('dismiss'),
+      updateOpen: screen.emitted('update:open'),
+    }).toEqual({ dismiss: [[]], updateOpen: undefined })
+  })
+
+  it('reports a dismiss once on a press on the scrim in the top left corner', async () => {
+    const screen = await arrange(true)
+    await expect.element(page.getByRole('dialog', { name: TITLE })).toBeVisible()
+
+    await userEvent.click(elementAt(0, 0), { position: { x: 0, y: 0 } })
+
+    expect(screen.emitted('dismiss')).toEqual([[]])
   })
 
   it('shows no dialog while closed', async () => {
