@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { UiKbd } from '@keeb-cad/ui'
 import { useElementSize } from '@vueuse/core'
 import { computed, useTemplateRef, watch } from 'vue'
 
+import { StartAddChainGroup } from '../../add-flow/start-add-chain-group'
 import { useOpenDesign } from '../../design/use-open-design'
 import { useCanvasItemsRoot } from '../../viewport/use-canvas-items-root'
 import { useViewport } from '../../viewport/use-viewport'
@@ -87,7 +89,11 @@ watch(
       </g>
     </svg>
     <div v-if="showsHint" class="absolute inset-0 flex items-center justify-center p-3">
-      <p>Add a group (G) or open the command palette (Ctrl+K).</p>
+      <!-- The palette has no handle yet to read Ctrl+K from. -->
+      <p>
+        Add a group (<UiKbd :hotkey="StartAddChainGroup.hotkeys[0]" />) or open the command palette
+        (<UiKbd hotkey="mod+K" />).
+      </p>
     </div>
   </div>
 </template>

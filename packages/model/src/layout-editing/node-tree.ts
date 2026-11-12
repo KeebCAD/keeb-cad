@@ -25,6 +25,19 @@ export function nextSiblingId(root: Frozen<Group>, id: Id): Option<Id> {
   return Option.fromNullable(found?.parent?.children[found.index + 1]?.id)
 }
 
+export function nearestGroupId(root: Frozen<Group>, id: Id): Option<Id> {
+  const found = findNode(root, id)
+  if (found === undefined) return Option.none()
+  return Option.fromNullable(isGroup(found.node) ? found.node.id : found.parent?.id)
+}
+
+export function lastChildId(root: Frozen<Group>, id: Id): Option<Id> {
+  const found = findNode(root, id)
+  return Option.fromNullable(
+    found !== undefined && isGroup(found.node) ? found.node.children.at(-1)?.id : undefined,
+  )
+}
+
 export function isGroup<N extends { readonly id: Id }>(
   node: N,
 ): node is Extract<N, { readonly arrangement: unknown }> {
