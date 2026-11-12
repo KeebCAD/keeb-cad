@@ -503,3 +503,8 @@
   summary: a flow view's field must not keep text the person typed while a finish is pending (`Flows.update` drops it); 13.25's add flow view disables or resyncs its Id field while finishing.
   evidence: 13.30 review pass 3 (quick): `TestRenameView`'s one-way `:value` leaves dropped edits on screen, and a failed finish then retries a draft different from the field.
   closed: 2026-11-12, by 13.25's decision: no pending-finish guard, because `AddGroup` and `AddSlot` are commands the store runs synchronously, so the finish settles in the same task's microtasks, before the browser dispatches another input event. A flow that finishes with an asynchronous action reopens it.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-t-toggles-the-slide-out-plan.md`
+  summary: the palette's `Open tree` / `Open parameters` entries (EXPERIENCE.md, Left rail + slide-out row) are open-only UiActions the palette story adds beside 13.28's `ToggleSlideOut`, which would close an open slide-out if the palette listed it.
+  evidence: 13.28 review pass 1 (quick): 13.28 removed `OpenTree` ('Open tree') for one toggle on T, per the ticket; no palette exists in `packages/editor/src` yet.
+  owner: the command palette story (epic-drag-keys).

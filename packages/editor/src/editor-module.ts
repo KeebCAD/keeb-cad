@@ -16,9 +16,8 @@ import { DeleteSelection } from './selection/delete-selection'
 import { DuplicateSelection } from './selection/duplicate-selection'
 import { Selection } from './selection/selection'
 import { ShortcutRegistry } from './shortcuts/shortcut-registry'
-import { CloseSlideOut } from './slide-out/close-slide-out'
-import { OpenTree } from './slide-out/open-tree'
 import { SlideOut } from './slide-out/slide-out'
+import { ToggleSlideOut } from './slide-out/toggle-slide-out'
 import { registerUiAction } from './ui-actions/register-ui-action'
 import { CanvasCursor } from './viewport/canvas-cursor'
 import { CanvasItems } from './viewport/canvas-items'
@@ -51,8 +50,7 @@ export const editorModule: Module = {
     registerUiAction(container, ShowFirmware)
     registerUiAction(container, FocusNextLandmark)
     registerUiAction(container, FocusPreviousLandmark)
-    registerUiAction(container, OpenTree)
-    registerUiAction(container, CloseSlideOut)
+    registerUiAction(container, ToggleSlideOut)
     registerUiAction(container, FitViewport)
     registerUiAction(container, DeleteSelection)
     registerUiAction(container, DuplicateSelection)
