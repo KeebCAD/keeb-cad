@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Empty group on the canvas</title>
+<style>
+  :root {
+    --chrome: #292c3c; --text: #c6d0f5; --muted: #a5adce; --canvas: #414559; --grid: #51576d;
+    --key-body: #626880; --key-edge: #949cbb; --key-top: #949cbb; --frame: #949cbb;
+    --selection: #ca9ee6; --crust: #232634;
+  }
+  body { margin: 0; background: var(--chrome); color: var(--text); font: 14px/1.45 "JetBrains Mono", ui-monospace, monospace; }
+  header { padding: 16px 20px 4px; max-width: 120ch; }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  header p { margin: 4px 0 0; color: var(--muted); }
+  .opt { padding: 12px 20px 8px; }
+  .opt h2 { font-size: 14px; margin: 0 0 2px; }
+  .opt p { margin: 0 0 8px; color: var(--muted); max-width: 120ch; }
+  .row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  figure { margin: 0; background: var(--canvas); border-radius: 8px; overflow: hidden; }
+  figcaption { background: var(--chrome); padding: 6px 10px; border-top: 1px solid var(--grid); color: var(--muted); font-size: 13px; }
+  svg { display: block; width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>What does an empty group look like? (G with matrix selected adds column-7)</h1>
+  <p>Per the spine's chain rule, a group with no placed slots is a point at its origin (near = far = 0), so column-7's origin sits one key gap right of inner's edge, at inner's bottom-key height: (205, −97.6). Moments: just added (the add flow selects it), pointer over it, at rest. Decided rules apply: no frames at rest, frames on hover and selection, tab above the highest point.</p>
+</header>
+<div id="opts"></div>
+<script>
+const S = 3.4, X0 = 128, Y0 = -48, VW = 106, VH = 80, W = VW * S, H = VH * S
+const key = (x, y) => ({ x, y })
+const cols = [[138,-95.25],[157,-92.875],[176,-95.25],[195,-97.625]]
+const keys = cols.flatMap(([x, y]) => [key(x, y), key(x, y + 19), key(x, y + 38)])
+  .concat([key(166.5, -114.875)])
+const origin = [205, -97.625], id = 'column-7'
+const sx = x => (x - X0) * S, sy = y => (Y0 - y) * S
+const ns = 'http://www.w3.org/2000/svg'
+const el = (n, a, p) => { const e = document.createElementNS(ns, n); for (const k in a) e.setAttribute(k, a[k]); p && p.appendChild(e); return e }
+function tab(svg, x, y, sel) {
+  const tg = el('g', { transform: `translate(${x},${y - 14})` }, svg)
+  el('rect', { width: 18 + id.length * 6, height: 14, rx: 3, fill: sel ? 'var(--selection)' : 'var(--canvas)', stroke: sel ? 'var(--selection)' : 'var(--frame)', 'stroke-width': 1 }, tg)
+  el('text', { x: 4, y: 10.5, fill: sel ? 'var(--crust)' : 'var(--text)', 'font-size': 10 }, tg).textContent = '⠿ ' + id
+}
+function originMark(svg, colour, w) {
+  const [ox, oy] = [sx(origin[0]), sy(origin[1])]
+  el('circle', { cx: ox, cy: oy, r: 6, fill: 'none', stroke: colour, 'stroke-width': w }, svg)
+  el('path', { d: `M${ox - 9},${oy} H${ox + 9} M${ox},${oy - 9} V${oy + 9}`, stroke: colour, 'stroke-width': w }, svg)
+}
+const options = [
+  ['1 · A key-sized placeholder frame on the origin', 'A dashed 1u square (the default part’s keycap plus the margin), centred on the origin, with the tab above it: the frame the first key would fill. It is also the hover target.',
+    (svg, m) => {
+      if (!m.shown) return
+      const c = m.sel ? 'var(--selection)' : 'var(--frame)', h = 9 + 1
+      el('rect', { x: sx(origin[0] - h), y: sy(origin[1] + h), width: 2 * h * S, height: 2 * h * S, rx: 1 * S, fill: 'none', stroke: c, 'stroke-width': m.sel ? 2 : 1, 'stroke-dasharray': '5 3' }, svg)
+      tab(svg, sx(origin[0] - h), sy(origin[1] + h), m.sel)
+    }],
+  ['2 · The origin mark and the tab, no outline', 'An origin cross (⊕) where the group sits, with the tab next to it; nothing pretends to be a region. The hover target is the mark and the tab.',
+    (svg, m) => {
+      if (!m.shown) return
+      originMark(svg, m.sel ? 'var(--selection)' : 'var(--frame)', m.sel ? 2 : 1.2)
+      tab(svg, sx(origin[0]) + 8, sy(origin[1]) - 6, m.sel)
+    }],
+  ['3 · Nothing on the canvas; the Tree only', 'The empty group appears only in the Tree; the canvas shows it once it holds a key. 13.25’s verify line (“draws nothing on the canvas until 13.26”) changes to say so.',
+    () => {}],
+]
+const moments = [['just added (selected)', { shown: true, sel: true }], ['pointer over it', { shown: true, sel: false }], ['at rest', { shown: false, sel: false }]]
+for (const [title, note, draw] of options) {
+  const sec = document.createElement('section'); sec.className = 'opt'
+  sec.innerHTML = `<h2>${title}</h2><p>${note}</p>`
+  const row = document.createElement('div'); row.className = 'row'; sec.appendChild(row)
+  for (const [label, m] of moments) {
+    const fig = document.createElement('figure')
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}` }, fig)
+    const defs = el('defs', {}, svg), pid = 'p' + Math.random().toString(36).slice(2)
+    const pat = el('pattern', { id: pid, width: 19*S/2, height: 19*S/2, patternUnits: 'userSpaceOnUse' }, defs)
+    el('path', { d: `M ${19*S/2} 0 L 0 0 0 ${19*S/2}`, fill: 'none', stroke: 'var(--grid)', 'stroke-width': 1 }, pat)
+    el('rect', { width: W, height: H, fill: `url(#${pid})` }, svg)
+    for (const k of keys) {
+      el('rect', { x: sx(k.x - 8.75), y: sy(k.y + 8.25), width: 17.5 * S, height: 16.5 * S, rx: 1.5 * S, fill: 'var(--key-body)', stroke: 'var(--key-edge)', 'stroke-width': 1 }, svg)
+      el('rect', { x: sx(k.x - 6.5), y: sy(k.y + 6.5), width: 13 * S, height: 11 * S, rx: 1.2 * S, fill: 'var(--key-top)' }, svg)
+    }
+    draw(svg, m)
+    if (label === 'pointer over it' && title[0] !== '3') {
+      const [px, py] = [sx(origin[0] + 2), sy(origin[1] - 2)]
+      el('path', { d: `M${px},${py} l0,14 l4,-4 l3,6 l2,-1 l-3,-6 l5,0 z`, fill: '#fff', stroke: '#000', 'stroke-width': 0.8 }, svg)
+    }
+    const cap = document.createElement('figcaption'); cap.textContent = label
+    fig.appendChild(cap); row.appendChild(fig)
+  }
+  document.getElementById('opts').appendChild(sec)
+}
+</script>
+</body>
+</html>

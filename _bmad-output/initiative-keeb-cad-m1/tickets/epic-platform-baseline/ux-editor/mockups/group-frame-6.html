@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Group frame margin</title>
+<script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
+<style>
+  :root {
+    --chrome: #292c3c; --text: #c6d0f5; --muted: #a5adce; --canvas: #414559; --grid: #51576d;
+    --key-body: #626880; --key-edge: #949cbb; --key-top: #949cbb; --frame: #949cbb;
+    --selection: #ca9ee6; --crust: #232634; --hover-key: #babbf1;
+  }
+  body { margin: 0; background: var(--chrome); color: var(--text); font: 14px/1.45 "JetBrains Mono", ui-monospace, monospace; }
+  header { padding: 16px 20px 4px; max-width: 120ch; }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  header p { margin: 4px 0 0; color: var(--muted); }
+  .margin { padding: 12px 20px 8px; }
+  .margin h2 { font-size: 14px; margin: 0 0 8px; }
+  .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 12px; }
+  figure { margin: 0; background: var(--canvas); border-radius: 8px; overflow: hidden; }
+  figcaption { background: var(--chrome); padding: 6px 10px; border-top: 1px solid var(--grid); color: var(--muted); font-size: 13px; }
+  svg { display: block; width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Group frame margin (shape C decided: rounded union of the keys)</h1>
+  <p>Frames are drawn beneath the keys, so where a frame passes under another group's key its line is hidden there. Moments: pointer on <code>index-bottom</code> (the column nearest the fan), <code>matrix</code> selected, pointer on <code>thumb-mid</code>. Keys are 18 mm on a 19 mm pitch: keys in a column are 1 mm apart, so a union needs at least 0.5 mm to join them; columns are 1 mm apart; the fan's top is 1.6 mm below index's bottom. The last row keeps a fixed 6 px on screen and shows the same view at three zoom levels.</p>
+</header>
+<div id="rows"></div>
+<script>
+const X0 = 76, Y0 = -30, CL = 1000, VW = 158, VH = 116
+const key = (id, x, y, r = 0, w = 18) => ({ id, x, y, r, w, h: 18 })
+const col = (id, x, y0) => ({ id, keys: ['bottom','home','top'].map((row, i) => key(`${id}-${row}`, x, y0 + 19 * i)) })
+const tree = { id: 'left', children: [
+  { id: 'matrix', children: [
+    col('outer', 100, -100), col('pinky', 119, -100), col('ring', 138, -95.25),
+    col('middle', 157, -92.875), col('index', 176, -95.25), col('inner', 195, -97.625),
+  ] },
+  { id: 'thumbs', keys: [key('thumb-near', 166.5, -114.875), key('thumb-mid', 187.5, -117.625, -15), key('thumb-far', 209.7468058, -121.3891576, 60, 27)] },
+] }
+function corners(k) {
+  const a = k.r * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), u0 = k.w / 2, v0 = k.h / 2
+  return [[-u0,-v0],[u0,-v0],[u0,v0],[-u0,v0]].map(([u,v]) => [k.x + u*c - v*s, k.y + u*s + v*c])
+}
+const toPath = poly => poly.map(([x,y]) => ({ X: Math.round(x*CL), Y: Math.round(y*CL) }))
+function shapeC(polys, m) {
+  const co = new ClipperLib.ClipperOffset(2, 0.02 * CL), off = new ClipperLib.Paths()
+  co.AddPaths(polys.map(toPath), ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon); co.Execute(off, m * CL)
+  const c = new ClipperLib.Clipper(), out = new ClipperLib.Paths()
+  c.AddPaths(off, ClipperLib.PolyType.ptSubject, true)
+  c.Execute(ClipperLib.ClipType.ctUnion, out, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero)
+  return out.map(p => p.map(q => [q.X/CL, q.Y/CL]))
+}
+const keysOf = g => (g.keys || []).concat(...(g.children || []).map(keysOf))
+const find = (g, id) => g.id === id ? g : (g.children || []).map(c => find(c, id)).find(Boolean)
+function frameOf(g, m) {
+  const sources = (g.keys || []).map(corners)
+  for (const c of g.children || []) sources.push(...frameOf(c, m))
+  return shapeC(sources, m)
+}
+const moments = [
+  ['pointer on index-bottom', { group: 'index', sel: false, hoverKey: 'index-bottom' }],
+  ['matrix selected', { group: 'matrix', sel: true }],
+  ['pointer on thumb-mid', { group: 'thumbs', sel: false, hoverKey: 'thumb-mid' }],
+]
+// Each cell: moment, margin in mm, px per mm, caption, optional zoomed window [cx, cy, half-width mm].
+const rows = [
+  ['0.5 mm — the least that joins a column', moments.map(([l, m]) => [m, 0.5, 2.9, l])],
+  ['1 mm — reaches the neighbour column’s edge', moments.map(([l, m]) => [m, 1, 2.9, l])],
+  ['2 mm — passes under the neighbour column and the fan', moments.map(([l, m]) => [m, 2, 2.9, l])],
+  ['6 px on screen at any zoom — pointer on index-bottom', [
+    [moments[0][1], 6 / 1.45, 1.45, '50% zoom · 6 px = 4.1 mm'],
+    [moments[0][1], 6 / 2.9, 2.9, '100% · 6 px = 2.1 mm'],
+    [moments[0][1], 6 / 5.8, 5.8, '200% · 6 px = 1 mm', [176, -100, 40]],
+  ]],
+]
+const ns = 'http://www.w3.org/2000/svg'
+const el = (n, a, p) => { const e = document.createElementNS(ns, n); for (const k in a) e.setAttribute(k, a[k]); p && p.appendChild(e); return e }
+let n = 0
+for (const [title, cells] of rows) {
+  const sec = document.createElement('section'); sec.className = 'margin'
+  sec.innerHTML = `<h2>${title}</h2>`
+  const row = document.createElement('div'); row.className = 'row'; sec.appendChild(row)
+  for (const [m, margin, S, caption, win] of cells) {
+    const sx = x => (x - X0) * S, sy = y => (Y0 - y) * S
+    const W = VW * 2.9, H = VH * 2.9
+    let vb
+    if (win) { const [cx, cy, hw] = win; vb = [sx(cx) - W / 2, sy(cy) - H / 2, W, H] }
+    else { const cx = X0 + VW / 2, cy = Y0 - VH / 2; vb = [sx(cx) - W / 2, sy(cy) - H / 2, W, H] }
+    const fig = document.createElement('figure')
+    const svg = el('svg', { viewBox: vb.join(' ') }, fig)
+    const pat = el('pattern', { id: 'p'+(++n), width: 19*S/2, height: 19*S/2, patternUnits: 'userSpaceOnUse', x: sx(X0), y: sy(Y0) }, el('defs', {}, svg))
+    el('path', { d: `M ${19*S/2} 0 L 0 0 0 ${19*S/2}`, fill: 'none', stroke: 'var(--grid)', 'stroke-width': 1 }, pat)
+    el('rect', { x: vb[0], y: vb[1], width: W, height: H, fill: `url(#p${n})` }, svg)
+    const d = poly => 'M' + poly.map(([x,y]) => `${sx(x).toFixed(1)},${sy(y).toFixed(1)}`).join('L') + 'Z'
+    const polys = frameOf(find(tree, m.group), margin)
+    for (const p of polys) el('path', { d: d(p), fill: 'none', stroke: m.sel ? 'var(--selection)' : 'var(--frame)', 'stroke-width': m.sel ? 2 : 1, 'stroke-dasharray': '5 3' }, svg)
+    for (const k of keysOf(tree)) {
+      const hov = k.id === m.hoverKey
+      const kg = el('g', { transform: `translate(${sx(k.x)},${sy(k.y)}) rotate(${-k.r})` }, svg)
+      el('rect', { x: -(k.w/2 - 0.25)*S, y: -8.25*S, width: (k.w - 0.5)*S, height: 16.5*S, rx: 1.5*S, fill: 'var(--key-body)', stroke: hov ? 'var(--hover-key)' : 'var(--key-edge)', 'stroke-width': hov ? 2 : 1 }, kg)
+      el('rect', { x: -(k.w/2 - 2.5)*S, y: -6.5*S, width: (k.w - 5)*S, height: 11*S, rx: 1.2*S, fill: 'var(--key-top)' }, kg)
+    }
+    const pts = polys.flat(), top = Math.max(...pts.map(p => p[1]))
+    const left = Math.min(...pts.filter(p => p[1] > top - 0.6).map(p => p[0]))
+    const tg = el('g', { transform: `translate(${sx(left)},${sy(top) - 14})` }, svg)
+    el('rect', { width: 18 + m.group.length * 6, height: 14, rx: 3, fill: m.sel ? 'var(--selection)' : 'var(--canvas)', stroke: m.sel ? 'var(--selection)' : 'var(--frame)', 'stroke-width': 1 }, tg)
+    el('text', { x: 4, y: 10.5, fill: m.sel ? 'var(--crust)' : 'var(--text)', 'font-size': 10 }, tg).textContent = '⠿ ' + m.group
+    const cap = document.createElement('figcaption'); cap.textContent = caption
+    fig.appendChild(cap); row.appendChild(fig)
+  }
+  document.getElementById('rows').appendChild(sec)
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Group frame hover</title>
+<script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
+<style>
+  :root {
+    --chrome: #292c3c; --text: #c6d0f5; --muted: #a5adce; --canvas: #414559; --grid: #51576d;
+    --key-body: #626880; --key-edge: #949cbb; --key-top: #949cbb; --frame: #949cbb;
+    --selection: #ca9ee6; --crust: #232634; --hover-key: #babbf1;
+  }
+  body { margin: 0; background: var(--chrome); color: var(--text); font: 14px/1.45 "JetBrains Mono", ui-monospace, monospace; }
+  header { padding: 16px 20px 4px; max-width: 120ch; }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  header p { margin: 4px 0 0; color: var(--muted); }
+  .wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(620px, 1fr)); gap: 16px; padding: 12px 20px 24px; }
+  figure { margin: 0; background: var(--canvas); border-radius: 8px; overflow: hidden; }
+  figcaption { background: var(--chrome); padding: 8px 12px; border-top: 1px solid var(--grid); }
+  figcaption b { display: block; }
+  figcaption span { color: var(--muted); display: block; }
+  .readout { color: var(--text); margin-top: 4px; min-height: 2.9em; }
+  svg { display: block; width: 100%; height: auto; cursor: default; }
+</style>
+</head>
+<body>
+<header>
+  <h1>What is “the pointer over a group”? Move the pointer over either canvas; click to select.</h1>
+  <p>Decided: no frames at rest; the group under the pointer shows its frame; a selected group shows only its own frame (2px Mauve). Shape still a placeholder (rounded union, 2 mm per level). A hovered key gets a lighter edge (placeholder). Tree: left ⊃ matrix [ASSUMPTION] ⊃ six columns; left ⊃ thumbs.</p>
+</header>
+<div class="wrap" id="wrap"></div>
+<script>
+const S = 4, M = 2, X0 = 76, Y0 = -30, W = 158 * S, H = 116 * S, CL = 1000
+const key = (id, x, y, r = 0, w = 18) => ({ id, x, y, r, w, h: 18 })
+const col = (id, x, y0) => ({ id, keys: ['bottom','home','top'].map((row, i) => key(`${id}-${row}`, x, y0 + 19 * i)) })
+const tree = { id: 'left', children: [
+  { id: 'matrix', children: [
+    col('outer', 100, -100), col('pinky', 119, -100), col('ring', 138, -95.25),
+    col('middle', 157, -92.875), col('index', 176, -95.25), col('inner', 195, -97.625),
+  ] },
+  { id: 'thumbs', keys: [key('thumb-near', 166.5, -114.875), key('thumb-mid', 187.5, -117.625, -15), key('thumb-far', 209.7468058, -121.3891576, 60, 27)] },
+] }
+const sx = x => (x - X0) * S, sy = y => (Y0 - y) * S
+const mx = X => X / S + X0, my = Y => Y0 - Y / S
+function corners(k) {
+  const a = k.r * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), u0 = k.w / 2, v0 = k.h / 2
+  return [[-u0,-v0],[u0,-v0],[u0,v0],[-u0,v0]].map(([u,v]) => [k.x + u*c - v*s, k.y + u*s + v*c])
+}
+const toPath = poly => poly.map(([x,y]) => ({ X: Math.round(x*CL), Y: Math.round(y*CL) }))
+function shape(polys) {
+  const co = new ClipperLib.ClipperOffset(2, 0.05 * CL), off = new ClipperLib.Paths()
+  co.AddPaths(polys.map(toPath), ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon); co.Execute(off, M * CL)
+  const c = new ClipperLib.Clipper(), out = new ClipperLib.Paths()
+  c.AddPaths(off, ClipperLib.PolyType.ptSubject, true)
+  c.Execute(ClipperLib.ClipType.ctUnion, out, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero)
+  return out.map(p => p.map(q => [q.X/CL, q.Y/CL]))
+}
+const frames = {}, depth = {}, groupOfKey = {}, keys = []
+;(function walk(g, dpt) {
+  depth[g.id] = dpt
+  const sources = []
+  for (const k of g.keys || []) { keys.push(k); groupOfKey[k.id] = g.id; sources.push(corners(k)) }
+  for (const c of g.children || []) sources.push(...walk(c, dpt + 1))
+  return (frames[g.id] = shape(sources))
+})(tree, 0)
+const inPoly = (p, poly) => ClipperLib.Clipper.PointInPolygon({ X: Math.round(p[0]*CL), Y: Math.round(p[1]*CL) }, toPath(poly)) !== 0
+const keyAt = p => keys.find(k => inPoly(p, corners(k)))
+const innermostGroupAt = p => Object.keys(frames).filter(id => frames[id].some(poly => inPoly(p, poly))).sort((a, b) => depth[b] - depth[a])[0]
+
+const options = [
+  { title: 'H1 · Over a key or inside the outline',
+    note: 'Over a key: that key’s group shows its frame (the key is hovered too). Elsewhere inside outlines: the innermost group there. Click on a key still selects the key.',
+    hover: p => { const k = keyAt(p); return { key: k?.id, group: k ? groupOfKey[k.id] : innermostGroupAt(p) } },
+    click: p => { const k = keyAt(p); return k ? { kind: 'slot', id: k.id } : (innermostGroupAt(p) ? { kind: 'group', id: innermostGroupAt(p) } : null) } },
+  { title: 'H2 · Only on empty space inside the outline',
+    note: 'Over a key: only the key is hovered, no frame. On empty space inside outlines: the innermost group there shows its frame, and a click selects it (EXPERIENCE.md l.218).',
+    hover: p => { const k = keyAt(p); return k ? { key: k.id } : { group: innermostGroupAt(p) } },
+    click: p => { const k = keyAt(p); return k ? { kind: 'slot', id: k.id } : (innermostGroupAt(p) ? { kind: 'group', id: innermostGroupAt(p) } : null) } },
+]
+const ns = 'http://www.w3.org/2000/svg'
+const el = (n, a, p) => { const e = document.createElementNS(ns, n); for (const k in a) e.setAttribute(k, a[k]); p && p.appendChild(e); return e }
+const d = poly => 'M' + poly.map(([x,y]) => `${sx(x).toFixed(1)},${sy(y).toFixed(1)}`).join('L') + 'Z'
+
+options.forEach((opt, i) => {
+  const fig = document.createElement('figure')
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}` }, fig)
+  const pat = el('pattern', { id: 'p'+i, width: 19*S/2, height: 19*S/2, patternUnits: 'userSpaceOnUse' }, el('defs', {}, svg))
+  el('path', { d: `M ${19*S/2} 0 L 0 0 0 ${19*S/2}`, fill: 'none', stroke: 'var(--grid)', 'stroke-width': 1 }, pat)
+  el('rect', { width: W, height: H, fill: `url(#p${i})` }, svg)
+  const frameLayer = el('g', {}, svg), keyLayer = el('g', {}, svg), tabLayer = el('g', {}, svg)
+  const cap = document.createElement('figcaption')
+  cap.innerHTML = `<b>${opt.title}</b><span>${opt.note}</span><div class="readout"></div>`
+  fig.appendChild(cap)
+  document.getElementById('wrap').appendChild(fig)
+  const readout = cap.querySelector('.readout')
+  let state = { hover: {}, selected: null }
+
+  function drawFrame(id, sel) {
+    for (const p of frames[id]) el('path', { d: d(p), fill: 'none', stroke: sel ? 'var(--selection)' : 'var(--frame)', 'stroke-width': sel ? 2 : 1, 'stroke-dasharray': '6 4' }, frameLayer)
+    const pts = frames[id].flat(), top = Math.max(...pts.map(p => p[1]))
+    const left = Math.min(...pts.filter(p => p[1] > top - 0.6).map(p => p[0]))
+    const tg = el('g', { transform: `translate(${sx(left)},${sy(top) - 17})` }, tabLayer)
+    el('rect', { width: 22 + id.length * 7.2, height: 17, rx: 3, fill: sel ? 'var(--selection)' : 'var(--canvas)', stroke: sel ? 'var(--selection)' : 'var(--frame)', 'stroke-width': 1 }, tg)
+    el('text', { x: 5, y: 12.5, fill: sel ? 'var(--crust)' : 'var(--text)', 'font-size': 12 }, tg).textContent = '⠿ ' + id
+  }
+  function render() {
+    frameLayer.replaceChildren(); keyLayer.replaceChildren(); tabLayer.replaceChildren()
+    const sel = state.selected
+    if (state.hover.group && !(sel?.kind === 'group' && sel.id === state.hover.group)) drawFrame(state.hover.group, false)
+    if (sel?.kind === 'group') drawFrame(sel.id, true)
+    for (const k of keys) {
+      const isSel = sel?.kind === 'slot' && sel.id === k.id, isHover = state.hover.key === k.id
+      const kg = el('g', { transform: `translate(${sx(k.x)},${sy(k.y)}) rotate(${-k.r})` }, keyLayer)
+      el('rect', { x: -(k.w/2 - 0.25)*S, y: -8.25*S, width: (k.w - 0.5)*S, height: 16.5*S, rx: 1.5*S, fill: 'var(--key-body)',
+        stroke: isSel ? 'var(--selection)' : isHover ? 'var(--hover-key)' : 'var(--key-edge)', 'stroke-width': isSel || isHover ? 2 : 1 }, kg)
+      el('rect', { x: -(k.w/2 - 2.5)*S, y: -6.5*S, width: (k.w - 5)*S, height: 11*S, rx: 1.2*S, fill: 'var(--key-top)' }, kg)
+    }
+    const h = state.hover
+    readout.textContent = `pointer: ${h.key ? 'key ' + h.key : 'empty space'}${h.group ? ' · frame shown: ' + h.group : ' · no frame'}\nselected: ${sel ? sel.kind + ' ' + sel.id : 'nothing'}`
+    readout.style.whiteSpace = 'pre'
+  }
+  const pointOf = e => { const r = svg.getBoundingClientRect(); return [mx((e.clientX - r.left) * W / r.width), my((e.clientY - r.top) * H / r.height)] }
+  svg.addEventListener('pointermove', e => { state.hover = opt.hover(pointOf(e)); render() })
+  svg.addEventListener('pointerleave', () => { state.hover = {}; render() })
+  svg.addEventListener('click', e => { state.selected = opt.click(pointOf(e)); render() })
+  render()
+})
+</script>
+</body>
+</html>

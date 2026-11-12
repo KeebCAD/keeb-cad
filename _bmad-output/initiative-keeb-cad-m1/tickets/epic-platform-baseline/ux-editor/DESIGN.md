@@ -2,7 +2,7 @@
 name: keeb-cad editor
 description: Browser-only visual keyboard CAD for one expert builder. Catppuccin Frappé dark by default, Latte light; calm density; canvas first, chrome quiet.
 status: final
-updated: 2026-11-11
+updated: 2026-11-12
 colors:
   # Unsuffixed = dark (Catppuccin Frappé, primary). `-light` = Catppuccin Latte.
   # Comment = Catppuccin color name. Latte uses the same name unless a decided fix says otherwise.
@@ -474,7 +474,14 @@ File menu, Export menu, Design info, Autocomplete dropdown and Context menu use 
 - **Mirror axis** — 1px dashed `{colors.mirror-axis}` line along `center`'s y-axis, between the halves, in every 2D workspace that draws both halves.
 - **Firmware legends** — keycaps with legends in `{colors.key-legend}`: transparent binding = faint ▽ in `{colors.text-faint}`; no binding (none) = empty cap; mod-tap / layer-tap = two lines, tap over hold; hardware-less action ▲ in the top-right corner.
 - **Unfitted slot** — dashed `{colors.key-outline-faint}` outline, no fill; keeps its place and index. An unresolved part's stand-in rectangle looks the same, plus its ▲ / ● badge at the top-right.
-- **Group frame** — dashed `{colors.group-frame}` with a grab-handle tab `⠿ <group id>` (`{components.group-frame-tab.height}`, `{components.group-frame-tab.radius}`); selected: frame 2px `{colors.selection}`, tab filled Mauve with a Crust label.
+- **Group frame** — frames show only on hover and selection (EXPERIENCE.md › Canvas).
+  - **Shape:** the union of the group's key rectangles grown by the margin, with rounded joins; a parent's frame is the same union over its children's frames and its own keys. It follows the stagger and keeps the waists where spread keys (a thumb fan) barely join.
+  - **Margin:** the design's key gap, the smaller of `gap x` and `gap y`, in model millimetres so it holds at any zoom; when that gap is 0, 1 mm.
+  - **Stroke:** 1px dashed `{colors.group-frame}`, drawn beneath the keys, so where a frame passes under another group's key it is hidden there.
+  - **Tab:** `⠿ <group id>` (`{components.group-frame-tab.height}`, `{components.group-frame-tab.radius}`) above the frame's highest point, at its left end, always horizontal.
+  - **Selected:** frame 2px `{colors.selection}`, tab filled Mauve with a Crust label.
+  - **Empty group** (no placed slots): an origin mark ⊕ in the same colours with its tab beside it, no outline.
+  - → `mockups/group-frame-5.html` (shape), `mockups/group-frame-6.html` (margin), `mockups/group-frame-7.html` (tab), `mockups/group-frame-8.html` (waists kept, row 1), `mockups/group-frame-9.html` (empty group, option 2). Supersedes the dashed rectangle (Sergii 2026-11-12).
 - **Rotation handle** — small `{rounded.full}` ring in `{colors.rotation-handle}` outside the selection's frame; while dragging, ⊕ in `{colors.rotation-handle}` at the pivot, drawn clear of legends, and a signed delta readout (`−3.4°`) in `{typography.canvas-label}` beside the handle. → `mockups/key-layout.html`.
 - **Anchor link** — dashed `{colors.anchor-link}` line with a dot at the anchor point.
 - **Outline context line** (Layout) — 1px `{colors.outline-context}`, behind keys, not hit-testable.
