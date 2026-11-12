@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Root group border</title>
+<script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
+<style>
+  :root {
+    --chrome: #292c3c; --text: #c6d0f5; --muted: #a5adce; --canvas: #414559; --grid: #51576d;
+    --key-body: #626880; --key-edge: #949cbb; --key-top: #949cbb; --frame: #949cbb;
+    --selection: #ca9ee6; --crust: #232634; --axis: #949cbb;
+  }
+  body { margin: 0; background: var(--chrome); color: var(--text); font: 14px/1.45 "JetBrains Mono", ui-monospace, monospace; }
+  header { padding: 16px 20px 4px; max-width: 120ch; }
+  h1 { font-size: 16px; margin: 0 0 4px; } header p { margin: 4px 0 0; color: var(--muted); }
+  section { padding: 12px 20px 8px; } h2 { font-size: 14px; margin: 0 0 2px; } section p { margin: 0 0 8px; color: var(--muted); max-width: 120ch; }
+  .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(560px, 1fr)); gap: 12px; }
+  figure { margin: 0; background: var(--canvas); border-radius: 8px; overflow: hidden; }
+  figcaption { background: var(--chrome); padding: 6px 10px; border-top: 1px solid var(--grid); color: var(--muted); font-size: 13px; }
+  svg { display: block; width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Does the root group get a border? (both halves of Corney)</h1>
+  <p>Decided rules: borders only on hover and selection; each level one margin (1 mm here, Corney's key gap) outside its children's borders; selected = 2px Mauve, tab filled. Tree: <code>center</code> (the root) ⊃ <code>left</code> ⊃ <code>matrix</code> ⊃ six columns, <code>left</code> ⊃ <code>thumbs</code>; the right half is derived as its mirror. The gap between the halves is illustrative [ASSUMPTION], not Corney's real spacing.</p>
+</header>
+<div id="rows"></div>
+<script>
+const S = 2.15, M = 1, AXIS = 242, X0 = 78, Y0 = -36, VW = 330, VH = 112, W = VW * S, H = VH * S, CL = 1000
+const key = (x, y, r = 0, w = 18, h = 18) => ({ x, y, r, w, h })
+const col = (x, y0) => [key(x, y0), key(x, y0 + 19), key(x, y0 + 38)]
+const colsAt = [[100, -100], [119, -100], [138, -95.25], [157, -92.875], [176, -95.25], [195, -97.625]]
+const half = side => {
+  const f = k => side === 'right' ? { ...k, x: 2 * AXIS - k.x, r: -k.r } : k
+  return { id: side, side, slots: [], children: [
+    { id: 'matrix', slots: [], children: colsAt.map(([x, y], i) => ({ id: 'col' + i, slots: col(x, y).map(f), children: [] })) },
+    { id: 'thumbs', slots: [key(166.5, -114.875), key(187.5, -117.625, -15), key(209.7468058, -121.3891576, 60, 27)].map(f), children: [] },
+  ] }
+}
+const halves = [half('left'), half('right')]
+const sx = x => (x - X0) * S, sy = y => (Y0 - y) * S
+const corners = k => { const a = k.r * Math.PI / 180, c = Math.cos(a), s = Math.sin(a); return [[-k.w/2,-k.h/2],[k.w/2,-k.h/2],[k.w/2,k.h/2],[-k.w/2,k.h/2]].map(([u,v]) => ({ X: Math.round((k.x + u*c - v*s) * CL), Y: Math.round((k.y + u*s + v*c) * CL) })) }
+const slotsWithLevel = (g, l) => [...g.slots.map(k => [k, l]), ...g.children.flatMap(ch => slotsWithLevel(ch, l + 1))]
+function border(g, extra = 0) {
+  const all = new ClipperLib.Paths()
+  for (const [k, l] of slotsWithLevel(g, 1 + extra)) {
+    const co = new ClipperLib.ClipperOffset(2, 0.05 * CL), out = new ClipperLib.Paths()
+    co.AddPath(corners(k), ClipperLib.JoinType.jtRound, ClipperLib.EndType.etClosedPolygon); co.Execute(out, l * M * CL)
+    all.push(...out)
+  }
+  const c = new ClipperLib.Clipper(), u = new ClipperLib.Paths()
+  c.AddPaths(all, ClipperLib.PolyType.ptSubject, true)
+  c.Execute(ClipperLib.ClipType.ctUnion, u, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero)
+  return u.map(p => p.map(q => [q.X / CL, q.Y / CL]))
+}
+const ns = 'http://www.w3.org/2000/svg'
+const el = (n, a, p) => { const e = document.createElementNS(ns, n); for (const k in a) e.setAttribute(k, a[k]); p && p.appendChild(e); return e }
+function canvas(drawBorders) {
+  const fig = document.createElement('figure')
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}` }, fig)
+  const pid = 'p' + Math.random().toString(36).slice(2)
+  const pat = el('pattern', { id: pid, width: 19*S/2, height: 19*S/2, patternUnits: 'userSpaceOnUse' }, el('defs', {}, svg))
+  el('path', { d: `M ${19*S/2} 0 L 0 0 0 ${19*S/2}`, fill: 'none', stroke: 'var(--grid)', 'stroke-width': 1 }, pat)
+  el('rect', { width: W, height: H, fill: `url(#${pid})` }, svg)
+  el('line', { x1: sx(AXIS), x2: sx(AXIS), y1: 0, y2: H, stroke: 'var(--axis)', 'stroke-dasharray': '2 4' }, svg)
+  const layer = el('g', {}, svg)
+  for (const h of halves) for (const k of slotsWithLevel(h, 0).map(([k]) => k)) {
+    const g = el('g', { transform: `translate(${sx(k.x)},${sy(k.y)}) rotate(${-k.r})` }, svg)
+    el('rect', { x: -(k.w/2 - 0.25)*S, y: -8.25*S, width: (k.w - 0.5)*S, height: 16.5*S, rx: 1.5*S, fill: 'var(--key-body)', stroke: 'var(--key-edge)', 'stroke-width': 1 }, g)
+    el('rect', { x: -(k.w/2 - 2.5)*S, y: -6.5*S, width: (k.w - 5)*S, height: 11*S, rx: 1.2*S, fill: 'var(--key-top)' }, g)
+  }
+  drawBorders(layer, svg)
+  return fig
+}
+function drawBorder(layer, svg, polys, id, sel) {
+  for (const p of polys) el('path', { d: 'M' + p.map(([x, y]) => `${sx(x).toFixed(1)},${sy(y).toFixed(1)}`).join('L') + 'Z', fill: 'none', stroke: sel ? 'var(--selection)' : 'var(--frame)', 'stroke-width': sel ? 2 : 1, 'stroke-dasharray': '5 3' }, layer)
+  const pts = polys.flat(), top = Math.max(...pts.map(p => p[1])), left = Math.min(...pts.filter(p => p[1] > top - 0.6).map(p => p[0]))
+  const tg = el('g', { transform: `translate(${sx(left)},${sy(top) - 14})` }, svg)
+  el('rect', { width: 18 + id.length * 6, height: 14, rx: 3, fill: sel ? 'var(--selection)' : 'var(--canvas)', stroke: sel ? 'var(--selection)' : 'var(--frame)' }, tg)
+  el('text', { x: 4, y: 10.5, fill: sel ? 'var(--crust)' : 'var(--text)', 'font-size': 10 }, tg).textContent = '⠿ ' + id
+}
+const options = [
+  ['a · The root gets no border', 'Selecting or pointing at center (its Tree row) draws nothing on the canvas; the Tree row shows the selection. For comparison, left selected draws the half’s border as usual.', [
+    ['center selected', () => {}],
+    ['left selected (unchanged)', (layer, svg) => drawBorder(layer, svg, border(halves[0]), 'left', true)],
+  ]],
+  ['b · The root gets a border like any group', 'center is posted once per side (left/center, right/center), so it draws as two half-borders, each one margin outside its half’s border, each with its own tab.', [
+    ['center selected', (layer, svg) => halves.forEach(h => drawBorder(layer, svg, border(h, 1), 'center', true))],
+    ['pointer on center’s Tree row', (layer, svg) => halves.forEach(h => drawBorder(layer, svg, border(h, 1), 'center', false))],
+  ]],
+]
+for (const [title, note, moments] of options) {
+  const sec = document.createElement('section'); sec.innerHTML = `<h2>${title}</h2><p>${note}</p>`
+  const row = document.createElement('div'); row.className = 'row'; sec.appendChild(row)
+  for (const [label, draw] of moments) { const fig = canvas(draw); const cap = document.createElement('figcaption'); cap.textContent = label; fig.appendChild(cap); row.appendChild(fig) }
+  document.getElementById('rows').appendChild(sec)
+}
+</script>
+</body>
+</html>
