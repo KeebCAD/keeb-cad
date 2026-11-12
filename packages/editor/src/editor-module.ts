@@ -1,5 +1,6 @@
 import type { Module } from '@keeb-cad/di'
 
+import { Flows } from './flows/flows'
 import { Invoke } from './invoke/invoke'
 import { FocusNextLandmark } from './landmarks/focus-next-landmark'
 import { FocusPreviousLandmark } from './landmarks/focus-previous-landmark'
@@ -32,6 +33,7 @@ export const editorModule: Module = {
     container.register(Landmarks).useClass(Landmarks)
     container.register(SlideOut).useClass(SlideOut)
     container.register(Selection).useClass(Selection)
+    container.register(Flows).useClass(Flows)
     container.register(CanvasItems).useClass(CanvasItems)
     container.register(Viewport).useClass(Viewport)
     container.register(CanvasCursor).useClass(CanvasCursor)

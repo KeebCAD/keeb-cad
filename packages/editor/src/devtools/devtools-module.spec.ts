@@ -1,4 +1,4 @@
-import { DesignStore, designModule } from '@keeb-cad/design'
+import { DesignStore, designModule, registerCommand } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
 import { expectOk } from '@keeb-cad/result/testing'
 import { aDesign, aLayout, anId, aSlot } from '@keeb-cad/schema/testing'
@@ -7,8 +7,12 @@ import { describe, expect, it, onTestFinished } from 'vitest'
 import { createApp } from 'vue'
 
 import { editorModule } from '../editor-module'
+import { Flows } from '../flows/flows'
+import { registerFlow } from '../flows/register-flow'
 import { Selection } from '../selection/selection'
 import { applyPanelEdit } from '../testing/apply-panel-edit'
+import { TestRenameDesign } from '../testing/test-rename-design'
+import { TestRenameFlow } from '../testing/test-rename-flow'
 import { SlideOut } from '../slide-out/slide-out'
 import { Viewport } from '../viewport/viewport'
 import { zoomForPercent } from '../viewport/zoom-percent'
@@ -23,16 +27,21 @@ const designStoreNode = `${devtoolsPluginId}.design-store`
 const slideOutNode = `${devtoolsPluginId}.slide-out`
 const selectionNode = `${devtoolsPluginId}.selection`
 const viewportNode = `${devtoolsPluginId}.viewport`
+const flowsNode = `${devtoolsPluginId}.flows`
 
 type Host = PluginHost['on']
 type StatePayload = Parameters<Parameters<Host['getInspectorState']>[0]>[0]
 
-async function arrange() {
+async function arrange({ renameFlow = false }: { renameFlow?: boolean } = {}) {
   const container = new Container()
     .addModule(designModule)
     .addModule(workersModule)
     .addModule(editorModule)
     .addModule(devtoolsModule)
+  if (renameFlow) {
+    registerCommand(container, TestRenameDesign)
+    registerFlow(container, TestRenameFlow)
+  }
   onTestFinished(() => container.dispose())
   await container.autoLoad()
   return container
@@ -133,6 +142,30 @@ describe('devtoolsModule', () => {
         ],
       },
       committed: before.getOrUndefined(),
+    })
+  })
+
+  it('shows the open flows as one read-only stack field', async () => {
+    const container = await arrange({ renameFlow: true })
+    expectOk(container.resolve(DesignStore).replaceDesign({ design: aDesign(), unreadable: [] }))
+    const entry = container.resolve(Flows).start(TestRenameFlow, { name: 'Kyria' })
+    const inspector = connected(container)
+
+    expect(inspector.rows(flowsNode)).toEqual({
+      fields: [
+        {
+          key: 'stack',
+          value: [
+            {
+              entry: entry.id,
+              flow: 'TestRenameFlow',
+              finishesWith: 'testing.renameDesign',
+              draft: { name: 'Kyria' },
+            },
+          ],
+          editable: false,
+        },
+      ],
     })
   })
 

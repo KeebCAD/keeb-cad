@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { UiTabPanel, UiTabs } from '@keeb-cad/ui'
 
+import FlowHost from '../flows/FlowHost.vue'
 import LeftRail from '../slide-out/LeftRail.vue'
 import TreeSlideOut from '../slide-out/TreeSlideOut.vue'
 import { useSlideOut } from '../slide-out/use-slide-out'
@@ -32,6 +33,7 @@ const { isOpen } = useSlideOut()
         </UiTabPanel>
       </div>
       <StatusStripLandmark />
+      <FlowHost />
     </div>
   </UiTabs>
 </template>

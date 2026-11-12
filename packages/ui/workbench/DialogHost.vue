@@ -12,7 +12,7 @@ const open = ref(false)
 
 <template>
   <UiButton @click="open = true">Open dialog</UiButton>
-  <UiDialog v-model:open="open">
+  <UiDialog :open="open" @dismiss="open = false">
     <template #title><slot name="title" /></template>
     <slot />
   </UiDialog>

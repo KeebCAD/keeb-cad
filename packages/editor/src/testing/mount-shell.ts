@@ -28,6 +28,7 @@ export async function mountShell({
   design,
   recordFocus = false,
   spawn = false,
+  modules = [],
 }: ShellArrangement): Promise<MountedShell | RecordingShell | SpawningShell> {
   // replaceState fires no popstate, which Firefox would deliver after the router listens.
   history.replaceState(null, '', `#${path}`)
@@ -37,6 +38,7 @@ export async function mountShell({
     .addModule(modelWorkerActionsModule)
     .addModule(layoutCommandsModule)
     .addModule(editorModule)
+  for (const module of modules) container.addModule(module)
   if (recordFocus) {
     container.register(RecordingModelWorkerLifecycle).useClass(RecordingModelWorkerLifecycle)
     container

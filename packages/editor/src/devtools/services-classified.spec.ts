@@ -4,6 +4,7 @@ import { workersModule } from '@keeb-cad/workers'
 import { describe, expect, it, onTestFinished } from 'vitest'
 
 import { editorModule } from '../editor-module'
+import { Flows } from '../flows/flows'
 import { Invoke } from '../invoke/invoke'
 import { Landmarks } from '../landmarks/landmarks'
 import { DesignLocation } from '../router/design-location'
@@ -33,6 +34,7 @@ const classified: readonly (readonly [new () => unknown, Classification])[] = [
   [CanvasItems, { notShown: 'DOM elements the canvas registers, read off the DOM like Landmarks' }],
   [CanvasCursor, { notShown: 'the pointer, shown live in the status strip' }],
   [SwitchGrace, { notShown: 'grayed is derived from a timer and the lifecycle, like Landmarks' }],
+  [Flows, { shownAs: `${devtoolsPluginId}.flows` }],
 ]
 
 // The base constructor registers its builtins before this class's fields exist, so `recorded`
@@ -54,11 +56,17 @@ function registeredClassNames(): string[] {
   const container = new RecordingContainer()
   container.recorded = []
   editorModule.register(container)
-  return container.recorded
-    .filter((token): token is new () => unknown => typeof token === 'function')
-    .filter((token) => (token as unknown as { kind?: string }).kind !== 'ui-action')
-    .map((token) => token.name)
-    .toSorted(byText)
+  return (
+    container.recorded
+      .filter((token): token is new () => unknown => typeof token === 'function')
+      // Handles, not state: a UiAction's or a flow's class is what a caller names.
+      .filter(
+        (token) =>
+          !['ui-action', 'flow'].includes((token as unknown as { kind?: string }).kind ?? ''),
+      )
+      .map((token) => token.name)
+      .toSorted(byText)
+  )
 }
 
 describe('the services shown in the devtools', () => {

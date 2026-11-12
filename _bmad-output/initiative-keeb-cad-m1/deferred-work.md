@@ -491,3 +491,11 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-flows-hold-the-open-flow-plan.md`
   summary: `const expectedScrim = 'rgba(35, 38, 52, 0.45)'` is declared in both `packages/editor/src/shortcuts/modal-keeps-keys.spec.ts` and `packages/ui/src/dialog/Dialog.spec.ts`; one shared value (AGENTS: "Write a shared assertion once").
   evidence: 13.30's final conformance pass, precedent finding P2.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-flows-hold-the-open-flow-plan.md`
+  summary: 13.25 proves that a flow's `finished` runs once with the parsed input (not the raw draft), on the add flow, whose `finished` selects the new node.
+  evidence: Sergii 2026-11-12 at 13.30's look: test fixtures stay plain, so 13.30's test flow has no `finished` hook and the rule moved to the first real flow.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-flows-hold-the-open-flow-plan.md`
+  summary: a flow view's field must not keep text the person typed while a finish is pending (`Flows.update` drops it); 13.25's add flow view disables or resyncs its Id field while finishing.
+  evidence: 13.30 review pass 3 (quick): `TestRenameView`'s one-way `:value` leaves dropped edits on screen, and a failed finish then retries a draft different from the field.
