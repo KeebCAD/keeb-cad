@@ -1,25 +1,23 @@
-import { Result } from '@keeb-cad/result'
-import { expectResult } from '@keeb-cad/result/testing'
+import type { Design } from '@keeb-cad/schema'
 import { aDesign, aLayout, anId, aSlot } from '@keeb-cad/schema/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { page } from 'vitest/browser'
+import { page, userEvent } from 'vitest/browser'
 
 import { Selection } from '../selection/selection'
 
 import { emulateColorScheme } from '../testing/color-scheme'
 import { mountShell } from '../testing/mount-shell'
-import { press, pressKey } from '../testing/press'
-import { CloseSlideOut } from './close-slide-out'
-import { OpenTree } from './open-tree'
-
-const ESCAPE = { key: 'Escape', code: 'Escape' }
+import { press } from '../testing/press'
 
 const slideOut = () => page.getByRole('complementary', { name: 'Tree' })
 const treeButton = () => page.getByRole('button', { name: 'Tree' })
 
-function arrange() {
-  return mountShell({ path: '/design/corne/layout' })
+function arrange(design?: Design) {
+  return mountShell({ path: '/design/corne/layout', design })
 }
+
+const withRowA = () => aDesign({ layout: aLayout({ children: [aSlot({ id: anId('a') })] }) })
+const rowA = () => page.getByRole('treeitem', { name: 'a', exact: true })
 
 function blur(): void {
   if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
@@ -28,15 +26,13 @@ function blur(): void {
 describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
   beforeEach(() => emulateColorScheme(scheme))
   describe('the Tree slide-out', () => {
-    it('opens on T holding no text, closes on Esc, and stays closed on a second Esc', async () => {
+    it('opens on T holding no text, and closes on T again', async () => {
       await arrange()
 
       press('T')
       await expect.element(slideOut()).toBeVisible()
       await expect.element(slideOut()).toHaveTextContent('')
-      pressKey(ESCAPE)
-      await expect.element(slideOut()).not.toBeInTheDocument()
-      pressKey(ESCAPE)
+      press('T')
       await expect.element(slideOut()).not.toBeInTheDocument()
     })
 
@@ -48,26 +44,23 @@ describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
       await expect.element(slideOut()).toHaveFocus()
     })
 
-    it('leaves Esc unavailable while closed', async () => {
-      const { invoke } = await arrange()
+    it('closes on T typed with focus on a Tree row', async () => {
+      await arrange(withRowA())
+      press('T')
+      await expect.element(rowA()).toHaveFocus()
 
-      expectResult(
-        invoke.available(CloseSlideOut),
-        Result.err({ kind: 'unavailable', command: CloseSlideOut.id }),
-      )
+      await userEvent.keyboard('t')
+
+      await expect.element(slideOut()).not.toBeInTheDocument()
     })
 
-    it('stays open on T while open, which is unavailable then', async () => {
-      const { invoke } = await arrange()
+    it('stays open on Esc with focus in the Tree', async () => {
+      await arrange(withRowA())
       press('T')
-      await expect.element(slideOut()).toBeVisible()
+      await expect.element(rowA()).toHaveFocus()
 
-      press('T')
+      await userEvent.keyboard('{Escape}')
 
-      expectResult(
-        invoke.available(OpenTree),
-        Result.err({ kind: 'unavailable', command: OpenTree.id }),
-      )
       await expect.element(slideOut()).toBeVisible()
     })
 
@@ -89,7 +82,7 @@ describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
       press('T')
       await expect.element(slideOut()).toHaveFocus()
 
-      pressKey(ESCAPE)
+      press('T')
 
       await expect.element(layoutTab).toHaveFocus()
     })
@@ -102,7 +95,7 @@ describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
       const canvas = page.getByRole('main', { name: 'Canvas' })
       canvas.element().focus()
 
-      pressKey(ESCAPE)
+      press('T')
 
       await expect.element(slideOut()).not.toBeInTheDocument()
       await expect.element(canvas).toHaveFocus()
@@ -114,7 +107,7 @@ describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
       press('T')
       await expect.element(slideOut()).toHaveFocus()
 
-      pressKey(ESCAPE)
+      press('T')
 
       await expect.element(page.getByRole('main', { name: 'Canvas' })).toHaveFocus()
     })
@@ -126,7 +119,7 @@ describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
       const design = aDesign({
         layout: aLayout({ children: [aSlot({ id: anId('a') }), aSlot({ id: anId('b') })] }),
       })
-      const { injector } = await mountShell({ path: '/design/corne/layout', design })
+      const { injector } = await arrange(design)
       injector.resolve(Selection).select(selected.map((id) => anId(id)))
 
       press('T')

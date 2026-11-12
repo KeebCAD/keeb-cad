@@ -6,19 +6,20 @@ import type { Rejection } from '@keeb-cad/schema'
 import type { UiAction } from '../ui-actions/types'
 import { SlideOut } from './slide-out'
 
-export class OpenTree implements UiAction<EmptyInput> {
+export class ToggleSlideOut implements UiAction<EmptyInput> {
   static readonly kind = 'ui-action'
-  static readonly id = 'slideOut.openTree'
-  static readonly label = 'Open tree'
+  static readonly id = 'slideOut.toggleSlideOut'
+  static readonly label = 'Toggle slide-out'
   static readonly input = emptyInputSchema
   static readonly hotkeys = ['T']
 
   available(): boolean {
-    return !this.#slideOut.isOpen
+    return true
   }
 
   apply(_input: EmptyInput): AsyncResult<void, Rejection> {
-    this.#slideOut.open()
+    if (this.#slideOut.isOpen) this.#slideOut.close()
+    else this.#slideOut.open()
     return AsyncResult.ok()
   }
 
