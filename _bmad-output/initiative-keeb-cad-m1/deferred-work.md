@@ -487,3 +487,7 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-availability-says-why-plan.md`
   summary: `packages/schema/src/id.spec.ts:11-13` asserts refusals as `expect(v.safeParse(idSchema, id).success).toBe(false)`, narrowing to the success flag instead of asserting the issues.
   evidence: 13.29 conformance pass 1 (precedent check); AGENTS 'assert whole values (`toEqual`, `toMatchObject`) instead of narrowing in the test'. 13.29's new rows 5–5b assert the messages with `toEqual`.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-flows-hold-the-open-flow-plan.md`
+  summary: `const expectedScrim = 'rgba(35, 38, 52, 0.45)'` is declared in both `packages/editor/src/shortcuts/modal-keeps-keys.spec.ts` and `packages/ui/src/dialog/Dialog.spec.ts`; one shared value (AGENTS: "Write a shared assertion once").
+  evidence: 13.30's final conformance pass, precedent finding P2.
