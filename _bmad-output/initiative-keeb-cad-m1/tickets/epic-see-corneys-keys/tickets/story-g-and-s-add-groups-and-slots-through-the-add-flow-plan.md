@@ -3,7 +3,7 @@ title: 'G and S add groups and slots through the add flow'
 type: 'feature'
 ticket: 25
 created: '2026-11-12'
-status: 'built'
+status: 'done'
 baseline_revision: 'a185d03b6e4b2397c2286478020bb7014829a8b4'
 route: 'full'
 route_source: 'auto'
