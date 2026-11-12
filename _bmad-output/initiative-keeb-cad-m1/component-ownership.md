@@ -4,7 +4,7 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 
 | Component (DESIGN.md › Components) | Owning slice | Story |
 | --- | --- | --- |
-| Primitives: Button, Kbd, Tooltip (2026-11-06: Button's disabled reason) (and the Tabs and Tree wrappers) | a new design opens (23), Tree wrapper by see Corney's keys (13) | 23.6 (Tree wrapper 13.7) |
+| Primitives: Button, Kbd, Tooltip (2026-11-06: Button's disabled reason) (and the Tabs and Tree wrappers) | a new design opens (23), Tree wrapper by see Corney's keys (13) | 23.6 (Tree wrapper 13.7; its hover output 13.32) |
 | Chip | outline follows the keys (17) | to plan |
 | Top bar, Workspace tabs, Status strip | a new design opens (23), cursor and zoom by see Corney's keys (13) | 23.8 (counts 23.23, 2026-11-08; cursor and zoom 13.23 (split from 13.7, 2026-11-10); undo and redo buttons 16.4, 2026-11-05) |
 | Status strip running-stage entry (stage name, elapsed time, Restart; 2026-11-02) and failed entry | a new design opens (23) | 23.23 (split from 23.8, 2026-11-08) |
@@ -13,7 +13,7 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | Dialog wrapper (`ui`, modal; 2026-11-11), Flow host (`editor`, 2026-11-11), Text field (`ui`), and the add flow built on them | see Corney's keys (13) | 13.27 (dialog wrapper; shortcuts stand down while a modal is open), 13.30 (Flows and the flow host; the dialog wrapper's dismiss), 13.25 (Text field; add flow, the first flow and the first modal) |
 | Left rail + slide-out (Parameters tab) | change a parameter (14) | to plan |
 | Left rail + slide-out (Parts tab) | change a parameter (14) | to plan |
-| Canvas, viewport, selection; Canvas keys, Right half, Mirror axis, Group frame, Anchor link, Unfitted slot | see Corney's keys (13) | 13.7 (canvas, selection, viewport service, Anchor link), 13.23 (viewport controls), 13.24 (Delete, Ctrl+D), 13.25 (G, S), 13.8 (2026-11-10 split), Group frame 13.26 (split from 13.7, 2026-11-10) |
+| Canvas, viewport, selection; Canvas keys, Right half, Mirror axis, Group border, Anchor link, Unfitted slot | see Corney's keys (13) | 13.7 (canvas, selection, viewport service, Anchor link), 13.23 (viewport controls), 13.24 (Delete, Ctrl+D), 13.25 (G, S), 13.8 (2026-11-10 split), Group border: 13.26 (model posts it) and 13.32 (the canvas draws it; split 2026-11-12, renamed from Group frame) |
 | Banner, Toast | keep my work (16) | 16.1, 16.3 |
 | Start screen, File menu, Design info | keep my work (16) | to plan |
 | Inspector, Design settings, Fitted toggle (moved from 13.8 on 2026-10-30), This slot section (2026-11-01) | change a parameter (14) | 14.5 |
