@@ -14,7 +14,7 @@ import { type BundleTexts, DesignStorage, storageModule, writeBundle } from '@ke
 import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
 import { describe, expect, it } from 'vitest'
 
-import { LoadFlow } from './load-flow'
+import { DesignLoader } from './design-loader'
 import { loadModule } from './load-module'
 
 // Once failing, fails every write as a request on open browser storage does.
@@ -28,7 +28,7 @@ class FailingWrites extends MemoryBackend {
   }
 }
 
-// Hands the flow the stored bundle read without its routing file, as a file opened without one
+// Hands the loader the stored bundle read without its routing file, as a file opened without one
 // is; storage itself always holds all three.
 class LoadsWithoutRouting extends DesignStorage {
   override load(...arguments_: Parameters<DesignStorage['load']>) {
@@ -78,7 +78,7 @@ async function arrange({
   expectOk(
     store.replaceDesign({ design: aDesign({ meta: aMeta({ name: 'Open' }) }), unreadable: [] }),
   )
-  return { flow: container.resolve(LoadFlow), store, storage, backend }
+  return { loader: container.resolve(DesignLoader), store, storage, backend }
 }
 
 async function versionsOf(storage: DesignStorage) {
@@ -87,12 +87,12 @@ async function versionsOf(storage: DesignStorage) {
   return versions.value
 }
 
-describe('LoadFlow', () => {
+describe('DesignLoader', () => {
   it('replaces the open design with a stored bundle, emptying nothing and keeping no reset version', async () => {
-    const { flow, store, storage } = await arrange({ stored: storedTexts() })
+    const { loader, store, storage } = await arrange({ stored: storedTexts() })
     const before = await versionsOf(storage)
 
-    const loaded = await flow.load(anId('corne'))
+    const loaded = await loader.load(anId('corne'))
 
     expectOk(loaded)
     expect(loaded.value).toEqual({ emptied: [] })
@@ -107,9 +107,9 @@ describe('LoadFlow', () => {
     'keeps a reset version holding the bundle as read before loading routing that is %s',
     async (reason, routing) => {
       const stored = { ...storedTexts(), routing }
-      const { flow, store, storage } = await arrange({ stored })
+      const { loader, store, storage } = await arrange({ stored })
 
-      const loaded = await flow.load(anId('corne'))
+      const loaded = await loader.load(anId('corne'))
 
       expectOk(loaded)
       expect(loaded.value).toEqual({ emptied: [{ file: 'routing', reason }] })
@@ -135,10 +135,13 @@ describe('LoadFlow', () => {
   )
 
   it('keeps no reset version before loading a bundle without routing', async () => {
-    const { flow, storage } = await arrange({ stored: storedTexts(), storage: LoadsWithoutRouting })
+    const { loader, storage } = await arrange({
+      stored: storedTexts(),
+      storage: LoadsWithoutRouting,
+    })
     const before = await versionsOf(storage)
 
-    const loaded = await flow.load(anId('corne'))
+    const loaded = await loader.load(anId('corne'))
 
     expectOk(loaded)
     expect(loaded.value).toEqual({ emptied: [{ file: 'routing', reason: 'missing' }] })
@@ -149,13 +152,13 @@ describe('LoadFlow', () => {
     // The writer takes only a valid Id, so the id is made invalid in the written text: an id must
     // be kebab-case.
     const invalidDesign = storedTexts().design.replace('meta id=corne', 'meta id=Corne')
-    const { flow, store, storage } = await arrange({
+    const { loader, store, storage } = await arrange({
       stored: { ...storedTexts(), design: invalidDesign, routing: unreadableRouting },
     })
     const open = store.current.getOrUndefined()
     const before = await versionsOf(storage)
 
-    const loaded = await flow.load(anId('corne'))
+    const loaded = await loader.load(anId('corne'))
 
     expectErr(loaded)
     expect(loaded.error).toMatchObject({ kind: 'design-invalid' })
@@ -165,7 +168,7 @@ describe('LoadFlow', () => {
 
   it('stops before replaceDesign with quota-exceeded when the reset save is refused with no autosave left', async () => {
     const stored = { ...storedTexts(), routing: unreadableRouting }
-    const { flow, store, storage } = await arrange({
+    const { loader, store, storage } = await arrange({
       stored,
       reason: 'reset',
       backend: new MemoryBackend({ capacity: 1 }),
@@ -173,7 +176,7 @@ describe('LoadFlow', () => {
     const open = store.current.getOrUndefined()
     const before = await versionsOf(storage)
 
-    const loaded = await flow.load(anId('corne'))
+    const loaded = await loader.load(anId('corne'))
 
     expectErr(loaded)
     expect(loaded.error).toEqual({ kind: 'quota-exceeded' })
@@ -183,7 +186,7 @@ describe('LoadFlow', () => {
 
   it('stops before replaceDesign with storage-unavailable when the reset save request fails', async () => {
     const backend = new FailingWrites()
-    const { flow, store, storage } = await arrange({
+    const { loader, store, storage } = await arrange({
       stored: { ...storedTexts(), routing: unreadableRouting },
       backend,
     })
@@ -191,7 +194,7 @@ describe('LoadFlow', () => {
     const before = await versionsOf(storage)
     backend.failing = true
 
-    const loaded = await flow.load(anId('corne'))
+    const loaded = await loader.load(anId('corne'))
 
     expectErr(loaded)
     expect(loaded.error).toEqual({

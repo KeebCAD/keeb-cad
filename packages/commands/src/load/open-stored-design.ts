@@ -2,11 +2,11 @@ import type { Action, Committed } from '@keeb-cad/design'
 import { inject } from '@keeb-cad/di'
 import type { AsyncResult, Option } from '@keeb-cad/result'
 
-import { LoadFlow } from './load-flow'
+import { DesignLoader } from './design-loader'
 import { openStoredDesignInputSchema } from './open-stored-design-input-schema'
-import type { LoadFlowError, OpenStoredDesignInput } from './types'
+import type { DesignLoaderError, OpenStoredDesignInput } from './types'
 
-export class OpenStoredDesign implements Action<OpenStoredDesignInput, LoadFlowError> {
+export class OpenStoredDesign implements Action<OpenStoredDesignInput, DesignLoaderError> {
   static readonly kind = 'action'
   static readonly id = 'load.openStoredDesign'
   static readonly label = 'Open stored design'
@@ -16,9 +16,9 @@ export class OpenStoredDesign implements Action<OpenStoredDesignInput, LoadFlowE
     return true
   }
 
-  apply({ id }: OpenStoredDesignInput): AsyncResult<void, LoadFlowError> {
-    return this.#flow.load(id).map(() => {})
+  apply({ id }: OpenStoredDesignInput): AsyncResult<void, DesignLoaderError> {
+    return this.#loader.load(id).map(() => {})
   }
 
-  readonly #flow = inject(LoadFlow)
+  readonly #loader = inject(DesignLoader)
 }

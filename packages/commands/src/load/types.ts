@@ -8,6 +8,6 @@ export interface LoadOutcome {
   emptied: Emptied[]
 }
 
-export type LoadFlowError = LoadFailure | SaveError | DesignInvalid
+export type DesignLoaderError = LoadFailure | SaveError | DesignInvalid
 
 export type OpenStoredDesignInput = v.InferOutput<typeof openStoredDesignInputSchema>

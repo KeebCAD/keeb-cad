@@ -4,11 +4,11 @@ import { AsyncResult, attempt } from '@keeb-cad/result'
 import type { Id } from '@keeb-cad/schema'
 import { DesignStorage, type LoadedBundle } from '@keeb-cad/storage'
 
-import type { LoadFlowError, LoadOutcome } from './types'
+import type { DesignLoaderError, LoadOutcome } from './types'
 
 // Every path that opens a stored bundle runs through here: storage's load, then replaceDesign.
-export class LoadFlow {
-  load(id: Id): AsyncResult<LoadOutcome, LoadFlowError> {
+export class DesignLoader {
+  load(id: Id): AsyncResult<LoadOutcome, DesignLoaderError> {
     return attempt.in(this, async function* () {
       const loaded = yield* this.#storage.load(id)
       // A design replaceDesign refuses replaces nothing, so it needs no reset point.
@@ -25,7 +25,7 @@ export class LoadFlow {
   // A derived file that was saved but can't be used would be emptied, and the autosave inside
   // replaceDesign would then replace it, so the bundle as read is kept first. A missing file
   // needs none: nothing was saved.
-  #keepResetPoint(loaded: LoadedBundle): AsyncResult<void, LoadFlowError> {
+  #keepResetPoint(loaded: LoadedBundle): AsyncResult<void, DesignLoaderError> {
     const needed = emptiedFiles(loaded.migrated).some(({ reason }) => reason !== 'missing')
     return needed ? this.#storage.save(loaded.label, loaded.asRead, 'reset') : AsyncResult.ok()
   }

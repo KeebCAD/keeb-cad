@@ -1,12 +1,12 @@
 import { registerAction } from '@keeb-cad/design'
 import type { Module } from '@keeb-cad/di'
 
-import { LoadFlow } from './load-flow'
+import { DesignLoader } from './design-loader'
 import { OpenStoredDesign } from './open-stored-design'
 
 export const loadModule: Module = {
   register(container) {
-    container.register(LoadFlow).useClass(LoadFlow)
+    container.register(DesignLoader).useClass(DesignLoader)
     registerAction(container, OpenStoredDesign)
   },
 }
