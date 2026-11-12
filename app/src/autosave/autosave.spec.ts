@@ -1,4 +1,4 @@
-import { LoadFlow, NewDesign } from '@keeb-cad/commands'
+import { DesignLoader, NewDesign } from '@keeb-cad/commands'
 import {
   type Command,
   type Committed,
@@ -149,7 +149,7 @@ describe('Autosave', () => {
     const container = await arrange(new MemoryBackend({ capacity: 1 }))
     const store = container.resolve(DesignStore)
     const autosave = container.resolve(Autosave)
-    const flow = container.resolve(LoadFlow)
+    const loader = container.resolve(DesignLoader)
     expectOk(await store.run(NewDesign, {}))
     const first = committed(store).design.meta.id
     // A second design finds storage full and has no autosave of its own to drop.
@@ -157,7 +157,7 @@ describe('Autosave', () => {
     await expect.poll(() => autosave.failure).toEqual(Option.some({ kind: 'quota-exceeded' }))
 
     // Reopening the first design saves at its revision, taking its own version's slot.
-    expectOk(await flow.load(first))
+    expectOk(await loader.load(first))
 
     await expect.poll(() => autosave.failure).toEqual(Option.none())
   })

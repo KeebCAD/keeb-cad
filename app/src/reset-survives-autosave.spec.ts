@@ -1,4 +1,4 @@
-import { LoadFlow } from '@keeb-cad/commands'
+import { DesignLoader } from '@keeb-cad/commands'
 import { DesignStore, designModule } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
 import { Option } from '@keeb-cad/result'
@@ -41,7 +41,7 @@ async function arrange(routing: string) {
   }
   expectOk(await storage.save(label, stored, 'autosave'))
   return {
-    flow: container.resolve(LoadFlow),
+    loader: container.resolve(DesignLoader),
     storage,
     backend: container.resolve(storageBackend),
     stored,
@@ -56,9 +56,9 @@ describe('a reset point beside autosave', () => {
   ])(
     'keeps the bundle as read when its routing file is %s, and the autosave at that revision leaves it in place',
     async (_role, routing) => {
-      const { flow, storage, backend, stored, label } = await arrange(routing)
+      const { loader, storage, backend, stored, label } = await arrange(routing)
 
-      expectOk(await flow.load(label.id))
+      expectOk(await loader.load(label.id))
 
       await expect
         .poll(async () =>
