@@ -1,5 +1,5 @@
 import { InvariantError } from '@keeb-cad/result'
-import { designSchema, type Design, type Frozen } from '@keeb-cad/schema'
+import { designSchema, type Design, type Frozen, type Node, nodeSchema } from '@keeb-cad/schema'
 import * as v from 'valibot'
 
 import type { Path, Reference, ReferenceMetadata, WalkedSchema } from './types'
@@ -8,6 +8,11 @@ import type { Path, Reference, ReferenceMetadata, WalkedSchema } from './types'
 // section needs code of its own.
 export function walkReferences(design: Frozen<Design>): Generator<Reference> {
   return walk(designSchema, design, [])
+}
+
+// The same walk over one layout node, paths starting at that node.
+export function walkNodeReferences(node: Frozen<Node>): Generator<Reference> {
+  return walk(nodeSchema, node, [])
 }
 
 function* walk(schema: v.GenericSchema, value: unknown, path: Path): Generator<Reference> {

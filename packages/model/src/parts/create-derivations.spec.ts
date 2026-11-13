@@ -21,12 +21,15 @@ import {
   aPartRef,
   anId,
   aSlot,
+  aSlotAnchor,
   aSplitForm,
   aUnibodyForm,
   aVersion,
 } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
+import { dependencyCycleMessage } from '../violations/dependency-cycle-message'
+import { unresolvableReferenceMessage } from '../violations/unresolvable-reference-message'
 import { createDerivations } from './create-derivations'
 import { partViolationMessage } from './part-violation-message'
 
@@ -83,6 +86,7 @@ async function arrange(design: Design, library: LibraryData = aLibrary()) {
     parts: derivations.parts,
     pins: derivations.pins,
     placements: derivations.placements,
+    violations: derivations.violations,
   }
 }
 
@@ -452,6 +456,76 @@ describe('createDerivations', () => {
       expect({ before, after: placements.value }).toEqual({
         before: ['left/a', 'left/b', 'left/c', 'left/root'],
         after: zeroRows(),
+      })
+    })
+  })
+
+  describe('violations', () => {
+    // slot names a missing part, a and b anchor to each other, n to a missing id.
+    const faulty = () =>
+      onSlots(
+        { id: slotId, part: aPartRef('gone') },
+        { id: anId('a'), anchor: aSlotAnchor({ ref: anId('b') }) },
+        { id: anId('b'), anchor: aSlotAnchor({ ref: anId('a') }) },
+        { id: anId('n'), anchor: aSlotAnchor({ ref: anId('missing') }) },
+      )
+
+    it("lists the parts' violations, then the cycle's, then the dangling anchor's", async () => {
+      const { violations } = await arrange(withLayout(faulty()))
+
+      const cycle = [anId('a'), anId('b')]
+      const dangling = [anId('n')]
+      expect(violations.value).toEqual([
+        unresolved('warning'),
+        {
+          kind: 'dependency-cycle',
+          severity: 'error',
+          ids: cycle,
+          message: dependencyCycleMessage(cycle),
+          fixes: [],
+        },
+        {
+          kind: 'unresolvable-reference',
+          severity: 'error',
+          ids: dangling,
+          message: unresolvableReferenceMessage('anchor', dangling),
+          fixes: [],
+        },
+      ])
+    })
+
+    it('leaves the cycle and the dangling anchor unplaced', async () => {
+      const { placements } = await arrange(withLayout(faulty()))
+
+      expect(placements.value).toMatchObject({
+        ids: ['left/a', 'left/b', 'left/n', 'left/root', `left/${slotId}`],
+        rows: [
+          { placed: false },
+          { placed: false },
+          { placed: false },
+          { placed: true },
+          { placed: true },
+        ],
+      })
+    })
+
+    it('keeps the same list for an edit to the name alone', async () => {
+      const { violations, mirror } = await arrange(withLayout(faulty()))
+      const before = violations.value
+
+      mirror.value = { ...mirror.value, meta: { ...mirror.value.meta, name: 'Other' } }
+
+      expect(violations.value).toBe(before)
+    })
+
+    it('reports no layout violation and places nothing for an unsupported form', async () => {
+      const { violations, placements } = await arrange(
+        withLayout(faulty(), { meta: aMeta({ form: aUnibodyForm() }) }),
+      )
+
+      expect({ violations: violations.value, placements: placements.value }).toEqual({
+        violations: [],
+        placements: { ids: [], rows: [] },
       })
     })
   })

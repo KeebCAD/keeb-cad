@@ -16,12 +16,14 @@ export { AddGroup } from './layout/add-group'
 export { AddSlot } from './layout/add-slot'
 export { DeleteNode } from './layout/delete-node'
 export { DuplicateNode } from './layout/duplicate-node'
+export { SetAnchor } from './layout/set-anchor'
 export { layoutCommandsModule } from './layout/layout-commands-module'
 export type {
   AddGroupInput,
   AddSlotInput,
   DeleteNodeInput,
   DuplicateNodeInput,
+  SetAnchorInput,
 } from './layout/types'
 
 export { emptyInputSchema } from './empty-input-schema'

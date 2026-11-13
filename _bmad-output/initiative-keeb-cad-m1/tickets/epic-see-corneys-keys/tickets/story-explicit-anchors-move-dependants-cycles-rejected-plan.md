@@ -3,14 +3,14 @@ title: 'Explicit anchors move dependants, cycles rejected'
 type: 'feature'
 ticket: 3
 created: '2026-11-13'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '64c61eb411f25f96ce546a01b4650d9860a38a47'
 route: 'full'
 route_source: 'auto'
 risk: 'high'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md'
@@ -137,9 +137,49 @@ Units: mm and degrees. `R` is a free root unless a row says otherwise; rects are
 
 ## Implementation Notes
 
+- First build: `pnpm typecheck`, `pnpm depcruise`, `pnpm test` (600 files, 4864 tests) all green. Toggled bugs: SetAnchor unregistered (rows 23, 28 red), cycle check always ok (row 24), cycle check ignoring `previous` (row 25), layout violations dropped (row 29), pipeline posting parts' violations (row 22).
+- Timing of the no-memo `frameIn` (implementer): 72 keys in y-chain columns under a free root ~3.6 ms; 30 keys three deep ~14 ms; 72 keys three deep ~90 ms, near the 100 ms visible-set budget.
+- Decision (Sergii): placement computes in dependency order, not a recursive `frameIn` with no memo and not a per-call memo, because the no-memo walk took ~90 ms for 72 keys three deep. Each group, children before parents, gets the frames of its subtree's nodes placed from inside it, relative to the group, in dependency order (so a chain sibling's extent is ready before the step that reads it); world frames then compose the root frame with the root's relative frames. Supersedes the Design Notes' no-memo decision.
+- Dependency-order rewrite: `dependencies/dependency-order.ts` (function) and `placement/group-frames.ts` (function); `frame-in.ts` removed. Timings: 1.95 ms / 1.37 ms / 3.24 ms for the three layouts. Toggled bug: not leaving out a node anchored outside its group turns rows 13 and 14 red.
+- Decision (Sergii): `anchor` sits right after `id` in every node schema, so the file writes it there, not after every other field, because the spine's `NodeBase = { id; anchor?; offset? }` and a file then reads in placement order.
+- Decision (Sergii): the `chain-child-anchored` message is `The node "x" sits in a chain, which places it, so it takes no anchor.`, not a shorter one, because it says why in the glossary's terms.
+- Decision (Sergii): `checkSetAnchor` refuses in the order missing node, chain child, missing or wrong-kind target, loop; not target before chain child, because a chain child is refused whatever anchor it gets.
+- Decision (build): `checkSetAnchor` with no anchor checks the fallback to the parent for a loop, because AD-3: "the graph is acyclic after every command".
+- Decision (build): an unresolvable anchor is no graph edge when finding cycles, because the plan's decision makes it `unresolvable-reference` and AD-3 says such a node "is not placed, with its dependants".
+- Decision (build): a "changed member" is one whose dependency kind or target changed, because the frozen block says "the member whose dependency changed".
+- Decision (build): an unplaced group row is part −1, fit `fitted`, because the Data Schema says "groups: -1" and "groups: fitted, ignored".
+- Real-host run: not needed; the specs fake only the repo's own services (`MemoryBackend`, fake derivations), no third-party host.
+- Decision (build): `anchor` follows `id` through a private `withAnchor` helper in `layout.ts`, not every field written three times, because the field schemas stay the one list of each node's other fields; JavaScript objects keep string keys in insertion order (ECMAScript OrdinaryOwnPropertyKeys).
+- Decision (build): the `unknown-target` messages reuse the existing texts, `The design has no node with the id "…".` (`check-delete-node.ts`) and `The design has nothing of the right kind with the id "…".` (`check-structure.ts`), not new wording, because the same kind already has them.
+- Decision (build): layout violations carry `fixes: []`, because the Data Schema says `fixes: Fix[] // possibly empty` and `fixSchema` has no variants yet, so "only [] type-checks".
+- Decision (build): `checkSetAnchor` on the root with no anchor is ok, because the root then has no dependency and AD-3's cycle needs an edge.
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+Pass 1 (quick, test-reviewer; 0 quotes dropped): 1 medium, 6 low, 1 false, 3 rejected low.
+- medium -- patch -- root anchor ignored: `dependencyGraph` seeds the root with no dependency and `placeLayout` places the root at identity, so a loaded root anchor reports no cycle or unresolvable anchor and everything stays placed; contradicts the Always line "any explicit anchor on the root closes a cycle".
+- low -- patch -- row 15's place-layout test marks `n` unplaced with no cause (AGENTS "Arrange only a state real commands could reach").
+- low -- patch -- `dependency-order.spec.ts` "leaves out the unplaced nodes" marks `b` unplaced with no cause (same rule).
+- low -- patch -- `dependency-order.spec.ts` first test narrows to booleans and a `Set` that hides duplicates (AGENTS "assert whole values"); both lenses.
+- low -- patch -- row 18: `setAnchor` runs only three of the seven inputs.
+- low -- patch -- `unknown-target` and `chain-child-anchored` refusals asserted with `toMatchObject({ kind, ids })`, not whole (AGENTS "assert whole values"); wording recorded as decisions above.
+- low -- patch -- `set-anchor.spec.ts` module-level `const OFFSET` object placed into mutated designs (AGENTS "Keep no mutable state at module level in a spec").
+- false -- `anchors.spec.ts` `part: 0`: the arranged design has one part run and PartsOutput rows are sorted by compareId, so the Data Schema's "its row in the PartsOutput" is 0.
+- low -- reject -- `cycleRejection` helper written in two specs: an app spec can't import a model spec and `only-tests-import-testing` limits shared homes; a fix adds a testing subpath.
+- low -- reject -- `fixes: []` undocumented: recorded as a decision above.
+- low -- reject -- root `checkSetAnchor` with no anchor undocumented: recorded as a decision above.
+
+Pass 2 (quick, test-reviewer on the patched files; 0 quotes dropped): nothing above low, no frozen line broken; review ends, lows logged, not patched.
+- low -- log -- `set-anchor.spec.ts` "removes the anchor when given none…" uses `toEqual`, which can't tell a deleted key from `anchor: undefined`; `setAnchor` does `delete`.
+- low -- log -- `place-layout.spec.ts` "moves every dependant along…" asserts a difference of two runs, not the frames row 12 names.
+- low -- log -- `dependency-order.spec.ts` and row 15's place-layout test feed `checkAnchors`' output instead of a literal unplaced set (AGENTS "a stage gets the outputs it reads as inputs").
+- low -- log -- `would-cycle.spec.ts` "answers %s" names no claim.
+- low -- log -- `check-anchors.spec.ts` 2-member cycle case can't tell "from the lowest" from meeting order; the 3-member case does.
+- low -- log -- `place-layout.spec.ts` "turns the attach point with a slot turned 90 deg…" puts a number in the name (AGENTS "numbers go in parameters").
+- low -- log -- comments restating types in `placement/types.ts`, `placement/attach-point.ts`, `dependencies/types.ts` (AGENTS "Write a comment only for a why").
+- Verification after patches: `pnpm typecheck`, `pnpm lint`, `pnpm depcruise` clean; `pnpm test --sequence.seed=1794559268850` 602 files, 4875 tests green. The first full run timed out on two unrelated `tooling/` ESLint specs (passed alone and on seed replay; logged in deferred-work.md, source unconfirmed).
 
 ## Design Notes
 

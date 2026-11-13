@@ -5,8 +5,10 @@ import {
   checkAddNode,
   checkDeleteNode,
   checkDuplicateNode,
+  checkSetAnchor,
   deleteNode,
   duplicateNode,
+  setAnchor,
 } from '@keeb-cad/model/main'
 import type { Result } from '@keeb-cad/result'
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
@@ -18,6 +20,7 @@ import {
   anId,
   anOffset,
   aPartRef,
+  aGroupAnchor,
   aSlot,
   aVec2,
 } from '@keeb-cad/schema/testing'
@@ -29,6 +32,7 @@ import { AddGroup } from './add-group'
 import { AddSlot } from './add-slot'
 import { DeleteNode } from './delete-node'
 import { DuplicateNode } from './duplicate-node'
+import { SetAnchor } from './set-anchor'
 import { settled } from '../testing/settled'
 import { layoutCommandsModule } from './layout-commands-module'
 
@@ -36,7 +40,10 @@ function aLayoutDesign() {
   return aDesign({
     layout: aLayout({
       id: anId('root'),
-      children: [aChainGroup({ id: anId('column'), children: [aSlot({ id: anId('home') })] })],
+      children: [
+        aChainGroup({ id: anId('column'), children: [aSlot({ id: anId('home') })] }),
+        aSlot({ id: anId('thumb'), anchor: aGroupAnchor({ ref: anId('column') }) }),
+      ],
     }),
   })
 }
@@ -102,6 +109,29 @@ describe('the layout commands forward to their operation', () => {
       () => {
         const draft = aLayoutDesign()
         return [duplicateNode(draft, anId('home')), draft]
+      },
+    ],
+    [
+      'SetAnchor, an anchor',
+      () => {
+        const draft = aLayoutDesign()
+        const anchor = aGroupAnchor({ ref: anId('root') })
+        return [new SetAnchor().apply(draft, { id: anId('thumb'), anchor }), draft]
+      },
+      () => {
+        const draft = aLayoutDesign()
+        return [setAnchor(draft, anId('thumb'), aGroupAnchor({ ref: anId('root') })), draft]
+      },
+    ],
+    [
+      'SetAnchor, no anchor',
+      () => {
+        const draft = aLayoutDesign()
+        return [new SetAnchor().apply(draft, { id: anId('thumb') }), draft]
+      },
+      () => {
+        const draft = aLayoutDesign()
+        return [setAnchor(draft, anId('thumb'), undefined), draft]
       },
     ],
     [
@@ -222,6 +252,28 @@ describe('the layout commands answer availability with their check', () => {
       },
     ],
     [
+      'SetAnchor, a target the design has',
+      () => {
+        const design = aLayoutDesign()
+        const anchor = aGroupAnchor({ ref: anId('root') })
+        return [
+          new SetAnchor().available(design, { id: anId('thumb'), anchor }),
+          checkSetAnchor(design, anId('thumb'), anchor),
+        ]
+      },
+    ],
+    [
+      'SetAnchor, a chain child',
+      () => {
+        const design = aLayoutDesign()
+        const anchor = aGroupAnchor({ ref: anId('root') })
+        return [
+          new SetAnchor().available(design, { id: anId('home'), anchor }),
+          checkSetAnchor(design, anId('home'), anchor),
+        ]
+      },
+    ],
+    [
       'DeleteNode, an id the design has',
       () => {
         const design = aLayoutDesign()
@@ -277,6 +329,11 @@ describe('the layout input schemas', () => {
     ['AddGroup, free', AddGroup.input, { arrangement: 'free', id: 'g' }],
     ['DuplicateNode', DuplicateNode.input, { id: 'home' }],
     ['DeleteNode', DeleteNode.input, { ids: ['home', 'column'] }],
+    [
+      'SetAnchor',
+      SetAnchor.input,
+      { id: 'thumb', anchor: { type: 'slot', ref: 'home', attach: 'edge-top' } },
+    ],
   ])('%s parses its fields', (_name, schema, input) => {
     expect(v.parse(schema as v.GenericSchema, input)).toEqual(input)
   })

@@ -5,6 +5,7 @@ import { AddGroup } from './add-group'
 import { AddSlot } from './add-slot'
 import { DeleteNode } from './delete-node'
 import { DuplicateNode } from './duplicate-node'
+import { SetAnchor } from './set-anchor'
 
 export const layoutCommandsModule: Module = {
   register(container) {
@@ -12,5 +13,6 @@ export const layoutCommandsModule: Module = {
     registerCommand(container, AddSlot)
     registerCommand(container, DuplicateNode)
     registerCommand(container, DeleteNode)
+    registerCommand(container, SetAnchor)
   },
 }

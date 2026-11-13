@@ -1,5 +1,16 @@
 import type { Node } from '@keeb-cad/schema'
-import { aDesign, aFreeGroup, aLayout, anId, aSlot } from '@keeb-cad/schema/testing'
+import {
+  aDelta,
+  aDesign,
+  aFreeGroup,
+  aGroupAnchor,
+  aLayout,
+  anId,
+  anOffset,
+  aSlot,
+  aSlotAnchor,
+  aVec2,
+} from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { deleteNode } from './delete-node'
@@ -43,5 +54,25 @@ describe('deleteNode', () => {
       ids: [ROOT],
     })
     expect(design).toEqual(arrange())
+  })
+
+  it('clears every anchor naming a deleted node or its child, keeping offsets and other anchors', () => {
+    const offset = anOffset({ position: aVec2({ x: aDelta('2mm') }) })
+    const design = arrange([
+      aFreeGroup({ id: anId('m'), children: [aSlot({ id: anId('m-child') })] }),
+      aSlot({ id: anId('other') }),
+      aSlot({ id: anId('b'), offset, anchor: aGroupAnchor({ ref: anId('m') }) }),
+      aSlot({ id: anId('c'), offset, anchor: aSlotAnchor({ ref: anId('m-child') }) }),
+      aSlot({ id: anId('d'), anchor: aSlotAnchor({ ref: anId('other') }) }),
+    ])
+
+    deleteNode(design, [anId('m')])
+
+    expect(design.layout.children).toEqual([
+      aSlot({ id: anId('other') }),
+      aSlot({ id: anId('b'), offset }),
+      aSlot({ id: anId('c'), offset }),
+      aSlot({ id: anId('d'), anchor: aSlotAnchor({ ref: anId('other') }) }),
+    ])
   })
 })

@@ -2,6 +2,8 @@ import type { Unit } from '@keeb-cad/expr'
 import type { AsyncResult } from '@keeb-cad/result'
 import type * as v from 'valibot'
 
+import type { anchorSchema } from './anchor'
+import type { attachPointSchema } from './attach-point'
 import type { blueprintDeclarationSchema } from './blueprint-declaration'
 import type { blueprintIdSchema } from './blueprint-id'
 import type { designPartSchema } from './design-part'
@@ -23,7 +25,12 @@ import type {
 } from './input-value'
 import type { laneDeclarationSchema } from './lane-declaration'
 import type { layoutOutputSchema } from './layout-output'
-import type { chainGroupFieldsSchema, freeGroupFieldsSchema, slotSchema } from './layout'
+import type {
+  chainGroupFieldsSchema,
+  freeGroupFieldsSchema,
+  slotFieldsSchema,
+  slotSchema,
+} from './layout'
 import type { libraryIdSchema } from './library-id'
 import type { libraryVersionSchema } from './library-version'
 import type { metaSchema } from './meta'
@@ -89,6 +96,8 @@ export type Vec2 = v.InferOutput<typeof vec2Schema>
 export type Offset = v.InferOutput<typeof offsetSchema>
 export type Gap = v.InferOutput<typeof gapSchema>
 export type LayoutOutput = v.InferOutput<typeof layoutOutputSchema>
+export type AttachPoint = v.InferOutput<typeof attachPointSchema>
+export type Anchor = v.InferOutput<typeof anchorSchema>
 
 export interface ScriptLoadFailed {
   kind: 'script-load-failed'
@@ -105,10 +114,22 @@ export type Slot = v.InferOutput<typeof slotSchema>
 
 // The layout tree's unions and children fields are written by hand: TypeScript can't infer a type
 // through the children cycle. The schemas are annotated with them, which checks they agree.
-export type ChainGroup = v.InferOutput<typeof chainGroupFieldsSchema> & { children: Node[] }
-export type FreeGroup = v.InferOutput<typeof freeGroupFieldsSchema> & { children: Node[] }
+export type ChainGroup = v.InferOutput<typeof chainGroupFieldsSchema> & {
+  anchor?: Anchor
+  children: ChainChild[]
+}
+export type FreeGroup = v.InferOutput<typeof freeGroupFieldsSchema> & {
+  anchor?: Anchor
+  children: Node[]
+}
 export type Group = ChainGroup | FreeGroup
 export type Node = Slot | Group
+
+// A chain places its children, so they hold no anchor.
+export type ChainChild =
+  | v.InferOutput<typeof slotFieldsSchema>
+  | (v.InferOutput<typeof chainGroupFieldsSchema> & { children: ChainChild[] })
+  | (v.InferOutput<typeof freeGroupFieldsSchema> & { children: Node[] })
 
 // The design file's own top-level node beside the authored sections; migrateBundle strips it.
 export type DesignFile = { formatVersion: FormatVersion } & Design
@@ -162,7 +183,13 @@ export interface SchemaIssue {
 }
 
 export type ModelRejectionKind =
-  'default-part-required' | 'id-taken' | 'root-required' | 'unknown-target' | 'index-out-of-range'
+  | 'default-part-required'
+  | 'id-taken'
+  | 'root-required'
+  | 'unknown-target'
+  | 'index-out-of-range'
+  | 'dependency-cycle'
+  | 'chain-child-anchored'
 
 // The design store's own kinds carry no message: the editor writes their text from the kind.
 export type Rejection =
@@ -172,7 +199,8 @@ export type Rejection =
   | { kind: 'stale'; seq: number; latest: number }
   | { kind: ModelRejectionKind; ids: ItemId[]; message: string }
 
-export type ViolationKind = 'blueprint-api-too-new' | 'lane-failed' | 'unresolvable-reference'
+export type ViolationKind =
+  'blueprint-api-too-new' | 'lane-failed' | 'unresolvable-reference' | 'dependency-cycle'
 
 export type Fix = v.InferOutput<typeof fixSchema>
 

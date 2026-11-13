@@ -1,17 +1,16 @@
 import { anId } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
+import { unresolvableReferenceMessage } from '../violations/unresolvable-reference-message'
 import { partViolationMessage } from './part-violation-message'
 import type { PartViolationDetail } from './types'
-
-const ids = [anId('key')]
 
 describe('partViolationMessage', () => {
   it.each<[string, PartViolationDetail, string]>([
     [
       'an unresolvable reference',
       { kind: 'unresolvable-reference' },
-      'The slot "key" names a part that doesn\'t resolve.',
+      unresolvableReferenceMessage('part', [anId('key')]),
     ],
     [
       'a blueprint too new',
@@ -59,6 +58,8 @@ describe('partViolationMessage', () => {
       'The part "key" failed: trap.',
     ],
   ])('words %s', (_role, detail, expected) => {
+    const ids = [anId('key')]
+
     expect(partViolationMessage(detail, ids)).toBe(expected)
   })
 })

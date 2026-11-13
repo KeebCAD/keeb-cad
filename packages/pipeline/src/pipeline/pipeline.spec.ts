@@ -32,6 +32,7 @@ async function arrange() {
     parts: { value: aResolvedParts() },
     placements: { value: aLayoutOutput() },
     pins: { value: [] },
+    violations: { value: [] },
   })
   const posts: unknown[] = []
   port2.addEventListener('message', (event) => posts.push(event.data))

@@ -4,13 +4,17 @@ export { hashSchema } from './hash'
 export { formatVersionSchema } from './format-version'
 export { formSchema } from './form'
 export { metaSchema } from './meta'
+export { attachPointSchema } from './attach-point'
+export { anchorSchema } from './anchor'
 export {
+  chainChildSchema,
   chainGroupFieldsSchema,
   chainGroupSchema,
   freeGroupFieldsSchema,
   freeGroupSchema,
   groupSchema,
   nodeSchema,
+  slotFieldsSchema,
   slotSchema,
 } from './layout'
 export { designSchema } from './design'
@@ -50,12 +54,15 @@ export { gapSchema } from './gap'
 export { layoutOutputSchema } from './layout-output'
 
 export type {
+  Anchor,
   Angle,
+  AttachPoint,
   BlueprintDeclaration,
   BlueprintDesignPart,
   BlueprintId,
   BlueprintInputs,
   BundleFile,
+  ChainChild,
   ChainGroup,
   DeclaredInput,
   Delta,

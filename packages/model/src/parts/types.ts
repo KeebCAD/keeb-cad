@@ -13,6 +13,7 @@ import type {
   ReadonlyRef,
   ResolvedParts,
   Version,
+  Violation,
 } from '@keeb-cad/schema'
 import type { LaneFailure, LaneOutput } from '@keeb-cad/blueprint'
 import type { Result } from '@keeb-cad/result'
@@ -23,6 +24,7 @@ export interface Derivations {
   parts: ReadonlyRef<ResolvedParts>
   pins: ReadonlyRef<{ id: BlueprintId; version: Version }[]>
   placements: ReadonlyRef<LayoutOutput>
+  violations: ReadonlyRef<Violation[]>
 }
 
 export interface SlotPartRun {
