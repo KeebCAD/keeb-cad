@@ -194,6 +194,9 @@ catalogs:
     '@vueuse/core':
       specifier: 14.4.0
       version: 14.4.0
+    clipper2-ts:
+      specifier: 2.0.1-18
+      version: 2.0.1-18
     dexie:
       specifier: ^4.4.7
       version: 4.4.7
@@ -700,6 +703,13 @@ importers:
   packages/firmware: {}
 
   packages/geometry:
+    dependencies:
+      '@keeb-cad/result':
+        specifier: workspace:*
+        version: link:../result
+      clipper2-ts:
+        specifier: 'catalog:'
+        version: 2.0.1-18
     devDependencies:
       typescript:
         specifier: 'catalog:'
@@ -2483,6 +2493,10 @@ packages:
   cli-width@4.1.0:
     resolution: {integrity: sha512-ouuZd4/dm2Sw5Gmqy6bGyNNNe1qt9RpmxveLSO7KcgsTnU7RXfsw+/bukWGo1abgBiMAic068rclZsO4IWmmxQ==}
     engines: {node: '>= 12'}
+
+  clipper2-ts@2.0.1-18:
+    resolution: {integrity: sha512-WuRO1ZHzyYTVHY78r4wVWVydvQ+1lx9qZ+DeZa/8zhvrxIgCVzElJ6lwSMGtUUKFPefhvfJsHZ5C9RNkgisCOQ==}
+    engines: {node: '>=14.0.0'}
 
   color-convert@2.0.1:
     resolution: {integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==}
@@ -5794,6 +5808,8 @@ snapshots:
   ci-info@4.4.0: {}
 
   cli-width@4.1.0: {}
+
+  clipper2-ts@2.0.1-18: {}
 
   color-convert@2.0.1:
     dependencies:

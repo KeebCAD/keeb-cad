@@ -2,6 +2,7 @@ import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
 import { layoutOutputSchema } from '../layout-output'
+import { aBorder } from './border'
 import { aLayoutOutput, aLayoutRow } from './layout-output'
 
 describe('aLayoutOutput', () => {
@@ -14,16 +15,7 @@ describe('aLayoutOutput', () => {
     [
       'rows',
       () => ({
-        rows: [
-          {
-            kind: 'group' as const,
-            frame: { x: 1, y: 2, rot: 3, mirrored: false },
-            anchorAt: { x: 0, y: 0 },
-            part: -1,
-            fit: 'fitted' as const,
-            placed: true,
-          },
-        ],
+        rows: [aLayoutRow({ kind: 'group', part: -1 })],
       }),
     ],
   ])('keeps the %s it is given', (_field, makeFields) => {
@@ -47,6 +39,7 @@ describe('aLayoutRow', () => {
     ['part', { part: 7 }],
     ['fit', { fit: 'stand-in' as const }],
     ['placed', { placed: false }],
+    ['border', { border: aBorder() }],
   ])('keeps the %s it is given', (_field, fields) => {
     expect(aLayoutRow(fields)).toMatchObject(fields)
   })

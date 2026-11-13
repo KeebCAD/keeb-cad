@@ -290,6 +290,7 @@ describe('placeLayout', () => {
       part,
       fit,
       placed: true,
+      border: [],
     })
     expect(output).toEqual({
       ids: [
@@ -451,6 +452,7 @@ describe('placeLayout', () => {
       part: 0,
       fit: 'fitted',
       placed: false,
+      border: [],
     })
   })
 
@@ -531,6 +533,7 @@ describe('placeLayout', () => {
         part: 0,
         fit: 'fitted',
         placed: false,
+        border: [],
       }
       expect([rowAt(output, 'a', 'right'), rowAt(output, 'b', 'right')]).toEqual([
         expectedUnplaced,

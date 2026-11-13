@@ -6,6 +6,7 @@ import type { anchorSchema } from './anchor'
 import type { attachPointSchema } from './attach-point'
 import type { blueprintDeclarationSchema } from './blueprint-declaration'
 import type { blueprintIdSchema } from './blueprint-id'
+import type { borderSchema } from './border'
 import type { designPartSchema } from './design-part'
 import type { declaredInputSchema } from './declared-input'
 import type { designSchema } from './design'
@@ -96,6 +97,7 @@ export type Vec2 = v.InferOutput<typeof vec2Schema>
 export type Offset = v.InferOutput<typeof offsetSchema>
 export type Gap = v.InferOutput<typeof gapSchema>
 export type LayoutOutput = v.InferOutput<typeof layoutOutputSchema>
+export type Border = v.InferOutput<typeof borderSchema>
 export type AttachPoint = v.InferOutput<typeof attachPointSchema>
 export type Anchor = v.InferOutput<typeof anchorSchema>
 

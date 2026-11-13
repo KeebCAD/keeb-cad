@@ -6,7 +6,7 @@ import { Container } from '@keeb-cad/di'
 import { libraryData } from '@keeb-cad/library/worker'
 import { createDerivations, type Derivations } from '@keeb-cad/model/worker'
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
-import { aDesign, aLayout, anId, aSlot } from '@keeb-cad/schema/testing'
+import { aDesign, aLayout, aLayoutRow, anId, aSlot } from '@keeb-cad/schema/testing'
 import { readBundle, writeBundle } from '@keeb-cad/storage'
 import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
 import { describe, expect, it } from 'vitest'
@@ -108,14 +108,10 @@ describe('blueprint inputs through mainModules', () => {
           fixes: [],
         },
       ],
-      row: {
-        kind: 'slot',
-        frame: { x: 0, y: 0, rot: 0, mirrored: false },
-        anchorAt: { x: 0, y: 0 },
+      row: aLayoutRow({
         part: derivations.parts.value.output.ids.indexOf('stand-in'),
         fit: 'stand-in',
-        placed: true,
-      },
+      }),
     })
   })
 

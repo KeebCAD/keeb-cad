@@ -20,6 +20,7 @@ catalog:
   '@vitest/browser-playwright': 5.0.5
   '@vue/tsconfig': ^0.9.1
   '@vueuse/core': 14.4.0
+  clipper2-ts: 2.0.1-18
   dexie: ^4.4.7
   nanoevents: ^10.0.0
   nanoid: ^6.0.2

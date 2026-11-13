@@ -1,5 +1,7 @@
 import * as v from 'valibot'
 
+import { borderSchema } from './border'
+
 // An unplaced row holds NaN.
 const coordinateSchema = v.union([v.number(), v.nan()])
 
@@ -18,6 +20,7 @@ export const layoutOutputSchema = v.strictObject({
       part: v.number(),
       fit: v.picklist(['fitted', 'empty', 'stand-in']),
       placed: v.boolean(),
+      border: borderSchema,
     }),
   ),
 })

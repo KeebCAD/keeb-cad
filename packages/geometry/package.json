@@ -6,6 +6,10 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "dependencies": {
+    "@keeb-cad/result": "workspace:*",
+    "clipper2-ts": "catalog:"
+  },
   "devDependencies": {
     "typescript": "catalog:",
     "vite": "catalog:",

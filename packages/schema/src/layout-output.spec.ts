@@ -2,6 +2,7 @@ import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
 import { layoutOutputSchema } from './layout-output'
+import { aBorder, aBorderRegion, aLayoutOutput, aLayoutRow } from './testing'
 
 const outputWith = (
   frame: Record<'x' | 'y' | 'rot', unknown>,
@@ -16,6 +17,7 @@ const outputWith = (
       part: 0,
       fit: 'fitted',
       placed: true,
+      border: [],
     },
   ],
 })
@@ -36,5 +38,32 @@ describe('layoutOutputSchema', () => {
     const output = outputWith({ x: 'a', y: 0, rot: 0 }, { x: 0, y: 0 })
 
     expect(v.safeParse(layoutOutputSchema, output).success).toBe(false)
+  })
+
+  it('accepts a group row whose border has two regions', () => {
+    const border = aBorder([
+      aBorderRegion({
+        holes: [
+          [
+            { x: 0.25, y: 0.25 },
+            { x: 0.25, y: 0.5 },
+            { x: 0.5, y: 0.5 },
+          ],
+        ],
+      }),
+      aBorderRegion({
+        outer: [
+          { x: 5, y: 0 },
+          { x: 6, y: 0 },
+          { x: 6, y: 1 },
+        ],
+      }),
+    ])
+    const output = aLayoutOutput({
+      ids: ['left/a'],
+      rows: [aLayoutRow({ kind: 'group', part: -1, border })],
+    })
+
+    expect(v.parse(layoutOutputSchema, output)).toEqual(output)
   })
 })

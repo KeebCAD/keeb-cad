@@ -18,6 +18,7 @@ import {
   aDesign,
   aFingerprintsFile,
   aLayoutOutput,
+  aLayoutRow,
   aPartsOutput,
   aResolvedParts,
   aRevision,
@@ -118,14 +119,8 @@ const layoutSetAt = (seq: number, parts: ResolvedParts, placements: LayoutOutput
   layout: packLayoutOutput(placements),
 })
 
-const slotRow = (x: number): LayoutOutput['rows'][number] => ({
-  kind: 'slot',
-  frame: { x, y: 0, rot: 0, mirrored: false },
-  anchorAt: { x, y: 0 },
-  part: 0,
-  fit: 'fitted',
-  placed: true,
-})
+const slotRow = (x: number) =>
+  aLayoutRow({ frame: { x, y: 0, rot: 0, mirrored: false }, anchorAt: { x, y: 0 } })
 
 const STAGES_AT_ONE_SEQ = [
   ['stage-started', 'parts'],
@@ -327,14 +322,10 @@ describe('Pipeline stages', () => {
       const expectedLayout = {
         ids: ['left/a'],
         rows: [
-          {
-            kind: 'slot',
+          aLayoutRow({
             frame: { x: 22.728, y: 0, rot: 0, mirrored: false },
             anchorAt: { x: 22.728, y: 0 },
-            part: 0,
-            fit: 'fitted',
-            placed: true,
-          },
+          }),
         ],
       }
       expect(readBack).toEqual([
@@ -374,6 +365,10 @@ describe('Pipeline stages', () => {
           part: new Int32Array(),
           fit: new Uint8Array(),
           placed: new Uint8Array(),
+          rowLoops: Uint32Array.from([0]),
+          loopPoints: Uint32Array.from([0]),
+          loopHole: new Uint8Array(),
+          points: new Float64Array(),
         },
       })
     })
@@ -414,6 +409,10 @@ describe('Pipeline stages', () => {
           part: 0,
           fit: 0,
           placed: 0,
+          rowLoops: 0,
+          loopPoints: 0,
+          loopHole: 0,
+          points: 0,
         },
       })
     })

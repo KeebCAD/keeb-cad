@@ -1,39 +1,56 @@
 import type { LayoutOutput } from '@keeb-cad/schema'
-import { aLayoutOutput } from '@keeb-cad/schema/testing'
+import { aBorder, aBorderRegion, aLayoutOutput, aLayoutRow } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { packLayoutOutput, readLayoutRow } from './layout-output-codec'
-import type { LayoutRow, PackedLayoutOutput } from './types'
+import type { PackedLayoutOutput } from './types'
 
-const SLOT: LayoutRow = {
-  kind: 'slot',
+const SLOT = aLayoutRow({
   frame: { x: 0, y: 19, rot: 0, mirrored: false },
   anchorAt: { x: 0, y: 19 },
-  part: 0,
-  fit: 'fitted',
-  placed: true,
-}
+})
 
-const GROUP: LayoutRow = {
+const GROUP = aLayoutRow({
   kind: 'group',
   frame: { x: -3.5, y: 2, rot: 15, mirrored: true },
   anchorAt: { x: 1, y: -2 },
   part: -1,
   fit: 'empty',
-  placed: true,
-}
+})
 
-const STAND_IN: LayoutRow = {
-  kind: 'slot',
+const STAND_IN = aLayoutRow({
   frame: { x: 40, y: 0, rot: -90, mirrored: true },
-  anchorAt: { x: 0, y: 0 },
   part: 2,
   fit: 'stand-in',
-  placed: true,
-}
+})
 
 // A slot turned 90 deg about the pivot (9, 0) in its own frame.
-const PIVOTED: LayoutRow = { ...SLOT, frame: { x: 9, y: -9, rot: 90, mirrored: false } }
+const PIVOTED = aLayoutRow({ frame: { x: 9, y: -9, rot: 90, mirrored: false } })
+
+const TWO_REGIONS_ONE_HOLED = aBorder([
+  aBorderRegion({
+    outer: [
+      { x: -10.5, y: -10.5 },
+      { x: 10.5, y: -10.5 },
+      { x: 10.5, y: 10.5 },
+      { x: -10.5, y: 10.5 },
+    ],
+    holes: [
+      [
+        { x: -1, y: -1 },
+        { x: -1, y: 1 },
+        { x: 1, y: 1 },
+      ],
+    ],
+  }),
+  aBorderRegion({
+    outer: [
+      { x: 30, y: -10 },
+      { x: 50, y: -10 },
+      { x: 40, y: 10.25 },
+    ],
+  }),
+])
 
 function roundTrip(output: LayoutOutput): LayoutOutput {
   const packed = packLayoutOutput(output)
@@ -54,12 +71,11 @@ describe('the layout output codec', () => {
   })
 
   it('reads back an unplaced row with no frame or anchor as NaN', () => {
-    const unplaced: LayoutRow = {
-      ...SLOT,
+    const unplaced = aLayoutRow({
       frame: { x: NaN, y: NaN, rot: NaN, mirrored: false },
       anchorAt: { x: NaN, y: NaN },
       placed: false,
-    }
+    })
     const output = aLayoutOutput({ ids: ['left/a'], rows: [unplaced] })
 
     expect(roundTrip(output)).toEqual(output)
@@ -95,6 +111,10 @@ describe('the layout output codec', () => {
       part: shared('part'),
       fit: shared('fit'),
       placed: shared('placed'),
+      rowLoops: shared('rowLoops'),
+      loopPoints: shared('loopPoints'),
+      loopHole: shared('loopHole'),
+      points: shared('points'),
     }).toEqual({
       kind: false,
       x: false,
@@ -106,6 +126,42 @@ describe('the layout output codec', () => {
       part: false,
       fit: false,
       placed: false,
+      rowLoops: false,
+      loopPoints: false,
+      loopHole: false,
+      points: false,
+    })
+  })
+
+  it('reads back a group border of two regions, one with a hole, between slots with none', () => {
+    const output = aLayoutOutput({
+      ids: ['left/a', 'left/b', 'left/c'],
+      rows: [SLOT, aLayoutRow({ ...GROUP, border: TWO_REGIONS_ONE_HOLED }), STAND_IN],
+    })
+
+    expect(roundTrip(output)).toEqual(output)
+  })
+
+  it('packs rows with no border into empty border columns and reads them back unchanged', () => {
+    const output = aLayoutOutput({ ids: ['left/a', 'left/b'], rows: [SLOT, GROUP] })
+
+    const { rowLoops, loopPoints, loopHole, points } = packLayoutOutput(output)
+
+    expect({
+      rowLoops: [...rowLoops],
+      loopPoints: [...loopPoints],
+      loopHole: [...loopHole],
+      points: [...points],
+      rows: roundTrip(output),
+    }).toEqual({ rowLoops: [0, 0, 0], loopPoints: [0], loopHole: [], points: [], rows: output })
+  })
+
+  it('packs an output of no rows into one offset per border column', () => {
+    const { rowLoops, loopPoints } = packLayoutOutput(aLayoutOutput())
+
+    expect({ rowLoops: [...rowLoops], loopPoints: [...loopPoints] }).toEqual({
+      rowLoops: [0],
+      loopPoints: [0],
     })
   })
 })

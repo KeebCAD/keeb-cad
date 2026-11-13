@@ -42,6 +42,8 @@ const CHOC_KEY = aBlueprintId('lib:blueprint/choc-key')
 
 const rectangle = (value: unknown): Answer => ({ value })
 const WIDE = { w: 27, h: 18 }
+// Borders are rounded to 1e-6 mm.
+const BORDER_DIGITS = 6
 
 type Answer = { value: unknown } | { failure: LaneFailure }
 
@@ -615,6 +617,34 @@ describe('createDerivations', () => {
       mirror.value = { ...mirror.value, meta: { ...mirror.value.meta, gap } }
 
       expect(placements.value).not.toBe(before)
+    })
+
+    it("posts a group's border at the margin of the design's gap, and none for its key", async () => {
+      const layout = aLayout({
+        children: [aFreeGroup({ id: anId('g'), children: [aSlot({ id: anId('k') })] })],
+      })
+      const gap = aGap({ x: aLength('2mm'), y: aLength('1.5mm') })
+      const { placements } = await arrange(withLayout(layout, { meta: aMeta({ gap }) }))
+
+      const rowOf = (id: string) => placements.value.rows[placements.value.ids.indexOf(id)]
+      const outerBounds = (rowOf('left/g')?.border ?? []).map(({ outer }) => ({
+        minX: Math.min(...outer.map(({ x }) => x)),
+        minY: Math.min(...outer.map(({ y }) => y)),
+        maxX: Math.max(...outer.map(({ x }) => x)),
+        maxY: Math.max(...outer.map(({ y }) => y)),
+      }))
+
+      expect({ group: outerBounds, key: rowOf('left/k')?.border }).toEqual({
+        group: [
+          {
+            minX: expect.closeTo(-10.5, BORDER_DIGITS),
+            minY: expect.closeTo(-10.5, BORDER_DIGITS),
+            maxX: expect.closeTo(10.5, BORDER_DIGITS),
+            maxY: expect.closeTo(10.5, BORDER_DIGITS),
+          },
+        ],
+        key: [],
+      })
     })
   })
 

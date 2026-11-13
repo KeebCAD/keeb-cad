@@ -15,6 +15,7 @@ import { mainModules } from './main-modules'
 const KEY_RUN = `key@${argumentHash({ size: '1u' })}`
 const CORNEY_SLOTS = ['matrix-outer-bottom', 'matrix-outer-home', 'matrix-outer-top']
 const GROUP_PART = -1
+const THUMBFAN_KEYS = ['thumbfan-near-home', 'thumbfan-mid-home', 'thumbfan-far-home']
 // The worker's first load has Vite transform its whole module graph on demand, which took over
 // two seconds while the rest of the suite ran beside it.
 const FIRST_LOAD = { timeout: 10_000 }
@@ -123,6 +124,32 @@ describe('the Layout set on main', () => {
       'matrix-outer-home': Option.some(KEY_RUN),
       'matrix-outer-top': Option.some(KEY_RUN),
       'matrix-outer-extra': Option.some(KEY_RUN),
+    })
+  })
+
+  it("carries the thumbfan's border on each side, and none on its keys", async () => {
+    const { store, lifecycle } = await arrange()
+
+    await runCorneyScript(store)
+    await expect.poll(() => lifecycle.layoutSetArrived, FIRST_LOAD).toBe(true)
+
+    const borderOf = (id: string) => lifecycle.layoutRow(id).map(({ border }) => border)
+    const regionsOf = (id: string) => borderOf(id).map(({ length }) => length)
+    expect({
+      left: regionsOf('left/thumbfan'),
+      right: regionsOf('right/thumbfan'),
+      keys: THUMBFAN_KEYS.flatMap((key) => [borderOf(`left/${key}`), borderOf(`right/${key}`)]),
+    }).toEqual({
+      left: Option.some(1),
+      right: Option.some(1),
+      keys: [
+        Option.some([]),
+        Option.some([]),
+        Option.some([]),
+        Option.some([]),
+        Option.some([]),
+        Option.some([]),
+      ],
     })
   })
 })

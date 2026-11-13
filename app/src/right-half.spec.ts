@@ -74,6 +74,7 @@ function seqs(lifecycle: ModelWorkerLifecycle) {
 function reflected({ frame, anchorAt, ...fields }: LayoutOutput['rows'][number]) {
   return {
     ...fields,
+    border: expect.any(Array),
     frame: {
       x: expect.closeTo(-frame.x, DIGITS),
       y: expect.closeTo(frame.y, DIGITS),

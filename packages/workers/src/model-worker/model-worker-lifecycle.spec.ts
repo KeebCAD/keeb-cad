@@ -22,6 +22,7 @@ import {
   aDesign,
   aFingerprintsFile,
   aLayoutOutput,
+  aLayoutRow,
   aMeta,
   aPartsOutput,
   aRevision,
@@ -112,14 +113,10 @@ function stageStartedAt(epoch: number, seq: number, stage: StageId = aStageId())
   return { kind: 'stage-started', epoch, seq, stage }
 }
 
-const SLOT_ROW: LayoutOutput['rows'][number] = {
-  kind: 'slot',
+const SLOT_ROW = aLayoutRow({
   frame: { x: 0, y: 19, rot: 0, mirrored: false },
   anchorAt: { x: 0, y: 19 },
-  part: 0,
-  fit: 'fitted',
-  placed: true,
-}
+})
 
 function layoutSetAt(
   epoch: number,
