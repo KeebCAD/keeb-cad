@@ -511,3 +511,11 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-explicit-anchors-move-dependants-cycles-rejected-plan.md`
   summary: After a layout edit that changes which key ends a chain (an append after it, or deleting it), the editor offers to re-anchor what hung off the old last key, as one undoable SetAnchor; for epic-drag-keys beside 15.3's re-anchor in place and 15.6's anchor picker.
   evidence: Sergii 2026-11-13, party round on anchoring: anchors stay by id, so a thumb cluster anchored to a column's last key stays on it when a key is appended, and falls back to its default anchor when that key is deleted; the fix belongs in the editor, not as a model 'last child' anchor kind.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-explicit-anchors-move-dependants-cycles-rejected-plan.md`
+  summary: `app/src/corney-column.spec.ts:76-78` asserts rows with `expect.objectContaining(at(0))`, narrowing instead of asserting each row whole.
+  evidence: 13.3's conformance pass, precedent finding: AGENTS.md "assert whole values (`toEqual`, `toMatchObject`) instead of narrowing in the test"; 13.3 takes only that spec's arrange helpers, and its own app spec asserts whole rows.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-explicit-anchors-move-dependants-cycles-rejected-plan.md`
+  summary: `app/src/corney-column.spec.ts`'s round-trip test asserts `expect(await placementsOf(committed(store))).toEqual(before)`, an expected value the same placement code computed.
+  evidence: 13.3's final conformance pass, precedent finding: AGENTS.md "no expected value computed the way production computes it, except by calling a function the requirement names and that has unit tests of its own"; 13.3 follows that spec's wiring but doesn't edit it.
