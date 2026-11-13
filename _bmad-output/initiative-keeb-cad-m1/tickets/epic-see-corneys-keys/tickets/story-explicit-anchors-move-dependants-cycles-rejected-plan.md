@@ -3,7 +3,7 @@ title: 'Explicit anchors move dependants, cycles rejected'
 type: 'feature'
 ticket: 3
 created: '2026-11-13'
-status: 'built'
+status: 'done'
 baseline_revision: '64c61eb411f25f96ce546a01b4650d9860a38a47'
 route: 'full'
 route_source: 'auto'
