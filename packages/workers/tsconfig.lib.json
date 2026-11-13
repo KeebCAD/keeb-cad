@@ -7,6 +7,8 @@
   "compilerOptions": {
     // Symbol.dispose and Symbol.asyncDispose, which di's container calls on dispose().
     "lib": ["ES2023", "ESNext.Disposable", "WebWorker"],
+    // vite/client types import.meta.glob, which design's store reaches through library's declarations.
+    "types": ["vite/client"],
     "noEmit": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo"
   }

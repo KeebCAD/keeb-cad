@@ -190,6 +190,7 @@ export type ModelRejectionKind =
   | 'index-out-of-range'
   | 'dependency-cycle'
   | 'chain-child-anchored'
+  | 'blueprint-input-invalid'
 
 // The design store's own kinds carry no message: the editor writes their text from the kind.
 export type Rejection =
@@ -200,7 +201,11 @@ export type Rejection =
   | { kind: ModelRejectionKind; ids: ItemId[]; message: string }
 
 export type ViolationKind =
-  'blueprint-api-too-new' | 'lane-failed' | 'unresolvable-reference' | 'dependency-cycle'
+  | 'blueprint-api-too-new'
+  | 'lane-failed'
+  | 'unresolvable-reference'
+  | 'dependency-cycle'
+  | 'blueprint-input-invalid'
 
 export type Fix = v.InferOutput<typeof fixSchema>
 

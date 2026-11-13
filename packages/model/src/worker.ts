@@ -1,4 +1,5 @@
 export { createDerivations } from './parts/create-derivations'
 export type { Derivations } from './parts/types'
+export { blueprintInputInvalidMessage } from './violations/blueprint-input-invalid-message'
 export { dependencyCycleMessage } from './violations/dependency-cycle-message'
 export { unresolvableReferenceMessage } from './violations/unresolvable-reference-message'

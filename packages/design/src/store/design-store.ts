@@ -1,5 +1,6 @@
 import { inject, InjectorToken } from '@keeb-cad/di'
-import { checkStructure } from '@keeb-cad/model/main'
+import { declarations } from '@keeb-cad/library'
+import { checkInputs, checkStructure } from '@keeb-cad/model/main'
 import { shallowRef, toRaw } from '@keeb-cad/reactive'
 import { AsyncResult, InvariantError, Option, Result } from '@keeb-cad/result'
 import {
@@ -168,14 +169,16 @@ export class DesignStore {
       .flatMap(({ design: next, patches }): Result<void, Rejection> => {
         if (patches.length === 0) return Result.ok()
         this.#ensureValidDesign(next, handle.id)
-        return checkStructure(design, next).map(() => {
-          const { seq, revision } = this.#write({
-            ...current,
-            design: next,
-            revision: revisionOf(next),
+        return checkStructure(design, next)
+          .flatMap(() => checkInputs(design, next, declarations))
+          .map(() => {
+            const { seq, revision } = this.#write({
+              ...current,
+              design: next,
+              revision: revisionOf(next),
+            })
+            this.#emitter.emit('commit', { kind: 'patches', patches, seq, revision })
           })
-          this.#emitter.emit('commit', { kind: 'patches', patches, seq, revision })
-        })
       })
   }
 

@@ -376,6 +376,7 @@
   summary: Show a part's last good output for a later failing run.
   evidence: 13.18 stands the slot in on every failure; no command changes a part's inputs yet, so only 13.4 can reach a later failing run. Decision (plan).
   owner: 13.4.
+  closed: 2026-11-13, re-owned by 13.4's entry below (choc-key's lane never fails).
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-a-new-design-holds-a-default-key-part-plan.md`
   summary: Report a lane's `problems` as violations once the `blueprint` violation kind arrives.
   evidence: `createDerivations` reads only a run's `rectangle` output; BP-8 `problems` become `blueprint` violations; `ViolationKind` has no `blueprint` member.
@@ -383,6 +384,7 @@
   summary: Pass quantity inputs to lanes as numbers once `expr` has an evaluator.
   evidence: `createDerivations` hands lanes the resolved inputs as written, a quantity as `{ type: 'quantity', value }`; BP-8 `quantities as numbers in mm or deg`; `expr` exports only `parseExpression`.
   owner: 13.4.
+  closed: 2026-11-13, re-owned by 13.4's entry below (choc-key's `size` is an option).
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
   summary: Sofia updates 13.22's ticket: model's layout rows already carry `part` as the PartsOutput row index, so the LayoutOutput codec no longer turns a run id into a row.
@@ -515,6 +517,7 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-explicit-anchors-move-dependants-cycles-rejected-plan.md`
   summary: `app/src/corney-column.spec.ts:76-78` asserts rows with `expect.objectContaining(at(0))`, narrowing instead of asserting each row whole.
   evidence: 13.3's conformance pass, precedent finding: AGENTS.md "assert whole values (`toEqual`, `toMatchObject`) instead of narrowing in the test"; 13.3 takes only that spec's arrange helpers, and its own app spec asserts whole rows.
+  closed: 2026-11-13, 13.4 rewrote the spec for the left half's ids and asserts each row whole.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-explicit-anchors-move-dependants-cycles-rejected-plan.md`
   summary: `app/src/corney-column.spec.ts`'s round-trip test asserts `expect(await placementsOf(committed(store))).toEqual(before)`, an expected value the same placement code computed.
@@ -523,3 +526,23 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-explicit-anchors-move-dependants-cycles-rejected-plan.md`
   summary: `tooling/lint/no-shared-spec-state.spec.ts` ("allows a recording inside a test in a describe") and `tooling/hooks/lint-decision.spec.ts` ("returns exit code 2 and the ESLint output for a violation") timed out at 15000 ms in one full run; source not confirmed, for a person to decide.
   evidence: 2026-11-13, during 13.3's build: `pnpm typecheck && pnpm lint && pnpm depcruise && pnpm test` failed only these two (timeout at the first ESLint await, no assertion failed), seed 1794559268850, load average ~8 on 16 cores; the two files alone passed (34 tests) and `pnpm test --sequence.seed=1794559268850` passed whole. Not order (seed replay green); candidates not ruled out: machine load, and the ESLint cache `pnpm lint` had just written. No test, timeout or config changed.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-corney-wired-s-left-half-from-commands-plan.md`
+  summary: Show a part's last good output for a later failing run.
+  evidence: 13.4 re-owns 13.18's entry: choc-key's parts lane never fails, so no part run can fail after a change yet; `createDerivations` stands the slot in on every failure. Decision (Sergii, 2026-11-13, plan questions).
+  owner: the first story whose part runs can fail after a change.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-corney-wired-s-left-half-from-commands-plan.md`
+  summary: Pass quantity inputs to lanes as numbers once `expr` has an evaluator.
+  evidence: 13.4 re-owns 13.18's entry: choc-key's only input, `size`, is an option; `createDerivations` hands a lane its resolved inputs as written. Decision (Sergii, 2026-11-13, plan questions).
+  owner: the first story that declares a quantity input.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-corney-wired-s-left-half-from-commands-plan.md`
+  summary: Rename `reference-designs`' key-centres harness to glossary terms ("pose" → frame plus keycap size, and the rest of its vocabulary).
+  evidence: 13.4 split the harness into `src/key-centres/` and renamed only `Design` to `Variant`, since glossary "design" is the keyboard document; "pose" stays because a pose carries the keycap size and the harness was reused, not redesigned. Decision (plan).
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-corney-wired-s-left-half-from-commands-plan.md`
+  summary: Triage `packages/editor/src/add-flow/add-flow.spec.ts` "adds a slot inside the chain group it just added", which failed once in Firefox (18.4 s) during 13.4's first full run.
+  evidence: it passed alone (65/65) and on every later full run (seeds 1794573588557, 1794573851280, 1794574914310); 13.4 changes no editor code. Run flaky-triage with the failing run's seed if it recurs.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-corney-wired-s-left-half-from-commands-plan.md`
+  summary: Settle in a UX pass how anchor links read on the Layout canvas; on Corney's left half Sergii found them "very unclear" (2026-11-13, at 13.4's look).
+  evidence: `packages/editor/src/workspace/layout/AnchorLink.vue` draws every placed node's link, dashed Teal from `anchorAt` to its frame, at all times (EXPERIENCE.md Layout row; DESIGN.md `anchor-link`); with the whole left half, stagger, thumb-fan and half-offset links overlap the keys.

@@ -32,6 +32,9 @@ const STAND_IN: LayoutRow = {
   placed: true,
 }
 
+// A slot turned 90 deg about the pivot (9, 0) in its own frame.
+const PIVOTED: LayoutRow = { ...SLOT, frame: { x: 9, y: -9, rot: 90, mirrored: false } }
+
 function roundTrip(output: LayoutOutput): LayoutOutput {
   const packed = packLayoutOutput(output)
   return { ids: packed.ids, rows: packed.ids.map((_id, row) => readLayoutRow(packed, row)) }
@@ -41,6 +44,7 @@ describe('the layout output codec', () => {
   it.each([
     ['no rows', aLayoutOutput()],
     ['one row', aLayoutOutput({ ids: ['left/a'], rows: [SLOT] })],
+    ['a row turned about a pivot', aLayoutOutput({ ids: ['left/a'], rows: [PIVOTED] })],
     [
       'three rows of both kinds, every fit and mirrored both ways',
       aLayoutOutput({ ids: ['left/a', 'left/b', 'left/c'], rows: [SLOT, GROUP, STAND_IN] }),

@@ -12,8 +12,8 @@ import { describe, expect, it, onTestFinished } from 'vitest'
 
 import { mainModules } from './main-modules'
 
-const KEY_RUN = `key@${argumentHash({})}`
-const CORNEY_SLOTS = ['outer-bottom', 'outer-home', 'outer-top']
+const KEY_RUN = `key@${argumentHash({ size: '1u' })}`
+const CORNEY_SLOTS = ['matrix-outer-bottom', 'matrix-outer-home', 'matrix-outer-top']
 const GROUP_PART = -1
 // The worker's first load has Vite transform its whole module graph on demand, which took over
 // two seconds while the rest of the suite ran beside it.
@@ -73,12 +73,12 @@ describe('the Layout set on main', () => {
 
     const { seq, design } = committed(store)
     expect(seqs(lifecycle)).toEqual({ parts: Option.some(seq), layout: Option.some(seq) })
-    expect(partsOf(lifecycle, [design.layout.id, 'outer', ...CORNEY_SLOTS])).toEqual({
+    expect(partsOf(lifecycle, [design.layout.id, 'matrix-outer', ...CORNEY_SLOTS])).toEqual({
       [design.layout.id]: Option.some(GROUP_PART),
-      outer: Option.some(GROUP_PART),
-      'outer-bottom': Option.some(KEY_RUN),
-      'outer-home': Option.some(KEY_RUN),
-      'outer-top': Option.some(KEY_RUN),
+      'matrix-outer': Option.some(GROUP_PART),
+      'matrix-outer-bottom': Option.some(KEY_RUN),
+      'matrix-outer-home': Option.some(KEY_RUN),
+      'matrix-outer-top': Option.some(KEY_RUN),
     })
   })
 
@@ -113,16 +113,16 @@ describe('the Layout set on main', () => {
     await runCorneyScript(store)
     await expect.poll(() => lifecycle.layoutSetArrived, FIRST_LOAD).toBe(true)
 
-    expectOk(store.runById('layout.addSlot', { parent: 'outer', id: 'outer-extra' }))
+    expectOk(store.runById('layout.addSlot', { parent: 'matrix-outer', id: 'matrix-outer-extra' }))
     await expect.poll(() => lifecycle.layoutSetArrived).toBe(true)
 
     const { seq } = committed(store)
     expect(seqs(lifecycle)).toEqual({ parts: Option.some(seq), layout: Option.some(seq) })
-    expect(partsOf(lifecycle, [...CORNEY_SLOTS, 'outer-extra'])).toEqual({
-      'outer-bottom': Option.some(KEY_RUN),
-      'outer-home': Option.some(KEY_RUN),
-      'outer-top': Option.some(KEY_RUN),
-      'outer-extra': Option.some(KEY_RUN),
+    expect(partsOf(lifecycle, [...CORNEY_SLOTS, 'matrix-outer-extra'])).toEqual({
+      'matrix-outer-bottom': Option.some(KEY_RUN),
+      'matrix-outer-home': Option.some(KEY_RUN),
+      'matrix-outer-top': Option.some(KEY_RUN),
+      'matrix-outer-extra': Option.some(KEY_RUN),
     })
   })
 })

@@ -5,7 +5,9 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./scripts": "./src/scripts/index.ts"
+    "./scripts": "./src/scripts/index.ts",
+    "./key-centres": "./src/key-centres/index.ts",
+    "./ergogen/points/*.yaml": "./corney-island/ergogen/points/*.yaml"
   },
   "devDependencies": {
     "@types/node": "catalog:"

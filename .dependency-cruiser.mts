@@ -94,8 +94,9 @@ export const GRAPH: Readonly<Record<string, readonly string[]>> = {
     'blueprint',
     'case',
     'routing',
-    // Tests only, through its data-only scripts subpath, and the one dev seed file
-    // app/src/dev-seed/corney-seed.ts (reference-designs-only-in-tests).
+    // Tests only, through its data-only scripts and key-centres subpaths and its
+    // ergogen/points/*.yaml export, and the one dev seed file app/src/dev-seed/corney-seed.ts
+    // (reference-designs-only-in-tests).
     'reference-designs',
   ],
   'reference-designs': ['schema'],
