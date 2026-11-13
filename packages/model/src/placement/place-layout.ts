@@ -1,4 +1,4 @@
-import { compose, type Matrix } from '@keeb-cad/geometry'
+import { compose, reflectionAcrossY, type Matrix } from '@keeb-cad/geometry'
 import { Option } from '@keeb-cad/result'
 import {
   compareId,
@@ -25,11 +25,15 @@ import { readOffset } from './read-offset'
 import { slotPart } from './slot-part'
 import type { GroupFrames, LayoutRow, Placing, RelativeFrames } from './types'
 
-const SIDE: PlacementSide = 'left'
+// The right side is the left reflected across the y-axis of the root's frame, so its mirror
+// sits between the root's frame and each node's frame relative to the root.
+const SIDES: readonly (readonly [PlacementSide, Matrix])[] = [
+  ['left', IDENTITY],
+  ['right', reflectionAcrossY()],
+]
 
-// The authored side's placements; the right side is derived from them. Each group, children
-// before parents, places its subtree relative to itself, so a chain step finds its siblings'
-// extents ready; the root's relative frames give the world frames.
+// Each group, children before parents, places its subtree relative to itself, so a chain step
+// finds its siblings' extents ready; the root's relative frames give the world frames.
 export function placeLayout(
   layout: Frozen<Group>,
   gap: Frozen<Gap>,
@@ -45,7 +49,6 @@ export function placeLayout(
   }
   const inRoot = framesByGroup(placing, layout).get(layout.id) as RelativeFrames
   const root = placeSlot(IDENTITY, readOffset(layout.offset))
-  const inWorld = (relative: Matrix) => compose(root, relative)
   const rows = new Map<string, LayoutRow>()
   for (const [id, { node }] of graph) {
     // The root's offset is already in its own frame.
@@ -53,14 +56,19 @@ export function placeLayout(
       id === layout.id && !unplaced.has(id)
         ? Option.some({ anchor: IDENTITY, frame: IDENTITY })
         : Option.fromNullable(inRoot.get(id))
-    rows.set(
-      sideQualifiedId(SIDE, id),
-      rowOf(
-        partFields(id, node, parts),
-        relative.map(({ anchor }) => inWorld(anchor)),
-        relative.map(({ frame }) => inWorld(frame)),
-      ),
-    )
+    const fields = partFields(id, node, parts)
+    for (const [side, mirror] of SIDES) {
+      const inWorld = (matrix: Matrix) => compose(compose(root, mirror), matrix)
+      rows.set(
+        sideQualifiedId(side, id),
+        rowOf(
+          fields,
+          side === 'right',
+          relative.map(({ anchor }) => inWorld(anchor)),
+          relative.map(({ frame }) => inWorld(frame)),
+        ),
+      )
+    }
   }
   const ids = [...rows.keys()].toSorted(compareId)
   return { ids, rows: ids.map((id) => rows.get(id) as LayoutRow) }

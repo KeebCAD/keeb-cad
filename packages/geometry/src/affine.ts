@@ -10,3 +10,7 @@ export function rotation(degrees: number): Matrix {
   const sin = Math.sin(radians)
   return [cos, sin, -sin, cos, 0, 0]
 }
+
+export function reflectionAcrossY(): Matrix {
+  return [-1, 0, 0, 1, 0, 0]
+}

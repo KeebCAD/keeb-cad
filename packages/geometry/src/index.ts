@@ -1,4 +1,4 @@
-export { rotation, translation } from './affine'
+export { reflectionAcrossY, rotation, translation } from './affine'
 export { apply } from './apply'
 export { compose } from './compose'
 export { frameOf } from './frame-of'

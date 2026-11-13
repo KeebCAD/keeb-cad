@@ -206,6 +206,7 @@ export type ViolationKind =
   | 'unresolvable-reference'
   | 'dependency-cycle'
   | 'blueprint-input-invalid'
+  | 'unsupported-form'
 
 export type Fix = v.InferOutput<typeof fixSchema>
 

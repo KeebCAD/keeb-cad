@@ -20,6 +20,7 @@ import {
 import { describe, expect, it } from 'vitest'
 
 import { checkAnchors } from '../dependencies/check-anchors'
+import type { PlacementSide } from '../ids/types'
 import { placeLayout } from './place-layout'
 
 const DIGITS = 9
@@ -53,23 +54,38 @@ interface Arrangement {
   unplaced?: ReadonlySet<Id>
 }
 
-function frameAt(output: LayoutOutput, id: string) {
-  return output.rows[output.ids.indexOf(`left/${id}`)]?.frame
+function rowAt(output: LayoutOutput, id: string, side: PlacementSide = 'left') {
+  return output.rows[output.ids.indexOf(`${side}/${id}`)]
 }
 
-const at = (x: number, y: number, rot = 0) => ({
+function frameAt(output: LayoutOutput, id: string, side: PlacementSide = 'left') {
+  return rowAt(output, id, side)?.frame
+}
+
+const at = (x: number, y: number, rot = 0, mirrored = false) => ({
   x: expect.closeTo(x, DIGITS),
   y: expect.closeTo(y, DIGITS),
   rot: expect.closeTo(rot, DIGITS),
-  mirrored: false,
+  mirrored,
 })
 
-const about = (x: number, y: number, rot: number, digits = TABLE_DIGITS) => ({
-  x: expect.closeTo(x, digits),
-  y: expect.closeTo(y, digits),
-  rot: expect.closeTo(rot, digits),
-  mirrored: false,
+const about = (x: number, y: number, rot: number, mirrored = false) => ({
+  x: expect.closeTo(x, TABLE_DIGITS),
+  y: expect.closeTo(y, TABLE_DIGITS),
+  rot: expect.closeTo(rot, TABLE_DIGITS),
+  mirrored,
 })
+
+const point = (x: number, y: number) => ({
+  x: expect.closeTo(x, DIGITS),
+  y: expect.closeTo(y, DIGITS),
+})
+
+const moved = (x: string, y: string, rotation?: string) =>
+  anOffset({
+    position: aVec2({ x: aDelta(x), y: aDelta(y) }),
+    ...(rotation === undefined ? {} : { rotation: anAngle(rotation) }),
+  })
 
 const turned = (rotation: string) => anOffset({ rotation: anAngle(rotation) })
 
@@ -85,7 +101,7 @@ describe('placeLayout', () => {
     it('with no slots has the group row only', () => {
       const output = arrange(inRoot(aChainGroup({ id: anId('c'), axis: 'y' })))
 
-      expect(output.ids).toEqual(['left/c', 'left/root'])
+      expect(output.ids).toEqual(['left/c', 'left/root', 'right/c', 'right/root'])
     })
 
     it('puts one slot on the chain’s origin', () => {
@@ -164,7 +180,7 @@ describe('placeLayout', () => {
     })
     const output = arrange(inRoot({ ...group, children: [slot('a')] }))
 
-    expect(output.rows[output.ids.indexOf('left/a')]).toMatchObject({
+    expect(rowAt(output, 'a')).toMatchObject({
       frame: at(5, 0),
       anchorAt: { x: expect.closeTo(5, DIGITS), y: expect.closeTo(0, DIGITS) },
     })
@@ -267,22 +283,38 @@ describe('placeLayout', () => {
     })
     const output = arrange(inRoot(chain), { parts })
 
-    const row = (kind: string, part: number, fit: string) =>
-      expect.objectContaining({
-        kind,
-        part,
-        fit,
-        placed: true,
-        frame: expect.objectContaining({ mirrored: false }),
-      })
+    const row = (kind: string, part: number, fit: string, y: number, mirrored: boolean) => ({
+      kind,
+      frame: at(0, y, 0, mirrored),
+      anchorAt: point(0, y),
+      part,
+      fit,
+      placed: true,
+    })
     expect(output).toEqual({
-      ids: ['left/a', 'left/b', 'left/c', 'left/d', 'left/root'],
+      ids: [
+        'left/a',
+        'left/b',
+        'left/c',
+        'left/d',
+        'left/root',
+        'right/a',
+        'right/b',
+        'right/c',
+        'right/d',
+        'right/root',
+      ],
       rows: [
-        row('slot', 0, 'fitted'),
-        row('slot', 1, 'stand-in'),
-        row('group', -1, 'fitted'),
-        row('slot', 0, 'fitted'),
-        row('group', -1, 'fitted'),
+        row('slot', 0, 'fitted', 19, false),
+        row('slot', 1, 'stand-in', 0, false),
+        row('group', -1, 'fitted', 0, false),
+        row('slot', 0, 'fitted', 38, false),
+        row('group', -1, 'fitted', 0, false),
+        row('slot', 0, 'fitted', 19, true),
+        row('slot', 1, 'stand-in', 0, true),
+        row('group', -1, 'fitted', 0, true),
+        row('slot', 0, 'fitted', 38, true),
+        row('group', -1, 'fitted', 0, true),
       ],
     })
   })
@@ -290,13 +322,7 @@ describe('placeLayout', () => {
   describe('an explicit anchor', () => {
     const RECTANGLE = { w: 18, h: 17 }
 
-    const anchorAtOf = (output: LayoutOutput, id: string) =>
-      output.rows[output.ids.indexOf(`left/${id}`)]?.anchorAt
-
-    const point = (x: number, y: number) => ({
-      x: expect.closeTo(x, DIGITS),
-      y: expect.closeTo(y, DIGITS),
-    })
+    const anchorAtOf = (output: LayoutOutput, id: string) => rowAt(output, id)?.anchorAt
 
     it.each([
       ['omitted, the center', undefined, 0, 0],
@@ -418,13 +444,128 @@ describe('placeLayout', () => {
     const layout = inRoot(slot('n', { anchor: aSlotAnchor({ ref: anId('missing') }) }))
     const output = arrange(layout, { unplaced: checkAnchors(layout).unplaced })
 
-    expect(output.rows[output.ids.indexOf('left/n')]).toEqual({
+    expect(rowAt(output, 'n')).toEqual({
       kind: 'slot',
       frame: { x: NaN, y: NaN, rot: NaN, mirrored: false },
       anchorAt: { x: NaN, y: NaN },
       part: 0,
       fit: 'fitted',
       placed: false,
+    })
+  })
+
+  describe('the right side, reflected across center’s y-axis', () => {
+    it('reflects a turned slot across center’s y-axis', () => {
+      const output = arrange(inRoot(slot('a', { offset: moved('-20mm', '5mm', '15deg') })))
+
+      expect([frameAt(output, 'a'), frameAt(output, 'a', 'right')]).toEqual([
+        at(-20, 5, 15),
+        at(20, 5, -15, true),
+      ])
+    })
+
+    it.each([
+      ['just below the half turn', '179deg', -179],
+      ['on the half turn', '180deg', 180],
+      ['just above the negative half turn', '-179deg', 179],
+    ])('wraps a reflected rotation %s into the half-open turn', (_role, rotation, expectedRot) => {
+      const output = arrange(inRoot(slot('a', { offset: turned(rotation) })))
+
+      expect(frameAt(output, 'a', 'right')).toEqual(at(0, 0, expectedRot, true))
+    })
+
+    it('reflects across the y-axis of a moved and turned center, not the world’s', () => {
+      const layout = aLayout({
+        id: anId('root'),
+        offset: moved('10mm', '0mm', '90deg'),
+        children: [slot('a', { offset: moved('3mm', '5mm') })],
+      })
+
+      const output = arrange(layout)
+
+      expect([
+        frameAt(output, 'a'),
+        frameAt(output, 'a', 'right'),
+        frameAt(output, 'root', 'right'),
+      ]).toEqual([at(5, 3, 90), at(5, -3, 90, true), at(10, 0, 90, true)])
+    })
+
+    it.each([
+      ['edge-left reads as the right slot’s edge-right', 'edge-left', 39, 0],
+      ['corner-tl reads as the right slot’s corner-tr', 'corner-tl', 39, 9],
+    ])('swaps attach points: %s', (_role, attach, expectedX, expectedY) => {
+      const anchor = aSlotAnchor({ ref: anId('a'), attach: anAttachPoint(attach) })
+      const output = arrange(
+        inRoot(slot('a', { offset: moved('-30mm', '0mm') }), slot('b', { anchor })),
+      )
+
+      expect(rowAt(output, 'b', 'right')).toMatchObject({
+        frame: at(expectedX, expectedY, 0, true),
+        anchorAt: point(expectedX, expectedY),
+      })
+    })
+
+    it('posts both sides of every node, the root included, in id order', () => {
+      const output = arrange(inRoot(slot('a')))
+
+      expect(output.ids).toEqual(['left/a', 'left/root', 'right/a', 'right/root'])
+    })
+
+    it('posts both sides of the root of an empty layout', () => {
+      const output = arrange(inRoot())
+
+      expect(output.ids).toEqual(['left/root', 'right/root'])
+    })
+
+    it('writes the right rows of slots in an anchor cycle unplaced and mirrored', () => {
+      const layout = inRoot(
+        slot('a', { anchor: aSlotAnchor({ ref: anId('b') }) }),
+        slot('b', { anchor: aSlotAnchor({ ref: anId('a') }) }),
+      )
+      const output = arrange(layout, { unplaced: checkAnchors(layout).unplaced })
+
+      const expectedUnplaced = {
+        kind: 'slot',
+        frame: { x: NaN, y: NaN, rot: NaN, mirrored: true },
+        anchorAt: { x: NaN, y: NaN },
+        part: 0,
+        fit: 'fitted',
+        placed: false,
+      }
+      expect([rowAt(output, 'a', 'right'), rowAt(output, 'b', 'right')]).toEqual([
+        expectedUnplaced,
+        expectedUnplaced,
+      ])
+    })
+
+    it('gives a stand-in slot’s right row the left row’s kind, part and fit', () => {
+      const parts = aResolvedParts({
+        output: aPartsOutput({ ids: ['stand-in'], rows: [KEY] }),
+        slots: { [anId('s')]: { run: 'stand-in', fit: 'stand-in' } },
+      })
+      const output = arrange(inRoot(slot('s')), { parts })
+
+      const expectedFields = { kind: 'slot', part: 0, fit: 'stand-in' }
+      expect([rowAt(output, 's'), rowAt(output, 's', 'right')]).toMatchObject([
+        expectedFields,
+        expectedFields,
+      ])
+    })
+
+    it('reflects a slot inside a turned group with the group', () => {
+      const group = aFreeGroup({
+        id: anId('g'),
+        offset: moved('-20mm', '0mm', '90deg'),
+        children: [slot('s', { offset: moved('0mm', '10mm') })],
+      })
+
+      const output = arrange(inRoot(group))
+
+      expect([
+        frameAt(output, 's'),
+        frameAt(output, 's', 'right'),
+        frameAt(output, 'g', 'right'),
+      ]).toEqual([at(-30, 0, 90), at(30, 0, -90, true), at(20, 0, -90, true)])
     })
   })
 })

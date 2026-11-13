@@ -123,7 +123,9 @@ describe("Corney Island's outer column", () => {
     const { placements: before } = await placementsOf(committed(store))
     const root = committed(store).design.layout.id
     expect(before.ids).toEqual(
-      [root, ...EXPECTED_NODE_IDS].map((id) => `left/${id}`).toSorted(compareId),
+      [root, ...EXPECTED_NODE_IDS]
+        .flatMap((id) => [`left/${id}`, `right/${id}`])
+        .toSorted(compareId),
     )
 
     const read = readBundle(writeBundle(committed(store)))
