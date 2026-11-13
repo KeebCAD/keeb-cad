@@ -60,7 +60,7 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | **form** | `{ type: 'split'; board: 'reversible' \| 'mirrored' }` or `{ type: 'unibody' }`: the type decides whether a right side is derived; `board` (split only) is the kind of physical board (glossary `board`): one reversible PCB, or one mirrored PCB per side; it decides what the halves may differ in (AD-6) |
 | **side** | One hand's set of resolved placements: `left` and `right` in split forms, `whole` in unibody |
 | **side-qualified id** | `<side>/<id>`: a resolved placement of an authored element on one side (`left/thumb-far`) |
-| **center** | The top-level group, required in split forms, whose frame's y-axis is the mirror axis |
+| **center** | The top-level group, required in split forms, whose frame's y-axis is the mirror axis. Like every group it is posted once per side (`left/<id>`, `right/<id>`); the right row's frame is the left's reflected, so the two share only the y-axis. The UI draws it as the mirror axis, never as a node of either half |
 | **board** | One physical PCB: one in split `reversible` and in `unibody`, one per side in split `mirrored` |
 | **anchor** | What a frame is placed from: a slot (+ attach point), a group origin, a vertex, a construction point, or (lane operations only) a spot. There is no `part` anchor: placing relative to a part goes through its slot |
 | **spot** | A named 3D frame a blueprint declares (`floor`, `wall-outer`, corners, `usb-side`), computed in `case`. Only that blueprint's own case lane anchors to it; elsewhere a spot travels as a placement reference in a pulled output, resolved by the consumer (AD-3, AD-18) |
@@ -302,7 +302,7 @@ graph LR
   - Split, board `reversible`: one board carries every footprint of both sides (reversible footprints, solder jumpers). The halves differ only through per-side overrides, which **remove**: a whole part (`'empty'`) or **one component** of a part (`side-component`, e.g. the encoder or the switch of a combo part), so the PCB stays identical. An override never swaps a part on a reversible board (`override-not-allowed`). Geometric overrides are not allowed. A non-reversible part is `part-not-reversible`.
   - Split, board `mirrored`: one board per side. Overrides may swap or remove a part; per-side `inputs` and `offset` come with mirrored boards.
   - **Lanes and sides.** `parts`, `shapes` and `extras` lanes run once, on the authored side, and `model` derives the right side from them like everything else. `plates`, `pcb`, `firmware` and `case` lanes run **once per physical thing** they make: per half for plates, case and firmware; per board for pcb (one on a reversible board, two on a mirrored one). The lane's context says which.
-  - Keymap, overrides, pads and violations use side-qualified ids.
+  - Keymap, overrides and pads use side-qualified ids. A violation names what is at fault: an authored element by its id, a resolved placement by its side-qualified id.
   - There is no other asymmetry mechanism.
 
 ### AD-7: Coordinates [ADOPTED]
