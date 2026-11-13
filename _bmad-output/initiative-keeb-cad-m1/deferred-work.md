@@ -508,3 +508,6 @@
   summary: the palette's `Open tree` / `Open parameters` entries (EXPERIENCE.md, Left rail + slide-out row) are open-only UiActions the palette story adds beside 13.28's `ToggleSlideOut`, which would close an open slide-out if the palette listed it.
   evidence: 13.28 review pass 1 (quick): 13.28 removed `OpenTree` ('Open tree') for one toggle on T, per the ticket; no palette exists in `packages/editor/src` yet.
   owner: the command palette story (epic-drag-keys).
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-explicit-anchors-move-dependants-cycles-rejected-plan.md`
+  summary: After a layout edit that changes which key ends a chain (an append after it, or deleting it), the editor offers to re-anchor what hung off the old last key, as one undoable SetAnchor; for epic-drag-keys beside 15.3's re-anchor in place and 15.6's anchor picker.
+  evidence: Sergii 2026-11-13, party round on anchoring: anchors stay by id, so a thumb cluster anchored to a column's last key stays on it when a key is appended, and falls back to its default anchor when that key is deleted; the fix belongs in the editor, not as a model 'last child' anchor kind.
