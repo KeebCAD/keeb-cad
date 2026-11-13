@@ -554,3 +554,15 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-right-side-derived-plan.md`
   summary: Rename the tests in `packages/model/src/placement/place-layout.spec.ts` whose names carry numbers (`:99` "steps three slots edge to edge: 0, 19, 38", `:130`, `:149`, `:173`), moving the numbers into `it.each` parameters or `expected*` constants.
   evidence: 13.6's plan conformance pass, precedent finding against AGENTS.md "Name the boundary's role (\"on the clearance limit\"); numbers go in parameters or `expected*` constants."
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-model-posts-group-borders-plan.md`
+  summary: Give a group border's margin 1 mm when `meta.gap` fails to evaluate (AD-16 Group borders), with its unit row, in the story that evaluates expressions.
+  evidence: Sergii, 2026-11-13, at 13.26's planning: no path reaches a failed gap today. `parseExpression` accepts only literals (`packages/expr/src/parse-expression.ts:6`), the schema refuses any other gap, and `placeLayout` throws on a non-literal before borders run (`packages/model/src/placement/literal-value.ts:6-12`); AGENTS.md "Arrange only a state real commands could reach". 13.26's `borderMargin` takes the evaluated numbers.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-model-posts-group-borders-plan.md`
+  summary: Move the `compose` tests out of `packages/geometry/src/frame-of.spec.ts` (`:31` `describe('compose', () => {`) into a `compose.spec.ts`.
+  evidence: 13.26's plan conformance pass, precedent finding against AGENTS.md "Test a rule where it is defined".
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-model-posts-group-borders-plan.md`
+  summary: Rename `packages/protocol/src/layout-output/layout-output-codec.spec.ts:68` "keeps a frame value's every digit and a group's part of -1", moving the number into a parameter or `expected*` constant.
+  evidence: 13.26's plan conformance pass, precedent finding against AGENTS.md "Name the boundary's role (\"on the clearance limit\"); numbers go in parameters or `expected*` constants."
