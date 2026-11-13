@@ -32,6 +32,7 @@ import { describe, expect, it } from 'vitest'
 import { blueprintInputInvalidMessage } from '../violations/blueprint-input-invalid-message'
 import { dependencyCycleMessage } from '../violations/dependency-cycle-message'
 import { unresolvableReferenceMessage } from '../violations/unresolvable-reference-message'
+import { unsupportedFormMessage } from '../violations/unsupported-form-message'
 import { createDerivations } from './create-derivations'
 import { partViolationMessage } from './part-violation-message'
 
@@ -639,7 +640,16 @@ describe('createDerivations', () => {
 
       expect({ parts: parts.value.output.ids, placements: placements.value.ids }).toEqual({
         parts: [KEY_RUN],
-        placements: ['left/a', 'left/b', 'left/c', 'left/root'],
+        placements: [
+          'left/a',
+          'left/b',
+          'left/c',
+          'left/root',
+          'right/a',
+          'right/b',
+          'right/c',
+          'right/root',
+        ],
       })
     })
 
@@ -661,7 +671,16 @@ describe('createDerivations', () => {
       mirror.value = withLayout(threeSlots(), { meta: aMeta({ form: aUnibodyForm() }) })
 
       expect({ before, after: placements.value }).toEqual({
-        before: ['left/a', 'left/b', 'left/c', 'left/root'],
+        before: [
+          'left/a',
+          'left/b',
+          'left/c',
+          'left/root',
+          'right/a',
+          'right/b',
+          'right/c',
+          'right/root',
+        ],
         after: zeroRows(),
       })
     })
@@ -705,8 +724,24 @@ describe('createDerivations', () => {
       const { placements } = await arrange(withLayout(faulty()))
 
       expect(placements.value).toMatchObject({
-        ids: ['left/a', 'left/b', 'left/n', 'left/root', `left/${slotId}`],
+        ids: [
+          'left/a',
+          'left/b',
+          'left/n',
+          'left/root',
+          `left/${slotId}`,
+          'right/a',
+          'right/b',
+          'right/n',
+          'right/root',
+          `right/${slotId}`,
+        ],
         rows: [
+          { placed: false },
+          { placed: false },
+          { placed: false },
+          { placed: true },
+          { placed: true },
           { placed: false },
           { placed: false },
           { placed: false },
@@ -725,14 +760,42 @@ describe('createDerivations', () => {
       expect(violations.value).toBe(before)
     })
 
-    it('reports no layout violation and places nothing for an unsupported form', async () => {
+    it.each([
+      ['split with board mirrored', aSplitForm({ board: 'mirrored' })],
+      ['unibody', aUnibodyForm()],
+    ])(
+      'reports only unsupported-form, naming the design, and places nothing for %s',
+      async (_role, form) => {
+        const design = anId('d')
+        const { violations, placements } = await arrange(
+          withLayout(faulty(), { meta: aMeta({ id: design, form }) }),
+        )
+
+        expect({ violations: violations.value, placements: placements.value }).toEqual({
+          violations: [
+            {
+              kind: 'unsupported-form',
+              severity: 'error',
+              ids: [design],
+              message: unsupportedFormMessage([design]),
+              fixes: [],
+            },
+          ],
+          placements: { ids: [], rows: [] },
+        })
+      },
+    )
+
+    it('reports no unsupported-form and places both sides for split with board reversible', async () => {
       const { violations, placements } = await arrange(
-        withLayout(faulty(), { meta: aMeta({ form: aUnibodyForm() }) }),
+        withLayout(onSlots({ id: anId('a') }), {
+          meta: aMeta({ form: aSplitForm({ board: 'reversible' }) }),
+        }),
       )
 
-      expect({ violations: violations.value, placements: placements.value }).toEqual({
+      expect({ violations: violations.value, placements: placements.value.ids }).toEqual({
         violations: [],
-        placements: { ids: [], rows: [] },
+        placements: ['left/a', 'left/root', 'right/a', 'right/root'],
       })
     })
   })

@@ -26,6 +26,7 @@ import type { FoundPart, SlotPartRun } from '../part-levels/types'
 import { isSupportedForm } from '../form/is-supported-form'
 import { placeLayout } from '../placement/place-layout'
 import { layoutViolations } from '../violations/layout-violations'
+import { unsupportedFormViolation } from '../violations/unsupported-form-violation'
 import { partViolationMessage } from './part-violation-message'
 import { partsLaneCalls, rectangleOutputOf } from './parts-lane-calls'
 import { pinsOf } from './pins-of'
@@ -46,6 +47,7 @@ export function createDerivations(
   const layout = computed(() => design.value.layout)
   const gap = computed(() => design.value.meta.gap)
   const form = computed(() => design.value.meta.form)
+  const designId = computed(() => design.value.meta.id)
   const slotRuns = computed(() => slotPartRuns(layout.value, defaultPart.value))
   const pins = computed(() => pinsOf(libraryVersions.value))
 
@@ -154,12 +156,12 @@ export function createDerivations(
       : { ids: [], rows: [] },
   )
 
-  // The parts' violations keep their place; an unsupported form reports none of the layout's,
-  // since nothing is placed.
+  // The parts' violations keep their place; an unsupported form reports only itself, since
+  // nothing is resolved or placed.
   const violations = computed((): Violation[] =>
     isSupportedForm(form.value)
       ? [...parts.value.violations, ...layoutViolations(anchors.value)]
-      : parts.value.violations,
+      : [unsupportedFormViolation(designId.value)],
   )
 
   return { parts, pins, placements, violations }
