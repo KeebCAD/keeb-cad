@@ -91,8 +91,7 @@ export class Pipeline {
       seq,
       stage: 'parts',
     })
-    const { output, violations } = this.#listening().parts.value
-    const parts = packPartsOutput(output)
+    const parts = packPartsOutput(this.#listening().parts.value.output)
     this.#dispatcher.send<FromModelWorker>(endpoint, {
       kind: 'stage-started',
       epoch,
@@ -105,6 +104,7 @@ export class Pipeline {
       { kind: 'layout-set', epoch, seq, parts, layout },
       [...buffersOf(parts), ...buffersOf(layout)],
     )
+    const violations = this.#listening().violations.value
     this.#dispatcher.send<FromModelWorker>(endpoint, { kind: 'issues', epoch, seq, violations })
     this.#dispatcher.send<FromModelWorker>(endpoint, {
       kind: 'derived-files',

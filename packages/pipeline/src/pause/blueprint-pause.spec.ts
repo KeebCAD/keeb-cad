@@ -239,6 +239,7 @@ describe('BlueprintPause', () => {
       parts: { value: aResolvedParts() },
       placements: { value: aLayoutOutput() },
       pins: { value: [] },
+      violations: { value: [] },
     })
 
     for (const message of messages) port2.postMessage(message)

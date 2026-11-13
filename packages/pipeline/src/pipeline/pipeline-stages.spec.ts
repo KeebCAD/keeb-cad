@@ -12,7 +12,7 @@ import {
   type ToModelWorker,
 } from '@keeb-cad/protocol'
 import { AsyncResult, Result } from '@keeb-cad/result'
-import type { LayoutOutput, ResolvedParts, Workspace } from '@keeb-cad/schema'
+import type { LayoutOutput, ResolvedParts, Violation, Workspace } from '@keeb-cad/schema'
 import {
   aBlueprintId,
   aDesign,
@@ -63,12 +63,14 @@ interface Arrangement {
   parts?: { value: ResolvedParts }
   placements?: { value: LayoutOutput }
   pins?: readonly BlueprintPin[]
+  violations?: { value: Violation[] }
 }
 
 async function arrange({
   parts = { value: aResolvedParts() },
   placements = { value: aLayoutOutput() },
   pins = [],
+  violations = { value: [] },
 }: Arrangement = {}) {
   const container = new Container()
     .addModule(designWorkerModule)
@@ -78,7 +80,9 @@ async function arrange({
   await container.autoLoad()
   const runner = container.resolve(LaneRunner) as FakeRunner
   const { port1, port2 } = new MessageChannel()
-  container.resolve(Pipeline).listen(port1, { parts, placements, pins: { value: pins } })
+  container
+    .resolve(Pipeline)
+    .listen(port1, { parts, placements, pins: { value: pins }, violations })
   return { runner, port1, port2 }
 }
 
@@ -163,7 +167,7 @@ afterEach(() => {
 describe('Pipeline stages', () => {
   it('pauses, then posts every stage of the message seq, issues among them', async () => {
     const violations = [aViolation()]
-    const { runner, port2 } = await arrange({ parts: { value: aResolvedParts({ violations }) } })
+    const { runner, port2 } = await arrange({ violations: { value: violations } })
     const { posts } = startRecording(port2, runner)
     const expectedOrder = ['pause', ...STAGES_AT_ONE_SEQ.map(([kind]) => kind)]
 

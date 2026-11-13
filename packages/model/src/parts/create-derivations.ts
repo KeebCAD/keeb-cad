@@ -15,8 +15,10 @@ import {
   type Violation,
 } from '@keeb-cad/schema'
 
+import { checkAnchors } from '../dependencies/check-anchors'
 import { isSupportedForm } from '../form/is-supported-form'
 import { placeLayout } from '../placement/place-layout'
+import { layoutViolations } from '../violations/layout-violations'
 import { partViolationMessage } from './part-violation-message'
 import { partsLaneCalls, rectangleOutputOf } from './parts-lane-calls'
 import { pinsOf } from './pins-of'
@@ -121,13 +123,23 @@ export function createDerivations(
     return { output: partsOutputOf(rectangles), slots, violations }
   })
 
+  const anchors = computed(() => checkAnchors(layout.value))
+
   const placements = computed((): LayoutOutput =>
     isSupportedForm(form.value)
-      ? placeLayout(layout.value, gap.value, parts.value)
+      ? placeLayout(layout.value, gap.value, parts.value, anchors.value.unplaced)
       : { ids: [], rows: [] },
   )
 
-  return { parts, pins, placements }
+  // The parts' violations keep their place; an unsupported form reports none of the layout's,
+  // since nothing is placed.
+  const violations = computed((): Violation[] =>
+    isSupportedForm(form.value)
+      ? [...parts.value.violations, ...layoutViolations(anchors.value)]
+      : parts.value.violations,
+  )
+
+  return { parts, pins, placements, violations }
 }
 
 function rectangleOf(

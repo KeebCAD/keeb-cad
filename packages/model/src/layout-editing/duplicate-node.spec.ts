@@ -1,5 +1,13 @@
 import type { Node } from '@keeb-cad/schema'
-import { aDesign, aFreeGroup, aLayout, anId, aSlot } from '@keeb-cad/schema/testing'
+import {
+  aDesign,
+  aFreeGroup,
+  aLayout,
+  anAttachPoint,
+  anId,
+  aSlot,
+  aSlotAnchor,
+} from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { duplicateNode } from './duplicate-node'
@@ -64,5 +72,29 @@ describe('duplicateNode', () => {
 
     expect(duplicateNode(design, ROOT)).toMatchObject({ kind: 'root-required', ids: [ROOT] })
     expect(design).toEqual(arrange(slots('a')))
+  })
+
+  it('points a copied anchor at the copy of a copied target, and keeps one to a target outside', () => {
+    const group = (id: string, a: string, b: string, c: string) =>
+      aFreeGroup({
+        id: anId(id),
+        children: [
+          aSlot({ id: anId(a) }),
+          aSlot({
+            id: anId(b),
+            anchor: aSlotAnchor({ ref: anId(a), attach: anAttachPoint('edge-top') }),
+          }),
+          aSlot({ id: anId(c), anchor: aSlotAnchor({ ref: anId('x') }) }),
+        ],
+      })
+    const design = arrange([group('g', 'a', 'b', 'c'), aSlot({ id: anId('x') })])
+
+    duplicateNode(design, anId('g'))
+
+    expect(design.layout.children).toEqual([
+      group('g', 'a', 'b', 'c'),
+      group('g-2', 'a-2', 'b-2', 'c-2'),
+      aSlot({ id: anId('x') }),
+    ])
   })
 })

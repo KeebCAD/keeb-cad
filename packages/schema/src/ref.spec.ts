@@ -8,6 +8,8 @@ describe('ref', () => {
     ['library-part', 'lib:part/x'],
     ['library-blueprint', 'lib:blueprint/x'],
     ['design-part', 'my-part'],
+    ['slot', 'thumb-near'],
+    ['group', 'thumbs'],
   ] as const)('marks a %s reference with its kind and accepts its target id', (kind, input) => {
     const schema = ref(kind as 'design-part')
 

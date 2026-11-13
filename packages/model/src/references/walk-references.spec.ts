@@ -5,6 +5,7 @@ import {
   aDesign,
   aDelta,
   aFreeGroup,
+  aGroupAnchor,
   aLayout,
   aMeta,
   anAngle,
@@ -12,12 +13,14 @@ import {
   anOffset,
   aPartRef,
   aQuantityInputValue,
+  anAttachPoint,
   aSlot,
+  aSlotAnchor,
   aVec2,
 } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
-import { walkReferences } from './walk-references'
+import { walkNodeReferences, walkReferences } from './walk-references'
 
 describe('walkReferences', () => {
   it('lists every declared reference in a design built from every section, by path', () => {
@@ -82,6 +85,47 @@ describe('walkReferences', () => {
 
     expect([...walkReferences(design)]).toEqual([
       { path: ['meta', 'defaultPart'], kind: 'library-part', target: 'lib:part/x' },
+    ])
+  })
+
+  it('finds an anchor naming a slot and one naming a group, at the anchor ref', () => {
+    const design = aDesign({
+      meta: aMeta({ defaultPart: aPartRef('lib:part/x') }),
+      parts: [],
+      layout: aLayout({
+        children: [
+          aSlot({ id: anId('a') }),
+          aSlot({
+            id: anId('n'),
+            anchor: aSlotAnchor({ ref: anId('a'), attach: anAttachPoint('edge-top') }),
+          }),
+          aFreeGroup({ id: anId('g') }),
+          aSlot({ id: anId('m'), anchor: aGroupAnchor({ ref: anId('g') }) }),
+        ],
+      }),
+    })
+
+    expect([...walkReferences(design)]).toEqual([
+      { path: ['meta', 'defaultPart'], kind: 'library-part', target: 'lib:part/x' },
+      { path: ['layout', 'children', 1, 'anchor', 'ref'], kind: 'slot', target: 'a' },
+      { path: ['layout', 'children', 3, 'anchor', 'ref'], kind: 'group', target: 'g' },
+    ])
+  })
+})
+
+describe('walkNodeReferences', () => {
+  it('lists the references in one node, by path from that node', () => {
+    const node = aFreeGroup({
+      id: anId('g'),
+      children: [
+        aSlot({ id: anId('a'), part: aPartRef('key') }),
+        aSlot({ id: anId('b'), anchor: aSlotAnchor({ ref: anId('a') }) }),
+      ],
+    })
+
+    expect([...walkNodeReferences(node)]).toEqual([
+      { path: ['children', 0, 'part'], kind: 'design-part', target: 'key' },
+      { path: ['children', 1, 'anchor', 'ref'], kind: 'slot', target: 'a' },
     ])
   })
 })

@@ -519,3 +519,7 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-explicit-anchors-move-dependants-cycles-rejected-plan.md`
   summary: `app/src/corney-column.spec.ts`'s round-trip test asserts `expect(await placementsOf(committed(store))).toEqual(before)`, an expected value the same placement code computed.
   evidence: 13.3's final conformance pass, precedent finding: AGENTS.md "no expected value computed the way production computes it, except by calling a function the requirement names and that has unit tests of its own"; 13.3 follows that spec's wiring but doesn't edit it.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-explicit-anchors-move-dependants-cycles-rejected-plan.md`
+  summary: `tooling/lint/no-shared-spec-state.spec.ts` ("allows a recording inside a test in a describe") and `tooling/hooks/lint-decision.spec.ts` ("returns exit code 2 and the ESLint output for a violation") timed out at 15000 ms in one full run; source not confirmed, for a person to decide.
+  evidence: 2026-11-13, during 13.3's build: `pnpm typecheck && pnpm lint && pnpm depcruise && pnpm test` failed only these two (timeout at the first ESLint await, no assertion failed), seed 1794559268850, load average ~8 on 16 cores; the two files alone passed (34 tests) and `pnpm test --sequence.seed=1794559268850` passed whole. Not order (seed replay green); candidates not ruled out: machine load, and the ESLint cache `pnpm lint` had just written. No test, timeout or config changed.

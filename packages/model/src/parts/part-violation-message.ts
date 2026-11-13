@@ -1,15 +1,13 @@
 import type { ItemId } from '@keeb-cad/schema'
 import { match } from 'ts-pattern'
 
+import { unresolvableReferenceMessage } from '../violations/unresolvable-reference-message'
 import type { PartViolationDetail } from './types'
 
 export function partViolationMessage(detail: PartViolationDetail, ids: readonly ItemId[]): string {
   const [named] = ids
   return match(detail)
-    .with(
-      { kind: 'unresolvable-reference' },
-      () => `The slot "${String(named)}" names a part that doesn't resolve.`,
-    )
+    .with({ kind: 'unresolvable-reference' }, () => unresolvableReferenceMessage('part', ids))
     .with(
       { kind: 'blueprint-api-too-new' },
       ({ blueprint }) => `The part "${String(named)}" needs a newer app: ${blueprint}.`,
