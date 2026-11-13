@@ -4,7 +4,7 @@ export function aLayoutOutput({ ids = [], rows = [] }: Partial<LayoutOutput> = {
   return { ids, rows }
 }
 
-// A placed, fitted slot at the origin on the parts output's first row.
+// A placed, fitted slot at the origin on the parts output's first row, with no border.
 export function aLayoutRow({
   kind = 'slot',
   frame = { x: 0, y: 0, rot: 0, mirrored: false },
@@ -12,6 +12,7 @@ export function aLayoutRow({
   part = 0,
   fit = 'fitted',
   placed = true,
+  border = [],
 }: Partial<LayoutOutput['rows'][number]> = {}): LayoutOutput['rows'][number] {
-  return { kind, frame, anchorAt, part, fit, placed }
+  return { kind, frame, anchorAt, part, fit, placed, border }
 }

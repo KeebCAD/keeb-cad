@@ -24,5 +24,6 @@ export function rowOf(
     part,
     fit,
     placed: frame.isSome(),
+    border: [],
   }
 }

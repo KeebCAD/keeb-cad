@@ -8,6 +8,7 @@ import { createDerivations } from '@keeb-cad/model/worker'
 import { corneyIslandLayout } from '@keeb-cad/reference-designs/scripts'
 import { expectOk } from '@keeb-cad/result/testing'
 import { compareId, type LayoutOutput } from '@keeb-cad/schema'
+import { aLayoutRow } from '@keeb-cad/schema/testing'
 import { readBundle, writeBundle } from '@keeb-cad/storage'
 import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
 import { describe, expect, it } from 'vitest'
@@ -87,14 +88,8 @@ const OUTER_COLUMN = ['matrix-outer-bottom', 'matrix-outer-home', 'matrix-outer-
 
 const KEY_1U_RUN = `key@${argumentHash({ size: '1u' })}`
 
-const slotAt = (x: number, y: number, part: number) => ({
-  kind: 'slot',
-  frame: { x, y, rot: 0, mirrored: false },
-  anchorAt: { x, y },
-  part,
-  fit: 'fitted',
-  placed: true,
-})
+const slotAt = (x: number, y: number, part: number) =>
+  aLayoutRow({ frame: { x, y, rot: 0, mirrored: false }, anchorAt: { x, y }, part })
 
 function rowOf(placements: LayoutOutput, id: string) {
   return placements.rows[placements.ids.indexOf(`left/${id}`)]

@@ -240,6 +240,11 @@ describe('the rules on cruised trees', async () => {
           v('only-editor-imports-di-vue', 'packages/storage/src/index.ts', '@keeb-cad/di/vue'),
           v('only-editor-ui-and-di-vue-import-vue', 'packages/di/src/wiring.ts', 'vue'),
           v('only-editor-ui-and-di-vue-import-vue', 'packages/storage/src/index.ts', 'vue'),
+          v(
+            'only-geometry-case-routing-import-clipper2-ts',
+            'packages/plates/src/index.ts',
+            'clipper2-ts',
+          ),
           v('only-geometry-imports-makerjs', 'packages/plates/src/index.ts', 'makerjs'),
           v(
             'only-model-worker-entry-and-pipeline-import-design-worker',
@@ -482,6 +487,9 @@ describe('the rules on cruised trees', async () => {
         ['packages/schema/src/types.ts'],
       ],
       ['geometry', 'makerjs', 'packages/geometry/src/index.ts', ['makerjs']],
+      ['geometry', 'clipper2-ts', 'packages/geometry/src/index.ts', ['clipper2-ts']],
+      ['case', 'clipper2-ts', 'packages/case/src/index.ts', ['clipper2-ts']],
+      ['routing', 'clipper2-ts', 'packages/routing/src/index.ts', ['clipper2-ts']],
       ["storage's browser backend", 'dexie', 'packages/storage/src/browser/x.ts', ['dexie']],
       ['reactive', '@vue/reactivity', 'packages/reactive/src/index.ts', ['@vue/reactivity']],
       [

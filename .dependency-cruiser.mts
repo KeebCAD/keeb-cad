@@ -371,6 +371,12 @@ const config: IConfiguration = {
       'Only geometry imports makerjs.',
     ),
     onlyImports(
+      'only-geometry-case-routing-import-clipper2-ts',
+      '^packages/(geometry|case|routing)/',
+      npm('clipper2-ts'),
+      'Only geometry, case and routing import clipper2-ts.',
+    ),
+    onlyImports(
       'only-storage-browser-imports-dexie',
       '^packages/storage/src/browser/',
       npm('dexie'),

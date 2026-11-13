@@ -11,6 +11,7 @@ import {
   aDesign,
   aFreeGroup,
   aLayout,
+  aLayoutRow,
   anAttachPoint,
   anId,
   aRevision,
@@ -137,14 +138,11 @@ describe('a loaded loop in the model worker', () => {
   it('reports dependency-cycle and leaves its members unplaced', async () => {
     const { violations, placements } = await arrangeDerivations(looped())
 
-    const unplaced = {
-      kind: 'slot',
+    const unplaced = aLayoutRow({
       frame: { x: NaN, y: NaN, rot: NaN, mirrored: false },
       anchorAt: { x: NaN, y: NaN },
-      part: 0,
-      fit: 'fitted',
       placed: false,
-    }
+    })
     const rowOf = (id: string) => placements.value.rows[placements.value.ids.indexOf(`left/${id}`)]
     const cycle = [anId('a'), anId('b')]
     expect({ violations: violations.value, rows: [rowOf('a'), rowOf('b')] }).toEqual({

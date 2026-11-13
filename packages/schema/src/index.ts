@@ -51,6 +51,7 @@ export { angleSchema } from './angle'
 export { vec2Schema } from './vec2'
 export { offsetSchema } from './offset'
 export { gapSchema } from './gap'
+export { borderSchema } from './border'
 export { layoutOutputSchema } from './layout-output'
 
 export type {
@@ -61,6 +62,7 @@ export type {
   BlueprintDesignPart,
   BlueprintId,
   BlueprintInputs,
+  Border,
   BundleFile,
   ChainChild,
   ChainGroup,

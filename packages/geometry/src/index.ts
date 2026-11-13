@@ -1,5 +1,7 @@
 export { reflectionAcrossY, rotation, translation } from './affine'
 export { apply } from './apply'
 export { compose } from './compose'
+export { FLATTEN_TOL } from './flatten-tolerance'
 export { frameOf } from './frame-of'
-export type { Frame, Matrix, Point } from './types'
+export { growAndUnite } from './grow-and-unite'
+export type { Frame, GrownEnvelope, Matrix, Point, PolygonRegion } from './types'

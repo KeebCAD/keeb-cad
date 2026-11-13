@@ -1,4 +1,10 @@
-import { aLayoutOutput, aPartsOutput } from '@keeb-cad/schema/testing'
+import {
+  aBorder,
+  aBorderRegion,
+  aLayoutOutput,
+  aLayoutRow,
+  aPartsOutput,
+} from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { packLayoutOutput, readLayoutRow } from '../layout-output/layout-output-codec'
@@ -9,14 +15,12 @@ const layoutOutput = () =>
   aLayoutOutput({
     ids: ['left/a'],
     rows: [
-      {
-        kind: 'slot',
+      aLayoutRow({
+        kind: 'group',
         frame: { x: 1, y: 2, rot: 3, mirrored: false },
-        anchorAt: { x: 0, y: 0 },
-        part: 0,
-        fit: 'fitted',
-        placed: true,
-      },
+        part: -1,
+        border: aBorder([aBorderRegion({ holes: [[{ x: 0.5, y: 0.5 }]] })]),
+      }),
     ],
   })
 
@@ -39,8 +43,24 @@ describe('buffersOf', () => {
 
     expect({ ids: clone.ids, rows: [readLayoutRow(clone, 0)] }).toEqual(output)
     const { kind, x, y, rot, mirrored, anchorX, anchorY, part, fit, placed } = packed
+    const { rowLoops, loopPoints, loopHole, points } = packed
     expect(
-      [kind, x, y, rot, mirrored, anchorX, anchorY, part, fit, placed].map(({ length }) => length),
-    ).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+      [
+        kind,
+        x,
+        y,
+        rot,
+        mirrored,
+        anchorX,
+        anchorY,
+        part,
+        fit,
+        placed,
+        rowLoops,
+        loopPoints,
+        loopHole,
+        points,
+      ].map(({ length }) => length),
+    ).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
   })
 })

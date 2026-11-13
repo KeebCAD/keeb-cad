@@ -16,6 +16,8 @@ import {
   type Violation,
 } from '@keeb-cad/schema'
 
+import { borderMargin } from '../borders/border-margin'
+import { groupBorders } from '../borders/group-borders'
 import { checkAnchors } from '../dependencies/check-anchors'
 import { designFaults } from '../inputs/design-faults'
 import { resolveInputs } from '../inputs/resolve-inputs'
@@ -24,6 +26,7 @@ import { resolvePartRef } from '../part-levels/resolve-part-ref'
 import { slotPartRuns } from '../part-levels/slot-part-runs'
 import type { FoundPart, SlotPartRun } from '../part-levels/types'
 import { isSupportedForm } from '../form/is-supported-form'
+import { literalValue } from '../placement/literal-value'
 import { placeLayout } from '../placement/place-layout'
 import { layoutViolations } from '../violations/layout-violations'
 import { unsupportedFormViolation } from '../violations/unsupported-form-violation'
@@ -152,7 +155,12 @@ export function createDerivations(
 
   const placements = computed((): LayoutOutput =>
     isSupportedForm(form.value)
-      ? placeLayout(layout.value, gap.value, parts.value, anchors.value.unplaced)
+      ? groupBorders(
+          layout.value,
+          placeLayout(layout.value, gap.value, parts.value, anchors.value.unplaced),
+          parts.value.output,
+          borderMargin({ x: literalValue(gap.value.x), y: literalValue(gap.value.y) }),
+        )
       : { ids: [], rows: [] },
   )
 
