@@ -3,7 +3,7 @@ import { argumentHash, blueprintWorkerModule, LaneRunner } from '@keeb-cad/bluep
 import { Container } from '@keeb-cad/di'
 import { shallowRef } from '@keeb-cad/reactive'
 import { AsyncResult, Result } from '@keeb-cad/result'
-import type { Design, LibraryData, ReadonlyRef } from '@keeb-cad/schema'
+import type { BlueprintDeclaration, Design, LibraryData, ReadonlyRef } from '@keeb-cad/schema'
 import {
   aBlueprintDeclaration,
   aBlueprintDesignPart,
@@ -18,6 +18,7 @@ import {
   aLength,
   aLibraryVersion,
   aMeta,
+  anOptionInput,
   aPartRef,
   anId,
   aSlot,
@@ -28,6 +29,7 @@ import {
 } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
+import { blueprintInputInvalidMessage } from '../violations/blueprint-input-invalid-message'
 import { dependencyCycleMessage } from '../violations/dependency-cycle-message'
 import { unresolvableReferenceMessage } from '../violations/unresolvable-reference-message'
 import { createDerivations } from './create-derivations'
@@ -38,6 +40,7 @@ const OTHER_RUN = `other@${argumentHash({})}`
 const CHOC_KEY = aBlueprintId('lib:blueprint/choc-key')
 
 const rectangle = (value: unknown): Answer => ({ value })
+const WIDE = { w: 27, h: 18 }
 
 type Answer = { value: unknown } | { failure: LaneFailure }
 
@@ -66,9 +69,9 @@ class FakeRunner extends LaneRunner {
   }
 }
 
-function aLibrary(ids = [CHOC_KEY]): LibraryData {
+function aLibrary(ids = [CHOC_KEY], inputs: BlueprintDeclaration['inputs'] = {}): LibraryData {
   const declarations: LibraryData['declarations'] = Object.fromEntries(
-    ids.map((id) => [id, { 1: aBlueprintDeclaration({ id }) }]),
+    ids.map((id) => [id, { 1: aBlueprintDeclaration({ id, inputs }) }]),
   )
   return { declarations, loadScript: () => AsyncResult.ok('') }
 }
@@ -103,6 +106,15 @@ const keyAnd = (other = aBlueprintDesignPart({ id: anId('other') })) => [
 
 const slotId = anId('slot')
 
+// choc-key v1's declared inputs.
+const chocKeySize = anOptionInput({
+  label: 'Size',
+  options: ['1u', '1.5u'],
+  default: '1u',
+  perSlot: true,
+})
+const chocKeyInputs: BlueprintDeclaration['inputs'] = { size: chocKeySize }
+
 function unresolved(severity: 'warning' | 'error') {
   const ids = [slotId]
   return {
@@ -129,6 +141,7 @@ describe('createDerivations', () => {
     const same = await arrange(withLayout(onSlots({ id: anId('a') }, { id: anId('b') })))
     const differing = await arrange(
       withLayout(onSlots({ id: anId('a') }, { id: anId('b'), inputs: { size: '1.5u' } })),
+      aLibrary([CHOC_KEY], chocKeyInputs),
     )
 
     expect(same.parts.value.output.rows).toHaveLength(1)
@@ -337,6 +350,200 @@ describe('createDerivations', () => {
     const { parts } = await arrange(withLayout(onSlots({ id: slotId })))
 
     expect(parts.value.output.ids).toEqual([KEY_RUN])
+  })
+
+  describe("on choc-key's declared inputs", () => {
+    const chocKey = () => aLibrary([CHOC_KEY], chocKeyInputs)
+
+    it('stands a slot with a size outside the options in on the app stand-in, reporting it once', async () => {
+      const { parts } = await arrange(
+        withLayout(onSlots({ id: slotId, inputs: { size: '2u' } })),
+        chocKey(),
+      )
+
+      const ids = [slotId]
+      expect({ slot: parts.value.slots[slotId], violations: parts.value.violations }).toEqual({
+        slot: { run: 'stand-in', fit: 'stand-in' },
+        violations: [
+          {
+            kind: 'blueprint-input-invalid',
+            severity: 'error',
+            ids,
+            message: blueprintInputInvalidMessage({
+              owner: { scope: 'slot', id: slotId },
+              input: 'size',
+              reason: 'bad-value',
+              value: '2u',
+              expected: chocKeySize,
+            }),
+            fixes: [],
+          },
+        ],
+      })
+    })
+
+    it("runs a slot's per-slot size and fits it on that run", async () => {
+      const { parts, runner } = await arrange(
+        withLayout(onSlots({ id: slotId, inputs: { size: '1.5u' } })),
+        chocKey(),
+      )
+      runner.fallback = rectangle(WIDE)
+
+      const run = `key@${argumentHash({ size: '1.5u' })}`
+      expect({
+        output: parts.value.output,
+        slot: parts.value.slots[slotId],
+        runs: runner.runs,
+      }).toEqual({
+        output: { ids: [run], rows: [WIDE] },
+        slot: { run, fit: 'fitted' },
+        runs: [{ size: '1.5u' }],
+      })
+    })
+
+    it('hashes the declared default into the run id of a slot with no inputs', async () => {
+      const { parts } = await arrange(withLayout(onSlots({ id: slotId })), chocKey())
+
+      expect(parts.value.slots[slotId]).toEqual({
+        run: `key@${argumentHash({ size: '1u' })}`,
+        fit: 'fitted',
+      })
+    })
+
+    it("reports a part's input fault once, for the part, and stands each of its slots in", async () => {
+      const { parts } = await arrange(
+        withLayout(onSlots({ id: anId('a') }, { id: anId('b') }), {
+          parts: [aBlueprintDesignPart({ inputs: { size: '2u' } })],
+        }),
+        chocKey(),
+      )
+
+      const ids = [anId('key')]
+      expect({ slots: parts.value.slots, violations: parts.value.violations }).toEqual({
+        slots: {
+          [anId('a')]: { run: 'stand-in', fit: 'stand-in' },
+          [anId('b')]: { run: 'stand-in', fit: 'stand-in' },
+        },
+        violations: [
+          {
+            kind: 'blueprint-input-invalid',
+            severity: 'error',
+            ids,
+            message: blueprintInputInvalidMessage({
+              owner: { scope: 'part', id: anId('key') },
+              input: 'size',
+              reason: 'bad-value',
+              value: '2u',
+              expected: chocKeySize,
+            }),
+            fixes: [],
+          },
+        ],
+      })
+    })
+
+    it("reports a slot's input fault once when every level refuses it", async () => {
+      const { parts } = await arrange(
+        aDesign({
+          meta: aMeta({ defaultPart: aPartRef('other') }),
+          layout: onSlots({ id: slotId, part: aPartRef('key'), inputs: { colour: 'red' } }),
+          parts: keyAnd(),
+        }),
+        aLibrary([CHOC_KEY], chocKeyInputs),
+      )
+
+      const ids = [slotId]
+      expect({ slot: parts.value.slots[slotId], violations: parts.value.violations }).toEqual({
+        slot: { run: 'stand-in', fit: 'stand-in' },
+        violations: [
+          {
+            kind: 'blueprint-input-invalid',
+            severity: 'error',
+            ids,
+            message: blueprintInputInvalidMessage({
+              owner: { scope: 'slot', id: slotId },
+              input: 'colour',
+              reason: 'unknown',
+            }),
+            fixes: [],
+          },
+        ],
+      })
+    })
+
+    it('reports a faulty design part no slot uses, once, for the part', async () => {
+      const unused = aBlueprintDesignPart({ id: anId('other'), inputs: { colour: 'red' } })
+      const { violations } = await arrange(
+        withLayout(onSlots({ id: slotId }), { parts: [aBlueprintDesignPart(), unused] }),
+        chocKey(),
+      )
+
+      expect(violations.value).toEqual([
+        {
+          kind: 'blueprint-input-invalid',
+          severity: 'error',
+          ids: [anId('other')],
+          message: blueprintInputInvalidMessage({
+            owner: { scope: 'part', id: anId('other') },
+            input: 'colour',
+            reason: 'unknown',
+          }),
+          fixes: [],
+        },
+      ])
+    })
+
+    it("checks a slot under a faulty first part against that part's declaration", async () => {
+      const plain = aBlueprintId('lib:blueprint/plain')
+      const library: LibraryData = {
+        declarations: Object.fromEntries([
+          [CHOC_KEY, { 1: aBlueprintDeclaration({ id: CHOC_KEY, inputs: chocKeyInputs }) }],
+          [plain, { 1: aBlueprintDeclaration({ id: plain }) }],
+        ]),
+        loadScript: () => AsyncResult.ok(''),
+      }
+      const faultyFirst = aBlueprintDesignPart({ id: anId('other'), inputs: { size: '2u' } })
+      const { parts } = await arrange(
+        aDesign({
+          libraryVersions: [aLibraryVersion(), aLibraryVersion({ id: aLibraryId(plain) })],
+          parts: [aBlueprintDesignPart({ blueprint: plain }), faultyFirst],
+          layout: onSlots({ id: slotId, part: aPartRef('other'), inputs: { size: '2u' } }),
+        }),
+        library,
+      )
+
+      const badSize = {
+        input: 'size',
+        reason: 'bad-value',
+        value: '2u',
+        expected: chocKeySize,
+      } as const
+      expect({ slot: parts.value.slots[slotId], violations: parts.value.violations }).toEqual({
+        slot: { run: 'stand-in', fit: 'stand-in' },
+        violations: [
+          {
+            kind: 'blueprint-input-invalid',
+            severity: 'error',
+            ids: [anId('other')],
+            message: blueprintInputInvalidMessage({
+              owner: { scope: 'part', id: anId('other') },
+              ...badSize,
+            }),
+            fixes: [],
+          },
+          {
+            kind: 'blueprint-input-invalid',
+            severity: 'error',
+            ids: [slotId],
+            message: blueprintInputInvalidMessage({
+              owner: { scope: 'slot', id: slotId },
+              ...badSize,
+            }),
+            fixes: [],
+          },
+        ],
+      })
+    })
   })
 
   describe('the rectangle value', () => {

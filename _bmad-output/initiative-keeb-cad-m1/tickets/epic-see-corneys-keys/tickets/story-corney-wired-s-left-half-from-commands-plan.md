@@ -3,14 +3,14 @@ title: "Corney wired's left half from commands"
 type: 'feature'
 ticket: 4
 created: '2026-11-13'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '038168d809e223a03ea6daf3fd02592bf80f8a0c'
 route: 'full'
 route_source: 'auto'
 risk: 'high'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md'
@@ -61,12 +61,12 @@ Units mm and degrees; rects 18 × 18, gap 1 unless stated. `D` is a declaration 
 | 2 | production bugs | integration app | Corney's script | the nodes with `offset.position` whose dependency is the root are exactly [`left-half`] |
 | 3 | rules | unit model | chain y [a, b rot 15, c] | c frame (−4.9176, 37.3526, 15) |
 | 4 | rules | unit model | chain y [a, b rot 15, c rot −15, d] | c frame (−4.9176, 37.3526, 0); d (−4.9176, 56.3526, 0) |
-| 5 | rules | unit model | chain x [a, b rot −15, c rect 27 × 18 offset (−1.037, 2.122) rot 75] | c frame (41.2469, −3.7642, 60), a at the origin |
+| 5 | rules | unit model | chain x [a, b rot −15, c rect 27 × 18 offset (−1.037, 2.122) rot 75] | c frame (41.2468, −3.7642, 60), a at the origin |
 | 6 | rules | unit library | choc-key parts lane with size `1u` / `1.5u` | rectangle 18 × 18 / 27 × 18 |
 | 7 | rules | unit model | `resolveInputs(D, {}, {})` / part `{size:'1.5u'}` / slot `{size:'1.5u'}` over part `{size:'1u'}` | ok `{size:'1u', legend:'', flip:false}` / ok, size `1.5u` / ok, size `1.5u` |
 | 8 | rules | unit model | `resolveInputs(D, {}, slot)`: `{colour:'red'}` / `{size:'2u'}` / `{size:true}` / `{legend:'x'}` / `{flip:'yes'}` / `{size:{type:'quantity', value:'5mm'}}` | refused: unknown / bad value / bad value / not per-slot / bad value / bad value; each names the slot and the input |
 | 9 | rules | unit model | `resolveInputs(D, part, {})`: `{colour:'red'}` / `{size:'2u'}` / `{legend:'x'}` | refused unknown, naming the part / refused bad value / ok |
-| 10 | rules | unit model | `checkInputs(previous, next)`: next adds a slot `{size:'1.5u'}` whose only level is a library part ref / under part `key` with `{size:'2u'}` / previous already held that slot and next renames the design / previous held it at `{size:'2u'}`, next sets `{colour:'red'}` / next adds slots `q` `{size:'2u'}` and `p` `{colour:'red'}` | ok (not checked) / blueprint-input-invalid [slot] / ok / refused (new reason) / refused [p] (lowest by compareId) |
+| 10 | rules | unit model | `checkInputs(previous, next)`: next adds a slot `{size:'2u'}` whose only level is a library part ref / under part `key` with `{size:'2u'}` / previous already held that slot and next renames the design / previous held it at `{size:'2u'}`, next sets `{colour:'red'}` / next adds slots `q` `{size:'2u'}` and `p` `{colour:'red'}` | ok (not checked) / blueprint-input-invalid [slot] / ok / refused (new reason) / refused [p] (lowest by compareId) |
 | 11 | rules | unit model | `blueprintInputInvalidMessage` for each fault in rows 8 and 9 | the agreed text, asserted whole |
 | 12 | rules | unit design-file | canonical design with a slot offset `{position, rotation, pivot}` | byte-for-byte round trip |
 | 13 | glue | unit model | createDerivations on choc-key's declaration: slot `{size:'2u'}` under `meta.defaultPart` only / `{size:'1.5u'}` / no inputs | one violation [slot], fit stand-in on the app stand-in run / run rect 27 × 18 fitted / run id `key@` the hash of `{size:'1u'}` |
@@ -116,6 +116,58 @@ Units mm and degrees; rects 18 × 18, gap 1 unless stated. `D` is a declaration 
 **Acceptance Criteria:**
 - Given the boundary table, when `pnpm test` runs, then each row has a passing test at its level.
 - Given rows 1, 15 and 16, when the implementer breaks the wiring each covers (a wrong stagger, the store skipping `checkInputs`, the worker ignoring faults), then that test goes red; each is named in the PR.
+
+## Implementation Notes
+
+- First build: `pnpm build:library`, `pnpm typecheck`, `pnpm lint`, `pnpm depcruise`, `pnpm format:check` clean; `pnpm test` (seed 1794573851280) 612 files, 4952 tests green. Toggled bugs: ring stagger 4.85 mm (row 1 red, naming ring and middle keys); the store's `checkInputs` call removed (rows 14, 15 red); derivations ignoring input faults (row 16 red).
+- One earlier full run failed `packages/editor/src/add-flow/add-flow.spec.ts` "adds a slot inside the chain group it just added" in Firefox (18.4 s); it passed alone (65/65) and on the next full run. Not caused by this diff (no editor change); logged in `deferred-work.md` for flaky-triage.
+- Decision (Sergii): row 5's x is 41.2468, not 41.2469, because the composition gives 41.24681 and Ergogen's 209.7468 − 168.5 agrees; the planner mis-rounded. The test asserts it to 4 decimals.
+- Decision (Sergii): row 10's unchecked case uses `{size:'2u'}`, not `{size:'1.5u'}`, because a valid input passes whether or not the slot is checked.
+- Decision (build): `types: ["vite/client"]` in `design`, `commands` and `workers` `tsconfig.lib.json`, not leaving `import.meta.glob` untyped, because library's root uses it (`library/src/library-data/declarations.ts:5`) and every importer already does the same (`pipeline/tsconfig.lib.json:9-10`: "vite/client types blueprint's ?url import, which this package reaches through blueprint/worker").
+- Decision (build): `workers` gains the `vite` devDependency, as every other package with Vitest has (`grep '"vite"' packages/*/package.json`: 16 packages).
+- Decision (build): `reference-designs` exports `./ergogen/points/*.yaml`, not a relative path from `app` into another package, because the spine's compile-time layer checks "package `exports`" (Verification row).
+- Decision (build): `resolveInputs(declaration, owner: {scope, id}, inputs, under = declared defaults)`, not `(declaration, owner, inputs, scope)`, because a slot is laid over its part's resolved inputs (row 7) and the scope describes the owner.
+- Decision (build): `checkInputs` compares every fault per owner (`inputFaults`), not the first per owner, because a new fault on a later input would otherwise hide behind an old one (row 10, fourth case).
+- Decision (build): the spike aligns frames on the `left/left-half` row's world frame, not by parsing the offset strings, because that row is the half's frame.
+- Decision (build): choc-key's lane throws on an unknown size (`lane-failed`), not falls back to 1u, because inputs are checked before a run, so an unknown size is a bug.
+- Decision (build): one input reports its first fault in the order unknown, not per-slot, bad value, not all three, because a value can't be checked against an input the blueprint doesn't declare or doesn't let a slot set.
+- Decision (build): new faults sort by owner id, then input, not by scope first, because part and slot ids are compared by the same `compareId` and the order stays fixed for one edit.
+- Decision (build): input violations come first in the parts' violations, before unresolvable references, not interleaved per slot, because both threads build them from the one `designFaults` list (`inputs/design-faults.ts`) before the level loop runs.
+- Decision (Sergii): the root `package.json` gains `dev` (`pnpm --filter @keeb-cad/app dev`), not remembering the filter command, because it is more convenient.
+- Look (Sergii, 2026-11-13): `pnpm dev`, `/?seed=corney` -- the left half looks right; anchor links are unclear, a separate UX question (`deferred-work.md`).
+- Real-host run: not needed; the specs fake only the repo's own services (`MemoryBackend`); the spike and rows 15–17 run the real QuickJS engine in Chromium and Firefox.
+
+## Plan Change Log
+
+## Review Triage Log
+
+Pass 1 (quick, test-reviewer; 0 quotes dropped): 2 medium, 13 low, 1 false, 4 rejected low.
+- medium -- patch -- worker never reports a fault in a design part no slot uses, while `checkInputs` refuses it on main (`create-derivations.ts` `inputsOf` vs `check-inputs.ts` `designFaults`); breaks "the worker reports the same kind".
+- medium -- patch -- with a faulty first-resolving part, the worker checks the slot's inputs against the next level's declaration, `checkInputs` against the first's; breaks the Always line "checked against the declaration of its first part level that resolves". Fix: the worker takes its input violations from the same fault list as `checkInputs`.
+- low -- patch -- `corney-column.spec.ts` `slotAt` hard-codes `part: 0`, which depends on how two run hashes sort (AGENTS "Assert relative to the arranged state").
+- low -- patch -- `corney-seed.spec.ts:88` narrows the seeded layout to `objectContaining({ id: 'left-half' })` (both lenses; AGENTS "assert whole values").
+- low -- patch -- `create-derivations.spec.ts` "reports a slot's input fault once…" maps violations to `{kind, ids}`; `blueprint-inputs.spec.ts` row 16 narrows its row with `objectContaining` (both lenses).
+- low -- patch -- `resolve-inputs.spec.ts` "lays a slot's inputs over its part's": part inputs equal the defaults, so ignoring `under` passes.
+- low -- patch -- `corney-column.spec.ts` round-trip test takes its expected ids from the production script.
+- low -- patch -- `place-layout.spec.ts` "turns every later sibling with a turned child" asserts one sibling.
+- low -- patch -- `corney-left-half.spec.ts` `keyPosesOf` slices every row id by `left/`; right-side rows (13.6) would read as extra keys.
+- low -- patch -- process comments in `inputs/input-faults.ts` and `inputs/types.ts` (AGENTS "No AD-n or ticket references").
+- low -- patch -- `reference-designs/src/key-centres/types.ts:1` file comment kept although the task removes the header essay.
+- low -- patch -- `corney-pcb.ts` doc comments still say "the design's" after `Design` became `Variant`.
+- low -- patch -- `design-store.spec.ts` test command `AddSizedSlot` with schema `addSlotInputSchema` (AGENTS command naming).
+- low -- patch (docs) -- AD-10 doesn't name the new `./ergogen/points/*.yaml` export app's spike imports through; a docs commit on main adds it, and the depcruise comment names it.
+- false -- choc-key's `SIZE_FACTORS['toString']`: `checkInputs` and the worker refuse any size outside the declared picklist before a run, so no such value reaches the lane.
+- low -- reject -- `create-derivations.spec.ts` "runs a slot's per-slot size…" asserts the fake's rectangle in `output`: it is part of the whole value AGENTS asks to assert.
+- low -- reject -- `check-inputs.spec.ts` `inputRejection` builds the message through `blueprintInputInvalidMessage`, which has its own unit tests (AGENTS exception).
+- low -- reject -- `layout-output-codec.spec.ts` case named "a row turned about a pivot": matches row 18's wording.
+- low -- reject -- `inputFaults` precedence (unknown, then not-per-slot, then bad value) and `checkInputs` sorting by owner id regardless of scope: deterministic; listed as decisions instead.
+
+Pass 2 (quick, test-reviewer on the patched files; 0 quotes dropped): nothing above low, no frozen line broken; review ends, lows logged, not patched.
+- low -- log -- `.dependency-cruiser.mts:97-99` comment reads "data-only scripts and key-centres subpaths", but `key-centres` holds functions; AD-10 words them apart.
+- low -- log -- `corney-seed.spec.ts` compares `structureOf` (ids, arrangements, children), not axis, offset or anchor; positions are row 1's.
+- low -- log -- `create-derivations.spec.ts` "runs a slot's per-slot size…" also asserts the fake runner's received inputs (`runs`).
+- low -- log -- `place-layout.spec.ts` `about`'s `digits` parameter is no longer passed.
+- Verification after patches: `pnpm build:library`, `pnpm typecheck`, `pnpm lint`, `pnpm depcruise`, `pnpm format:check` clean; `pnpm test` (seed 1794574914310) 612 files, 4956 tests green.
 
 ## Design Notes
 

@@ -24,6 +24,8 @@ import { describe, expect, it, onTestFinished } from 'vitest'
 
 import { mainModules } from './main-modules'
 
+const EXPECTED_1U_KEYCAP = { w: 18, h: 18 }
+
 async function arrange() {
   const container = new Container()
   for (const module of mainModules) container.addModule(module)
@@ -52,7 +54,7 @@ class RecordingRunner extends LaneRunner {
 }
 
 describe('the parts lane, wired by hand', () => {
-  it('resolves a slot on key to an 18 by 18 mm rectangle in the real sandbox', async () => {
+  it("resolves a slot on key to choc-key's 1u keycap rectangle in the real sandbox", async () => {
     const container = new Container().addModule(designWorkerModule).addModule(blueprintWorkerModule)
     await container.autoLoad()
     const runner = container.resolve(LaneRunner)
@@ -65,8 +67,8 @@ describe('the parts lane, wired by hand', () => {
 
     await runner.pause(pins.value)
 
-    const run = `key@${argumentHash({})}`
-    expect(parts.value.output).toEqual({ ids: [run], rows: [{ w: 18, h: 18 }] })
+    const run = `key@${argumentHash({ size: '1u' })}`
+    expect(parts.value.output).toEqual({ ids: [run], rows: [EXPECTED_1U_KEYCAP] })
     expect(parts.value.slots[slot]).toEqual({ run, fit: 'fitted' })
   })
 

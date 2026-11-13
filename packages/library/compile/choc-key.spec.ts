@@ -19,28 +19,57 @@ function tempDir(): string {
   return dir
 }
 
+const KEYCAP_HEIGHT = 18
+
 const evaluate = (script: string) =>
   new Function(`'use strict';\nreturn (${script}\n)`)() as {
-    lanes: { parts: () => unknown }
+    lanes: { parts: (args: unknown) => unknown }
   }
 
-describe('lib:blueprint/choc-key v1', { timeout: SLOW_BUILD_TIMEOUT }, () => {
-  it('compiles to a parts lane answering one 18 by 18 mm rectangle', async () => {
-    const compiled = await compileLibrary({ sourcesDir, outDir: tempDir() })
+async function compiledChocKey() {
+  const compiled = await compileLibrary({ sourcesDir, outDir: tempDir() })
+  return compiled.filter(({ declaration }) => declaration.id === CHOC_KEY)
+}
 
-    const key = compiled.filter(({ declaration }) => declaration.id === CHOC_KEY)
+describe('lib:blueprint/choc-key v1', { timeout: SLOW_BUILD_TIMEOUT }, () => {
+  it('declares one rectangle output and a per-slot size input defaulting to 1u', async () => {
+    const key = await compiledChocKey()
 
     expect(
-      key.map(({ declaration, script }) => ({
+      key.map(({ declaration }) => ({
         version: declaration.version,
+        inputs: declaration.inputs,
         outputs: declaration.lanes.parts?.outputs.map(({ role, count }) => ({ role, count })),
-        run: evaluate(script).lanes.parts(),
       })),
     ).toEqual([
       {
         version: 1,
+        inputs: {
+          size: {
+            kind: 'option',
+            label: 'Size',
+            options: ['1u', '1.5u'],
+            default: '1u',
+            perSlot: true,
+          },
+        },
         outputs: [{ role: 'rectangle', count: 'one' }],
-        run: { outputs: { rectangle: { w: 18, h: 18 } }, problems: [] },
+      },
+    ])
+  })
+
+  it.each([
+    ['1u', 18],
+    ['1.5u', 27],
+  ])('answers the keycap rectangle for size %s', async (size, expectedWidth) => {
+    const runs = (await compiledChocKey()).map(({ script }) =>
+      evaluate(script).lanes.parts({ inputs: { size }, pulls: {}, queries: {} }),
+    )
+
+    expect(runs).toEqual([
+      {
+        outputs: { rectangle: { w: expectedWidth, h: KEYCAP_HEIGHT } },
+        problems: [],
       },
     ])
   })

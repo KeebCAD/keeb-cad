@@ -16,6 +16,7 @@
     "depcruise": "depcruise packages app/src reference-designs --config .dependency-cruiser.mts",
     "test": "vitest run",
     "test:mutation": "stryker run",
+    "dev": "pnpm --filter @keeb-cad/app dev",
     "build": "pnpm --filter @keeb-cad/app build",
     "build:workbench": "pnpm --filter @keeb-cad/ui build:workbench",
     "check:dist": "node tooling/check-dist/check-dist.ts",

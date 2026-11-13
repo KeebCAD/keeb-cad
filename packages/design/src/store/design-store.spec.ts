@@ -8,6 +8,8 @@ import {
   type DesignInvalid,
   type Form,
   formSchema,
+  idSchema,
+  partRefSchema,
   type Frozen,
   type Rejection,
 } from '@keeb-cad/schema'
@@ -156,6 +158,30 @@ class LoadDesign implements Action<LoadDesignInput, DesignInvalid> {
 
 const recordInputInputSchema = v.unknown()
 type RecordInputInput = v.InferOutput<typeof recordInputInputSchema>
+
+// Adds a slot "s" under the default part key, with the input values and part the test gives.
+const addSizedSlotInputSchema = v.object({ size: v.string(), part: v.optional(v.string()) })
+type AddSizedSlotInput = v.InferOutput<typeof addSizedSlotInputSchema>
+
+class AddSizedSlot implements Command<AddSizedSlotInput> {
+  static readonly kind = 'command'
+  static readonly id = 'layout.addSizedSlot'
+  static readonly label = 'Add sized slot'
+  static readonly input = addSizedSlotInputSchema
+
+  available(_design: Frozen<Design>): Result<void, Rejection> {
+    return Result.ok()
+  }
+
+  apply(draft: Writable<Design>, input: AddSizedSlotInput): void {
+    const part = input.part === undefined ? {} : { part: v.parse(partRefSchema, input.part) }
+    draft.layout.children.push({
+      id: v.parse(idSchema, 's'),
+      ...part,
+      inputs: { size: input.size },
+    })
+  }
+}
 
 // Passes any input through and records what apply receives into the test's own list.
 function recordInputAction(received: unknown[]) {
@@ -471,6 +497,35 @@ describe('DesignStore', () => {
       expect(result.error).toEqual(rejection)
 
       expectNothingCommitted(store, before, events)
+    })
+
+    it("refuses an edit giving a slot a size outside choc-key's options, committing nothing", async () => {
+      const store = await arrange({ commands: [AddSizedSlot], design: aDesign() })
+      const before = store.current
+      const events = recordCommits(store)
+
+      const result = store.run(AddSizedSlot, { size: '2u' })
+
+      expectErr(result)
+      expect(result.error).toEqual({
+        kind: 'blueprint-input-invalid',
+        ids: ['s'],
+        message: `The slot "s" sets "size" to "2u", which isn't one of 1u, 1.5u.`,
+      })
+      expectNothingCommitted(store, before, events)
+    })
+
+    it('names the structural fault before the input fault when one edit makes both', async () => {
+      const store = await arrange({ commands: [AddSizedSlot], design: aDesign() })
+
+      const result = store.run(AddSizedSlot, { size: '2u', part: 'missing' })
+
+      expectErr(result)
+      expect(result.error).toEqual({
+        kind: 'unknown-target',
+        ids: ['missing'],
+        message: 'The design has nothing of the right kind with the id "missing".',
+      })
     })
 
     it('refuses input the schema refuses, with plain issue paths', async () => {

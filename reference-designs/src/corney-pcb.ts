@@ -1,11 +1,12 @@
 // Golden board geometry for Corney Island v0.3, read from the committed Ergogen PCBs: the
-// design's outline (Edge.Cuts), the plate's cutouts and the design's footprints. Data to data:
+// variant's outline (Edge.Cuts), the plate's cutouts and the variant's footprints. Data to data:
 // compare with `compareSegments`, `compareCutouts` and `compareFootprints`.
 //
 // Frame: KiCad's (mm, y down, rotation in degrees as written). Ergogen points map as `(x, −y)`.
 import { readFixture, readYaml } from './fixture-files'
 import { readKicadPcb, type Footprint, type KicadPcb, type Point, type Segment } from './kicad-pcb'
-import { DESIGN_PCB, type Design } from './key-centres'
+import type { Variant } from './key-centres'
+import { DESIGN_PCB } from './load-key-poses'
 import { boundsOf, centreOf, chainLoops, type Cutout } from './pcb-geometry'
 
 /** The front plate; wired and wireless share it. */
@@ -16,14 +17,14 @@ const NAME_RADIUS = 0.5
 
 const readPcb = (relative: string): KicadPcb => readKicadPcb(readFixture(relative))
 
-/** The design's board outline: its top-level Edge.Cuts segments, in file order. */
-export function loadOutline(design: Design): Segment[] {
-  return readPcb(DESIGN_PCB[design]).edgeCuts
+/** The variant's board outline: its top-level Edge.Cuts segments, in file order. */
+export function loadOutline(variant: Variant): Segment[] {
+  return readPcb(DESIGN_PCB[variant]).edgeCuts
 }
 
-/** Every footprint on the design's PCB, in file order. */
-export function loadFootprints(design: Design): Footprint[] {
-  return readPcb(DESIGN_PCB[design]).footprints
+/** Every footprint on the variant's PCB, in file order. */
+export function loadFootprints(variant: Variant): Footprint[] {
+  return readPcb(DESIGN_PCB[variant]).footprints
 }
 
 /** Ergogen points in KiCad's frame. */

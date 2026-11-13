@@ -22,6 +22,7 @@
     "@vitest/browser-playwright": "catalog:",
     "typescript": "catalog:",
     "valibot": "catalog:",
+    "vite": "catalog:",
     "vitest": "catalog:"
   }
 }

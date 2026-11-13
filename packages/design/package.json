@@ -10,6 +10,7 @@
   "dependencies": {
     "@keeb-cad/di": "workspace:*",
     "@keeb-cad/hashing": "workspace:*",
+    "@keeb-cad/library": "workspace:*",
     "@keeb-cad/model": "workspace:*",
     "@keeb-cad/reactive": "workspace:*",
     "@keeb-cad/result": "workspace:*",

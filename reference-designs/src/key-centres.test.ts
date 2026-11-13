@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { compareKeyPoses, formatKeyComparison, loadKeyPoses, type KeyPose } from './key-centres'
+import { compareKeyPoses, formatKeyComparison, type KeyPose } from './key-centres'
+import { loadKeyPoses } from './load-key-poses'
 
 const SHIFTED = 'matrix_middle_home'
 const WIDE = 'thumbfan_far_home'

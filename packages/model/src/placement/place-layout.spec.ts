@@ -23,6 +23,8 @@ import { checkAnchors } from '../dependencies/check-anchors'
 import { placeLayout } from './place-layout'
 
 const DIGITS = 9
+// The boundary table gives carried frames to four decimals.
+const TABLE_DIGITS = 4
 const RUN = 'key@h'
 const KEY = { w: 18, h: 18 }
 const GAP = aGap({ x: aLength('1mm'), y: aLength('1mm') })
@@ -61,6 +63,15 @@ const at = (x: number, y: number, rot = 0) => ({
   rot: expect.closeTo(rot, DIGITS),
   mirrored: false,
 })
+
+const about = (x: number, y: number, rot: number, digits = TABLE_DIGITS) => ({
+  x: expect.closeTo(x, digits),
+  y: expect.closeTo(y, digits),
+  rot: expect.closeTo(rot, digits),
+  mirrored: false,
+})
+
+const turned = (rotation: string) => anOffset({ rotation: anAngle(rotation) })
 
 const offsetY = (y: string) => anOffset({ position: aVec2({ y: aDelta(y) }) })
 
@@ -175,6 +186,69 @@ describe('placeLayout', () => {
     const output = arrange(inRoot(slot('a', { offset: anOffset({ rotation: anAngle('190deg') }) })))
 
     expect(frameAt(output, 'a')).toEqual(at(0, 0, -170))
+  })
+
+  describe('rotation carried along a chain', () => {
+    it('turns the sibling after a turned child', () => {
+      const chain = aChainGroup({
+        id: anId('c'),
+        axis: 'y',
+        children: [slot('a'), slot('b', { offset: turned('15deg') }), slot('d')],
+      })
+
+      const output = arrange(inRoot(chain))
+
+      expect(frameAt(output, 'd')).toEqual(about(-4.9176, 37.3526, 15))
+    })
+
+    it('steps straight after a counter-turn cancels the carried turn', () => {
+      const chain = aChainGroup({
+        id: anId('c'),
+        axis: 'y',
+        children: [
+          slot('a'),
+          slot('b', { offset: turned('15deg') }),
+          slot('d', { offset: turned('-15deg') }),
+          slot('e'),
+        ],
+      })
+
+      const output = arrange(inRoot(chain))
+
+      expect(['d', 'e'].map((id) => frameAt(output, id))).toEqual([
+        about(-4.9176, 37.3526, 0),
+        about(-4.9176, 56.3526, 0),
+      ])
+    })
+
+    it('steps a wide slot from a turned sibling by its own rectangle, then applies its offset', () => {
+      const wide = slot('d', {
+        offset: anOffset({
+          position: aVec2({ x: aDelta('-1.037mm'), y: aDelta('2.122mm') }),
+          rotation: anAngle('75deg'),
+        }),
+      })
+      const chain = aChainGroup({
+        id: anId('c'),
+        axis: 'x',
+        children: [slot('a'), slot('b', { offset: turned('-15deg') }), wide],
+      })
+      const parts = aResolvedParts({
+        output: aPartsOutput({ ids: [RUN, 'wide@h'], rows: [KEY, { w: 27, h: 18 }] }),
+        slots: {
+          [anId('a')]: { run: RUN, fit: 'fitted' },
+          [anId('b')]: { run: RUN, fit: 'fitted' },
+          [anId('d')]: { run: 'wide@h', fit: 'fitted' },
+        },
+      })
+
+      const output = arrange(inRoot(chain), { parts })
+
+      expect(['a', 'd'].map((id) => frameAt(output, id))).toEqual([
+        about(0, 0, 0),
+        about(41.2468, -3.7642, 60),
+      ])
+    })
   })
 
   it('lists a three-slot chain by compareId, slots on their run’s row and fit, groups on −1', () => {

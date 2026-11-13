@@ -1,4 +1,5 @@
 import { DesignStore } from '@keeb-cad/design'
+import type { Frozen, Node } from '@keeb-cad/schema'
 import { Container } from '@keeb-cad/di'
 import { expectOk } from '@keeb-cad/result/testing'
 import {
@@ -65,6 +66,49 @@ async function arrange() {
   }
 }
 
+// A node's id and arrangement, and its children's, as the seed's script builds them.
+type Structure = { id: string; arrangement?: string; children?: Structure[] }
+
+function structureOf(node: Frozen<Node>): Structure {
+  return 'children' in node
+    ? { id: node.id, arrangement: node.arrangement, children: node.children.map(structureOf) }
+    : { id: node.id }
+}
+
+const column = (name: string): Structure => ({
+  id: `matrix-${name}`,
+  arrangement: 'chain',
+  children: ['bottom', 'home', 'top'].map((row) => ({ id: `matrix-${name}-${row}` })),
+})
+
+const EXPECTED_LEFT_HALF: Structure = {
+  id: 'left-half',
+  arrangement: 'free',
+  children: [
+    {
+      id: 'matrix',
+      arrangement: 'chain',
+      children: [
+        column('outer'),
+        column('pinky'),
+        column('ring'),
+        column('middle'),
+        column('index'),
+        column('inner'),
+      ],
+    },
+    {
+      id: 'thumbfan',
+      arrangement: 'chain',
+      children: [
+        { id: 'thumbfan-near-home' },
+        { id: 'thumbfan-mid-home' },
+        { id: 'thumbfan-far-home' },
+      ],
+    },
+  ],
+}
+
 afterEach(() => {
   localStorage.clear()
   delete document.documentElement.dataset.theme
@@ -80,23 +124,12 @@ describe('the Corney seed', () => {
     const id = current?.design.meta.id
     expect({
       id,
-      layout: current?.design.layout.children,
+      layout: current?.design.layout.children.map(structureOf),
       hash: location.hash,
       first: workers[0]?.received[0],
     }).toEqual({
       id: expect.not.stringMatching(/^stored$/),
-      layout: [
-        expect.objectContaining({
-          id: 'outer',
-          arrangement: 'chain',
-          axis: 'y',
-          children: [
-            expect.objectContaining({ id: 'outer-bottom' }),
-            expect.objectContaining({ id: 'outer-home' }),
-            expect.objectContaining({ id: 'outer-top' }),
-          ],
-        }),
-      ],
+      layout: [EXPECTED_LEFT_HALF],
       hash: `#/design/${id}/layout`,
       first: expect.objectContaining({ kind: 'design', design: current?.design }),
     })

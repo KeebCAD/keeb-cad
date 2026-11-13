@@ -1,6 +1,7 @@
 import type { ItemId } from '@keeb-cad/schema'
 import { match } from 'ts-pattern'
 
+import { blueprintInputInvalidMessage } from '../violations/blueprint-input-invalid-message'
 import { unresolvableReferenceMessage } from '../violations/unresolvable-reference-message'
 import type { PartViolationDetail } from './types'
 
@@ -15,6 +16,9 @@ export function partViolationMessage(detail: PartViolationDetail, ids: readonly 
     .with(
       { kind: 'lane-failed' },
       (failed) => `The part "${String(named)}" failed: ${causeOf(failed)}.`,
+    )
+    .with({ kind: 'blueprint-input-invalid' }, ({ invalid }) =>
+      blueprintInputInvalidMessage(invalid),
     )
     .exhaustive()
 }

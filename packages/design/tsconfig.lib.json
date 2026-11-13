@@ -8,6 +8,8 @@
     // WebWorker for structuredClone, which the store copies run's input with. Worker-only globals
     // (importScripts, self as WorkerGlobalScope) also type-check here but don't exist on main.
     "lib": ["ES2023", "ESNext.Disposable", "WebWorker"],
+    // vite/client types import.meta.glob, which the store reaches through library's declarations.
+    "types": ["vite/client"],
     "noEmit": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo"
   }
