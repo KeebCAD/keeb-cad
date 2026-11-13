@@ -9,8 +9,9 @@
 # Re-sliced 2026-11-10 at 13.7's planning: 26 (group frames following their keys) split from 7.
 # Re-sliced 2026-11-12 after the group-border UX and spine passes: 26 (model posts group borders) and 32 (the canvas draws them) replace 26 (group frames).
 # Re-sliced 2026-11-11 after spine 8aa709d (modal amendment, from 13.25's planning): 27 (a modal owns the keyboard) before 25, 28 (T toggles the slide-out) added.
+# Re-sliced 2026-11-13 at 13.6's build: 33 (per-side overrides) split from 6.
 
-next_id = 33
+next_id = 34
 
 [[entry]]
 id = 9
@@ -119,9 +120,9 @@ risk = "high"
 [[entry]]
 id = 6
 type = "story"
-title = "Right side derived, per-side overrides"
-description = "model derives the right side of a split design with a reversible board by reflection across the centre frame's y-axis, with side-qualified ids, attach points swapped, and right-side frames carrying mirrored = true, rot normalised to (-180, 180] (Data Schema LayoutOutput); adds the overrides section (a list, AD-23) in its AD-8 position, its schema holding every variant of the Data Schema's overrides, side-component included, though only 'empty' gets a command and tests here (a side-component command waits for the first part with components, epic-parts-and-pcb); an override is keyed by (type, target), plus component for side-component, at most one per key, and setting it again replaces it. A per-side override set by command (targeting left/<id> or right/<id>, part 'empty') removes the slot's part on that side, and the removed slot keeps its space (fit = empty, which wins over a stand-in); on a reversible board the set-override command refuses a swap with the model rejection override-not-allowed (ModelRejectionKind gains it), and no command takes a right-side position; a loaded swap reports the violation override-not-allowed (error, ids: the target) and is ignored when placing; an override whose target is missing reports unresolvable-reference; DeleteNode of a slot deletes its overrides in the same command. Split files with a mirrored board and unibody files load and report unsupported-form (error, ids: the design id) in the posted issues; each kind's message comes from 13.3's per-kind message function. Corney's script sets no overrides (the real board has none); a documented test-only step file, never part of the reference script, removes the far thumb key on the right. The epic's headless scenario: run Corney's script, post the Layout set, the right half is the left's reflection across the centre, each override of the test-only step file applies, and no violation appears beyond the expected."
-verify = "Each right-side key is the reflection of its left key across the centre frame, rot in (-180, 180]; removing right/<id>'s part by an override leaves the left fitted and both chains unchanged; setting the same override again leaves one; a swap on a reversible board is refused with override-not-allowed and the design unchanged; a loaded swap reports override-not-allowed naming its target and places as if absent; an override with a missing target reports unresolvable-reference; deleting a slot deletes its overrides; a split file with a mirrored board and a unibody file each report unsupported-form naming the design; the headless scenario on Corney's script and the test-only step file passes."
+title = "Right side derived"
+description = "model derives the right side of a split design with a reversible board by reflection across the y-axis of center's frame (AD-6), with side-qualified ids, attach points swapped, and right-side frames carrying mirrored = true, rot normalised to (-180, 180] (Data Schema LayoutOutput). Split files with a mirrored board and unibody files load and report unsupported-form (error, ids: the design id) in the posted issues: ViolationKind gains it, createDerivations reports it where today it reports nothing for an unsupported form, and its message comes from its own model function in violations/, as each kind's does (Consistency Conventions, Violations). Headless check: run Corney's script, post the Layout set; every right row is its left row reflected across center's y-axis, and no violation appears. Per-side overrides are 33's (split 2026-11-13)."
+verify = "Each right-side key is the reflection of its left key across center's y-axis, rot in (-180, 180]; attach points swap left and right; a split file with a mirrored board and a unibody file each report unsupported-form naming the design; the headless check on Corney's script passes."
 covers = ["R3"]
 after = [4]
 hitl = false
@@ -145,9 +146,21 @@ title = "Model posts group borders"
 description = "model computes a group border for every placed group except the root, per spine AD-16 Group borders: each placed slot's envelope (in M1 its rectangle; fitted, stand-in and emptied slots alike) grown by the margin once per level, from its own group up to the bordered group, united with round joins; the margin is the smaller of meta.gap x and y, never less than 1 mm, and 1 mm when the gap fails to evaluate; each side's borders come from that side's own rows, outer loops counter-clockwise, regions and loops in AD-16's order; a group with no placed slots, an unplaced row and the root post none, and a failed border posts none and reports nothing. geometry gains its polygon engine (clipper2-ts: inflate with round joins at precision 6 and an arc tolerance of 0.005 mm, union with fill rule NonZero, read through a PolyTree), geometry adds clipper2-ts at the spine's pin (2.0.1-18, exact), and dependency-cruiser gains a rule that only geometry, case and routing import clipper2-ts (spine AD-10), with a violation fixture under tooling/ad10/violations/ proving another package can't. LayoutOutput gains border: its type and valibot schema in schema, its codec in protocol (AD-11: rowLoops, loopPoints counted in points, loopHole, points; a region is its outer loop followed by its holes), with a round-trip test. Nothing on screen changes; 13.32 draws the borders."
 verify = "On a design built through the add commands (a chain group of two column groups, plus a free group of one slot): each column's border lies 1 mm outside its keys and the parent's 1 mm outside the columns' borders, so a point 0.5 mm outside a column key is inside both borders and a point 1.5 mm out is inside the parent's only; the root and an empty group post no border; a gap of 0.5, 1 and 1.5 mm gives a margin of 1, 1 and 1.5 mm, a gap of x 2 mm and y 1.5 mm gives 1.5 mm, and a gap of -0.5 mm and a gap that fails to evaluate each give 1 mm; a border with two regions and a hole survives the codec round trip unchanged; dependency-cruiser accepts geometry importing clipper2-ts and rejects the violation fixture."
 covers = ["R6"]
-after = [22]
+after = [22, 6]
 hitl = false
 risk = "medium"
+
+[[entry]]
+id = 33
+type = "story"
+title = "Per-side overrides remove a part"
+description = "Split from 13.6 (2026-11-13). Adds the overrides section (a list, AD-23) in its AD-8 position, its schema holding every variant of the Data Schema's overrides, side-component included, though only 'empty' gets a command and tests here (a side-component command waits for the first part with components, epic-parts-and-pcb); an override is keyed by (type, target), plus component for side-component, at most one per key, and setting it again replaces it. A per-side override set by command (targeting left/<id> or right/<id>, part 'empty') removes the slot's part on that side, and the removed slot keeps its space (fit = empty, which wins over a stand-in); on a reversible board the SetOverride command (id overrides.setOverride) refuses a swap with the model rejection override-not-allowed (ModelRejectionKind and ViolationKind gain it), and no command takes a right-side position; a loaded swap reports the violation override-not-allowed (error, ids: the target) and is ignored when placing; an override whose target is missing reports unresolvable-reference; DeleteNode of a slot deletes its overrides in the same command; each new message (override-not-allowed, unresolvable-reference for an override target, a new UnresolvedReference variant) comes from a model function in violations/, as each kind's does (Consistency Conventions, Violations). Corney's script sets no overrides (the real board has none); a documented test-only step file, never part of the reference script, removes the far thumb key on the right. The epic's headless scenario: run Corney's script, post the Layout set, the right half is the left's reflection across center's y-axis, each override of the test-only step file applies, and no violation appears beyond the expected."
+verify = "Removing right/<id>'s part by an override leaves the left fitted and both chains unchanged; setting the same override again leaves one; a swap on a reversible board is refused with override-not-allowed and the design unchanged; a loaded swap reports override-not-allowed naming its target and places as if absent; an override with a missing target reports unresolvable-reference; deleting a slot deletes its overrides; an emptied slot leaves its group's border unchanged; the headless scenario on Corney's script and the test-only step file passes."
+covers = ["R3"]
+after = [6, 26]
+hitl = false
+risk = "medium"
+unknown = "The spine's Violations row gives unresolvable-reference a severity only for a part reference and an anchor, not for an override whose target is missing (AD-24 calls it dangling); pick: warning, ids naming the target, since the override changes nothing on the board. Its ModelRejectionKind comment still gives override-not-allowed to 13.6, now 33. A spine edit settles both before 33 is planned."
 
 [[entry]]
 id = 32
@@ -242,9 +255,9 @@ id = 8
 type = "story"
 title = "Both halves drawn"
 description = "The canvas draws the derived right half, from the posted per-side placements, beside the left with a dashed mirror axis, at lower opacity until selected, selectable on the canvas and in the tree; a slot removed on one side keeps its place, drawn as unfitted; ids are the ones Corney's script chose (13.2's id input), side-qualified. The Fitted toggle and the read-only derived-from fields are 14.5's. Adds the slice's e2e journey: browser storage seeded with the autosaved design bundle of a design built by Corney's script in a Node test, the app reopens it, both halves are drawn, a key is added and deleted through 13.25's G and S and 13.24's Delete, a reload is unchanged. Sergii approves the screenshot baseline."
-verify = "Selecting right/thumb-home on the canvas selects it in the tree; a right slot removed by 13.6's test-only override step file draws as unfitted while its left stays fitted; the e2e journey passes in Chromium and Firefox, with its screenshot baseline approved by Sergii. Pointing at right/thumb-home shows the right thumb group's border."
+verify = "Selecting right/thumb-home on the canvas selects it in the tree; a right slot removed by 13.33's test-only override step file draws as unfitted while its left stays fitted; the e2e journey passes in Chromium and Firefox, with its screenshot baseline approved by Sergii. Pointing at right/thumb-home shows the right thumb group's border."
 covers = ["R3", "R6"]
-after = [6, 7, 24, 25, 32]
+after = [6, 33, 7, 24, 25, 32]
 hitl = true
 risk = "medium"
 notes = ["Right-half group borders follow 13.32's rule (it draws every posted row's border); this story's verify checks one.", "Open question: whether selecting or pointing at a group on one side also shows its mirror's border (EXPERIENCE.md Open Items, 2026-11-12)."]
@@ -267,6 +280,6 @@ title = "Refactor sweep"
 description = "Cleanup only, scoped at its start from the epic's plans and the review findings it deferred. Scope pushed out of another story becomes a new story, not part of this one."
 verify = "pnpm check and every test of the slice pass, and each cleanup item from the scope list is closed or recorded as deferred."
 covers = []
-after = [9, 16, 17, 21, 18, 2, 22, 3, 4, 6, 7, 26, 23, 24, 27, 29, 30, 25, 28, 8, 31]
+after = [9, 16, 17, 21, 18, 2, 22, 3, 4, 6, 7, 26, 33, 32, 23, 24, 27, 29, 30, 25, 28, 8, 31]
 hitl = false
 risk = "low"
