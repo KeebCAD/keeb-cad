@@ -3,7 +3,7 @@ title: "Corney wired's left half from commands"
 type: 'feature'
 ticket: 4
 created: '2026-11-13'
-status: 'built'
+status: 'done'
 baseline_revision: '038168d809e223a03ea6daf3fd02592bf80f8a0c'
 route: 'full'
 route_source: 'auto'
