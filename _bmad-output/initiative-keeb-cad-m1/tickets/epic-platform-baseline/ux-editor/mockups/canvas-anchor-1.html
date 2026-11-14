@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anchor links</title>
+<style>
+  :root {
+    --canvas: #414559; --key-body: #626880; --key-edge: #949cbb; --key-top: #949cbb;
+    --legend: #232634; --label-bg: #303446; --label-text: #c6d0f5; --selection: #ca9ee6;
+    --group-border: #949cbb; --text: #c6d0f5; --muted: #a5adce; --anchor: #81c8be;
+  }
+  body { margin: 0; padding: 16px; background: #303446; color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  p.lead { margin: 0 0 16px; color: var(--muted); max-width: 70ch; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; }
+  figure { margin: 0; background: #292c3c; border-radius: 6px; padding: 12px; }
+  figcaption { margin-bottom: 8px; }
+  figcaption b { display: block; }
+  figcaption span { color: var(--muted); font-size: 13px; }
+  svg { width: 100%; height: auto; display: block; background: var(--canvas); border-radius: 4px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<h1>Anchor links: when they show</h1>
+<p class="lead">Corney's left half at fit zoom, ids per B2. Each key in a column anchors to its chain step, each column to the matrix group's origin, and the thumbfan group explicitly to <span class="mono">matrix-middle-bottom</span>. In the on-demand panel the pointer rests on <span class="mono">thumbfan-mid-home</span>.</p>
+<div class="grid">
+  <figure><figcaption><b>A · Always (today)</b><span>Every node's link at all times: chain steps, parent origins and the explicit anchor.</span></figcaption><svg id="all" viewBox="0 0 440 300"></svg></figure>
+  <figure><figcaption><b>B · On demand</b><span>Nothing at rest. The pointed and the selected node show their own link, as their border and id do.</span></figcaption><svg id="ondemand" viewBox="0 0 440 300"></svg></figure>
+  <figure><figcaption><b>D · Explicit anchors only, always</b><span>Only anchors the person set by hand are drawn, at all times; chain steps and parent origins never.</span></figcaption><svg id="explicit" viewBox="0 0 440 300"></svg></figure>
+</div>
+<script>
+const cols = [
+  { name: 'outer', x: 0, dy: 18 }, { name: 'pinky', x: 1, dy: 18 }, { name: 'ring', x: 2, dy: 6 },
+  { name: 'middle', x: 3, dy: 0 }, { name: 'index', x: 4, dy: 6 }, { name: 'inner', x: 5, dy: 10 },
+];
+const rows = ['top', 'home', 'bottom'];
+const U = 48, GAP = 6;
+function keys() {
+  const out = [];
+  for (const c of cols) rows.forEach((r, i) => out.push({
+    id: `matrix-${c.name}-${r}`, x: 30 + c.x * (U + GAP), y: 40 + c.dy + i * (U + GAP), rot: 0,
+  }));
+  out.push({ id: 'thumbfan-near-home', x: 210, y: 215, rot: 0 });
+  out.push({ id: 'thumbfan-mid-home', x: 265, y: 222, rot: -12 });
+  out.push({ id: 'thumbfan-far-home', x: 322, y: 236, rot: -26 });
+  return out;
+}
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; }
+const CHAR = 6.6; // JetBrains Mono at 11px
+function label(svg, k, scale) {
+  const w = k.id.length * CHAR + 12, cx = (k.x + U / 2) * scale, top = k.y * scale - 6;
+  const g = el('g', {}, svg);
+  el('rect', { x: cx - w / 2, y: top - 18, width: w, height: 18, rx: 3, fill: 'var(--label-bg)', stroke: 'var(--key-edge)', 'stroke-width': 1 }, g);
+  el('text', { x: cx, y: top - 5, 'text-anchor': 'middle', fill: 'var(--label-text)', 'font-size': 11, class: 'mono' }, g).textContent = k.id;
+}
+function draw(id, mode, scale = 1, origin = [0, 0]) { return drawB(id, mode); }
+function unused(id, mode, scale = 1, origin = [0, 0]) {
+  const svg = document.getElementById(id);
+  const root = el('g', { transform: `translate(${-origin[0]} ${-origin[1]})` }, svg);
+  const hovered = 'matrix-ring-home', selected = 'thumbfan-mid-home';
+  const ks = keys();
+  for (const k of ks) {
+    const s = U * scale, x = k.x * scale, y = k.y * scale;
+    const g = el('g', { transform: `rotate(${k.rot} ${x + s / 2} ${y + s / 2})` }, root);
+    el('rect', { x, y, width: s, height: s, rx: 3, fill: 'var(--key-body)', stroke: k.id === selected ? 'var(--selection)' : 'var(--key-edge)', 'stroke-width': k.id === selected ? 2 : 1 }, g);
+    const inset = 6 * scale;
+    el('rect', { x: x + inset, y: y + inset * 0.6, width: s - 2 * inset, height: s - 2 * inset, rx: 2, fill: 'var(--key-top)' }, g);
+    const face = s - 2 * inset - 4;
+    const fits = k.id.length * CHAR <= face;
+    const showOnKey = mode === 'a' || (mode === 'c' && fits);
+    if (showOnKey) el('text', { x: x + s / 2, y: y + s / 2 + 3, 'text-anchor': 'middle', fill: 'var(--legend)', 'font-size': 11, class: 'mono' }, g).textContent = k.id;
+  }
+  if (mode !== 'a') for (const k of ks) if (k.id === hovered || k.id === selected) {
+    if (!(mode === 'c' && k.id.length * CHAR <= U * scale - 12 * scale - 4)) label(root, k, scale);
+  }
+}
+
+
+function chip(parent, cx, cy, text) {
+  const w = text.length * CHAR + 12;
+  el('rect', { x: cx - w / 2, y: cy - 9, width: w, height: 18, rx: 3, fill: 'var(--label-bg)', stroke: 'var(--key-edge)', 'stroke-width': 1 }, parent);
+  el('text', { x: cx, y: cy + 4, 'text-anchor': 'middle', fill: 'var(--label-text)', 'font-size': 11, class: 'mono' }, parent).textContent = text;
+}
+function link(svg, from, to) {
+  el('line', { x1: from[0], y1: from[1], x2: to[0], y2: to[1], stroke: 'var(--anchor)', 'stroke-dasharray': '4 3' }, svg);
+  el('circle', { cx: from[0], cy: from[1], r: 2, fill: 'var(--anchor)' }, svg);
+}
+function drawLinks(id, mode) {
+  const svg = document.getElementById(id);
+  const ks = keys();
+  const centre = (k) => [k.x + U / 2, k.y + U / 2];
+  const links = [];
+  const origin = [20, 300];
+  for (const c of cols) {
+    const colKeys = ks.filter(k => k.id.startsWith(`matrix-${c.name}-`));
+    links.push({ node: 'col-' + c.name, kind: 'parent', from: origin, to: centre(colKeys[2]) });
+    links.push({ node: colKeys[1].id, kind: 'chain', from: [colKeys[2].x + U / 2, colKeys[2].y - GAP / 2], to: centre(colKeys[1]) });
+    links.push({ node: colKeys[0].id, kind: 'chain', from: [colKeys[1].x + U / 2, colKeys[1].y - GAP / 2], to: centre(colKeys[0]) });
+  }
+  const mb = ks.find(k => k.id === 'matrix-middle-bottom');
+  const anchorPt = [mb.x + U / 2, mb.y + U];
+  const thumbs = ks.filter(k => k.id.startsWith('thumbfan'));
+  links.push({ node: 'thumbfan', kind: 'explicit', from: anchorPt, to: [thumbs[0].x, thumbs[0].y + U / 2] });
+  links.push({ node: 'thumbfan-mid-home', kind: 'chain', from: [thumbs[0].x + U, thumbs[0].y + U / 2], to: centre(thumbs[1]) });
+  links.push({ node: 'thumbfan-far-home', kind: 'chain', from: [thumbs[1].x + U, thumbs[1].y + U / 2], to: centre(thumbs[2]) });
+  for (const k of ks) {
+    const g = el('g', { transform: `rotate(${k.rot} ${k.x + U / 2} ${k.y + U / 2})` }, svg);
+    el('rect', { x: k.x, y: k.y, width: U, height: U, rx: 3, fill: 'var(--key-body)', stroke: 'var(--key-edge)' }, g);
+    el('rect', { x: k.x + 6, y: k.y + 3.6, width: U - 12, height: U - 12, rx: 2, fill: 'var(--key-top)' }, g);
+  }
+  const shown = links.filter(l => mode === 'all' || (mode === 'explicit' && l.kind === 'explicit') || (mode === 'ondemand' && l.node === 'thumbfan-mid-home'));
+  for (const l of shown) link(svg, l.from, l.to);
+  if (mode === 'ondemand') {
+    const k = thumbs[1];
+    chip(svg, k.x + U / 2, k.y + U + 14, k.id);
+    el('path', { d: `M${k.x + 30} ${k.y + 28} l0 14 l4 -4 l5 8 l2 -1 l-5 -8 l6 0 z`, fill: '#fff', stroke: '#000', 'stroke-width': 0.6 }, svg);
+  }
+}
+drawLinks('all', 'all'); drawLinks('ondemand', 'ondemand'); drawLinks('explicit', 'explicit');
+</script>
+</body>
+</html>

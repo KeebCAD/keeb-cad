@@ -469,7 +469,7 @@ File menu, Export menu, Design info, Autocomplete dropdown and Context menu use 
 
 ### Canvas marks
 
-- **Canvas keys** — Layout: filled keycaps (`{colors.key-body}`, `{colors.key-edge}`, `{colors.key-top-face}`), selection outline `{colors.selection}`; slot ids on the top face in `{colors.key-legend}`. Outline and PCB: keys as `{colors.key-outline-faint}` outlines. → `mockups/key-rendering-1.html` (option a).
+- **Canvas keys** — Layout: filled keycaps (`{colors.key-body}`, `{colors.key-edge}`, `{colors.key-top-face}`), selection outline `{colors.selection}`; no slot ids at rest: the pointed and the selected slot show their id in a label just below the key (`{colors.panel}` fill, 1px `{colors.key-edge}`, `{typography.canvas-label}` in `{colors.text}`), drawn in screen space above keys and borders; on the right half the id reads as authored, with no `right/`, since the half's position shows the side (Sergii 2026-11-14; → `mockups/canvas-legend-2.html` B2). Outline and PCB: keys as `{colors.key-outline-faint}` outlines. → `mockups/key-rendering-1.html` (option a).
 - **Right half** — body and top face at `{components.right-half.body-opacity}` until selected; edges, legends and marks stay at full opacity to keep 3:1 contrast `[ASSUMPTION]`.
 - **Mirror axis** — 1px dashed `{colors.mirror-axis}` line along `center`'s y-axis, between the halves, in every 2D workspace that draws both halves.
 - **Firmware legends** — keycaps with legends in `{colors.key-legend}`: transparent binding = faint ▽ in `{colors.text-faint}`; no binding (none) = empty cap; mod-tap / layer-tap = two lines, tap over hold; hardware-less action ▲ in the top-right corner.
@@ -484,7 +484,7 @@ File menu, Export menu, Design info, Autocomplete dropdown and Context menu use 
   - **Dragging and nudging:** a group moved as a whole (dragged by its tab, nudged or rotated while selected) carries its border and tab with it, turned about its pivot when rotated; every other border hides until the layout posted after the drop arrives.
   - → `mockups/group-frame-5.html` (shape), `mockups/group-frame-6.html` (margin), `mockups/group-frame-7.html` (tab), `mockups/group-frame-8.html` (waists kept, row 1), `mockups/group-frame-9.html` (empty group, option 2), `mockups/group-border-10.html` (root, option a), `mockups/group-border-11.html` (holes, option c), `mockups/group-border-12.html` (drag, option b). Supersedes the dashed rectangle (Sergii 2026-11-12).
 - **Rotation handle** — small `{rounded.full}` ring in `{colors.rotation-handle}` outside the selection's frame; while dragging, ⊕ in `{colors.rotation-handle}` at the pivot, drawn clear of legends, and a signed delta readout (`−3.4°`) in `{typography.canvas-label}` beside the handle. → `mockups/key-layout.html`.
-- **Anchor link** — dashed `{colors.anchor-link}` line with a dot at the anchor point.
+- **Anchor link** — dashed `{colors.anchor-link}` line with a dot at the anchor point; shown only for the pointed and the selected node (EXPERIENCE.md › Canvas; → `mockups/canvas-anchor-1.html` B).
 - **Outline context line** (Layout) — 1px `{colors.outline-context}`, behind keys, not hit-testable.
 - **Overlap area** — error: `{colors.overlap-fill}` with a solid `{colors.error}` outline; warning: `{colors.overlap-warning-fill}` with a dashed `{colors.overlap-warning-stroke}` outline.
 - **Violation marker** — ● / ▲ badge on the id's top-right corner; anchor-cycle path drawn in `{colors.cycle-path}` with arrowheads.
@@ -515,7 +515,7 @@ Hand-built parts are milestone 2 (decided 2026-11-01, spine AD-5); their decided
 |---|---|
 | Mauve for selection, rotation handle, focus and pick marks only | Reuse Mauve for state, copper or decoration |
 | Pair every state color with a glyph, hatch or line style | Signal state or severity by color alone |
-| Put all keycap text on the top face in `key-legend` | Text on the key body or on Overlay0 |
+| Put all keycap text on the top face in `key-legend` (the Layout id label below the key is not keycap text) | Text on the key body or on Overlay0 |
 | Mono for anything the user types or reads as a value, id or hash | Mono for chrome labels and menus |
 | Tabular digits in every number | Proportional digits that jitter while dragging |
 | Shadows only on floating overlays | Shadows or gradients on docked panels or the canvas |

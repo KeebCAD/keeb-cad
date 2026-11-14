@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canvas legends</title>
+<style>
+  :root {
+    --canvas: #414559; --key-body: #626880; --key-edge: #949cbb; --key-top: #949cbb;
+    --legend: #232634; --label-bg: #303446; --label-text: #c6d0f5; --selection: #ca9ee6;
+    --group-border: #949cbb; --text: #c6d0f5; --muted: #a5adce; --anchor: #81c8be;
+  }
+  body { margin: 0; padding: 16px; background: #303446; color: var(--text); font: 14px/1.4 system-ui, sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  p.lead { margin: 0 0 16px; color: var(--muted); max-width: 70ch; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; }
+  figure { margin: 0; background: #292c3c; border-radius: 6px; padding: 12px; }
+  figcaption { margin-bottom: 8px; }
+  figcaption b { display: block; }
+  figcaption span { color: var(--muted); font-size: 13px; }
+  svg { width: 100%; height: auto; display: block; background: var(--canvas); border-radius: 4px; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<h1>Canvas legends 2: where the pointed key's id goes</h1>
+<p class="lead">Same keys in every panel, at the zoom where F fits the whole board (a 1u key is about 50 px). The pointer rests on <span class="mono">matrix-middle-top</span>, the top key of its column, so its group <span class="mono">matrix-middle</span> shows its border and tab. No ids are drawn at rest (option B).</p>
+<div class="grid">
+  <figure><figcaption><b>B1 · Label above the key</b><span>The pointed key's label sits where its group's tab goes: they overlap on every top-row key.</span></figcaption><svg id="above" viewBox="0 0 440 300"></svg></figure>
+  <figure><figcaption><b>B2 · Label below the key</b><span>The tab stays above the border, the label below the key; it covers part of the key beneath while shown.</span></figcaption><svg id="below" viewBox="0 0 440 300"></svg></figure>
+  <figure><figcaption><b>B3 · Label centred on the key</b><span>Never near the tab; it hides the key's own top face and spills over its neighbours.</span></figcaption><svg id="centre" viewBox="0 0 440 300"></svg></figure>
+  <figure><figcaption><b>B4 · Id in the status strip</b><span>Nothing drawn on the canvas but the border and tab; the strip names the pointed key beside the cursor coordinates.</span></figcaption><svg id="strip" viewBox="0 0 440 300"></svg></figure>
+</div>
+<script>
+const cols = [
+  { name: 'outer', x: 0, dy: 18 }, { name: 'pinky', x: 1, dy: 18 }, { name: 'ring', x: 2, dy: 6 },
+  { name: 'middle', x: 3, dy: 0 }, { name: 'index', x: 4, dy: 6 }, { name: 'inner', x: 5, dy: 10 },
+];
+const rows = ['top', 'home', 'bottom'];
+const U = 48, GAP = 6;
+function keys() {
+  const out = [];
+  for (const c of cols) rows.forEach((r, i) => out.push({
+    id: `matrix-${c.name}-${r}`, x: 30 + c.x * (U + GAP), y: 40 + c.dy + i * (U + GAP), rot: 0,
+  }));
+  out.push({ id: 'thumbfan-near-home', x: 210, y: 215, rot: 0 });
+  out.push({ id: 'thumbfan-mid-home', x: 265, y: 222, rot: -12 });
+  out.push({ id: 'thumbfan-far-home', x: 322, y: 236, rot: -26 });
+  return out;
+}
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; }
+const CHAR = 6.6; // JetBrains Mono at 11px
+function label(svg, k, scale) {
+  const w = k.id.length * CHAR + 12, cx = (k.x + U / 2) * scale, top = k.y * scale - 6;
+  const g = el('g', {}, svg);
+  el('rect', { x: cx - w / 2, y: top - 18, width: w, height: 18, rx: 3, fill: 'var(--label-bg)', stroke: 'var(--key-edge)', 'stroke-width': 1 }, g);
+  el('text', { x: cx, y: top - 5, 'text-anchor': 'middle', fill: 'var(--label-text)', 'font-size': 11, class: 'mono' }, g).textContent = k.id;
+}
+function draw(id, mode, scale = 1, origin = [0, 0]) { return drawB(id, mode); }
+function unused(id, mode, scale = 1, origin = [0, 0]) {
+  const svg = document.getElementById(id);
+  const root = el('g', { transform: `translate(${-origin[0]} ${-origin[1]})` }, svg);
+  const hovered = 'matrix-ring-home', selected = 'thumbfan-mid-home';
+  const ks = keys();
+  for (const k of ks) {
+    const s = U * scale, x = k.x * scale, y = k.y * scale;
+    const g = el('g', { transform: `rotate(${k.rot} ${x + s / 2} ${y + s / 2})` }, root);
+    el('rect', { x, y, width: s, height: s, rx: 3, fill: 'var(--key-body)', stroke: k.id === selected ? 'var(--selection)' : 'var(--key-edge)', 'stroke-width': k.id === selected ? 2 : 1 }, g);
+    const inset = 6 * scale;
+    el('rect', { x: x + inset, y: y + inset * 0.6, width: s - 2 * inset, height: s - 2 * inset, rx: 2, fill: 'var(--key-top)' }, g);
+    const face = s - 2 * inset - 4;
+    const fits = k.id.length * CHAR <= face;
+    const showOnKey = mode === 'a' || (mode === 'c' && fits);
+    if (showOnKey) el('text', { x: x + s / 2, y: y + s / 2 + 3, 'text-anchor': 'middle', fill: 'var(--legend)', 'font-size': 11, class: 'mono' }, g).textContent = k.id;
+  }
+  if (mode !== 'a') for (const k of ks) if (k.id === hovered || k.id === selected) {
+    if (!(mode === 'c' && k.id.length * CHAR <= U * scale - 12 * scale - 4)) label(root, k, scale);
+  }
+}
+
+function chip(parent, cx, cy, text, opts = {}) {
+  const w = text.length * CHAR + 12;
+  el('rect', { x: cx - w / 2, y: cy - 9, width: w, height: 18, rx: 3, fill: opts.fill || 'var(--label-bg)', stroke: 'var(--key-edge)', 'stroke-width': 1 }, parent);
+  el('text', { x: cx, y: cy + 4, 'text-anchor': 'middle', fill: opts.color || 'var(--label-text)', 'font-size': 11, class: 'mono' }, parent).textContent = text;
+}
+function drawB(id, where) {
+  const svg = document.getElementById(id);
+  const ks = keys();
+  const col = ks.filter(k => k.id.startsWith('matrix-middle'));
+  const m = 4, minX = Math.min(...col.map(k => k.x)) - m, minY = Math.min(...col.map(k => k.y)) - m;
+  const maxX = Math.max(...col.map(k => k.x)) + U + m, maxY = Math.max(...col.map(k => k.y)) + U + m;
+  el('rect', { x: minX, y: minY, width: maxX - minX, height: maxY - minY, rx: 6, fill: 'none', stroke: 'var(--group-border)', 'stroke-dasharray': '4 3' }, svg);
+  for (const k of ks) {
+    const g = el('g', { transform: `rotate(${k.rot} ${k.x + U / 2} ${k.y + U / 2})` }, svg);
+    el('rect', { x: k.x, y: k.y, width: U, height: U, rx: 3, fill: 'var(--key-body)', stroke: 'var(--key-edge)' }, g);
+    el('rect', { x: k.x + 6, y: k.y + 3.6, width: U - 12, height: U - 12, rx: 2, fill: 'var(--key-top)' }, g);
+  }
+  const tabText = '⠿ matrix-middle', tw = tabText.length * CHAR + 10;
+  el('rect', { x: minX, y: minY - 19, width: tw, height: 17, rx: 3, fill: 'var(--label-bg)', stroke: 'var(--group-border)' }, svg);
+  el('text', { x: minX + 5, y: minY - 6.5, fill: 'var(--label-text)', 'font-size': 11, class: 'mono' }, svg).textContent = tabText;
+  const k = ks.find(k => k.id === 'matrix-middle-top');
+  const cx = k.x + U / 2;
+  if (where === 'above') chip(svg, cx, k.y - 13, k.id);
+  if (where === 'below') chip(svg, cx, k.y + U + 12, k.id);
+  if (where === 'centre') chip(svg, cx, k.y + U / 2, k.id);
+  el('path', { d: `M${cx + 6} ${k.y + 30} l0 14 l4 -4 l5 8 l2 -1 l-5 -8 l6 0 z`, fill: '#fff', stroke: '#000', 'stroke-width': 0.6 }, svg);
+  if (where === 'strip') {
+    el('rect', { x: 0, y: 278, width: 440, height: 22, fill: '#292c3c' }, svg);
+    el('text', { x: 10, y: 293, fill: 'var(--muted)', 'font-size': 11, class: 'mono' }, svg).textContent = 'matrix-middle-top   x −84.0  y 41.5   zoom 100%';
+  }
+}
+drawB('above', 'above'); drawB('below', 'below'); drawB('centre', 'centre'); drawB('strip', 'strip');
+</script>
+</body>
+</html>
