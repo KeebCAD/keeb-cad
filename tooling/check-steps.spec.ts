@@ -1,6 +1,5 @@
 // A step dropped from `pnpm check`, the pre-commit hook or CI fails no other test; this one makes
-// the drop a visible edit. Each tool's own behaviour is proven where it is configured (the lint
-// rules in tooling/lint, the import rules in tooling/ad10).
+// the drop a visible edit. The import rules are proven where they are configured (tooling/ad10).
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
