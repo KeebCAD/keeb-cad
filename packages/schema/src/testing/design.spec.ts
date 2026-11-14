@@ -8,6 +8,7 @@ import { aLayout, aSlot } from './layout'
 import { aLibraryVersion } from './library-version'
 import { anId } from './id'
 import { aMeta } from './meta'
+import { aSidePartOverride } from './override'
 
 describe('aDesign', () => {
   it('builds a value its schema accepts', () => {
@@ -19,6 +20,7 @@ describe('aDesign', () => {
     ['libraryVersions', () => ({ libraryVersions: [aLibraryVersion()] })],
     ['parts', () => ({ parts: [aBlueprintDesignPart({ id: anId('other') })] })],
     ['layout', () => ({ layout: aLayout({ children: [aSlot()] }) })],
+    ['overrides', () => ({ overrides: [aSidePartOverride()] })],
   ])('keeps the %s it is given', (_field, makeFields) => {
     const fields = makeFields()
 

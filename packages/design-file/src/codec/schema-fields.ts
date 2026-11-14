@@ -5,6 +5,7 @@ import type { CodecSchema, FieldForm, FieldMetadata, Fields, ObjectLikeSchema } 
 
 const supported = new Set<string>([
   'optional',
+  'nullable',
   'string',
   'number',
   'boolean',
@@ -101,11 +102,26 @@ export function resolveObject(
   }
 }
 
-// Optional fields are written and read like the schema they wrap; an absent one is omitted.
-function codecSchemaOf(schema: v.GenericSchema): Exclude<CodecSchema, { type: 'optional' }> {
+// Whether a field's schema lets its value be null, which the codec then writes as KDL's null.
+export function isNullable(schema: v.GenericSchema): boolean {
+  return checkedSchema(schema).type === 'nullable'
+}
+
+// Optional and nullable fields are written and read like the schema they wrap; an absent
+// optional one is omitted.
+function codecSchemaOf(
+  schema: v.GenericSchema,
+): Exclude<CodecSchema, { type: 'optional' | 'nullable' }> {
+  const codecSchema = checkedSchema(schema)
+  return codecSchema.type === 'optional' || codecSchema.type === 'nullable'
+    ? codecSchemaOf(codecSchema.wrapped)
+    : codecSchema
+}
+
+function checkedSchema(schema: v.GenericSchema): CodecSchema {
   const codecSchema = schema as CodecSchema
   if (!supported.has(codecSchema.type)) {
     throw new InvariantError(`The KDL codec has no rule for a ${codecSchema.type} schema.`)
   }
-  return codecSchema.type === 'optional' ? codecSchemaOf(codecSchema.wrapped) : codecSchema
+  return codecSchema
 }

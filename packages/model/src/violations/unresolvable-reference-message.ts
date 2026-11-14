@@ -11,5 +11,6 @@ export function unresolvableReferenceMessage(
   return match(reference)
     .with('part', () => `The slot "${String(named)}" names a part that doesn't resolve.`)
     .with('anchor', () => `The node "${String(named)}" has an anchor that doesn't resolve.`)
+    .with('override', () => `The override on "${String(named)}" names a slot that doesn't resolve.`)
     .exhaustive()
 }

@@ -37,7 +37,7 @@ function slotIds(node: Node): string[] {
 // Every slot on one run, 18 by 18 mm unless the test gives a rectangle or parts of its own.
 function arrange(
   layout: Group,
-  { parts, rectangle = KEY, unplaced = new Set() }: Arrangement = {},
+  { parts, rectangle = KEY, unplaced = new Set(), removed = new Set() }: Arrangement = {},
 ) {
   const resolved =
     parts ??
@@ -45,13 +45,14 @@ function arrange(
       output: aPartsOutput({ ids: [RUN], rows: [rectangle] }),
       slots: Object.fromEntries(slotIds(layout).map((id) => [id, { run: RUN, fit: 'fitted' }])),
     })
-  return placeLayout(layout, GAP, resolved, unplaced)
+  return placeLayout(layout, GAP, resolved, unplaced, removed)
 }
 
 interface Arrangement {
   parts?: ResolvedParts
   rectangle?: { w: number; h: number }
   unplaced?: ReadonlySet<Id>
+  removed?: ReadonlySet<string>
 }
 
 function rowAt(output: LayoutOutput, id: string, side: PlacementSide = 'left') {
@@ -554,6 +555,31 @@ describe('placeLayout', () => {
         expectedFields,
       ])
     })
+
+    it.each([
+      ['fitted', 'fitted'],
+      ['a stand-in', 'stand-in'],
+    ] as const)(
+      'empties a removed right slot that is %s, keeping its frame and part row and the left row as it was',
+      (_role, fit) => {
+        const parts = aResolvedParts({
+          output: aPartsOutput({ ids: [RUN], rows: [KEY] }),
+          slots: { [anId('a')]: { run: RUN, fit }, [anId('b')]: { run: RUN, fit: 'fitted' } },
+        })
+        const layout = inRoot(
+          aChainGroup({ id: anId('g'), axis: 'y', children: [slot('a'), slot('b')] }),
+        )
+        const kept = arrange(layout, { parts })
+
+        const output = arrange(layout, { parts, removed: new Set(['right/a']) })
+
+        expect({ left: rowAt(output, 'a'), right: rowAt(output, 'a', 'right') }).toEqual({
+          left: rowAt(kept, 'a'),
+          right: { ...rowAt(kept, 'a', 'right'), fit: 'empty' },
+        })
+        expect(rowAt(output, 'a')?.fit).toBe(fit)
+      },
+    )
 
     it('reflects a slot inside a turned group with the group', () => {
       const group = aFreeGroup({

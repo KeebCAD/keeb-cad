@@ -6,6 +6,8 @@ import {
   aLayout,
   anId,
   aPartRef,
+  aSideId,
+  aSidePartOverride,
   aSlot,
   aSlotAnchor,
 } from '@keeb-cad/schema/testing'
@@ -56,6 +58,32 @@ describe('checkStructure', () => {
     const next = onSlots({ id: anId('a'), part: aPartRef('missing') }, { id: anId('b') })
 
     expectOk(checkStructure(previous, next))
+  })
+
+  describe('an override target', () => {
+    const dangling = () => aSidePartOverride({ target: aSideId('right/zz'), part: null })
+    const withOverrides = (slots: string[], overrides = [dangling()]) =>
+      aDesign({
+        layout: aLayout({ children: slots.map((id) => aSlot({ id: anId(id) })) }),
+        overrides,
+      })
+
+    it('lets an edit keep an override a loaded file already left dangling', () => {
+      expectOk(checkStructure(withOverrides(['a']), withOverrides(['a', 'c'])))
+    })
+
+    it('refuses an edit that adds an override on a slot the design lacks, naming its target', () => {
+      const result = checkStructure(withOverrides(['a'], []), withOverrides(['a']))
+
+      expectErr(result)
+      expect(result.error).toEqual(unknownTarget('right/zz'))
+    })
+
+    it('passes an override on a slot the design has', () => {
+      const removal = aSidePartOverride({ target: aSideId('left/a'), part: null })
+
+      expectOk(checkStructure(withOverrides(['a'], []), withOverrides(['a'], [removal])))
+    })
   })
 
   it('passes a library target the design does not hold', () => {

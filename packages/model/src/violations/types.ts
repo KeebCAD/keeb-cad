@@ -1,1 +1,1 @@
-export type UnresolvedReference = 'part' | 'anchor'
+export type UnresolvedReference = 'part' | 'anchor' | 'override'

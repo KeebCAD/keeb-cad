@@ -26,5 +26,9 @@ export type {
   SetAnchorInput,
 } from './layout/types'
 
+export { SetOverride } from './overrides/set-override'
+export { overridesCommandsModule } from './overrides/overrides-commands-module'
+export type { SetOverrideInput } from './overrides/types'
+
 export { emptyInputSchema } from './empty-input-schema'
 export type { DeletePartInput, EmptyInput } from './types'

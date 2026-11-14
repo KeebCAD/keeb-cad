@@ -1,4 +1,4 @@
-import { anId } from '@keeb-cad/schema/testing'
+import { anId, aSideId } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { unresolvableReferenceMessage } from './unresolvable-reference-message'
@@ -10,5 +10,11 @@ describe('unresolvableReferenceMessage', () => {
     ['part', 's', 'The slot "s" names a part that doesn\'t resolve.'],
   ])('words an unresolved %s', (reference, id, expected) => {
     expect(unresolvableReferenceMessage(reference, [anId(id)])).toBe(expected)
+  })
+
+  it('words an unresolved override target, naming it', () => {
+    expect(unresolvableReferenceMessage('override', [aSideId('right/zz')])).toBe(
+      'The override on "right/zz" names a slot that doesn\'t resolve.',
+    )
   })
 })

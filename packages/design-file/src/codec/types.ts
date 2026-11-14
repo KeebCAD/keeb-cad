@@ -15,6 +15,7 @@ export type CodecSchema =
   | v.VariantSchema<string, v.VariantOptions<string>, v.ErrorMessage<v.VariantIssue> | undefined>
   | v.LazySchema<AnySchema>
   | v.OptionalSchema<AnySchema, unknown>
+  | v.NullableSchema<AnySchema, unknown>
   | v.ArraySchema<AnySchema, v.ErrorMessage<v.ArrayIssue> | undefined>
   | v.StringSchema<v.ErrorMessage<v.StringIssue> | undefined>
   | v.NumberSchema<v.ErrorMessage<v.NumberIssue> | undefined>

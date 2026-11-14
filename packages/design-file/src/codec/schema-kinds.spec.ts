@@ -192,6 +192,27 @@ describe('the KDL codec over every schema kind it supports', () => {
     )
   })
 
+  it('writes null in a nullable field as KDL null and reads it back as null', () => {
+    const schema = v.strictObject({ s: v.strictObject({ p: v.nullable(v.string()) }) })
+
+    const written = writeKdl(schema, { s: { p: null } })
+    const document = parseKdl(written)
+    expectOk(document)
+    const result = readKdl(schema, document.value.nodes)
+
+    expectOk(result)
+    expect({ written, read: result.value }).toEqual({
+      written: 's p=#null\n',
+      read: { s: { p: null } },
+    })
+  })
+
+  it('refuses null in a field that is not nullable as a value it cannot write', () => {
+    expect(() => writeKdl(v.strictObject({ p: v.string() }), { p: null })).toThrow(
+      'The KDL codec writes only strings, numbers and booleans, not object.',
+    )
+  })
+
   it('writes record entries in compareId order, however they were given', () => {
     const schema = v.strictObject({ map: v.record(v.string(), v.string()) })
 

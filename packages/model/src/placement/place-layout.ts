@@ -33,12 +33,14 @@ const SIDES: readonly (readonly [PlacementSide, Matrix])[] = [
 ]
 
 // Each group, children before parents, places its subtree relative to itself, so a chain step
-// finds its siblings' extents ready; the root's relative frames give the world frames.
+// finds its siblings' extents ready; the root's relative frames give the world frames. A removed
+// slot keeps its frame and part row, so it still takes its space; only its fit says it is empty.
 export function placeLayout(
   layout: Frozen<Group>,
   gap: Frozen<Gap>,
   parts: ResolvedParts,
   unplaced: ReadonlySet<Id>,
+  removed: ReadonlySet<string>,
 ): LayoutOutput {
   const graph = dependencyGraph(layout)
   const placing: Placing = {
@@ -59,10 +61,11 @@ export function placeLayout(
     const fields = partFields(id, node, parts)
     for (const [side, mirror] of SIDES) {
       const inWorld = (matrix: Matrix) => compose(compose(root, mirror), matrix)
+      const qualified = sideQualifiedId(side, id)
       rows.set(
-        sideQualifiedId(side, id),
+        qualified,
         rowOf(
-          fields,
+          removed.has(qualified) ? { ...fields, fit: 'empty' } : fields,
           side === 'right',
           relative.map(({ anchor }) => inWorld(anchor)),
           relative.map(({ frame }) => inWorld(frame)),

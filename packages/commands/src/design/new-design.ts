@@ -31,6 +31,7 @@ export class NewDesign implements Action<EmptyInput, DesignInvalid> {
       libraryVersions: [{ id: 'lib:blueprint/choc-key', version: 1 }],
       parts: [{ type: 'blueprint', id: 'key', blueprint: 'lib:blueprint/choc-key', inputs: {} }],
       layout: { id: mintId(), arrangement: 'free', children: [] },
+      overrides: [],
     })
     return AsyncResult.fromResult(
       this.#store.replaceDesign({ design, unreadable: [] }).map(() => {}),

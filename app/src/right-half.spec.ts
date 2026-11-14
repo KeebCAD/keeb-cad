@@ -2,7 +2,11 @@ import { NewDesign } from '@keeb-cad/commands'
 import { type Committed, DesignStore } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
 import { unsupportedFormMessage } from '@keeb-cad/model/worker'
-import { corneyIslandLayout } from '@keeb-cad/reference-designs/scripts'
+import {
+  corneyIslandLayout,
+  corneyIslandTestOverrides,
+  type LayoutScript,
+} from '@keeb-cad/reference-designs/scripts'
 import { Option } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
 import type { LayoutOutput } from '@keeb-cad/schema'
@@ -25,6 +29,8 @@ const DIGITS = 9
 const LEFT = 'left/'
 const RIGHT = 'right/'
 const EXPECTED_RIGHT_HALF_X = 140
+// The slot corneyIslandTestOverrides removes on the right.
+const REMOVED = 'thumbfan-far-home'
 // The worker's first load has Vite transform its whole module graph on demand, which took over
 // two seconds while the rest of the suite ran beside it.
 const FIRST_LOAD = { timeout: 10_000 }
@@ -49,9 +55,12 @@ function committed(store: DesignStore): Committed {
   return current.value
 }
 
-async function runCorneyScript(store: DesignStore): Promise<void> {
+// Corney's script, then any test-only steps after it.
+async function runCorneyScript(store: DesignStore, steps: LayoutScript = []): Promise<void> {
   expectOk(await store.run(NewDesign, {}))
-  for (const { command, input } of corneyIslandLayout) expectOk(store.runById(command, input))
+  for (const { command, input } of [...corneyIslandLayout, ...steps]) {
+    expectOk(store.runById(command, input))
+  }
 }
 
 // One side's posted rows in id order, the side prefix dropped from each id.
@@ -154,4 +163,31 @@ describe('the right half on main', () => {
       })
     },
   )
+})
+
+describe('a per-side override on main', () => {
+  it("posts the removed right slot empty in its left slot's reflected space, every other right row as before", async () => {
+    const { store, lifecycle } = await arrange()
+
+    await runCorneyScript(store, corneyIslandTestOverrides)
+    await expect.poll(() => lifecycle.layoutSetArrived, FIRST_LOAD).toBe(true)
+    const { seq } = committed(store)
+    await expect.poll(() => lifecycle.issues.map((issues) => issues.seq)).toEqual(Option.some(seq))
+
+    const left = sideOf(lifecycle, LEFT)
+    expect({
+      right: sideOf(lifecycle, RIGHT),
+      leftFit: lifecycle.layoutRow(`${LEFT}${REMOVED}`).map(({ fit }) => fit),
+      violations: lifecycle.issues.map(({ violations }) => violations),
+    }).toEqual({
+      right: left.map(({ id, row }) => ({
+        id,
+        row: row.map((fields) =>
+          id === REMOVED ? { ...reflected(fields), fit: 'empty' } : reflected(fields),
+        ),
+      })),
+      leftFit: Option.some('fitted'),
+      violations: Option.some([]),
+    })
+  })
 })
