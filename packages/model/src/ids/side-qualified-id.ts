@@ -18,3 +18,17 @@ export function nodeIdOf(qualified: string): Id {
   }
   return node.output
 }
+
+// Every posted row id starts with one of the placement sides, so any other prefix is a bug.
+export function sideOf(qualified: string): PlacementSide {
+  const separator = qualified.indexOf('/')
+  const side = qualified.slice(0, Math.max(separator, 0))
+  if (!isPlacementSide(side)) {
+    throw new InvariantError(`"${qualified}" has no placement side.`)
+  }
+  return side
+}
+
+function isPlacementSide(side: string): side is PlacementSide {
+  return side === 'left' || side === 'right' || side === 'whole'
+}

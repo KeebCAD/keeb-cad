@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { UiTree } from '@keeb-cad/ui'
+import { type TreeRow, UiTree } from '@keeb-cad/ui'
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 
+import { useHoveredGroup } from '../group-border/use-hovered-group'
 import { useLandmark } from '../landmarks/use-landmark'
 import { useSelection } from '../selection/use-selection'
 import { useLayoutTree } from './use-layout-tree'
@@ -11,6 +12,7 @@ const root = useTemplateRef<HTMLElement>('root')
 const { returnFocus } = useSlideOut()
 const rows = useLayoutTree()
 const { ids, select } = useSelection()
+const { pointAtTreeGroup, leave, clearTreeHover } = useHoveredGroup()
 useLandmark('slide-out', root)
 
 // Its first meaningful item: the selected row, else the first row, else, empty, the root itself.
@@ -21,7 +23,17 @@ onMounted(() => {
     root.value
   target?.focus()
 })
-onBeforeUnmount(() => returnFocus(root.value))
+onBeforeUnmount(() => {
+  // Only a hover its rows set, so a key's border under the pointer stays.
+  clearTreeHover()
+  returnFocus(root.value)
+})
+
+// A slot's row points at no group (EXPERIENCE.md Left rail: only a group row shows a border).
+function hover(row: TreeRow): void {
+  if (row.kind === 'group') pointAtTreeGroup(row.id)
+  else leave()
+}
 </script>
 
 <template>
@@ -37,6 +49,8 @@ onBeforeUnmount(() => returnFocus(root.value))
       :rows="rows"
       :selected="ids"
       @update:selected="select"
+      @hover="hover"
+      @leave="leave"
     />
   </aside>
 </template>

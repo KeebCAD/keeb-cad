@@ -2,7 +2,7 @@
 name: keeb-cad editor
 description: Browser-only visual keyboard CAD for one expert builder. Catppuccin Frappé dark by default, Latte light; calm density; canvas first, chrome quiet.
 status: final
-updated: 2026-11-12
+updated: 2026-11-14
 colors:
   # Unsuffixed = dark (Catppuccin Frappé, primary). `-light` = Catppuccin Latte.
   # Comment = Catppuccin color name. Latte uses the same name unless a decided fix says otherwise.
@@ -33,7 +33,7 @@ colors:
   key-top-face: '#949cbb'        # Overlay2 (lighter than the body)
   key-legend: '#232634'          # Crust: every text drawn on a keycap
   key-outline-faint: '#949cbb'   # Overlay2, 1px, full opacity (Outline, PCB, unfitted slots)
-  group-frame: '#949cbb'         # Overlay2, dashed
+  group-border: '#949cbb'        # Overlay2, dashed
   anchor-link: '#81c8be'         # Teal, dashed
   rotation-handle: '#ca9ee6'     # Mauve ring; shown only on the selection
   outline-context: '#b5bfe2'     # Subtext1: outline drawn behind keys in Layout
@@ -88,7 +88,7 @@ colors:
   key-top-face-light: '#dce0e8'  # Crust, lighter than the body — decided
   key-legend-light: '#4c4f69'    # Text
   key-outline-faint-light: '#7c7f93'
-  group-frame-light: '#6c6f85'   # Subtext0 — decided
+  group-border-light: '#6c6f85'  # Subtext0 — decided
   anchor-link-light: '#0f6f75'   # darkened Teal — decided
   rotation-handle-light: '#8839ef'
   outline-context-light: '#5c5f77'
@@ -307,7 +307,7 @@ components:
     inset: 12px                  # from the canvas top-left corner
   keymap-layer-tabs:
     height: 30px
-  group-frame-tab:
+  group-border-tab:
     height: 17px
     radius: '{rounded.sm}'
   fitted-toggle:
@@ -371,7 +371,7 @@ Avoid: Peach or Red for selection (Peach collided with F.Cu and error Red, so Ma
 | key-legend / key-top-face | 5.53 | 6.04 |
 | error text / panel · chrome | 4.65 · 5.21 | 4.80 · 4.46 (not used) |
 | key-edge, key-outline-faint, plate / canvas | 3.48 | 3.49 |
-| group-frame / canvas | 3.48 | 4.37 |
+| group-border / canvas | 3.48 | 4.37 |
 | anchor-link / canvas | 4.93 | 5.23 |
 | selection / canvas | 4.30 | 4.79 |
 | F.Cu · B.Cu / canvas | 4.45 · 4.10 | 4.13 · 4.34 |
@@ -474,11 +474,11 @@ File menu, Export menu, Design info, Autocomplete dropdown and Context menu use 
 - **Mirror axis** — 1px dashed `{colors.mirror-axis}` line along `center`'s y-axis, between the halves, in every 2D workspace that draws both halves.
 - **Firmware legends** — keycaps with legends in `{colors.key-legend}`: transparent binding = faint ▽ in `{colors.text-faint}`; no binding (none) = empty cap; mod-tap / layer-tap = two lines, tap over hold; hardware-less action ▲ in the top-right corner.
 - **Unfitted slot** — dashed `{colors.key-outline-faint}` outline, no fill; keeps its place and index. An unresolved part's stand-in rectangle looks the same, plus its ▲ / ● badge at the top-right.
-- **Group border** — borders show only on hover and selection (EXPERIENCE.md › Canvas); the root group has none. Tokens: still `group-frame` / `group-frame-tab` until 13.32 renames them with `theme.css`.
+- **Group border** — borders show only on hover and selection (EXPERIENCE.md › Canvas); the root group has none.
   - **Shape:** each slot's part envelope (in M1, its key rectangle) grown by the margin once per level, from the slot's own group up to the bordered group, then united with rounded joins, so each level sits one margin outside its children's borders. Fitted slots, stand-ins and slots an override empties count; unplaced slots don't. It follows the stagger and keeps the waists where spread keys (a thumb fan) barely join.
   - **Margin:** the smaller of `gap x` and `gap y`, never less than 1 mm, and 1 mm when the gap fails to evaluate; in model millimetres, so it holds at any zoom.
-  - **Stroke:** 1px dashed `{colors.group-frame}`, drawn beneath the keys, so where a border passes under another group's key it is hidden there. Only the outer line is drawn; a hole the union leaves is not.
-  - **Tab:** `⠿ <group id>` (`{components.group-frame-tab.height}`, `{components.group-frame-tab.radius}`) above the border's highest point, at its left end, always horizontal.
+  - **Stroke:** 1px dashed `{colors.group-border}`, drawn beneath the keys, so where a border passes under another group's key it is hidden there. Only the outer line is drawn; a hole the union leaves is not.
+  - **Tab:** `⠿ <group id>` (`{components.group-border-tab.height}`, `{components.group-border-tab.radius}`) above the border's highest point, at its left end, always horizontal.
   - **Selected:** border 2px `{colors.selection}`, tab filled Mauve with a Crust label.
   - **Empty group** (no placed slots): an origin mark ⊕ in the same colours with its tab beside it, no outline.
   - **Dragging and nudging:** a group moved as a whole (dragged by its tab, nudged or rotated while selected) carries its border and tab with it, turned about its pivot when rotated; every other border hides until the layout posted after the drop arrives.

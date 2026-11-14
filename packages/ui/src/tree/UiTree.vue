@@ -4,10 +4,11 @@ import { computed, shallowRef } from 'vue'
 
 import UiIcon from '../icon/UiIcon.vue'
 import { findTreeRow, groupIdsOf } from './tree-rows'
-import type { TreeProps, TreeRow } from './types'
+import type { TreeEmits, TreeProps, TreeRow } from './types'
 
 const props = defineProps<TreeProps>()
 const selected = defineModel<readonly string[]>('selected', { required: true })
+const emit = defineEmits<TreeEmits>()
 
 // Groups start expanded, so a row selected elsewhere is shown; the user's collapses are kept.
 const collapsed = shallowRef<readonly string[]>([])
@@ -43,6 +44,7 @@ const childrenOf = (row: TreeRow): TreeRow[] | undefined =>
     selection-behavior="replace"
     :aria-label="label"
     class="flex flex-col py-1"
+    @pointerleave="emit('leave')"
   >
     <TreeItem
       v-for="item in flattenItems"
@@ -50,6 +52,7 @@ const childrenOf = (row: TreeRow): TreeRow[] | undefined =>
       v-bind="item.bind"
       :style="{ paddingInlineStart: `${item.level * 12}px` }"
       class="flex h-row cursor-default items-center gap-2 border-l-2 border-transparent pr-3 text-text-muted hover:bg-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus data-selected:border-selection data-selected:bg-hover data-selected:text-text"
+      @pointerenter="emit('hover', item.value)"
     >
       <UiIcon :name="item.value.kind" />
       <span class="truncate font-mono text-mono">{{ item.value.label }}</span>

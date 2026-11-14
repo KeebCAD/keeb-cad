@@ -67,6 +67,25 @@ describe('Tree', () => {
     await expect.element(row('outer-home')).toHaveAttribute('aria-selected', 'false')
   })
 
+  it('emits hover with the row the pointer enters, then leave once it leaves the tree', async () => {
+    const row: TreeRow = { id: 'x', label: 'x', kind: 'slot', children: [] }
+    const events: unknown[] = []
+    const screen = await render(UiTree, {
+      props: {
+        label: 'Tree',
+        rows: [row],
+        selected: [],
+        onHover: (hovered: TreeRow) => events.push(['hover', hovered]),
+        onLeave: () => events.push(['leave']),
+      },
+    })
+
+    await userEvent.hover(screen.getByRole('treeitem', { name: 'x', exact: true }))
+    await userEvent.unhover(screen.getByRole('tree', { name: 'Tree' }))
+
+    expect(events).toEqual([['hover', row], ['leave']])
+  })
+
   it('moves focus to the next row on the down arrow', async () => {
     const { row } = await arrange()
     row('outer-bottom').element().focus()

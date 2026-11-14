@@ -1,15 +1,22 @@
 <script setup lang="ts">
 import { UiKbd } from '@keeb-cad/ui'
 import { useElementSize } from '@vueuse/core'
-import { computed, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, useTemplateRef, watch } from 'vue'
 
 import { StartAddChainGroup } from '../../add-flow/start-add-chain-group'
 import { useOpenDesign } from '../../design/use-open-design'
+import GroupBorder from '../../group-border/GroupBorder.vue'
+import { groupBorderMarks } from '../../group-border/group-border-marks'
+import GroupBorderTab from '../../group-border/GroupBorderTab.vue'
+import GroupOriginMark from '../../group-border/GroupOriginMark.vue'
+import { useGroupBorders } from '../../group-border/use-group-borders'
+import { useHoveredGroup } from '../../group-border/use-hovered-group'
 import { useCanvasItemsRoot } from '../../viewport/use-canvas-items-root'
 import { useViewport } from '../../viewport/use-viewport'
 import { useViewportControls } from '../../viewport/use-viewport-controls'
 import AnchorLink from './AnchorLink.vue'
 import CanvasSlot from './CanvasSlot.vue'
+import type { GroupMarksAt } from './types'
 import { useLayoutSetArrived } from './use-layout-set-arrived'
 import { useNewDesignHint } from './use-new-design-hint'
 import { usePlacedNodes } from './use-placed-nodes'
@@ -27,6 +34,9 @@ const arrived = useLayoutSetArrived()
 const { transform, modelToScreen, fitOnce } = useViewport(size)
 useViewportControls(svg, size)
 useCanvasItemsRoot(svg, keys)
+const borders = useGroupBorders()
+const { clear: clearHovered } = useHoveredGroup()
+onBeforeUnmount(clearHovered)
 
 const slots = computed(() => placed.value.flatMap((node) => (node.kind === 'slot' ? [node] : [])))
 const legends = computed(() =>
@@ -40,6 +50,22 @@ const links = computed(() =>
     from: modelToScreen(anchorAt),
     to: modelToScreen(frame),
   })),
+)
+
+// Tabs and origin marks in screen px: an empty group's tab sits beside its origin, any other's on
+// its border's topmost point.
+const marks = computed(() =>
+  borders.value.flatMap(({ id, key, frame, empty, tabAt, shown }): GroupMarksAt[] => {
+    if (shown === 'none') return []
+    if (empty) {
+      const origin = modelToScreen(frame)
+      const { x, y } = groupBorderMarks.emptyTabOffset
+      return [{ id, key, shown, origin, tab: { x: origin.x + x, y: origin.y + y } }]
+    }
+    return tabAt
+      .map((at): GroupMarksAt[] => [{ id, key, shown, origin: undefined, tab: modelToScreen(at) }])
+      .getOr([])
+  }),
 )
 
 // The board extent is what the browser drew, so the fit waits for the keys to be in the DOM; and
@@ -61,6 +87,7 @@ watch(
     <svg ref="svg" class="absolute inset-0 block size-full touch-none">
       <g v-if="!showsHint">
         <g :transform="transform">
+          <GroupBorder v-for="row in borders" :key="row.key" :row="row" :grayed="grayed" />
           <g ref="keys">
             <CanvasSlot v-for="slot in slots" :key="slot.key" :placed="slot" :grayed="grayed" />
           </g>
@@ -85,6 +112,19 @@ watch(
           >
             {{ legend.id }}
           </text>
+        </g>
+        <!-- Pointed at and pressed, so neither hidden nor passed through like the legends. -->
+        <g>
+          <template v-for="mark in marks" :key="mark.key">
+            <GroupOriginMark
+              v-if="mark.origin !== undefined"
+              :id="mark.id"
+              :at="mark.origin"
+              :shown="mark.shown"
+              :grayed="grayed"
+            />
+            <GroupBorderTab :id="mark.id" :at="mark.tab" :shown="mark.shown" :grayed="grayed" />
+          </template>
         </g>
       </g>
     </svg>
