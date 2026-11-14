@@ -3,7 +3,7 @@ title: 'Per-side overrides remove a part'
 type: 'feature'
 ticket: 33
 created: '2026-11-14'
-status: 'built'
+status: 'done'
 baseline_revision: '40326d150f9516a638921383f1848777497cfc03'
 route: 'full'
 route_source: 'auto'
