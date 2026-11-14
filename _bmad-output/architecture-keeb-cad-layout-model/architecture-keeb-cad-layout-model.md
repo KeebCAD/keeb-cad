@@ -74,7 +74,7 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | **gap** | The one uniform edge-to-edge gap between keycaps, `meta.gap` (x, y), so rows align; no group or per-child gap (AD-4) |
 | **u** | A keycap-size label (`1u`, `1.5u`, …): a value of a part blueprint's `size` input, never a length (AD-5) |
 | **index** | A child's position within a chain |
-| **part** | What a slot holds: a library part pinned in `library-versions` (`ref('library-part')`), or a design-local part (`ref('design-part')`); both kinds use the one part schema (AD-5). `'empty'` exists only in per-side overrides (AD-6) |
+| **part** | What a slot holds: a library part pinned in `library-versions` (`ref('library-part')`), or a design-local part (`ref('design-part')`); both kinds use the one part schema (AD-5). A `null` part (no part) exists only in per-side overrides (AD-6) |
 | **module** | A ready-made board used as a part (nice!nano, nice!view) |
 | **library** | The library's part and blueprint definitions, each with a `lib:` id and an immutable version; design-local parts share the part schema but are not in it |
 | **reversible** | A flag every part carries, library or design-local; a non-reversible part on a split `reversible` board is `part-not-reversible` (AD-5, AD-6) |
@@ -87,7 +87,7 @@ Each term means exactly one thing. Code, file format and UI use these words and 
 | **design-local part** | A part defined in the design's `parts` section, in the part schema: usually a part blueprint applied with inputs (`blueprint`), or a part blueprint the user authors in the design (`authored`, code in milestone 2); how a user makes their own key |
 | **default part** | The part a slot with no part of its own uses: its nearest ancestor group's `defaultPart`, else the required `meta.defaultPart` |
 | **override** | A named change to one side's placement (an `overrides` entry targeting `left/…` or `right/…`, AD-6), to the derived netlist (matrix row/column, MCU pin, LED order), or to a part parameter per target |
-| **fitted** | A slot's part on one side after that side's overrides; a part removed there by `'empty'` is not fitted on that side (AD-6) |
+| **fitted** | A slot's part on one side after that side's overrides; a part removed there by a `null` part is not fitted on that side (AD-6) |
 | **parameter** | A named value with a unit; its name is its id |
 | **expression** | A length or angle written with numbers, units, parameter names and `+ - * / ( )`; parsed and evaluated only by `expr` (AD-17) |
 | **shape** | A named **2D** geometry (AD-16): `derived` or `drawn`, possibly built on other named shapes; resolves to regions. Alterations may go on top. The one term for the outline, plates and the 2D geometry inside blueprints |
@@ -298,8 +298,8 @@ graph LR
   - The design carries `form` in `meta`: `{ type: 'split'; board: 'reversible' | 'mirrored' }` or `{ type: 'unibody' }`. The shape (split or unibody) decides whether a right side is derived; `board` (split only) decides what the halves may differ in and whether `part-not-reversible` applies. All three forms are valid in the schema from format-version 1. Milestone 1 implements split with board `reversible`; the others load and report `unsupported-form` instead of producing outputs.
   - The authored layout describes one side: `left` in split forms, `whole` in unibody. **Only `model` derives the right side**, and it emits per-side placements, with side-qualified ids, for every form. Every stage consumes them; no stage mirrors.
   - The right side is the resolved left side reflected across the y-axis of `center`'s frame. Nodes, vertices, construction points and shapes are reflected together. Attach points swap left and right.
-  - **Per-side differences are `overrides` entries**, each targeting a side placement (`left/…` or `right/…`, a `SideId`) with a `part`: a part reference, or `'empty'` to remove it. `'empty'` exists only here, never on an authored `slot.part`. A slot removed on one side **keeps its space**: that side's chain still steps by the rectangle of the slot's authored part, which the other half fits, so the halves stay geometrically identical and only what's fitted differs.
-  - Split, board `reversible`: one board carries every footprint of both sides (reversible footprints, solder jumpers). The halves differ only through per-side overrides, which **remove**: a whole part (`'empty'`) or **one component** of a part (`side-component`, e.g. the encoder or the switch of a combo part), so the PCB stays identical. An override never swaps a part on a reversible board (`override-not-allowed`). Geometric overrides are not allowed. A non-reversible part is `part-not-reversible`.
+  - **Per-side differences are `overrides` entries**, each targeting a side placement (`left/…` or `right/…`, a `SideId`) with a `part`: a part reference, or `null` to remove it (`part=#null` in the file). `null` exists only here, never on an authored `slot.part`. Not a reserved word such as `'empty'`, because any kebab-case word passes `idSchema` and would read the same as a design part with that id (Sergii 2026-11-14, 13.33). A slot removed on one side **keeps its space**: that side's chain still steps by the rectangle of the slot's authored part, which the other half fits, so the halves stay geometrically identical and only what's fitted differs.
+  - Split, board `reversible`: one board carries every footprint of both sides (reversible footprints, solder jumpers). The halves differ only through per-side overrides, which **remove**: a whole part (`null`) or **one component** of a part (`side-component`, e.g. the encoder or the switch of a combo part), so the PCB stays identical. An override never swaps a part on a reversible board (`override-not-allowed`). Geometric overrides are not allowed. A non-reversible part is `part-not-reversible`.
   - Split, board `mirrored`: one board per side. Overrides may swap or remove a part; per-side `inputs` and `offset` come with mirrored boards.
   - **Lanes and sides.** `parts`, `shapes` and `extras` lanes run once, on the authored side, and `model` derives the right side from them like everything else. `plates`, `pcb`, `firmware` and `case` lanes run **once per physical thing** they make: per half for plates, case and firmware; per board for pcb (one on a reversible board, two on a mirrored one). The lane's context says which.
   - Keymap, overrides and pads use side-qualified ids. A violation names what is at fault: an authored element by its id, a resolved placement by its side-qualified id.
@@ -973,7 +973,7 @@ type Group = ChainGroup | FreeGroup
 type Node  = Slot | Group
 
 type Slot = NodeBase & {
-  part?: PartRef                              // unset = nearest ancestor's defaultPart, else meta.defaultPart; no 'empty' (decision 54)
+  part?: PartRef                              // unset = nearest ancestor's defaultPart, else meta.defaultPart; never null (decision 54)
   inputs?: BlueprintInputs                    // overrides only the inputs the part blueprint marks per-slot (decision 57), e.g. { size: '1.5u' }
 }
 // chain step along the axis = far(A) + meta.gap[axis] − near(B), edge to edge (AD-4); for two slots (hA + hB) / 2 + gap
@@ -986,7 +986,7 @@ type SideId = Brand<`${'left' | 'right'}/${string}`, 'SideId'>   // a derived pl
 type Override =
   | { type: 'side-part'                       // per-side part change (decision 54)
       target: Ref<'side-placement'>           // holds a SideId; resolves to the authored slot after the side prefix
-      part: PartRef | 'empty' }               // remove the part, or swap it (mirrored boards only; a swap on a reversible board is `override-not-allowed`)
+      part: PartRef | null }                  // null removes the part (KDL part=#null; the reference walk and the KDL codec read v.null()); a part reference swaps it (mirrored boards only; a swap on a reversible board is `override-not-allowed`)
   | { type: 'side-component'                  // removes one component of the fitted part on that side (decision 55)
       target: Ref<'side-placement'>
       component: string }                     // a component name of the part, e.g. 'encoder'
@@ -1046,7 +1046,7 @@ type LayoutOutput = {               // shaped like PartsOutput; rows[i] belongs 
 // slot -> part run: one computed in model's parts concept (own part, else the nearest group's defaultPart, else meta.defaultPart; 'else' means unset), plus per-slot inputs,
 // read by the parts lane and placement. fit = stand-in, with part pointing at the stand-in run (the next level's rectangle, else the app-defined one), when the set
 // reference doesn't resolve (unresolvable-reference) or resolves with no run output (blueprint-api-too-new, a first run failing with no last good output, unavailable).
-// An 'empty' override wins: fit = empty, still stepping by that rectangle.
+// A removing override (part null) wins: fit = empty, still stepping by that rectangle.
 type ShapesOutput    // fields: defined before its first story (the Layout set's outline context line, AD-11)
 type PlatesOutput    // fields: defined before its first story
 type PcbPlacement    // fields: defined before its first story; carries the board edge (AD-16)
