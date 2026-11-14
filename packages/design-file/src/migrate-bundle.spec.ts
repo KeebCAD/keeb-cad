@@ -20,6 +20,7 @@ const sections = [
   '    }',
   '}',
   'layout id="root" arrangement="free"',
+  'overrides',
 ]
 
 const routingText = lines('revision "r1"')
@@ -138,7 +139,7 @@ describe('migrateBundle', () => {
       expect(result.error).toEqual({
         kind: 'file-unreadable',
         file: 'design',
-        message: 'The node "meta" appears more than once, on lines 2 and 15.',
+        message: 'The node "meta" appears more than once, on lines 2 and 16.',
       })
     })
   })

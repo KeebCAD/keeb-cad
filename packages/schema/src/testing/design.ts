@@ -9,6 +9,7 @@ export function aDesign({
   libraryVersions = [aLibraryVersion()],
   parts = [aBlueprintDesignPart()],
   layout = aLayout(),
+  overrides = [],
 }: Partial<Design> = {}): Design {
-  return { meta, libraryVersions, parts, layout }
+  return { meta, libraryVersions, parts, layout, overrides }
 }

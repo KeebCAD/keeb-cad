@@ -5,7 +5,14 @@ import type * as v from 'valibot'
 
 import { codecValue } from './codec-value'
 import { kebabCase } from './kebab-case'
-import { fieldForm, fieldMetadata, listItem, recordValue, resolveObject } from './schema-fields'
+import {
+  fieldForm,
+  fieldMetadata,
+  isNullable,
+  listItem,
+  recordValue,
+  resolveObject,
+} from './schema-fields'
 import type { Fields, ObjectLikeSchema } from './types'
 
 // One node per top-level field, in the schema's entry order; a primitive one holds its value as
@@ -15,7 +22,7 @@ export function writeKdl(schema: v.GenericSchema, value: unknown): string {
     ([key, field, fieldValue]) => {
       if (fieldForm(field) !== 'value') return childNodes(key, field, fieldValue)
       const node = Node.create(kebabCase(key))
-      node.addArgument(codecValue(fieldValue))
+      node.addArgument(fieldValueOf(field, fieldValue))
       return [node]
     },
   )
@@ -26,7 +33,7 @@ function writeNode(name: string, schema: ObjectLikeSchema, value: Fields): Node 
   const node = Node.create(name)
   for (const [key, field, fieldValue] of fieldsOf(schema, value)) {
     if (fieldForm(field) === 'value') {
-      node.setProperty(kebabCase(key), codecValue(fieldValue))
+      node.setProperty(kebabCase(key), fieldValueOf(field, fieldValue))
     } else {
       for (const child of childNodes(key, field, fieldValue)) node.appendNode(child)
     }
@@ -70,6 +77,12 @@ function writeItems(item: v.GenericSchema, values: readonly unknown[]): Node[] {
     if (name === undefined) throw new InvariantError('A list item schema names no KDL node.')
     return writeNode(name, schema, value as Fields)
   })
+}
+
+// Null only where the field's schema allows it; anywhere else it is refused like any value the
+// codec can't write.
+function fieldValueOf(field: v.GenericSchema, value: unknown): string | number | boolean | null {
+  return value === null && isNullable(field) ? null : codecValue(value)
 }
 
 // An absent optional field is omitted.

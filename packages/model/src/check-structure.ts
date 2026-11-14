@@ -1,9 +1,17 @@
 import { InvariantError, Result } from '@keeb-cad/result'
-import { compareId, type Design, type Frozen, type Id, type Rejection } from '@keeb-cad/schema'
+import {
+  compareId,
+  type Design,
+  type Frozen,
+  type Id,
+  type ItemId,
+  type Rejection,
+} from '@keeb-cad/schema'
 
 import { checkAnchors } from './dependencies/check-anchors'
 import { dependencyGraph } from './dependencies/dependency-graph'
 import type { DependencyGraph } from './dependencies/types'
+import { nodeIdOf } from './ids/side-qualified-id'
 import { isGroup } from './layout-editing/node-tree'
 import type { Reference } from './references/types'
 import { walkReferences } from './references/walk-references'
@@ -28,7 +36,7 @@ function checkReferences(previous: Frozen<Design>, next: Frozen<Design>): Result
         .filter((reference) => !before.has(referenceKey(reference)))
         .map(({ target }) => target),
     ),
-  ] as Id[]
+  ] as ItemId[]
   if (added.length === 0) return Result.ok()
   const named = added.map((id) => `"${id}"`).join(', ')
   return Result.err(
@@ -78,14 +86,19 @@ function referenceKey({ kind, target }: Reference): string {
 }
 
 // Library targets resolve against the library, where an unknown one is a violation, not a refusal.
+// A side placement resolves to the slot after its side prefix.
 function danglingTargets(design: Frozen<Design>): Reference[] {
-  const targets = new Map<string, ReadonlySet<string>>([
-    ['design-part', new Set<string>(design.parts.map(({ id }) => id))],
-    ['slot', nodeIds(design, false)],
-    ['group', nodeIds(design, true)],
+  const parts = new Set<string>(design.parts.map(({ id }) => id))
+  const slots = nodeIds(design, false)
+  const groups = nodeIds(design, true)
+  const resolves = new Map<string, (target: string) => boolean>([
+    ['design-part', (target) => parts.has(target)],
+    ['slot', (target) => slots.has(target)],
+    ['group', (target) => groups.has(target)],
+    ['side-placement', (target) => slots.has(nodeIdOf(target))],
   ])
   return [...walkReferences(design)].filter(
-    ({ kind, target }) => !target.startsWith('lib:') && targets.get(kind)?.has(target) !== true,
+    ({ kind, target }) => !target.startsWith('lib:') && resolves.get(kind)?.(target) !== true,
   )
 }
 

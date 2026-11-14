@@ -8,6 +8,9 @@ import {
   anId,
   anOffset,
   aSlot,
+  aSideComponentOverride,
+  aSideId,
+  aSidePartOverride,
   aSlotAnchor,
   aVec2,
 } from '@keeb-cad/schema/testing'
@@ -54,6 +57,33 @@ describe('deleteNode', () => {
       ids: [ROOT],
     })
     expect(design).toEqual(arrange())
+  })
+
+  it("deletes every override on a deleted slot, either side, keeping another slot's", () => {
+    const kept = aSidePartOverride({ target: aSideId('left/b'), part: null })
+    const design = aDesign({
+      layout: arrange().layout,
+      overrides: [
+        aSidePartOverride({ target: aSideId('left/a'), part: null }),
+        aSideComponentOverride({ target: aSideId('right/a') }),
+        kept,
+      ],
+    })
+
+    deleteNode(design, [anId('a')])
+
+    expect(design.overrides).toEqual([kept])
+  })
+
+  it('deletes an override on a slot inside a deleted group', () => {
+    const design = aDesign({
+      layout: arrange([aFreeGroup({ id: anId('g'), children: [aSlot({ id: anId('a') })] })]).layout,
+      overrides: [aSidePartOverride({ target: aSideId('right/a'), part: null })],
+    })
+
+    deleteNode(design, [anId('g')])
+
+    expect(design.overrides).toEqual([])
   })
 
   it('clears every anchor naming a deleted node or its child, keeping offsets and other anchors', () => {

@@ -53,6 +53,8 @@ export { offsetSchema } from './offset'
 export { gapSchema } from './gap'
 export { borderSchema } from './border'
 export { layoutOutputSchema } from './layout-output'
+export { sideIdSchema } from './side-id'
+export { overrideSchema, sideComponentOverrideSchema, sidePartOverrideSchema } from './override'
 
 export type {
   Anchor,
@@ -103,6 +105,7 @@ export type {
   Node,
   Offset,
   OptionInput,
+  Override,
   PartId,
   PartRef,
   PartsOutput,
@@ -117,6 +120,7 @@ export type {
   RoutingFile,
   SchemaIssue,
   ScriptLoadFailed,
+  SideId,
   Slot,
   StageId,
   StorageError,

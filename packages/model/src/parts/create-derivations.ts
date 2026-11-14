@@ -28,7 +28,9 @@ import type { FoundPart, SlotPartRun } from '../part-levels/types'
 import { isSupportedForm } from '../form/is-supported-form'
 import { literalValue } from '../placement/literal-value'
 import { placeLayout } from '../placement/place-layout'
+import { removedSideIds } from '../overrides/removed-side-ids'
 import { layoutViolations } from '../violations/layout-violations'
+import { overrideViolations } from '../violations/override-violations'
 import { unsupportedFormViolation } from '../violations/unsupported-form-violation'
 import { partViolationMessage } from './part-violation-message'
 import { partsLaneCalls, rectangleOutputOf } from './parts-lane-calls'
@@ -48,6 +50,7 @@ export function createDerivations(
   const libraryVersions = computed(() => design.value.libraryVersions)
   const designParts = computed(() => design.value.parts)
   const layout = computed(() => design.value.layout)
+  const overrides = computed(() => design.value.overrides)
   const gap = computed(() => design.value.meta.gap)
   const form = computed(() => design.value.meta.form)
   const designId = computed(() => design.value.meta.id)
@@ -152,23 +155,28 @@ export function createDerivations(
   })
 
   const anchors = computed(() => checkAnchors(layout.value))
+  const removed = computed(() => removedSideIds(overrides.value, layout.value))
 
   const placements = computed((): LayoutOutput =>
     isSupportedForm(form.value)
       ? groupBorders(
           layout.value,
-          placeLayout(layout.value, gap.value, parts.value, anchors.value.unplaced),
+          placeLayout(layout.value, gap.value, parts.value, anchors.value.unplaced, removed.value),
           parts.value.output,
           borderMargin({ x: literalValue(gap.value.x), y: literalValue(gap.value.y) }),
         )
       : { ids: [], rows: [] },
   )
 
-  // The parts' violations keep their place; an unsupported form reports only itself, since
-  // nothing is resolved or placed.
+  // The parts' violations keep their place, then the layout's, then the overrides' in their list's
+  // order; an unsupported form reports only itself, since nothing is resolved or placed.
   const violations = computed((): Violation[] =>
     isSupportedForm(form.value)
-      ? [...parts.value.violations, ...layoutViolations(anchors.value)]
+      ? [
+          ...parts.value.violations,
+          ...layoutViolations(anchors.value),
+          ...overrideViolations(overrides.value, layout.value, form.value),
+        ]
       : [unsupportedFormViolation(designId.value)],
   )
 

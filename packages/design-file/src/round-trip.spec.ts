@@ -41,6 +41,11 @@ const canonical = {
     '\t\tanchor type=slot ref=thumb-far attach=edge-top',
     '\t}',
     '}',
+    'overrides {',
+    '\toverride type=side-part target="right/thumb-near" part=#null',
+    '\toverride type=side-part target="left/thumb-far" part=key',
+    '\toverride type=side-component target="right/encoder" component=encoder',
+    '}',
   ),
   routing: lines('revision r1'),
   fingerprints: lines(
@@ -84,6 +89,7 @@ describe('a bundle read and written back', () => {
       '\t\tinputs',
       '\t}',
       '}',
+      'overrides',
     )
 
     const written = writeBack({ ...canonical, design: layoutFirst })
@@ -104,6 +110,7 @@ describe('a bundle read and written back', () => {
         '\t}',
         '}',
         'layout id=root arrangement=free',
+        'overrides',
       ),
     )
   })

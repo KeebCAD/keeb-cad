@@ -14,6 +14,9 @@ import {
   aPartRef,
   aQuantityInputValue,
   anAttachPoint,
+  aSideComponentOverride,
+  aSideId,
+  aSidePartOverride,
   aSlot,
   aSlotAnchor,
   aVec2,
@@ -49,6 +52,11 @@ describe('walkReferences', () => {
           aFreeGroup({ id: anId('thumbs'), children: [aSlot({ part: aPartRef('lib:part/x') })] }),
         ],
       }),
+      overrides: [
+        aSidePartOverride({ target: aSideId('left/home'), part: null }),
+        aSidePartOverride({ target: aSideId('right/home'), part: aPartRef('key') }),
+        aSideComponentOverride({ target: aSideId('right/top') }),
+      ],
     })
 
     expect([...walkReferences(design)]).toEqual([
@@ -73,6 +81,10 @@ describe('walkReferences', () => {
         kind: 'library-part',
         target: 'lib:part/x',
       },
+      { path: ['overrides', 0, 'target'], kind: 'side-placement', target: 'left/home' },
+      { path: ['overrides', 1, 'target'], kind: 'side-placement', target: 'right/home' },
+      { path: ['overrides', 1, 'part'], kind: 'design-part', target: 'key' },
+      { path: ['overrides', 2, 'target'], kind: 'side-placement', target: 'right/top' },
     ])
   })
 

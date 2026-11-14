@@ -36,11 +36,13 @@ import type { libraryIdSchema } from './library-id'
 import type { libraryVersionSchema } from './library-version'
 import type { metaSchema } from './meta'
 import type { offsetSchema } from './offset'
+import type { overrideSchema } from './override'
 import type { partIdSchema } from './part-id'
 import type { partRefSchema } from './part-ref'
 import type { partsOutputSchema } from './parts-output'
 import type { revisionSchema } from './revision'
 import type { routingFileSchema } from './routing-file'
+import type { sideIdSchema } from './side-id'
 import type { stageIdSchema } from './stage-id'
 import type { upgradeMappingSchema } from './upgrade-mapping'
 import type { vec2Schema } from './vec2'
@@ -100,6 +102,8 @@ export type LayoutOutput = v.InferOutput<typeof layoutOutputSchema>
 export type Border = v.InferOutput<typeof borderSchema>
 export type AttachPoint = v.InferOutput<typeof attachPointSchema>
 export type Anchor = v.InferOutput<typeof anchorSchema>
+export type SideId = v.InferOutput<typeof sideIdSchema>
+export type Override = v.InferOutput<typeof overrideSchema>
 
 export interface ScriptLoadFailed {
   kind: 'script-load-failed'
@@ -165,7 +169,7 @@ export interface MigratedBundle {
   migratedFrom?: FormatVersion
 }
 
-export type ItemId = Id | LibraryId
+export type ItemId = Id | LibraryId | SideId
 
 // Hand-declared: the crossing's channel has no validation yet.
 export interface DesignPatch {
@@ -193,6 +197,7 @@ export type ModelRejectionKind =
   | 'dependency-cycle'
   | 'chain-child-anchored'
   | 'blueprint-input-invalid'
+  | 'override-not-allowed'
 
 // The design store's own kinds carry no message: the editor writes their text from the kind.
 export type Rejection =
@@ -209,6 +214,7 @@ export type ViolationKind =
   | 'dependency-cycle'
   | 'blueprint-input-invalid'
   | 'unsupported-form'
+  | 'override-not-allowed'
 
 export type Fix = v.InferOutput<typeof fixSchema>
 

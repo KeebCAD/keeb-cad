@@ -3,7 +3,15 @@ import { argumentHash, blueprintWorkerModule, LaneRunner } from '@keeb-cad/bluep
 import { Container } from '@keeb-cad/di'
 import { shallowRef } from '@keeb-cad/reactive'
 import { AsyncResult, Result } from '@keeb-cad/result'
-import type { BlueprintDeclaration, Design, LibraryData, ReadonlyRef } from '@keeb-cad/schema'
+import type {
+  BlueprintDeclaration,
+  Design,
+  Form,
+  LayoutOutput,
+  LibraryData,
+  Override,
+  ReadonlyRef,
+} from '@keeb-cad/schema'
 import {
   aBlueprintDeclaration,
   aBlueprintDesignPart,
@@ -21,6 +29,9 @@ import {
   anOptionInput,
   aPartRef,
   anId,
+  aSideComponentOverride,
+  aSideId,
+  aSidePartOverride,
   aSlot,
   aSlotAnchor,
   aSplitForm,
@@ -31,6 +42,7 @@ import { describe, expect, it } from 'vitest'
 
 import { blueprintInputInvalidMessage } from '../violations/blueprint-input-invalid-message'
 import { dependencyCycleMessage } from '../violations/dependency-cycle-message'
+import { overrideNotAllowedMessage } from '../violations/override-not-allowed-message'
 import { unresolvableReferenceMessage } from '../violations/unresolvable-reference-message'
 import { unsupportedFormMessage } from '../violations/unsupported-form-message'
 import { createDerivations } from './create-derivations'
@@ -816,6 +828,39 @@ describe('createDerivations', () => {
       },
     )
 
+    it("lists the overrides' violations after the parts' and the layout's", async () => {
+      const swap = aSidePartOverride({ target: aSideId(`right/${slotId}`), part: aPartRef('key') })
+      const { violations } = await arrange(withLayout(faulty(), { overrides: [swap] }))
+
+      const cycle = [anId('a'), anId('b')]
+      const dangling = [anId('n')]
+      const swapped = [swap.target]
+      expect(violations.value).toEqual([
+        unresolved('warning'),
+        {
+          kind: 'dependency-cycle',
+          severity: 'error',
+          ids: cycle,
+          message: dependencyCycleMessage(cycle),
+          fixes: [],
+        },
+        {
+          kind: 'unresolvable-reference',
+          severity: 'error',
+          ids: dangling,
+          message: unresolvableReferenceMessage('anchor', dangling),
+          fixes: [],
+        },
+        {
+          kind: 'override-not-allowed',
+          severity: 'error',
+          ids: swapped,
+          message: overrideNotAllowedMessage(swapped),
+          fixes: [],
+        },
+      ])
+    })
+
     it('reports no unsupported-form and places both sides for split with board reversible', async () => {
       const { violations, placements } = await arrange(
         withLayout(onSlots({ id: anId('a') }), {
@@ -827,6 +872,142 @@ describe('createDerivations', () => {
         violations: [],
         placements: ['left/a', 'left/root', 'right/a', 'right/root'],
       })
+    })
+  })
+
+  describe('per-side overrides', () => {
+    // A chain group g holding the slots a and b, under the root.
+    const chain = () =>
+      aLayout({
+        id: anId('root'),
+        children: [
+          aChainGroup({
+            id: anId('g'),
+            axis: 'y',
+            children: [aSlot({ id: anId('a') }), aSlot({ id: anId('b') })],
+          }),
+        ],
+      })
+    const removal = (target: string) => aSidePartOverride({ target: aSideId(target), part: null })
+    const swap = (target: string) =>
+      aSidePartOverride({ target: aSideId(target), part: aPartRef('key') })
+
+    function rowAt(output: LayoutOutput, id: string) {
+      return output.rows[output.ids.indexOf(id)]
+    }
+
+    // The same output with one row's fit changed, every other field and row as arranged.
+    function withFit(output: LayoutOutput, id: string, fit: 'empty') {
+      return {
+        ids: output.ids,
+        rows: output.rows.map((row, index) => (output.ids[index] === id ? { ...row, fit } : row)),
+      }
+    }
+
+    async function placedWith(overrides: Override[], layout = chain(), form?: Form) {
+      const meta = form === undefined ? {} : { meta: aMeta({ form }) }
+      const without = await arrange(withLayout(layout, meta))
+      const withOverrides = await arrange(withLayout(layout, { ...meta, overrides }))
+      return {
+        without: without.placements.value,
+        placements: withOverrides.placements.value,
+        violations: withOverrides.violations.value,
+      }
+    }
+
+    it("empties a removed right slot, keeping its frame, part row and borders, and the left slot's fit", async () => {
+      const { without, placements, violations } = await placedWith([removal('right/a')])
+
+      expect({
+        placements,
+        left: rowAt(placements, 'left/a')?.fit,
+        violations,
+      }).toEqual({
+        placements: withFit(without, 'right/a', 'empty'),
+        left: 'fitted',
+        violations: [],
+      })
+    })
+
+    it("empties a removed right slot whose part doesn't resolve, still reporting the part", async () => {
+      const layout = onSlots({ id: slotId, part: aPartRef('gone') })
+      const { placements, violations } = await placedWith([removal(`right/${slotId}`)], layout)
+
+      expect({
+        right: rowAt(placements, `right/${slotId}`)?.fit,
+        left: rowAt(placements, `left/${slotId}`)?.fit,
+        violations,
+      }).toEqual({ right: 'empty', left: 'stand-in', violations: [unresolved('warning')] })
+    })
+
+    it.each([
+      ['an id the design lacks', 'right/zz'],
+      ['a group', 'right/g'],
+    ])(
+      'warns of a loaded removal on %s as unresolvable and places as if it were absent',
+      async (_role, target) => {
+        const { without, placements, violations } = await placedWith([removal(target)])
+
+        const ids = [aSideId(target)]
+        expect({ placements, violations }).toEqual({
+          placements: without,
+          violations: [
+            {
+              kind: 'unresolvable-reference',
+              severity: 'warning',
+              ids,
+              message: unresolvableReferenceMessage('override', ids),
+              fixes: [],
+            },
+          ],
+        })
+      },
+    )
+
+    it('reports a loaded swap on a reversible board and places as if it were absent', async () => {
+      const { without, placements, violations } = await placedWith([swap('right/a')])
+
+      const ids = [aSideId('right/a')]
+      expect({ placements, violations }).toEqual({
+        placements: without,
+        violations: [
+          {
+            kind: 'override-not-allowed',
+            severity: 'error',
+            ids,
+            message: overrideNotAllowedMessage(ids),
+            fixes: [],
+          },
+        ],
+      })
+    })
+
+    it.each([
+      ['split with board mirrored', aSplitForm({ board: 'mirrored' })],
+      ['unibody', aUnibodyForm()],
+    ])('reports only unsupported-form for a loaded swap on %s', async (_role, form) => {
+      const design = anId('d')
+      const { violations } = await arrange(
+        withLayout(chain(), { meta: aMeta({ id: design, form }), overrides: [swap('right/a')] }),
+      )
+
+      expect(violations.value).toEqual([
+        {
+          kind: 'unsupported-form',
+          severity: 'error',
+          ids: [design],
+          message: unsupportedFormMessage([design]),
+          fixes: [],
+        },
+      ])
+    })
+
+    it('reports nothing for a loaded side-component override and places as if it were absent', async () => {
+      const { without, placements, violations } = await placedWith([
+        aSideComponentOverride({ target: aSideId('right/a') }),
+      ])
+
+      expect({ placements, violations }).toEqual({ placements: without, violations: [] })
     })
   })
 })
