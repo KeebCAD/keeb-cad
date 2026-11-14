@@ -1,4 +1,4 @@
-import { AddSlot } from '@keeb-cad/commands'
+import { AddSlot, DeleteNode } from '@keeb-cad/commands'
 import { expectOk } from '@keeb-cad/result/testing'
 import type { Node } from '@keeb-cad/schema'
 import {
@@ -7,6 +7,7 @@ import {
   aFreeGroup,
   aLayoutRow,
   anId,
+  aPlacementId,
   aSlot,
 } from '@keeb-cad/schema/testing'
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
@@ -27,6 +28,7 @@ import { press } from '../testing/press'
 import type { LayoutRowOf } from '../testing/types'
 import type { Point } from '../viewport/types'
 import { switchGraceDelayMs } from '../workspace/layout/switch-grace-delay'
+import { HoveredGroup } from './hovered-group'
 
 // Frappé's tokens.
 const GROUP_BORDER = 'rgb(148, 156, 187)'
@@ -41,27 +43,30 @@ const SCREEN_PX_DIGITS = 0
 
 const NOTHING = { borders: [], tabs: [], origins: [] } as const
 
-const hoveredBorder = (id: string, stroke = GROUP_BORDER) => ({
-  name: `${id} border`,
+type Side = 'left' | 'right'
+
+// Borders and tabs are named by the side's id; a tab reads the authored one.
+const hoveredBorder = (id: string, side: Side = 'left', stroke = GROUP_BORDER) => ({
+  name: `${side}/${id} border`,
   stroke,
   width: '1px',
   dashed: true,
 })
-const selectedBorder = (id: string) => ({
-  name: `${id} border`,
+const selectedBorder = (id: string, side: Side = 'left') => ({
+  name: `${side}/${id} border`,
   stroke: SELECTION,
   width: '2px',
   dashed: true,
 })
-const hoveredTab = (id: string) => ({
-  name: id,
+const hoveredTab = (id: string, side: Side = 'left') => ({
+  name: `${side}/${id}`,
   text: `⠿ ${id}`,
   fill: CANVAS,
   edge: GROUP_BORDER,
   label: TEXT,
 })
-const selectedTab = (id: string) => ({
-  name: id,
+const selectedTab = (id: string, side: Side = 'left') => ({
+  name: `${side}/${id}`,
   text: `⠿ ${id}`,
   fill: SELECTION,
   edge: 'none',
@@ -146,7 +151,7 @@ function drawn() {
 
 // Where a model point is drawn, in client px, through the keys group the browser maps.
 function clientOf({ x, y }: Point): Point {
-  const keys = key('a').element().parentElement
+  const keys = key('left/a').element().parentElement
   const matrix = keys instanceof SVGGElement ? keys.getScreenCTM() : null
   if (matrix === null) throw new Error('The keys are not rendered.')
   const point = new DOMPoint(x, y).matrixTransform(matrix)
@@ -190,7 +195,7 @@ async function arrange(design = columnDesign(), layout = columnLayout()) {
   // The pointer stays where the last test left it, which may be where this test draws a key.
   await userEvent.hover(page.getByRole('contentinfo', { name: 'Status strip' }))
   shell.post(layout)
-  await expect.element(key('a').first()).toBeInTheDocument()
+  await expect.element(key('left/a')).toBeInTheDocument()
   // The fit moves every point the pointer is aimed at, so it has run before the test aims.
   await nextFrames()
   return shell
@@ -217,10 +222,10 @@ describe('the group borders', () => {
       expect(drawn()).toEqual(NOTHING)
     })
 
-    it("strokes a key's group 1px dashed and shows its tab while the pointer is over the key", async () => {
+    it("strokes a key's group as hovered and shows its tab while the pointer is over the key", async () => {
       await arrange()
 
-      await userEvent.hover(key('a'))
+      await userEvent.hover(key('left/a'))
 
       await expect.poll(drawn).toEqual(HOVERED_C)
     })
@@ -233,7 +238,7 @@ describe('the group borders', () => {
       'after the pointer leaves a key for empty space, %s',
       async (_role, milliseconds, expected) => {
         await arrange()
-        await userEvent.hover(key('a'))
+        await userEvent.hover(key('left/a'))
         await expect.poll(() => drawn().borders.length).toBe(1)
         const advance = freezeTime()
 
@@ -246,13 +251,13 @@ describe('the group borders', () => {
 
     it('keeps the group shown once the pointer reaches its tab within the grace', async () => {
       await arrange()
-      await userEvent.hover(key('a'))
+      await userEvent.hover(key('left/a'))
       await expect.poll(() => drawn().borders.length).toBe(1)
       const advance = freezeTime()
 
       await userEvent.hover(canvas(), outsideEveryBorder())
       await advance(100)
-      await userEvent.hover(tab('c'))
+      await userEvent.hover(tab('left/c'))
       await advance(400)
 
       expect(drawn()).toEqual(HOVERED_C)
@@ -267,13 +272,13 @@ describe('the group borders', () => {
         d: groupRow(rectangle(30, -10, 50, 10)),
       })
       await arrange(design, layout)
-      await userEvent.hover(key('a'))
+      await userEvent.hover(key('left/a'))
       await expect.poll(() => drawn().borders.length).toBe(1)
       const advance = freezeTime()
 
       await userEvent.hover(canvas(), outsideEveryBorder())
       await advance(100)
-      await userEvent.hover(key('k'))
+      await userEvent.hover(key('left/k'))
 
       expect(drawn()).toEqual({
         borders: [hoveredBorder('d')],
@@ -312,7 +317,7 @@ describe('the group borders', () => {
         .toEqual({ borders: [hoveredBorder('h')], tabs: [hoveredTab('h')], origins: [] })
       await userEvent.click(canvas(), onCanvas({ x: 10, y: 15 }))
 
-      expect(shell.selection.ids).toEqual(['h'])
+      expect(shell.selection.ids).toEqual([aPlacementId('left/h')])
     })
 
     it('strokes nothing for a key directly under the root', async () => {
@@ -324,7 +329,7 @@ describe('the group borders', () => {
       })
       await arrange(design, layout)
 
-      await userEvent.hover(key('r'))
+      await userEvent.hover(key('left/r'))
       await nextFrames()
 
       expect(drawn()).toEqual(NOTHING)
@@ -343,24 +348,17 @@ describe('the group borders', () => {
       const { x, y } = clientOf({ x: 10, y: 0 })
       const hit = document.elementFromPoint(x, y)
 
-      expect(key('k').element().contains(hit)).toBe(true)
+      expect(key('left/k').element().contains(hit)).toBe(true)
     })
 
-    it("strokes both halves' borders and shows both tabs for a key on the left", async () => {
-      const design = designOf([group('c', [slot('a')])])
-      const layout = layoutOf({
-        a: keyAt(0),
-        c: groupRow(rectangle(-10, -10, 10, 10)),
-        'right/a': keyAt(60),
-        'right/c': groupRow(rectangle(50, -10, 70, 10)),
-      })
-      await arrange(design, layout)
+    it("strokes only the right group's border and shows its one tab for a key on the right", async () => {
+      await arrange(...bothHalves())
 
-      await userEvent.hover(key('a').first())
+      await userEvent.hover(key('right/a'))
 
       await expect.poll(drawn).toEqual({
-        borders: [hoveredBorder('c'), hoveredBorder('c')],
-        tabs: [hoveredTab('c'), hoveredTab('c')],
+        borders: [hoveredBorder('c', 'right')],
+        tabs: [hoveredTab('c', 'right')],
         origins: [],
       })
     })
@@ -373,11 +371,11 @@ describe('the group borders', () => {
       await shell.router.push({ name: 'layout', params: { id: 'corne' } })
       await advance(switchGraceDelayMs + 1)
 
-      await userEvent.hover(key('a'))
+      await userEvent.hover(key('left/a'))
       await nextTick()
 
       expect(drawn()).toEqual({
-        borders: [hoveredBorder('c', STALE)],
+        borders: [hoveredBorder('c', 'left', STALE)],
         tabs: [{ ...hoveredTab('c'), edge: STALE, label: STALE }],
         origins: [],
       })
@@ -385,13 +383,13 @@ describe('the group borders', () => {
 
     it('clears the hovered group across a switch to Outline and back', async () => {
       const shell = await arrange()
-      await userEvent.hover(key('a'))
+      await userEvent.hover(key('left/a'))
       await expect.poll(() => drawn().borders.length).toBe(1)
 
       await shell.router.push({ name: 'outline', params: { id: 'corne' } })
       await shell.router.push({ name: 'layout', params: { id: 'corne' } })
 
-      await expect.element(key('a')).toBeInTheDocument()
+      await expect.element(key('left/a')).toBeInTheDocument()
       expect(drawn()).toEqual(NOTHING)
     })
   })
@@ -399,6 +397,15 @@ describe('the group borders', () => {
   describe('the Tree', () => {
     it("strokes a group's border while the pointer is over its row", async () => {
       await arrange()
+      await openTree()
+
+      await userEvent.hover(treeRow('c'))
+
+      await expect.poll(drawn).toEqual(HOVERED_C)
+    })
+
+    it("strokes only the authored side's border for a group's row with both halves drawn", async () => {
+      await arrange(...bothHalves())
       await openTree()
 
       await userEvent.hover(treeRow('c'))
@@ -454,7 +461,7 @@ describe('the group borders', () => {
       await arrange()
       await openTree()
       // The open slide-out covers key a, so the pointer is on c's other key.
-      await userEvent.hover(key('b'))
+      await userEvent.hover(key('left/b'))
       await expect.poll(drawn).toEqual(HOVERED_C)
       const advance = freezeTime()
 
@@ -485,16 +492,30 @@ describe('the group borders', () => {
   describe('selection', () => {
     it('selects the group on a click of its tab, in the canvas and the Tree', async () => {
       const shell = await arrange()
-      await userEvent.hover(key('a'))
+      await userEvent.hover(key('left/a'))
 
-      await tab('c').click()
+      await tab('left/c').click()
       await openTree()
 
-      expect(shell.selection.ids).toEqual(['c'])
+      expect(shell.selection.ids).toEqual([aPlacementId('left/c')])
       await expect.element(treeRow('c')).toHaveAttribute('aria-selected', 'true')
       await expect
         .poll(drawn)
         .toEqual({ borders: [selectedBorder('c')], tabs: [selectedTab('c')], origins: [] })
+    })
+
+    it('selects only the right group on a click of its tab, showing only its border', async () => {
+      const shell = await arrange(...bothHalves())
+      await userEvent.hover(key('right/a'))
+
+      await tab('right/c').click()
+
+      expect(shell.selection.ids).toEqual([aPlacementId('right/c')])
+      await expect.poll(drawn).toEqual({
+        borders: [selectedBorder('c', 'right')],
+        tabs: [selectedTab('c', 'right')],
+        origins: [],
+      })
     })
 
     it('selects the group on a click of empty space inside its line', async () => {
@@ -502,21 +523,21 @@ describe('the group borders', () => {
 
       await userEvent.click(canvas(), onCanvas({ x: 10, y: 0 }))
 
-      expect(shell.selection.ids).toEqual(['c'])
+      expect(shell.selection.ids).toEqual([aPlacementId('left/c')])
     })
 
     it('strokes only the selected group, not its ancestor', async () => {
       const { design, layout } = nested()
       const shell = await arrange(design, layout)
 
-      shell.selection.select([anId('c')])
+      shell.selection.select([aPlacementId('left/c')])
 
       await expect
         .poll(drawn)
         .toEqual({ borders: [selectedBorder('c')], tabs: [selectedTab('c')], origins: [] })
     })
 
-    it("keeps the selected group's 2px border while a sibling group is hovered", async () => {
+    it("keeps the selected group's selection border while a sibling group is hovered", async () => {
       const design = designOf([group('c', [slot('a')]), group('d', [slot('k')])])
       const layout = layoutOf({
         a: keyAt(0),
@@ -525,14 +546,66 @@ describe('the group borders', () => {
         d: groupRow(rectangle(30, -10, 50, 10)),
       })
       const shell = await arrange(design, layout)
-      shell.selection.select([anId('c')])
+      shell.selection.select([aPlacementId('left/c')])
 
-      await userEvent.hover(key('k'))
+      await userEvent.hover(key('left/k'))
 
       await expect.poll(drawn).toEqual({
         borders: [selectedBorder('c'), hoveredBorder('d')],
         tabs: [selectedTab('c'), hoveredTab('d')],
         origins: [],
+      })
+    })
+  })
+
+  describe('a commit', () => {
+    it('drops the selection and the hovered group at once when it deletes their group', async () => {
+      const shell = await arrange(...bothHalves())
+      await userEvent.hover(key('right/a'))
+      await expect.poll(drawn).toEqual({
+        borders: [hoveredBorder('c', 'right')],
+        tabs: [hoveredTab('c', 'right')],
+        origins: [],
+      })
+      shell.selection.select([aPlacementId('right/a')])
+      freezeTime()
+
+      expectOk(shell.store.run(DeleteNode, { ids: [anId('c')] }))
+      await nextTick()
+
+      expect({
+        selected: shell.selection.ids,
+        hovered: shell.injector.resolve(HoveredGroup).id.getOrUndefined(),
+        drawn: drawn(),
+      }).toEqual({ selected: [], hovered: undefined, drawn: NOTHING })
+    })
+
+    it('keeps the selection and the hovered group when it deletes another node', async () => {
+      const shell = await arrange(...bothHalves([slot('z')]))
+      await userEvent.hover(key('right/a'))
+      await expect.poll(drawn).toEqual({
+        borders: [hoveredBorder('c', 'right')],
+        tabs: [hoveredTab('c', 'right')],
+        origins: [],
+      })
+      shell.selection.select([aPlacementId('right/a')])
+      freezeTime()
+
+      expectOk(shell.store.run(DeleteNode, { ids: [anId('z')] }))
+      await nextTick()
+
+      expect({
+        selected: shell.selection.ids,
+        hovered: shell.injector.resolve(HoveredGroup).id.getOrUndefined(),
+        drawn: drawn(),
+      }).toEqual({
+        selected: [aPlacementId('right/a')],
+        hovered: aPlacementId('right/c'),
+        drawn: {
+          borders: [hoveredBorder('c', 'right')],
+          tabs: [hoveredTab('c', 'right')],
+          origins: [],
+        },
       })
     })
   })
@@ -543,15 +616,15 @@ describe('the group borders', () => {
       const frame = { x: 40, y: 5, rot: 0, mirrored: false }
       const shell = await arrange(design, layoutOf({ a: keyAt(0), e: emptyGroupRow({ frame }) }))
 
-      shell.selection.select([anId('e')])
+      shell.selection.select([aPlacementId('left/e')])
 
       await expect.poll(drawn).toEqual({
         borders: [],
         tabs: [selectedTab('e')],
-        origins: [{ name: 'e origin', stroke: SELECTION }],
+        origins: [{ name: 'left/e origin', stroke: SELECTION }],
       })
       const expected = clientOf(frame)
-      expect(originCentre('e')).toEqual({
+      expect(originCentre('left/e')).toEqual({
         x: expect.closeTo(expected.x, SCREEN_PX_DIGITS),
         y: expect.closeTo(expected.y, SCREEN_PX_DIGITS),
       })
@@ -577,7 +650,7 @@ describe('the group borders', () => {
         layoutOf({ a: keyAt(0), e: emptyGroupRow({ placed: false }) }),
       )
 
-      shell.selection.select([anId('e')])
+      shell.selection.select([aPlacementId('left/e')])
       await nextTick()
 
       expect(drawn()).toEqual(NOTHING)
@@ -593,12 +666,12 @@ describe('the group borders', () => {
       })
       const shell = await arrange(design, layout)
 
-      shell.selection.select([anId('u')])
+      shell.selection.select([aPlacementId('left/u')])
 
       await expect.poll(drawn).toEqual({
         borders: [],
         tabs: [selectedTab('u')],
-        origins: [{ name: 'u origin', stroke: SELECTION }],
+        origins: [{ name: 'left/u origin', stroke: SELECTION }],
       })
     })
 
@@ -611,7 +684,7 @@ describe('the group borders', () => {
       })
       const shell = await arrange(design, layout)
 
-      shell.selection.select([anId('p')])
+      shell.selection.select([aPlacementId('left/p')])
 
       await expect
         .poll(drawn)
@@ -619,6 +692,19 @@ describe('the group borders', () => {
     })
   })
 })
+
+// Group c holds key a, drawn on both halves 60 mm apart, beside the given root-level nodes.
+function bothHalves(others: Node[] = []) {
+  return [
+    designOf([group('c', [slot('a')]), ...others]),
+    layoutOf({
+      a: keyAt(0),
+      c: groupRow(rectangle(-10, -10, 10, 10)),
+      'right/a': keyAt(60),
+      'right/c': groupRow(rectangle(50, -10, 70, 10)),
+    }),
+  ] as const
+}
 
 // Group h holds column c (keys a and b) and key s; h's border reaches 10 mm above c's.
 function nested(holes: Point[][] = []) {

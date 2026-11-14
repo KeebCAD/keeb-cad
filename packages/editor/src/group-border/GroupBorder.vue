@@ -29,14 +29,14 @@ const stroke = computed(() =>
     aria-hidden="true"
     fill="none"
     pointer-events="fill"
-    @pointerenter="pointAtGroup(row.id)"
+    @pointerenter="pointAtGroup(row.key)"
     @pointerleave="leave"
-    @click="select([row.id])"
+    @click="select([row.key])"
   />
   <g
     v-if="row.shown !== 'none' && paths.length > 0"
     role="img"
-    :aria-label="`${row.id} border`"
+    :aria-label="`${row.key} border`"
     fill="none"
     pointer-events="none"
     stroke-dasharray="5 3"

@@ -4,14 +4,14 @@ import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 
 import { useHoveredGroup } from '../group-border/use-hovered-group'
 import { useLandmark } from '../landmarks/use-landmark'
-import { useSelection } from '../selection/use-selection'
 import { useLayoutTree } from './use-layout-tree'
 import { useSlideOut } from './use-slide-out'
+import { useTreeSelection } from './use-tree-selection'
 
 const root = useTemplateRef<HTMLElement>('root')
 const { returnFocus } = useSlideOut()
 const rows = useLayoutTree()
-const { ids, select } = useSelection()
+const { selected, select } = useTreeSelection()
 const { pointAtTreeGroup, leave, clearTreeHover } = useHoveredGroup()
 useLandmark('slide-out', root)
 
@@ -47,7 +47,7 @@ function hover(row: TreeRow): void {
       v-if="rows.length > 0"
       label="Layout"
       :rows="rows"
-      :selected="ids"
+      :selected="selected"
       @update:selected="select"
       @hover="hover"
       @leave="leave"

@@ -114,6 +114,8 @@
   --default-mono-font-family: var(--font-mono);
 
   --shadow-overlay: 0 6px 18px rgba(0, 0, 0, 0.35);
+
+  --opacity-right-half-body: 70%;
 }
 
 /* Themes swap values on any element, so the workbench can show both side by side. */

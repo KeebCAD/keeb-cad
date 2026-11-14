@@ -1,4 +1,4 @@
-import type { Id } from '@keeb-cad/schema'
+import type { PlacementId } from '@keeb-cad/schema'
 import type * as v from 'valibot'
 import type { ComputedRef } from 'vue'
 
@@ -24,7 +24,7 @@ export type ViewportEdit = { key: string; value: ViewportValue }
 // Where the pointer sits on the canvas, with the canvas size it was read against.
 export type CursorSample = { screen: Point; size: CanvasSize }
 
-export type CanvasItem = { id: Id; element: SVGGraphicsElement }
+export type CanvasItem = { id: PlacementId; element: SVGGraphicsElement }
 
 export type CanvasRoot = { svg: SVGSVGElement; keys: SVGGElement }
 

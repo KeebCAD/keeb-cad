@@ -1,6 +1,6 @@
 import { useService } from '@keeb-cad/di/vue'
 import { sideOf, sideQualifiedId, subtreeIds, subtreeIdsOf } from '@keeb-cad/model/main'
-import type { Id } from '@keeb-cad/schema'
+import type { PlacementId } from '@keeb-cad/schema'
 import { computed, type ComputedRef } from 'vue'
 
 import { useOpenDesign } from '../design/use-open-design'
@@ -25,8 +25,8 @@ export function useGroupBorders(): ComputedRef<GroupBorderRow[]> {
       placed.value.flatMap(({ kind, key }) => (kind === 'slot' ? [key] : [])),
     )
     const hoveredId = hovered.id.getOrUndefined()
-    const shownOf = (id: Id): GroupBorderShown =>
-      selection.ids.includes(id) ? 'selected' : hoveredId === id ? 'hovered' : 'none'
+    const shownOf = (key: PlacementId): GroupBorderShown =>
+      selection.ids.includes(key) ? 'selected' : hoveredId === key ? 'hovered' : 'none'
     return (
       placed.value
         .flatMap((node) => (node.kind === 'group' ? [node] : []))
@@ -45,7 +45,7 @@ export function useGroupBorders(): ComputedRef<GroupBorderRow[]> {
             outers: border.map(({ outer }) => outer),
             empty,
             tabAt: tabPoint(border),
-            shown: shownOf(id),
+            shown: shownOf(key),
           }
         })
     )

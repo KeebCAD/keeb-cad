@@ -1,7 +1,7 @@
 import { DesignStore } from '@keeb-cad/design'
 import { inject } from '@keeb-cad/di'
-import { subtreeIdsOf } from '@keeb-cad/model/main'
-import type { Id } from '@keeb-cad/schema'
+import { nodeIdOf, sideOf, sideQualifiedId, subtreeIdsOf } from '@keeb-cad/model/main'
+import type { PlacementId } from '@keeb-cad/schema'
 import { useStorage, watchThrottled } from '@vueuse/core'
 import { effectScope, shallowRef, watch } from 'vue'
 
@@ -84,9 +84,16 @@ export class Viewport implements Disposable {
     this.#fit(bounds, size)
   }
 
-  fitNodes(ids: readonly Id[]): void {
+  // Each id fits its node's subtree on its own side; one with no drawn element fits nothing.
+  fitNodes(ids: readonly PlacementId[]): void {
     const expanded = this.#store.current
-      .map(({ design }) => subtreeIdsOf(design.layout, ids))
+      .map(({ design }) =>
+        ids.flatMap((id) =>
+          subtreeIdsOf(design.layout, [nodeIdOf(id)]).map((node) =>
+            sideQualifiedId(sideOf(id), node),
+          ),
+        ),
+      )
       .getOr([])
     const bounds = this.#items.bounds(expanded)
     const drawn = (bounds.isSome() ? bounds : this.#items.allBounds()).getOrUndefined()

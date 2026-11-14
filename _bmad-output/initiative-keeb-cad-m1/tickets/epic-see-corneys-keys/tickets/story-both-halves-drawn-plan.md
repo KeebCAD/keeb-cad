@@ -3,14 +3,14 @@ title: 'Both halves drawn'
 type: 'feature'
 ticket: 8
 created: '2026-11-14'
-status: 'ready-for-dev'
+status: 'built'
 baseline_revision: '44d388bbbb16e27cef6fb0160414ee9bba566e23'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md'
@@ -65,7 +65,7 @@ context:
 | 6b | rules | only `left/root` posted | no `Mirror axis` | unit, editor |
 | 6c | rules | row 6 at 10% zoom, centre (0, 0) | the line's screen ends lie beyond the canvas's top and bottom edges | unit, editor |
 | 7 | production bugs | selection `['right/thumbfan-near-home']`, canvas focused, Delete | design unchanged; keydown not `defaultPrevented` | unit, editor |
-| 7a | production bugs | same, Ctrl+D | design unchanged; keydown not `defaultPrevented` | unit, editor |
+| 7a | production bugs | same, Ctrl+D | design unchanged; keydown `defaultPrevented` (no bookmark dialog) | unit, editor |
 | 7c | rules | `selectsRightHalf` of `[]`, `['left/a']`, `['whole/a']`, `['right/a']`, `['left/a', 'right/b']` | false, false, false, true, true | unit, editor |
 | 7b | rules | selection `['left/thumbfan-near-home']`, Ctrl+D | copy `thumbfan-near-home-2` added; selection `['left/thumbfan-near-home-2']` | unit, editor |
 | 8 | production bugs | selection `['right/thumbfan-near-home']`, S, empty Id, Add | `thumbfan` gains one slot, its last child `<new>` read from the design after Add; selection `['right/<new>']` | unit, editor |
@@ -99,22 +99,22 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] Spine, on main first (docs) -- Editor state: "Hover holds a `PlacementId` in the same service" → "Hover holds a `PlacementId` in its own service (`HoveredGroup`), dropped after each commit by the same check, not in the selection's service, because hover and selection stay apart" (Sergii's decision; no review pass).
-- [ ] `packages/schema/src/{placement-id,placement-id.spec,types,index}.ts`, `testing/{placement-id,placement-id.spec,index}.ts` -- `placementIdSchema` (`left/`, `right/`, `whole/` before an `idSchema` id), `PlacementId` inferred, `aPlacementId(text = 'left/id')` (function). Rows 12–12a.
-- [ ] `packages/model/src/ids/side-qualified-id.ts` -- `sideQualifiedId(side, id): PlacementId` (function), through `placementIdSchema`. `form/placement-sides.ts` -- `placementSides(form): PlacementSide[]` and `authoredSide(form)`, the first of them (functions, one concept). `ids/holds-placement.ts` -- `holdsPlacement(design, id: PlacementId): boolean` (function): `nodeIdOf(id)` in `subtreeIds(design.layout)` and `sideOf(id)` in `placementSides(design.meta.form)`. All exported from `model/main`. Rows 10–11.
-- [ ] `packages/editor/src/selection/{selection,types,use-selection}.ts` -- `ids: readonly PlacementId[]`, `select(ids: readonly PlacementId[])` in both service and composable, no parse; the prune keeps ids `holdsPlacement` accepts. Row 9.
-- [ ] `packages/editor/src/group-border/{hovered-group,use-hovered-group,types}.ts` -- `HoveredGroup` (service) holds `Option<PlacementId>` and subscribes to the store's commit event itself, clearing at once a hover `holdsPlacement` refuses (it becomes `Disposable` over that subscription too). `pointAtSlot(key)` → `sideQualifiedId(sideOf(key), nearestGroupId(…, nodeIdOf(key)))`; `pointAtGroup(key)`; `pointAtTreeGroup(nodeId)` points at `authoredSide`'s id with source `'tree'`, and `leave`, `clear`, `clearTreeHover` stay as they are. Rows 3, 3a, 9, 9a.
-- [ ] `packages/editor/src/group-border/{use-group-borders.ts,GroupBorder.vue,GroupBorderTab.vue,GroupOriginMark.vue,types.ts}` -- `shown`, select, point and accessible names by `key`; tab text stays `⠿ <id>`. Row 3b.
-- [ ] `packages/editor/src/slide-out/{use-tree-selection.ts,use-tree-selection.spec.ts,types.ts,TreeSlideOut.vue}` -- `useTreeSelection()` (function) returns `UseTreeSelectionResult`: `selected` (node ids with any side selected), `select(nodeIds)` on `authoredSide`; Tree hover stays on `useHoveredGroup`. Rows 1–2a.
-- [ ] `packages/editor/src/workspace/layout/{use-placed-nodes,types}.ts`, `CanvasSlot.vue` -- `usePlacedNodes` is the one place a posted id becomes `key: PlacementId` (`v.parse(placementIdSchema, …)`); `CanvasSlot` registers, labels, selects, points and checks `selected` by `key`; an unselected, ungrayed, fitted `right` key's body and top-face fills take the `/right-half-body` modifier (`fill-key-body/right-half-body`). `theme.css` -- `--opacity-right-half-body: 70%`. Rows 1, 1a, 5–5d.
-- [ ] `packages/editor/src/mirror-axis/{use-mirror-axis.ts,use-mirror-axis.spec.ts,MirrorAxis.vue,mirror-axis-length.ts,types.ts}`, `workspace/layout/LayoutCanvas.vue` -- `useMirrorAxis()` (function): `Option` of the posted `left/<center>` frame when `right/<center>` is posted; `mirrorAxisLengthMm = 10_000`; `MirrorAxis.vue` (component, props in `types.ts`) drawn first in the transform group. Rows 6–6c.
-- [ ] `packages/editor/src/viewport/{canvas-items,types,viewport,fit-viewport}.ts` -- items by `PlacementId`; `fitNodes` expands each id to its node's subtree on the same side. Rows 4–4b.
-- [ ] `packages/editor/src/selection/{selects-right-half.ts,selects-right-half.spec.ts,delete-selection.ts,duplicate-selection.ts}` -- `selectsRightHalf(ids): boolean` (function), the select-only rule's one check; both `#input()`s are none when it holds; commands get `nodeIdOf` ids; the copy is selected on the original's side. Rows 7–7c.
-- [ ] `packages/editor/src/add-flow/{parent-for-selection,added-side,add-slot-flow,add-group-flow}.ts` -- `parentForSelection` reads `nodeIdOf`; `addedSide(design, selected)` (function): the side of the only selected id, else `authoredSide`; `finished` selects `sideQualifiedId(addedSide(…), addedNodeId(…))`. Rows 8–8d.
-- [ ] `packages/editor/src/devtools/selection-inspectable.ts` -- `v.array(placementIdSchema)`, kept by `holdsPlacement`. Row 13.
-- [ ] The Code Map's specs and stale comments -- placement ids through `aPlacementId`, whole-value asserts; comments naming node ids updated or dropped; `group-borders.spec.ts` test names that carry `1px`/`2px` (`:220`, `:519`) name the role instead.
-- [ ] `app/src/both-halves.spec.ts` -- row 14 through `Launch.run` with the real model worker, the steps run by `runById`, keys found by role and name, expectations as row 14 states them.
-- [ ] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` -- `app/src/right-half.spec.ts`'s `reflected` (expected values computed as production does) and local `sideOf`; `use-hovered-group.ts` and `use-placed-nodes.ts` have no spec of their own.
+- [x] Spine, on main first (docs, done in 13fe178) -- Editor state: "Hover holds a `PlacementId` in the same service" → "Hover holds a `PlacementId` in its own service (`HoveredGroup`), dropped after each commit by the same check, not in the selection's service, because hover and selection stay apart" (Sergii's decision; no review pass).
+- [x] `packages/schema/src/{placement-id,placement-id.spec,types,index}.ts`, `testing/{placement-id,placement-id.spec,index}.ts` -- `placementIdSchema` (`left/`, `right/`, `whole/` before an `idSchema` id), `PlacementId` inferred, `aPlacementId(text = 'left/id')` (function). Rows 12–12a.
+- [x] `packages/model/src/ids/side-qualified-id.ts` -- `sideQualifiedId(side, id): PlacementId` (function), through `placementIdSchema`. `form/placement-sides.ts` -- `placementSides(form): PlacementSide[]` and `authoredSide(form)`, the first of them (functions, one concept). `ids/holds-placement.ts` -- `holdsPlacement(design, id: PlacementId): boolean` (function): `nodeIdOf(id)` in `subtreeIds(design.layout)` and `sideOf(id)` in `placementSides(design.meta.form)`. All exported from `model/main`. Rows 10–11.
+- [x] `packages/editor/src/selection/{selection,types,use-selection}.ts` -- `ids: readonly PlacementId[]`, `select(ids: readonly PlacementId[])` in both service and composable, no parse; the prune keeps ids `holdsPlacement` accepts. Row 9.
+- [x] `packages/editor/src/group-border/{hovered-group,use-hovered-group,types}.ts` -- `HoveredGroup` (service) holds `Option<PlacementId>` and subscribes to the store's commit event itself, clearing at once a hover `holdsPlacement` refuses (it becomes `Disposable` over that subscription too). `pointAtSlot(key)` → `sideQualifiedId(sideOf(key), nearestGroupId(…, nodeIdOf(key)))`; `pointAtGroup(key)`; `pointAtTreeGroup(nodeId)` points at `authoredSide`'s id with source `'tree'`, and `leave`, `clear`, `clearTreeHover` stay as they are. Rows 3, 3a, 9, 9a.
+- [x] `packages/editor/src/group-border/{use-group-borders.ts,GroupBorder.vue,GroupBorderTab.vue,GroupOriginMark.vue,types.ts}` -- `shown`, select, point and accessible names by `key`; tab text stays `⠿ <id>`. Row 3b.
+- [x] `packages/editor/src/slide-out/{use-tree-selection.ts,use-tree-selection.spec.ts,types.ts,TreeSlideOut.vue}` -- `useTreeSelection()` (function) returns `UseTreeSelectionResult`: `selected` (node ids with any side selected), `select(nodeIds)` on `authoredSide`; Tree hover stays on `useHoveredGroup`. Rows 1–2a.
+- [x] `packages/editor/src/workspace/layout/{use-placed-nodes,types}.ts`, `CanvasSlot.vue` -- `usePlacedNodes` is the one place a posted id becomes `key: PlacementId` (`v.parse(placementIdSchema, …)`); `CanvasSlot` registers, labels, selects, points and checks `selected` by `key`; an unselected, ungrayed, fitted `right` key's body and top-face fills take the `/right-half-body` modifier (`fill-key-body/right-half-body`). `theme.css` -- `--opacity-right-half-body: 70%`. Rows 1, 1a, 5–5d.
+- [x] `packages/editor/src/mirror-axis/{use-mirror-axis.ts,use-mirror-axis.spec.ts,MirrorAxis.vue,mirror-axis-length.ts,types.ts}`, `workspace/layout/LayoutCanvas.vue` -- `useMirrorAxis()` (function): `Option` of the posted `left/<center>` frame when `right/<center>` is posted; `mirrorAxisLengthMm = 10_000`; `MirrorAxis.vue` (component, props in `types.ts`) drawn first in the transform group. Rows 6–6c.
+- [x] `packages/editor/src/viewport/{canvas-items,types,viewport,fit-viewport}.ts` -- items by `PlacementId`; `fitNodes` expands each id to its node's subtree on the same side. Rows 4–4b.
+- [x] `packages/editor/src/selection/{selects-right-half.ts,selects-right-half.spec.ts,delete-selection.ts,duplicate-selection.ts}` -- `selectsRightHalf(ids): boolean` (function), the select-only rule's one check; both `#input()`s are none when it holds; commands get `nodeIdOf` ids; the copy is selected on the original's side. Rows 7–7c.
+- [x] `packages/editor/src/add-flow/{parent-for-selection,added-side,add-slot-flow,add-group-flow}.ts` -- `parentForSelection` reads `nodeIdOf`; `addedSide(design, selected)` (function): the side of the only selected id, else `authoredSide`; `finished` selects `sideQualifiedId(addedSide(…), addedNodeId(…))`. Rows 8–8d.
+- [x] `packages/editor/src/devtools/selection-inspectable.ts` -- `v.array(placementIdSchema)`, kept by `holdsPlacement`. Row 13.
+- [x] The Code Map's specs and stale comments -- placement ids through `aPlacementId`, whole-value asserts; comments naming node ids updated or dropped; `group-borders.spec.ts` test names that carry `1px`/`2px` (`:220`, `:519`) name the role instead.
+- [x] `app/src/both-halves.spec.ts` -- row 14 through `Launch.run` with the real model worker, the steps run by `runById`, keys found by role and name, expectations as row 14 states them.
+- [x] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` -- `app/src/right-half.spec.ts`'s `reflected` (expected values computed as production does) and local `sideOf`; `use-hovered-group.ts` and `use-placed-nodes.ts` have no spec of their own.
 
 **Acceptance Criteria:**
 - Given the boundary table, when `pnpm test` runs, then each row passes at its level in Chromium and Firefox.
@@ -122,9 +122,32 @@ context:
 
 ## Implementation Notes
 
+- Row 7a conflicts with the spine: AD-26/Shortcuts says a matched Ctrl or Meta chord outside a text field is always prevented, and `ui`'s `hotkey-layer.ts:48` (`alwaysClaimed`) plus `duplicate-selection.spec.ts` "claims the chord with nothing selected" hold it. Built per the spine: Ctrl+D on a right selection is unavailable and changes nothing, but its keydown is prevented. Row 7 (Delete) is not prevented, as planned. Settled: Sergii renegotiated row 7a (Plan Change Log).
+- The toggle "`authoredSide` always `left`" turns row 2a red, and `added-side.spec.ts`'s unibody case (nothing selected gives `whole`); row 8c runs on a split design, where the authored side is `left` anyway.
+
+- Real-host run: the editor specs post sets through `workers/testing`'s `FakeWorker`, the repo's own fake of the model worker, which `app` specs check against the real one; row 14 (`app/src/both-halves.spec.ts`) runs the real model worker through `Launch.run` and passed in Chromium and Firefox (`pnpm test`: 670 files, 5317 tests, exit 0).
+- No unplanned structural change: the diff since `baseline_revision` touches no `tsconfig*.json`, `package.json`, `pnpm-workspace.yaml`, or Vitest, ESLint, Stryker or dependency-cruiser config, and adds no `declare global` or `declare module`.
+
 ## Plan Change Log
 
+- Build, Sergii (2026-11-14): frozen row 7a renegotiated from "keydown not `defaultPrevented`" to "keydown `defaultPrevented` (no bookmark dialog)", because the spine's Shortcuts rule (13.24) says "outside a text field, a matched chord with Ctrl or Meta … is always prevented, so an unavailable Ctrl+D never opens the browser's bookmark dialog" (`hotkey-layer.ts:48`); the planner had copied row 7's Delete expectation. KEEP: everything else.
+
 ## Review Triage Log
+
+Pass 1 (quick, test-reviewer; 0 findings dropped for a missing quote). Verdicts: high 0, medium 1, low 4, false 1 (part of one), maybe-false 0.
+- medium, patch -- `duplicate-selection.spec.ts` "with %s, is unavailable and changes nothing" drops `pressKey(CTRL_D)`'s event, so row 7a's prevented keydown is never asserted for a right-half selection (both lenses). Patch: assert `defaultPrevented` for every row.
+- low, patch -- `LayoutCanvas.spec.ts` `alphaOf` returns `FULL_ALPHA` for any unparsed colour, so rows 5a, 5b and the edge assertion could pass unmeasured. Patch: throw on an unreadable colour.
+- low, patch -- AC toggle "`authoredSide` always `left` (2a, 8c)" cannot turn 8c red on a split design (quick). Patch: a unibody row in `added-side.spec.ts`.
+- low, rejected -- `use-mirror-axis.spec.ts` `MIRROR_AXIS` equals the group border's colour, so a swapped token passes; unlikely in use, and the colour is Sergii's hitl check at the look.
+- low, rejected (decisions, not defects) -- no-design branches in `pointAtTreeGroup` and `useTreeSelection.select`, and no axis when `left/<center>` is missing: listed as build decisions at the look. False part: "with no design, hover is kept" -- `HoveredGroup.#prune` maps the hovered id to `design !== undefined && …`, which is `some(false)` with no design, so `getOr(true)` is false and it clears.
+
+Pass 2 (quick, test-reviewer on the three patched specs; 0 dropped). Verdicts: high 0, medium 0, low 4, rejected 1. Nothing above low and no frozen line broken: the review ends; lows logged, not patched.
+- low, logged -- `CanvasSlot.vue` `dimmed`'s `!props.grayed` is dead (`bodyFill` and `topFaceFill` return `fill-stale` first), so deleting it leaves row 5c green; the 5c and 5d toggles are the branch order in `bodyFill`, to be named so in the PR.
+- low, logged -- row 5c's test reads only the body rect; a grayed right key's top face is unguarded (row 5c names the body only).
+- low, logged -- the same test reads the body through a ternary rather than `keyAlphas`' throwing lookup; it still fails when the rect is missing.
+- low, logged -- `LayoutCanvas.spec.ts` comments on `keyAlphas` and `bothHalves` restate their names.
+- rejected (fix edits the plan) -- the AC's toggle line still names 8c for "`authoredSide` always `left`"; the PR names 2a and `added-side.spec.ts`'s unibody test instead.
+- note -- the dim rows compare alpha to exactly 0.7; both browsers serialise it so today.
 
 ## Design Notes
 

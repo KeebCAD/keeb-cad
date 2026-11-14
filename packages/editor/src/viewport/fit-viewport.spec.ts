@@ -1,6 +1,6 @@
 import { Result } from '@keeb-cad/result'
 import { expectResult } from '@keeb-cad/result/testing'
-import { aFreeGroup, aLayoutRow, anId, aSlot } from '@keeb-cad/schema/testing'
+import { aFreeGroup, aLayoutRow, anId, aPlacementId, aSlot } from '@keeb-cad/schema/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { emulateColorScheme } from '../testing/color-scheme'
@@ -29,12 +29,28 @@ const KEYS_A_AND_B_FITTED = { centre: { x: 20, y: 0 }, zoom: 600 / 58 }
 // With only a and b drawn, every slot on the canvas is a and b.
 const EVERY_SLOT_FITTED = KEYS_A_AND_B_FITTED
 const MOVED: ViewportValue = { centre: { x: -70, y: 30 }, zoom: 2 }
+// Group `thumbfan` holding slots `thumbfan-near-home` and `thumbfan-far`, each posted on both sides.
+const THUMBFAN = designOf([
+  aFreeGroup({
+    id: anId('thumbfan'),
+    children: [aSlot({ id: anId('thumbfan-near-home') }), aSlot({ id: anId('thumbfan-far') })],
+  }),
+])
+const THUMBFAN_GROUP = aLayoutRow({ kind: 'group', part: -1 })
+// One key on each side, 120 mm apart: the right key alone at x 60, 18 mm square.
+const RIGHT_KEY_FITTED = { centre: { x: 60, y: 0 }, zoom: 400 / 18 }
+// The right group's keys at x 60 and 70: 600 px over the 28 mm from 51 to 79, centred between.
+const RIGHT_GROUP_FITTED = { centre: { x: 65, y: 0 }, zoom: 600 / 28 }
 
-async function arrange({ design = designWith('a', 'b'), layout = TWO_KEYS } = {}) {
+async function arrange({
+  design = designWith('a', 'b'),
+  layout = TWO_KEYS,
+  drawn = 'left/a',
+} = {}) {
   const shell = await arrangeLayoutCanvas(design)
   await sizeCanvasAndWait(SIZE.width, SIZE.height)
   shell.post(layout)
-  await expect.element(key('a')).toBeInTheDocument()
+  await expect.element(key(drawn)).toBeInTheDocument()
   await nextFrames()
   shell.viewport.setCentre(MOVED.centre)
   shell.viewport.setZoom(MOVED.zoom)
@@ -53,7 +69,7 @@ describe('F, fitting the viewport', () => {
 
   it("fits a selected key's drawn bounds less the padding", async () => {
     const shell = await arrange()
-    shell.selection.select([anId('a')])
+    shell.selection.select([aPlacementId('left/a')])
 
     press('F')
 
@@ -73,7 +89,7 @@ describe('F, fitting the viewport', () => {
       design: designWith('a', 'b', 'c'),
       layout: layoutOf({ a: keyAt(0), b: keyAt(40), c: aLayoutRow({ placed: false }) }),
     })
-    shell.selection.select([anId('c')])
+    shell.selection.select([aPlacementId('left/c')])
 
     press('F')
 
@@ -94,7 +110,7 @@ describe('F, fitting the viewport', () => {
         c: keyAt(200),
       }),
     })
-    shell.selection.select([anId('g')])
+    shell.selection.select([aPlacementId('left/g')])
 
     press('F')
 
@@ -107,7 +123,54 @@ describe('F, fitting the viewport', () => {
       design: designOf([group, aSlot({ id: anId('a') }), aSlot({ id: anId('b') })]),
       layout: layoutOf({ g: aLayoutRow({ kind: 'group', part: -1 }), a: keyAt(0), b: keyAt(40) }),
     })
-    shell.selection.select([anId('g')])
+    shell.selection.select([aPlacementId('left/g')])
+
+    press('F')
+
+    expect(shell.viewport.value).toEqual(near(EVERY_SLOT_FITTED))
+  })
+
+  it('fits only the selected side of a key drawn on both halves', async () => {
+    const shell = await arrange({
+      design: THUMBFAN,
+      layout: layoutOf({
+        'left/thumbfan': THUMBFAN_GROUP,
+        'right/thumbfan': THUMBFAN_GROUP,
+        'left/thumbfan-near-home': keyAt(-60),
+        'right/thumbfan-near-home': keyAt(60),
+      }),
+      drawn: 'right/thumbfan-near-home',
+    })
+    shell.selection.select([aPlacementId('right/thumbfan-near-home')])
+
+    press('F')
+
+    expect(shell.viewport.value).toEqual(near(RIGHT_KEY_FITTED))
+  })
+
+  it("fits a selected right group to its own side's keys", async () => {
+    const shell = await arrange({
+      design: THUMBFAN,
+      layout: layoutOf({
+        'left/thumbfan': THUMBFAN_GROUP,
+        'right/thumbfan': THUMBFAN_GROUP,
+        'left/thumbfan-near-home': keyAt(-60),
+        'left/thumbfan-far': keyAt(-70),
+        'right/thumbfan-near-home': keyAt(60),
+        'right/thumbfan-far': keyAt(70),
+      }),
+      drawn: 'right/thumbfan-far',
+    })
+    shell.selection.select([aPlacementId('right/thumbfan')])
+
+    press('F')
+
+    expect(shell.viewport.value).toEqual(near(RIGHT_GROUP_FITTED))
+  })
+
+  it('fits every slot on the canvas for a selected id whose row is not posted yet', async () => {
+    const shell = await arrange({ design: designWith('a', 'b', 'new') })
+    shell.selection.select([aPlacementId('right/new')])
 
     press('F')
 

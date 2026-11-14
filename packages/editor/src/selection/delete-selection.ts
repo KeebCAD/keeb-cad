@@ -5,6 +5,7 @@ import {
   type EmptyInput,
 } from '@keeb-cad/commands'
 import { inject } from '@keeb-cad/di'
+import { nodeIdOf } from '@keeb-cad/model/main'
 import { AsyncResult, Option } from '@keeb-cad/result'
 import type { Rejection } from '@keeb-cad/schema'
 
@@ -14,6 +15,7 @@ import { DesignLocation } from '../router/design-location'
 import type { UiAction } from '../ui-actions/types'
 import { actsOnSelection } from './acts-on-selection'
 import { Selection } from './selection'
+import { selectsRightHalf } from './selects-right-half'
 
 export class DeleteSelection implements UiAction<EmptyInput> {
   static readonly kind = 'ui-action'
@@ -44,6 +46,8 @@ export class DeleteSelection implements UiAction<EmptyInput> {
   #input(): Option<DeleteNodeInput> {
     const ids = this.#selection.ids
     const acts = actsOnSelection(this.#landmarks.focusedPlace(), this.#location.workspace)
-    return acts && ids.length > 0 ? Option.some({ ids: [...ids] }) : Option.none()
+    return acts && ids.length > 0 && !selectsRightHalf(ids)
+      ? Option.some({ ids: ids.map(nodeIdOf) })
+      : Option.none()
   }
 }

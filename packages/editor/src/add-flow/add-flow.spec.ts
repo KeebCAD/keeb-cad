@@ -1,7 +1,7 @@
 import { DesignStore } from '@keeb-cad/design'
 import { subtreeIds } from '@keeb-cad/model/main'
 import { type Id, idSchema } from '@keeb-cad/schema'
-import { aChainGroup, aFreeGroup, anId, aSlot } from '@keeb-cad/schema/testing'
+import { aChainGroup, aFreeGroup, anId, aPlacementId, aSlot } from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 import { page, userEvent } from 'vitest/browser'
@@ -39,7 +39,7 @@ async function arrange({ workspace = 'layout', selected = [] }: Arrangement = {}
   const shell = await mountShell({ path: `/design/corne/${workspace}`, design: arrangedDesign() })
   const store = shell.injector.resolve(DesignStore)
   const selection = shell.injector.resolve(Selection)
-  selection.select(selected.map(anId))
+  selection.select(selected.map(aPlacementId))
   const design = () => {
     const current = store.current.getOrUndefined()
     if (current === undefined) throw new Error('No design is open.')
@@ -118,7 +118,7 @@ describe('the add flow', () => {
         others: [],
         parses: true,
         last: aChainGroup({ id: added, axis: 'y', children: [] }),
-        selected: [added],
+        selected: [aPlacementId(`left/${added}`)],
       })
     })
 
@@ -155,7 +155,7 @@ describe('the add flow', () => {
       await expect.element(anyDialog()).not.toBeInTheDocument()
       expect({ last: shell.rootLastChild(), selected: shell.selection.ids }).toEqual({
         last: aChainGroup({ id: anId('thumb'), axis: 'y', children: [] }),
-        selected: [anId('thumb')],
+        selected: [aPlacementId('left/thumb')],
       })
     })
   })
@@ -211,7 +211,7 @@ describe('the add flow', () => {
       expect({ others, last: shell.rootLastChild()?.id, selected: shell.selection.ids }).toEqual({
         others: [],
         last: added,
-        selected: [added],
+        selected: [aPlacementId(`left/${added}`)],
       })
     })
 
@@ -235,7 +235,7 @@ describe('the add flow', () => {
 
   describe('the parent', () => {
     it('adds a slot after the last child of the selected group and selects it', async () => {
-      const shell = await arrange({ selected: ['g'] })
+      const shell = await arrange({ selected: ['left/g'] })
       await focusCanvasAndPress('S')
       await expect.element(dialog('Add slot in g')).toBeVisible()
 
@@ -247,25 +247,77 @@ describe('the add flow', () => {
           id: anId('g'),
           children: [aSlot({ id: anId('a') }), aSlot({ id: added })],
         }),
-        selected: [added],
+        selected: [aPlacementId(`left/${added}`)],
       })
     })
 
-    it("adds a slot to the selected slot's group and selects it", async () => {
-      const shell = await arrange({ selected: ['a'] })
+    it("adds a typed slot to the selected left slot's group and selects it on the left", async () => {
+      const shell = await arrange({ selected: ['left/a'] })
+      await focusCanvasAndPress('S')
+      await userEvent.keyboard('n')
+
+      await add()
+
+      expect({ group: shell.groupG(), selected: shell.selection.ids }).toEqual({
+        group: aFreeGroup({
+          id: anId('g'),
+          children: [aSlot({ id: anId('a') }), aSlot({ id: anId('n') })],
+        }),
+        selected: [aPlacementId('left/n')],
+      })
+    })
+
+    it("adds a slot to the selected right slot's group and selects it on the right", async () => {
+      const shell = await arrange({ selected: ['right/a'] })
       await focusCanvasAndPress('S')
 
       await add()
 
-      const [added] = shell.newIds()
-      expect({ last: shell.groupG(), selected: shell.selection.ids }).toMatchObject({
-        last: { children: [aSlot({ id: anId('a') }), aSlot({ id: added })] },
-        selected: [added],
+      const [added, ...others] = shell.newIds()
+      expect({ others, group: shell.groupG(), selected: shell.selection.ids }).toEqual({
+        others: [],
+        group: aFreeGroup({
+          id: anId('g'),
+          children: [aSlot({ id: anId('a') }), aSlot({ id: added })],
+        }),
+        selected: [aPlacementId(`right/${added}`)],
+      })
+    })
+
+    it('adds a chain group inside the selected right group and selects it on the right', async () => {
+      const shell = await arrange({ selected: ['right/g'] })
+      await focusCanvasAndPress('G')
+      await userEvent.keyboard('h')
+
+      await add()
+
+      expect({ group: shell.groupG(), selected: shell.selection.ids }).toEqual({
+        group: aFreeGroup({
+          id: anId('g'),
+          children: [
+            aSlot({ id: anId('a') }),
+            aChainGroup({ id: anId('h'), axis: 'y', children: [] }),
+          ],
+        }),
+        selected: [aPlacementId('right/h')],
+      })
+    })
+
+    it('adds a typed slot to the root with nothing selected and selects it on the authored side', async () => {
+      const shell = await arrange()
+      await focusCanvasAndPress('S')
+      await userEvent.keyboard('n')
+
+      await add()
+
+      expect({ last: shell.rootLastChild(), selected: shell.selection.ids }).toEqual({
+        last: aSlot({ id: anId('n') }),
+        selected: [aPlacementId('left/n')],
       })
     })
 
     it('adds a slot inside the chain group it just added', async () => {
-      const shell = await arrange({ selected: ['g'] })
+      const shell = await arrange({ selected: ['left/g'] })
       await focusCanvasAndPress('G')
       await add()
       await expect.element(canvas()).toHaveFocus()
@@ -282,12 +334,12 @@ describe('the add flow', () => {
             aChainGroup({ id: group, axis: 'y', children: [aSlot({ id: slot })] }),
           ],
         }),
-        selected: [slot],
+        selected: [aPlacementId(`left/${slot}`)],
       })
     })
 
     it('names the root for a slot selected at the root', async () => {
-      await arrange({ selected: ['b'] })
+      await arrange({ selected: ['left/b'] })
 
       await focusCanvasAndPress('S')
 
@@ -325,7 +377,7 @@ describe('the add flow', () => {
     })
 
     it('opens from a focused Tree row off Layout', async () => {
-      await arrange({ workspace: 'outline', selected: ['b'] })
+      await arrange({ workspace: 'outline', selected: ['left/b'] })
       await focusTreeRow('b')
 
       press('G')
@@ -361,7 +413,7 @@ describe('the add flow', () => {
     })
 
     it('closes on Esc with Add focused, leaving the Tree open', async () => {
-      const shell = await arrange({ selected: ['b'] })
+      const shell = await arrange({ selected: ['left/b'] })
       const before = shell.design()
       await focusTreeRow('b')
       press('S')

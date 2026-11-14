@@ -38,11 +38,11 @@ const text = computed(() => {
 
 <template>
   <UiCanvasToggle
-    :label="id"
+    :label="placement"
     :pressed="selected"
     :transform="`translate(${at.x}, ${at.y})`"
-    @press="select([id])"
-    @pointerenter="pointAtGroup(id)"
+    @press="select([placement])"
+    @pointerenter="pointAtGroup(placement)"
     @pointerleave="leave"
   >
     <!-- The tab sits on its bottom-left corner, so it rises one tab height above it. -->

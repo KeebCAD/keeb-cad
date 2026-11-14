@@ -1,5 +1,5 @@
 import type { Design } from '@keeb-cad/schema'
-import { aDesign, aLayout, anId, aSlot } from '@keeb-cad/schema/testing'
+import { aDesign, aLayout, anId, aPlacementId, aSlot } from '@keeb-cad/schema/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { page, userEvent } from 'vitest/browser'
 
@@ -113,14 +113,14 @@ describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
     })
 
     it.each([
-      ['the selected row', ['b'], 'b'],
+      ['the selected row', ['left/b'], 'b'],
       ['the first row with nothing selected', [], 'a'],
     ])('takes focus on %s as it opens', async (_role, selected, expected) => {
       const design = aDesign({
         layout: aLayout({ children: [aSlot({ id: anId('a') }), aSlot({ id: anId('b') })] }),
       })
       const { injector } = await arrange(design)
-      injector.resolve(Selection).select(selected.map((id) => anId(id)))
+      injector.resolve(Selection).select(selected.map(aPlacementId))
 
       press('T')
 

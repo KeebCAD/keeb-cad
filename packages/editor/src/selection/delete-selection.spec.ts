@@ -1,8 +1,8 @@
 import { Result } from '@keeb-cad/result'
 import { expectResult } from '@keeb-cad/result/testing'
 import { DesignStore } from '@keeb-cad/design'
-import type { Id } from '@keeb-cad/schema'
-import { anId } from '@keeb-cad/schema/testing'
+import type { PlacementId } from '@keeb-cad/schema'
+import { aPlacementId } from '@keeb-cad/schema/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { page } from 'vitest/browser'
 
@@ -16,13 +16,15 @@ import { Selection } from './selection'
 
 const DELETE = { key: 'Delete', code: 'Delete' }
 const BACKSPACE = { key: 'Backspace', code: 'Backspace' }
-const ROOT = anId('root')
+const ROOT = aPlacementId('left/root')
 
 const canvas = () => page.getByRole('main', { name: 'Canvas' })
 const topBar = () => page.getByRole('banner', { name: 'Top bar' })
 const treeRow = (id: string) => page.getByRole('treeitem', { name: id })
 
-async function arrange({ workspace = 'layout', selected = [anId('a')] } = {} as Arrangement) {
+async function arrange(
+  { workspace = 'layout', selected = [aPlacementId('left/a')] } = {} as Arrangement,
+) {
   const design = designWith('a', 'b')
   const shell = await mountShell({ path: `/design/corne/${workspace}`, design })
   const store = shell.injector.resolve(DesignStore)
@@ -35,7 +37,7 @@ async function arrange({ workspace = 'layout', selected = [anId('a')] } = {} as 
   }
 }
 
-type Arrangement = { workspace?: string; selected?: readonly Id[] }
+type Arrangement = { workspace?: string; selected?: readonly PlacementId[] }
 
 // Opening the Tree focuses its selected row.
 async function focusTreeRow(id: string) {
@@ -108,6 +110,19 @@ describe('Delete on the selection', () => {
       Result.err({ kind: 'unavailable', command: DeleteSelection.id }),
     )
     expect(shell.design()).toEqual(before)
+  })
+
+  it('is unavailable on a right-half selection, leaving the design and the key', async () => {
+    const shell = await arrange({ selected: [aPlacementId('right/a')] })
+    const before = shell.design()
+    canvas().element().focus()
+
+    const keydown = pressKey(DELETE)
+
+    expect({ design: shell.design(), prevented: keydown.defaultPrevented }).toEqual({
+      design: before,
+      prevented: false,
+    })
   })
 
   it('is unavailable with focus on the canvas off Layout, changing nothing', async () => {

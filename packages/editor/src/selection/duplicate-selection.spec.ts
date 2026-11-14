@@ -1,8 +1,8 @@
 import { Result } from '@keeb-cad/result'
 import { expectResult } from '@keeb-cad/result/testing'
 import { DesignStore } from '@keeb-cad/design'
-import type { Id } from '@keeb-cad/schema'
-import { anId } from '@keeb-cad/schema/testing'
+import type { PlacementId } from '@keeb-cad/schema'
+import { aPlacementId } from '@keeb-cad/schema/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { page } from 'vitest/browser'
 
@@ -17,7 +17,7 @@ const CTRL_D = { key: 'd', code: 'KeyD', ctrl: true }
 
 const canvas = () => page.getByRole('main', { name: 'Canvas' })
 
-async function arrange(selected: readonly Id[]) {
+async function arrange(selected: readonly PlacementId[]) {
   const shell = await mountShell({
     path: '/design/corne/layout',
     design: designWith('thumb-home', 'thumb-far'),
@@ -36,13 +36,13 @@ async function arrange(selected: readonly Id[]) {
 describe('Ctrl+D on the selection', () => {
   beforeEach(() => emulateColorScheme('dark'))
 
-  it('puts a copy right after the selected key, selects it and claims the chord', async () => {
-    const shell = await arrange([anId('thumb-home')])
+  it('puts a copy right after the selected key, selects it on its side and claims the chord', async () => {
+    const shell = await arrange([aPlacementId('left/thumb-home')])
     canvas().element().focus()
 
     const keydown = pressKey(CTRL_D)
 
-    await expect.poll(() => shell.selection.ids).toEqual([anId('thumb-home-2')])
+    await expect.poll(() => shell.selection.ids).toEqual([aPlacementId('left/thumb-home-2')])
     expect({ children: shell.children(), prevented: keydown.defaultPrevented }).toEqual({
       children: designWith('thumb-home', 'thumb-home-2', 'thumb-far').layout.children,
       prevented: true,
@@ -64,18 +64,25 @@ describe('Ctrl+D on the selection', () => {
 
   it.each([
     ['nothing selected', []],
-    ['the root selected', [anId('root')]],
-  ])('with %s, is unavailable and changes nothing', async (_role, selected) => {
-    const shell = await arrange(selected)
-    const before = shell.children()
-    canvas().element().focus()
+    ['the root selected', [aPlacementId('left/root')]],
+    ['a right-half key selected', [aPlacementId('right/thumb-home')]],
+  ])(
+    'with %s, is unavailable, changes nothing and still claims the chord',
+    async (_role, selected) => {
+      const shell = await arrange(selected)
+      const before = shell.children()
+      canvas().element().focus()
 
-    pressKey(CTRL_D)
+      const keydown = pressKey(CTRL_D)
 
-    expectResult(
-      shell.invoke.available(DuplicateSelection),
-      Result.err({ kind: 'unavailable', command: DuplicateSelection.id }),
-    )
-    expect(shell.children()).toEqual(before)
-  })
+      expectResult(
+        shell.invoke.available(DuplicateSelection),
+        Result.err({ kind: 'unavailable', command: DuplicateSelection.id }),
+      )
+      expect({ children: shell.children(), prevented: keydown.defaultPrevented }).toEqual({
+        children: before,
+        prevented: true,
+      })
+    },
+  )
 })
