@@ -566,3 +566,15 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-model-posts-group-borders-plan.md`
   summary: Rename `packages/protocol/src/layout-output/layout-output-codec.spec.ts:68` "keeps a frame value's every digit and a group's part of -1", moving the number into a parameter or `expected*` constant.
   evidence: 13.26's plan conformance pass, precedent finding against AGENTS.md "Name the boundary's role (\"on the clearance limit\"); numbers go in parameters or `expected*` constants."
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-canvas-draws-group-borders-on-hover-and-selection-plan.md`
+  summary: Make `packages/ui/src/tree/Tree.spec.ts`'s module-level `const ROWS: TreeRow[] = [` read-only (`readonly TreeRow[]`) or build it inside each test.
+  evidence: 13.32's plan conformance pass, precedent finding against AGENTS.md "Keep no mutable state at module level in a spec; create spies and recordings inside the test."
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-canvas-draws-group-borders-on-hover-and-selection-plan.md`
+  summary: Test that selecting the root group draws no border, tab or ⊕ on the Layout canvas, in the first story that makes the root selectable.
+  evidence: Sergii, 2026-11-14, at 13.32's planning: no command or click selects the root today (no Tree row, `use-layout-tree.ts`; no canvas mark, `use-placed-nodes.ts`); AGENTS.md "Arrange only a state real commands could reach". 13.32 tests root hover only.
+
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-canvas-draws-group-borders-on-hover-and-selection-plan.md`
+  summary: The ESLint-driven specs in `tooling/lint/` (`entry-files-re-export`, `no-inline-config`, `no-shared-spec-state`, `no-services-in-components`) time out at 15 s in some full `pnpm test` runs, then pass alone (`entry-files-re-export.spec.ts`: 10 tests in 22.6 s).
+  evidence: maybe-false, medium if true, unverified. Seen on 2026-11-14 during 13.32 with seeds 1794643608223, 1794646024498 and 1794646518368, load average 10–12; the same files passed in the full run with seed 1794645433830. Flaky triage would settle it by replaying those seeds on `main` with and without `--no-file-parallelism`. Not caused by 13.32, which changes nothing they lint.

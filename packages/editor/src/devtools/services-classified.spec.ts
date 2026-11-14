@@ -5,6 +5,7 @@ import { describe, expect, it, onTestFinished } from 'vitest'
 
 import { editorModule } from '../editor-module'
 import { Flows } from '../flows/flows'
+import { HoveredGroup } from '../group-border/hovered-group'
 import { Invoke } from '../invoke/invoke'
 import { Landmarks } from '../landmarks/landmarks'
 import { DesignLocation } from '../router/design-location'
@@ -34,6 +35,7 @@ const classified: readonly (readonly [new () => unknown, Classification])[] = [
   [CanvasItems, { notShown: 'DOM elements the canvas registers, read off the DOM like Landmarks' }],
   [CanvasCursor, { notShown: 'the pointer, shown live in the status strip' }],
   [SwitchGrace, { notShown: 'grayed is derived from a timer and the lifecycle, like Landmarks' }],
+  [HoveredGroup, { notShown: 'the pointer, shown live by the borders it strokes on the canvas' }],
   [Flows, { shownAs: `${devtoolsPluginId}.flows` }],
 ]
 

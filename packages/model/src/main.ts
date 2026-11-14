@@ -1,7 +1,7 @@
 export { checkStructure } from './check-structure'
 export { checkInputs } from './inputs/check-inputs'
 export { mintId } from './ids/mint-id'
-export { nodeIdOf, sideQualifiedId } from './ids/side-qualified-id'
+export { nodeIdOf, sideOf, sideQualifiedId } from './ids/side-qualified-id'
 export type { PlacementSide } from './ids/types'
 export { addNode } from './layout-editing/add-node'
 export { checkAddNode } from './layout-editing/check-add-node'

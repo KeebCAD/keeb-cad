@@ -36,7 +36,7 @@
   --color-key-top-face: #949cbb;
   --color-key-legend: #232634;
   --color-key-outline-faint: #949cbb;
-  --color-group-frame: #949cbb;
+  --color-group-border: #949cbb;
   --color-anchor-link: #81c8be;
   --color-rotation-handle: #ca9ee6;
   --color-outline-context: #b5bfe2;
@@ -81,6 +81,7 @@
   --spacing-target-min: 24px;
   --spacing-canvas-hit-radius: 8px;
   --spacing-focus-offset: 2px;
+  --spacing-group-border-tab: 17px;
 
   --radius-sm: 2px;
   --radius-md: 4px;
@@ -142,7 +143,7 @@
     --color-key-top-face: #949cbb;
     --color-key-legend: #232634;
     --color-key-outline-faint: #949cbb;
-    --color-group-frame: #949cbb;
+    --color-group-border: #949cbb;
     --color-anchor-link: #81c8be;
     --color-rotation-handle: #ca9ee6;
     --color-outline-context: #b5bfe2;
@@ -198,7 +199,7 @@
     --color-key-top-face: #dce0e8;
     --color-key-legend: #4c4f69;
     --color-key-outline-faint: #7c7f93;
-    --color-group-frame: #6c6f85;
+    --color-group-border: #6c6f85;
     --color-anchor-link: #0f6f75;
     --color-rotation-handle: #8839ef;
     --color-outline-context: #5c5f77;
@@ -256,7 +257,7 @@
       --color-key-top-face: #dce0e8;
       --color-key-legend: #4c4f69;
       --color-key-outline-faint: #7c7f93;
-      --color-group-frame: #6c6f85;
+      --color-group-border: #6c6f85;
       --color-anchor-link: #0f6f75;
       --color-rotation-handle: #8839ef;
       --color-outline-context: #5c5f77;

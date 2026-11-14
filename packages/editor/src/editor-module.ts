@@ -7,6 +7,7 @@ import { StartAddFreeGroup } from './add-flow/start-add-free-group'
 import { StartAddSlot } from './add-flow/start-add-slot'
 import { Flows } from './flows/flows'
 import { registerFlow } from './flows/register-flow'
+import { HoveredGroup } from './group-border/hovered-group'
 import { Invoke } from './invoke/invoke'
 import { FocusNextLandmark } from './landmarks/focus-next-landmark'
 import { FocusPreviousLandmark } from './landmarks/focus-previous-landmark'
@@ -43,6 +44,7 @@ export const editorModule: Module = {
     container.register(Viewport).useClass(Viewport)
     container.register(CanvasCursor).useClass(CanvasCursor)
     container.register(SwitchGrace).useClass(SwitchGrace)
+    container.register(HoveredGroup).useClass(HoveredGroup)
     registerUiAction(container, ShowLayout)
     registerUiAction(container, ShowOutline)
     registerUiAction(container, ShowPcb)

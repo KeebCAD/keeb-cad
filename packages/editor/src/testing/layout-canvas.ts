@@ -31,11 +31,15 @@ export function designOf(children: Node[]): Design {
   return aDesign({ layout: aLayout({ id: anId('root'), children }) })
 }
 
-// The root and the given rows, in the worker's id order.
+// The root and the given rows, in the worker's id order. A key that names its side (`right/c`) is
+// kept as given; any other is on the left.
 export function layoutOf(rowsById: Readonly<Record<string, LayoutRowOf>>): LayoutOutput {
   const rows = new Map<string, LayoutRowOf>([
     ['left/root', ROOT_ROW],
-    ...Object.entries(rowsById).map(([id, row]): [string, LayoutRowOf] => [`left/${id}`, row]),
+    ...Object.entries(rowsById).map(([id, row]): [string, LayoutRowOf] => [
+      id.includes('/') ? id : `left/${id}`,
+      row,
+    ]),
   ])
   const ids = [...rows.keys()].toSorted(compareId)
   return aLayoutOutput({ ids, rows: ids.map((id) => rows.get(id) ?? ROOT_ROW) })
