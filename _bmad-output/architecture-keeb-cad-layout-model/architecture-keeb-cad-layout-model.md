@@ -986,7 +986,7 @@ type SideId = Brand<`${'left' | 'right'}/${string}`, 'SideId'>   // a derived pl
 type Override =
   | { type: 'side-part'                       // per-side part change (decision 54)
       target: Ref<'side-placement'>           // holds a SideId; resolves to the authored slot after the side prefix
-      part: PartRef | null }                  // null removes the part (KDL part=#null; the reference walk and the KDL codec read v.null()); a part reference swaps it (mirrored boards only; a swap on a reversible board is `override-not-allowed`)
+      part: PartRef | null }                  // null removes the part (KDL part=#null; v.nullable(partRefSchema), which the reference walk and the KDL codec read); a part reference swaps it (mirrored boards only; a swap on a reversible board is `override-not-allowed`)
   | { type: 'side-component'                  // removes one component of the fitted part on that side (decision 55)
       target: Ref<'side-placement'>
       component: string }                     // a component name of the part, e.g. 'encoder'
