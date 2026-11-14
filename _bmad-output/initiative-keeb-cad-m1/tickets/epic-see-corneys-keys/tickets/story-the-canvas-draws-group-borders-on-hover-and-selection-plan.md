@@ -3,7 +3,7 @@ title: 'The canvas draws group borders on hover and selection'
 type: 'feature'
 ticket: '32'
 created: '2026-11-14'
-status: 'built'
+status: 'done'
 baseline_revision: '48a02774ec97e65c713e0485908106f724803008'
 route: 'full'
 route_source: 'auto'
@@ -212,6 +212,8 @@ Verification after the guard: `pnpm lint`, `pnpm typecheck` clean; `packages/edi
 Pass 4 resolution: Sergii (2026-11-14) chose three rows for findings 2–3: row 6c split into 6c (299 ms, shown), 6d (300 ms, cleared) and 6e (301 ms, cleared), one `it.each`. Toggled "a slot row clears at once" (`else clearTreeHover()`) turns 6c red; "guard removed" turns 6d–6e red; both restored. `group-borders.spec.ts` 64/64 in Chromium and Firefox.
 
 Pass 3 finding 4 resolution: Sergii (2026-11-14) renamed row 6a's key to `b`, matching the test.
+
+Pass 5 (before merge, on the change since pass 4: rows 6c–6e as one `it.each`; quick, test-reviewer): no findings. PR #60 checks `check` and `mutation` passed; squash-merged as 8a57191.
 
 ## Design Notes
 
