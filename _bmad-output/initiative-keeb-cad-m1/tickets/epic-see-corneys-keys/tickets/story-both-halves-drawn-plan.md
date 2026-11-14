@@ -3,7 +3,7 @@ title: 'Both halves drawn'
 type: 'feature'
 ticket: 8
 created: '2026-11-14'
-status: 'built'
+status: 'done'
 baseline_revision: '44d388bbbb16e27cef6fb0160414ee9bba566e23'
 route: 'full'
 route_source: 'auto'
