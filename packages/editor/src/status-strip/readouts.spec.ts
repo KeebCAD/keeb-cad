@@ -32,7 +32,7 @@ async function arrangeCanvas() {
   const shell = await arrangeLayoutCanvas(designWith('a'))
   await sizeCanvasAndWait(SIZE.width, SIZE.height)
   shell.post(layoutOf({ a: keyAt(0) }))
-  await expect.element(key('a')).toBeInTheDocument()
+  await expect.element(key('left/a')).toBeInTheDocument()
   shell.viewport.setCentre(VIEW.centre)
   shell.viewport.setZoom(VIEW.zoom)
   return shell

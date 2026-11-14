@@ -36,7 +36,7 @@ async function arrange() {
   const shell = await arrangeLayoutCanvas(designWith('a', 'b'))
   await sizeCanvasAndWait(SIZE.width, SIZE.height)
   shell.post(layoutOf({ a: keyAt(0), b: keyAt(40) }))
-  await expect.element(key('a')).toBeInTheDocument()
+  await expect.element(key('left/a')).toBeInTheDocument()
   await expect.poll(() => shell.viewport.centre.x).toBeCloseTo(20, DIGITS)
   return shell
 }
@@ -196,7 +196,7 @@ describe('the viewport controls on the Layout canvas', () => {
     const from = modelToScreen({ x: 0, y: 0 }, before, SIZE)
 
     holdSpace()
-    drag(key('a').element(), from, DRAG, 1)
+    drag(key('left/a').element(), from, DRAG, 1)
     space('keyup')
 
     expect({ viewport: shell.viewport.value, selection: shell.selection.ids }).toEqual({

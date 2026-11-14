@@ -1,7 +1,7 @@
 import { DesignStore, designModule, registerCommand } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
 import { expectOk } from '@keeb-cad/result/testing'
-import { aDesign, aLayout, anId, aSlot } from '@keeb-cad/schema/testing'
+import { aDesign, aLayout, anId, aPlacementId, aSlot } from '@keeb-cad/schema/testing'
 import { workersModule } from '@keeb-cad/workers'
 import { describe, expect, it, onTestFinished } from 'vitest'
 import { createApp } from 'vue'
@@ -54,7 +54,7 @@ async function arrangeSelection({ holds, selected }: { holds: string[]; selected
   })
   expectOk(container.resolve(DesignStore).replaceDesign({ design, unreadable: [] }))
   const selection = container.resolve(Selection)
-  selection.select(selected.map((id) => anId(id)))
+  selection.select(selected.map(aPlacementId))
   return { selection, inspector: connected(container) }
 }
 
@@ -190,11 +190,14 @@ describe('devtoolsModule', () => {
   })
 
   it.each<[string, unknown, string[]]>([
-    ['selects an id the design holds', ['a'], ['a']],
-    ['keeps only the ids the design holds', ['a', 'gone'], ['a']],
-    ['leaves the selection unchanged on a value that is no array', 'a', ['b']],
+    ['selects an id the design holds', ['left/a'], ['left/a']],
+    ['keeps only the ids the design holds', ['left/a', 'left/gone'], ['left/a']],
+    ['leaves the selection unchanged on a value that is no array', 'left/a', ['left/b']],
   ])('%s', async (_role, value, expected) => {
-    const { selection, inspector } = await arrangeSelection({ holds: ['a', 'b'], selected: ['b'] })
+    const { selection, inspector } = await arrangeSelection({
+      holds: ['a', 'b'],
+      selected: ['left/b'],
+    })
 
     inspector.edit(selectionNode, 'ids', value)
 
@@ -202,15 +205,43 @@ describe('devtoolsModule', () => {
   })
 
   it.each<[string, string[], EditPayload['state'], string[]]>([
-    ['replaces a list item with an id the design holds', ['ids', '0'], { value: 'a' }, ['a']],
-    ['drops a list item set to an id the design lacks', ['ids', '0'], { value: 'gone' }, []],
-    ['adds a list item', ['ids', '1'], { value: 'a', newKey: '1' }, ['b', 'a']],
+    [
+      'replaces a list item with an id the design holds',
+      ['ids', '0'],
+      { value: 'left/a' },
+      ['left/a'],
+    ],
+    ['drops a list item set to an id the design lacks', ['ids', '0'], { value: 'left/gone' }, []],
+    ['adds a list item', ['ids', '1'], { value: 'left/a', newKey: '1' }, ['left/b', 'left/a']],
     ['removes a list item', ['ids', '0'], { value: undefined, remove: true }, []],
-    ['leaves the selection unchanged on an item that is no id', ['ids', '0'], { value: 7 }, ['b']],
+    [
+      'leaves the selection unchanged on an item that is no id',
+      ['ids', '0'],
+      { value: 7 },
+      ['left/b'],
+    ],
   ])('%s, edited as the panel does', async (_role, path, state, expected) => {
-    const { selection, inspector } = await arrangeSelection({ holds: ['a', 'b'], selected: ['b'] })
+    const { selection, inspector } = await arrangeSelection({
+      holds: ['a', 'b'],
+      selected: ['left/b'],
+    })
 
     inspector.editAt(selectionNode, path, state)
+
+    expect(selection.ids).toEqual(expected)
+  })
+
+  it.each<[string, unknown, string[]]>([
+    ['selects a right id of a node the split design holds', ['right/a'], ['right/a']],
+    ['drops a unibody id, a side the split design has not', ['whole/a'], []],
+    ['leaves the selection unchanged on a node id with no side', ['a'], ['left/b']],
+  ])('%s', async (_role, value, expected) => {
+    const { selection, inspector } = await arrangeSelection({
+      holds: ['a', 'b'],
+      selected: ['left/b'],
+    })
+
+    inspector.edit(selectionNode, 'ids', value)
 
     expect(selection.ids).toEqual(expected)
   })

@@ -54,6 +54,7 @@ export { gapSchema } from './gap'
 export { borderSchema } from './border'
 export { layoutOutputSchema } from './layout-output'
 export { sideIdSchema } from './side-id'
+export { placementIdSchema } from './placement-id'
 export { overrideSchema, sideComponentOverrideSchema, sidePartOverrideSchema } from './override'
 
 export type {
@@ -109,6 +110,7 @@ export type {
   PartId,
   PartRef,
   PartsOutput,
+  PlacementId,
   PlainInput,
   Quantity,
   QuantityInput,

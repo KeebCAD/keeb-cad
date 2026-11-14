@@ -1,10 +1,10 @@
 import { Option } from '@keeb-cad/result'
-import type { Id } from '@keeb-cad/schema'
+import type { PlacementId } from '@keeb-cad/schema'
 
 import { cornersIn } from './corners-in'
 import type { Bounds, CanvasItem, CanvasRoot, CanvasSize } from './types'
 
-// The drawn elements of the canvas by node id, measured by the browser: a canvas computes no
+// The drawn elements of the canvas by placement id, measured by the browser: a canvas computes no
 // geometry of its own.
 export class CanvasItems {
   registerRoot(root: CanvasRoot): void {
@@ -15,7 +15,6 @@ export class CanvasItems {
     if (this.#root.getOrUndefined()?.svg === root.svg) this.#root = Option.none()
   }
 
-  // One node may draw several elements: the right half shares the left's node ids.
   register(item: CanvasItem): void {
     this.#items.add(item)
   }
@@ -29,7 +28,7 @@ export class CanvasItems {
   }
 
   // The union of every registered element of these ids, in model mm; none when none is drawn.
-  bounds(ids: readonly Id[]): Option<Bounds> {
+  bounds(ids: readonly PlacementId[]): Option<Bounds> {
     const wanted = new Set<string>(ids)
     return this.#union([...this.#items].filter(({ id }) => wanted.has(id)))
   }

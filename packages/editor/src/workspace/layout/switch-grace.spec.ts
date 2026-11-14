@@ -78,7 +78,7 @@ async function arrange({ commitAfterSet }: { commitAfterSet: boolean }) {
 }
 
 function shown() {
-  const key = page.getByRole('button', { name: 'a', exact: true }).element()
+  const key = page.getByRole('button', { name: 'left/a', exact: true }).element()
   const strip = page.getByRole('contentinfo', { name: 'Status strip' }).element()
   const [, topFace] = key.querySelectorAll('rect')
   if (topFace === undefined) throw new Error('Expected a keycap top face.')

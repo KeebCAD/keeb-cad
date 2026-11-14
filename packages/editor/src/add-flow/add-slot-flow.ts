@@ -1,12 +1,14 @@
 import { AddSlot, type AddSlotInput } from '@keeb-cad/commands'
 import { DesignStore } from '@keeb-cad/design'
 import { inject } from '@keeb-cad/di'
+import { sideQualifiedId } from '@keeb-cad/model/main'
 import { InvariantError } from '@keeb-cad/result'
 import type { Component } from 'vue'
 
 import type { Flow } from '../flows/types'
 import { Selection } from '../selection/selection'
 import { addedNodeId } from './added-node-id'
+import { addedSide } from './added-side'
 import AddFlowView from './AddFlowView.vue'
 
 export class AddSlotFlow implements Flow<AddSlotInput> {
@@ -18,7 +20,8 @@ export class AddSlotFlow implements Flow<AddSlotInput> {
   finished(input: AddSlotInput): void {
     const design = this.#store.current.map((committed) => committed.design)
     if (design.isNone()) throw new InvariantError('The add flow finished with no design open.')
-    this.#selection.select([addedNodeId(design.value, input)])
+    const side = addedSide(design.value, this.#selection.ids)
+    this.#selection.select([sideQualifiedId(side, addedNodeId(design.value, input))])
   }
 
   readonly #selection = inject(Selection)

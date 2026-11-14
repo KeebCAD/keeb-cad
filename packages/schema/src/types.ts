@@ -40,6 +40,7 @@ import type { overrideSchema } from './override'
 import type { partIdSchema } from './part-id'
 import type { partRefSchema } from './part-ref'
 import type { partsOutputSchema } from './parts-output'
+import type { placementIdSchema } from './placement-id'
 import type { revisionSchema } from './revision'
 import type { routingFileSchema } from './routing-file'
 import type { sideIdSchema } from './side-id'
@@ -103,6 +104,7 @@ export type Border = v.InferOutput<typeof borderSchema>
 export type AttachPoint = v.InferOutput<typeof attachPointSchema>
 export type Anchor = v.InferOutput<typeof anchorSchema>
 export type SideId = v.InferOutput<typeof sideIdSchema>
+export type PlacementId = v.InferOutput<typeof placementIdSchema>
 export type Override = v.InferOutput<typeof overrideSchema>
 
 export interface ScriptLoadFailed {

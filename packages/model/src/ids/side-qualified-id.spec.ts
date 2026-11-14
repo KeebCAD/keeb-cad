@@ -1,12 +1,12 @@
 import { InvariantError } from '@keeb-cad/result'
-import { anId } from '@keeb-cad/schema/testing'
+import { anId, aPlacementId } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { nodeIdOf, sideOf, sideQualifiedId } from './side-qualified-id'
 
 describe('sideQualifiedId', () => {
   it('puts the side before the id, split by a slash', () => {
-    expect(sideQualifiedId('left', 'thumb-far')).toBe('left/thumb-far')
+    expect(sideQualifiedId('left', anId('thumb-far'))).toBe(aPlacementId('left/thumb-far'))
   })
 })
 

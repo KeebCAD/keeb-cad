@@ -1,11 +1,11 @@
 import { InvariantError } from '@keeb-cad/result'
-import { type Id, idSchema } from '@keeb-cad/schema'
+import { type Id, idSchema, type PlacementId, placementIdSchema } from '@keeb-cad/schema'
 import * as v from 'valibot'
 
 import type { PlacementSide } from './types'
 
-export function sideQualifiedId(side: PlacementSide, id: string): string {
-  return `${side}/${id}`
+export function sideQualifiedId(side: PlacementSide, id: Id): PlacementId {
+  return v.parse(placementIdSchema, `${side}/${id}`)
 }
 
 // Every posted row id is side-qualified, so one without a side or a node id is a bug.

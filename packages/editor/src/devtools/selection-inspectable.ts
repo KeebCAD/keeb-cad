@@ -1,7 +1,7 @@
 import { DesignStore } from '@keeb-cad/design'
 import { inject } from '@keeb-cad/di'
-import { subtreeIds } from '@keeb-cad/model/main'
-import { idSchema } from '@keeb-cad/schema'
+import { holdsPlacement } from '@keeb-cad/model/main'
+import { placementIdSchema } from '@keeb-cad/schema'
 import * as v from 'valibot'
 
 import { Selection } from '../selection/selection'
@@ -13,15 +13,15 @@ export class SelectionInspectable implements Inspectable {
   readonly id = `${devtoolsPluginId}.selection`
   readonly label = 'Selection'
   readonly fields = {
-    // A selection names only nodes the design holds, so an edit keeps only those.
+    // A selection names only placements the design holds, so an edit keeps only those.
     ids: editableField({
-      schema: v.array(idSchema),
+      schema: v.array(placementIdSchema),
       get: () => this.#selection.ids,
       set: (ids) => {
-        const held = new Set<string>(
-          this.#store.current.map(({ design }) => subtreeIds(design.layout)).getOr([]),
+        const design = this.#store.current.map(({ design }) => design).getOrUndefined()
+        this.#selection.select(
+          ids.filter((id) => design !== undefined && holdsPlacement(design, id)),
         )
-        this.#selection.select(ids.filter((id) => held.has(id)))
       },
     }),
   }

@@ -1,20 +1,22 @@
+import { DesignStore } from '@keeb-cad/design'
+import { inject } from '@keeb-cad/di'
+import { holdsPlacement } from '@keeb-cad/model/main'
 import { Option } from '@keeb-cad/result'
-import type { Id } from '@keeb-cad/schema'
+import type { PlacementId } from '@keeb-cad/schema'
 import { useTimeoutFn } from '@vueuse/core'
 import { effectScope, shallowRef } from 'vue'
 
 import { hoverGraceDelayMs } from './hover-grace-delay'
 import type { HoverSource } from './types'
 
-// The group the pointer is at, through a key, a border, a tab or a Tree row; a node id, so both
-// halves of a group show together.
+// The group the pointer is at, through a key, a border, a tab or a Tree row, on one side.
 export class HoveredGroup implements Disposable {
-  get id(): Option<Id> {
+  get id(): Option<PlacementId> {
     return this.#id.value
   }
 
   // Entering a source replaces the hovered group and cancels a pending clear.
-  point(id: Id, by: HoverSource): void {
+  point(id: PlacementId, by: HoverSource): void {
     this.#timer.stop()
     this.#setBy = by
     if (this.#id.value.getOrUndefined() !== id) this.#id.value = Option.some(id)
@@ -38,10 +40,12 @@ export class HoveredGroup implements Disposable {
   }
 
   [Symbol.dispose](): void {
+    this.#stopPruning()
     this.#scope.stop()
   }
 
-  readonly #id = shallowRef<Option<Id>>(Option.none())
+  readonly #store = inject(DesignStore)
+  readonly #id = shallowRef<Option<PlacementId>>(Option.none())
   #setBy: HoverSource = 'canvas'
   // Detached: the service is first resolved inside some component's setup, and a scope of that
   // component's would stop the timer when it unmounts.
@@ -55,6 +59,16 @@ export class HoveredGroup implements Disposable {
       { immediate: false },
     ),
   )
+  // Nothing fires when a group goes away under a still pointer, so a commit drops it at once.
+  readonly #stopPruning = this.#store.events.on('commit', () => {
+    this.#prune()
+  })
+
+  #prune(): void {
+    const design = this.#store.current.map(({ design }) => design).getOrUndefined()
+    const held = this.#id.value.map((id) => design !== undefined && holdsPlacement(design, id))
+    if (!held.getOr(true)) this.clear()
+  }
 
   #runInScope<T>(run: () => T): T {
     const result = this.#scope.run(run)

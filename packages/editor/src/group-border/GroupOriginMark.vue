@@ -19,7 +19,7 @@ const stroke = computed(() =>
 <template>
   <g
     role="img"
-    :aria-label="`${id} origin`"
+    :aria-label="`${placement} origin`"
     fill="none"
     pointer-events="none"
     :stroke-width="shown === 'selected' ? 2 : 1"

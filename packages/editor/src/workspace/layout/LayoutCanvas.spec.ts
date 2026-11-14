@@ -1,8 +1,17 @@
 import { AddSlot } from '@keeb-cad/commands'
 import { expectOk } from '@keeb-cad/result/testing'
-import { aDesign, aLayout, aLayoutRow, aMeta, anId, aSlot } from '@keeb-cad/schema/testing'
-import { beforeEach, describe, expect, it } from 'vitest'
+import {
+  aDesign,
+  aLayout,
+  aLayoutRow,
+  aMeta,
+  anId,
+  aPlacementId,
+  aSlot,
+} from '@keeb-cad/schema/testing'
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { page } from 'vitest/browser'
+import { nextTick } from 'vue'
 
 import { emulateColorScheme } from '../../testing/color-scheme'
 import {
@@ -17,6 +26,7 @@ import {
 import { mountShell } from '../../testing/mount-shell'
 import type { ViewportValue } from '../../viewport/types'
 import type { Viewport } from '../../viewport/viewport'
+import { switchGraceDelayMs } from './switch-grace-delay'
 
 const HINT = 'Add a group (G) or open the command palette (Ctrl+K).'
 const INITIAL_VIEWPORT = { centre: { x: 0, y: 0 }, zoom: 4 }
@@ -24,6 +34,10 @@ const DIGITS = 6
 // Frappé's tokens.
 const KEY_BODY = 'rgb(98, 104, 128)'
 const SELECTION = 'rgb(202, 158, 230)'
+const STALE = 'rgb(115, 121, 148)'
+// DESIGN.md components.right-half.body-opacity.
+const RIGHT_HALF_BODY_ALPHA = 0.7
+const FULL_ALPHA = 1
 
 const treeRow = (id: string) => page.getByRole('treeitem', { name: id, exact: true })
 
@@ -62,6 +76,36 @@ function ownTransform(id: string): DOMMatrix {
   return DOMMatrix.fromMatrix(outer).inverse().multiply(DOMMatrix.fromMatrix(own))
 }
 
+// A computed colour's alpha: the `/ a` of a colour function, the fourth rgba value, or an opaque
+// rgb; any other text is a colour this test cannot read.
+function alphaOf(color: string): number {
+  const slashed = /\/\s*([\d.]+)(%?)\s*\)$/.exec(color)
+  if (slashed !== null) return Number(slashed[1]) / (slashed[2] === '%' ? 100 : 1)
+  const rgba = /^rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\)$/.exec(color)
+  if (rgba !== null) return Number(rgba[1])
+  if (/^rgb\([^,/]+,[^,/]+,[^,/]+\)$/.test(color)) return FULL_ALPHA
+  throw new Error(`Cannot read the alpha of "${color}".`)
+}
+
+// The alpha of a key's body and top-face fills and of its edge.
+function keyAlphas(id: string) {
+  const [body, topFace] = keyElement(id).querySelectorAll('rect')
+  if (body === undefined || topFace === undefined) throw new Error('A fitted key draws two rects.')
+  return {
+    body: alphaOf(getComputedStyle(body).fill),
+    topFace: alphaOf(getComputedStyle(topFace).fill),
+    edge: alphaOf(getComputedStyle(body).stroke),
+  }
+}
+
+// Slot k, drawn on both halves.
+function bothHalves(fit: 'fitted' | 'empty' = 'fitted') {
+  return layoutOf({
+    k: aLayoutRow({ fit }),
+    'right/k': aLayoutRow({ fit, frame: { x: 40, y: 0, rot: 0, mirrored: true } }),
+  })
+}
+
 describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
   beforeEach(() => emulateColorScheme(scheme))
   describe('the Layout canvas', () => {
@@ -85,8 +129,8 @@ describe('the Layout canvas', () => {
 
       shell.post(layoutOf({ a: aLayoutRow({ frame: { x: 0, y: 0, rot, mirrored: false } }) }))
 
-      await expect.element(key('a')).toBeInTheDocument()
-      expect(screenAngle('a')).toBeCloseTo(expectedAngle, DIGITS)
+      await expect.element(key('left/a')).toBeInTheDocument()
+      expect(screenAngle('left/a')).toBeCloseTo(expectedAngle, DIGITS)
     })
 
     it('draws a mirrored key with its x scaled by −1 at its frame', async () => {
@@ -94,8 +138,8 @@ describe('the Layout canvas', () => {
 
       shell.post(layoutOf({ a: aLayoutRow({ frame: { x: 5, y: 7, rot: 0, mirrored: true } }) }))
 
-      await expect.element(key('a')).toBeInTheDocument()
-      const { a, b, c, d, e, f } = ownTransform('a')
+      await expect.element(key('left/a')).toBeInTheDocument()
+      const { a, b, c, d, e, f } = ownTransform('left/a')
       expect({ a, b, c, d, e, f }).toEqual({
         a: expect.closeTo(-1, DIGITS),
         b: expect.closeTo(0, DIGITS),
@@ -112,8 +156,8 @@ describe('the Layout canvas', () => {
       // No command posts an unplaced row until anchors land; the set is the one a loaded anchor cycle posts.
       shell.post(layoutOf({ a: aLayoutRow(), b: aLayoutRow({ placed: false }) }))
 
-      await expect.element(key('a')).toBeInTheDocument()
-      await expect.element(key('b')).not.toBeInTheDocument()
+      await expect.element(key('left/a')).toBeInTheDocument()
+      await expect.element(key('left/b')).not.toBeInTheDocument()
     })
 
     it.each([
@@ -125,8 +169,8 @@ describe('the Layout canvas', () => {
 
       shell.post(layoutOf({ a: aLayoutRow({ fit }) }))
 
-      await expect.element(key('a')).toBeInTheDocument()
-      const style = getComputedStyle(keyElement('a'))
+      await expect.element(key('left/a')).toBeInTheDocument()
+      const style = getComputedStyle(keyElement('left/a'))
       expect({ fill: style.fill, dashed: style.strokeDasharray !== 'none' }).toEqual(expected)
     })
   })
@@ -156,7 +200,7 @@ describe('the Layout canvas', () => {
 
       // 448 px less 2 × 24 px of padding over the 18 mm key.
       const expectedZoom = 400 / 18
-      await expect.element(key('a')).toBeInTheDocument()
+      await expect.element(key('left/a')).toBeInTheDocument()
       await expect.element(canvas()).not.toHaveTextContent(HINT)
       await expect.poll(() => shell.viewport.zoom).toBeCloseTo(expectedZoom, DIGITS)
       expect(shell.viewport.centre).toEqual({
@@ -190,7 +234,7 @@ describe('the Layout canvas', () => {
       await shell.router.push({ name: 'outline', params: { id: 'corne' } })
       await shell.router.push({ name: 'layout', params: { id: 'corne' } })
 
-      await expect.element(key('a')).toBeInTheDocument()
+      await expect.element(key('left/a')).toBeInTheDocument()
       await nextFrames()
       expect(shell.viewport.value).toEqual(moved)
     })
@@ -216,23 +260,77 @@ describe('the Layout canvas', () => {
     it('draws no key of the previous set and no hint for a design with slots', async () => {
       const shell = await arrange(designWith('a'))
       shell.post(layoutOf({ a: aLayoutRow() }))
-      await expect.element(key('a')).toBeInTheDocument()
+      await expect.element(key('left/a')).toBeInTheDocument()
 
       shell.store.replaceDesign({ design: designWith('b'), unreadable: [] })
 
-      await expect.element(key('a')).not.toBeInTheDocument()
+      await expect.element(key('left/a')).not.toBeInTheDocument()
       await expect.element(canvas()).not.toHaveTextContent(HINT)
     })
 
     it('shows the hint for a design with no slot', async () => {
       const shell = await arrange(designWith('a'))
       shell.post(layoutOf({ a: aLayoutRow() }))
-      await expect.element(key('a')).toBeInTheDocument()
+      await expect.element(key('left/a')).toBeInTheDocument()
 
       shell.store.replaceDesign({ design: designWith(), unreadable: [] })
 
       await expect.element(canvas()).toHaveTextContent(HINT)
-      await expect.element(key('a')).not.toBeInTheDocument()
+      await expect.element(key('left/a')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('the right half', () => {
+    it.each([
+      ['dims an unselected right key', 'right/k', [], RIGHT_HALF_BODY_ALPHA],
+      ['does not dim a selected right key', 'right/k', ['right/k'], FULL_ALPHA],
+      ['does not dim an unselected left key', 'left/k', [], FULL_ALPHA],
+    ])("%s's body and top face, keeping its edge", async (_role, id, selected, expectedFill) => {
+      const shell = await arrange(designWith('k'))
+      shell.post(bothHalves())
+      await expect.element(key(id)).toBeInTheDocument()
+
+      shell.selection.select(selected.map(aPlacementId))
+
+      await expect
+        .poll(() => keyAlphas(id))
+        .toEqual({
+          body: expectedFill,
+          topFace: expectedFill,
+          edge: FULL_ALPHA,
+        })
+    })
+
+    it('fills an unselected right key in the opaque stale colour while the switch grace grays it', async () => {
+      const shell = await arrange(designWith('k'))
+      shell.post(bothHalves())
+      await expect.element(key('right/k')).toBeInTheDocument()
+      await shell.router.push({ name: 'outline', params: { id: 'corne' } })
+      expectOk(shell.store.run(AddSlot, {}))
+      vi.useFakeTimers()
+      onTestFinished(() => {
+        vi.useRealTimers()
+      })
+      await shell.router.push({ name: 'layout', params: { id: 'corne' } })
+      vi.advanceTimersByTime(switchGraceDelayMs + 1)
+      await nextTick()
+
+      const [body] = keyElement('right/k').querySelectorAll('rect')
+      expect(body === undefined ? undefined : getComputedStyle(body).fill).toBe(STALE)
+    })
+
+    it('draws an unfitted right key as an opaque dashed outline with no fill', async () => {
+      const shell = await arrange(designWith('k'))
+
+      shell.post(bothHalves('empty'))
+
+      await expect.element(key('right/k')).toBeInTheDocument()
+      const style = getComputedStyle(keyElement('right/k'))
+      expect({
+        fill: style.fill,
+        dashed: style.strokeDasharray !== 'none',
+        edge: alphaOf(style.stroke),
+      }).toEqual({ fill: 'none', dashed: true, edge: FULL_ALPHA })
     })
   })
 
@@ -241,10 +339,10 @@ describe('the Layout canvas', () => {
       const shell = await arrange(designWith('a', 'b'))
       shell.post(twoKeys())
 
-      await key('a').click()
+      await key('left/a').click()
       await page.getByRole('button', { name: 'Tree', exact: true }).click()
 
-      expect(shell.selection.ids).toEqual(['a'])
+      expect(shell.selection.ids).toEqual([aPlacementId('left/a')])
       await expect.element(treeRow('a')).toHaveAttribute('aria-selected', 'true')
     })
 
@@ -255,9 +353,9 @@ describe('the Layout canvas', () => {
 
       await treeRow('a').click()
 
-      expect(shell.selection.ids).toEqual(['a'])
-      await expect.element(key('a')).toHaveAttribute('aria-pressed', 'true')
-      expect(getComputedStyle(keyElement('a')).stroke).toBe(SELECTION)
+      expect(shell.selection.ids).toEqual([aPlacementId('left/a')])
+      await expect.element(key('left/a')).toHaveAttribute('aria-pressed', 'true')
+      expect(getComputedStyle(keyElement('left/a')).stroke).toBe(SELECTION)
     })
   })
 })

@@ -11,6 +11,8 @@ import GroupBorderTab from '../../group-border/GroupBorderTab.vue'
 import GroupOriginMark from '../../group-border/GroupOriginMark.vue'
 import { useGroupBorders } from '../../group-border/use-group-borders'
 import { useHoveredGroup } from '../../group-border/use-hovered-group'
+import MirrorAxis from '../../mirror-axis/MirrorAxis.vue'
+import { useMirrorAxis } from '../../mirror-axis/use-mirror-axis'
 import { useCanvasItemsRoot } from '../../viewport/use-canvas-items-root'
 import { useViewport } from '../../viewport/use-viewport'
 import { useViewportControls } from '../../viewport/use-viewport-controls'
@@ -35,6 +37,8 @@ const { transform, modelToScreen, fitOnce } = useViewport(size)
 useViewportControls(svg, size)
 useCanvasItemsRoot(svg, keys)
 const borders = useGroupBorders()
+const mirrorAxis = useMirrorAxis()
+const axisFrame = computed(() => mirrorAxis.value.getOrUndefined())
 const { clear: clearHovered } = useHoveredGroup()
 onBeforeUnmount(clearHovered)
 
@@ -87,6 +91,7 @@ watch(
     <svg ref="svg" class="absolute inset-0 block size-full touch-none">
       <g v-if="!showsHint">
         <g :transform="transform">
+          <MirrorAxis v-if="axisFrame !== undefined" :frame="axisFrame" />
           <GroupBorder v-for="row in borders" :key="row.key" :row="row" :grayed="grayed" />
           <g ref="keys">
             <CanvasSlot v-for="slot in slots" :key="slot.key" :placed="slot" :grayed="grayed" />
@@ -118,12 +123,18 @@ watch(
           <template v-for="mark in marks" :key="mark.key">
             <GroupOriginMark
               v-if="mark.origin !== undefined"
-              :id="mark.id"
+              :placement="mark.key"
               :at="mark.origin"
               :shown="mark.shown"
               :grayed="grayed"
             />
-            <GroupBorderTab :id="mark.id" :at="mark.tab" :shown="mark.shown" :grayed="grayed" />
+            <GroupBorderTab
+              :id="mark.id"
+              :placement="mark.key"
+              :at="mark.tab"
+              :shown="mark.shown"
+              :grayed="grayed"
+            />
           </template>
         </g>
       </g>
