@@ -262,13 +262,24 @@ risk = "medium"
 notes = ["Settled (2026-11-14, spine 81c64d9; was the open question of 2026-11-12): pointing at or selecting a group on one side shows only that side's border; EXPERIENCE.md's Open Items entry is owed to Sally.", "hitl: DESIGN.md's right-half body opacity (0.7) and the mirror-axis colour are [ASSUMPTION]s; Sergii confirms them at the build's look."]
 
 [[entry]]
+id = 35
+type = "story"
+title = "The canvas shows ids and anchor links on hover and selection"
+description = "At rest the Layout canvas draws keys only (EXPERIENCE.md Layout and Canvas rows; DESIGN.md Canvas keys and Anchor link; Sergii 2026-11-14, 2dd41f6, picked from mockups/canvas-legend-2.html B2 and canvas-anchor-1.html B): 13.7's slot ids on the top face and its anchor links drawn at all times go. The pointed and the selected node show their anchor link and, for a slot, its id in a label just below the key (panel fill, 1px key-edge, canvas-label in text), drawn in screen space above keys and borders; a right-half key's label reads its id as authored, with no right/; every slot shows it, fitted or not (today only fitted slots carry a legend). Hover today holds only a group (HoveredGroup, collapsed from a pointed key by nearestGroupId); 35 makes it record the pointed node, a key or a group, as a placement id (spine Editor state row: hover holds a PlacementId), and the innermost group's border still shows from it as 32 and 8 draw it. Pointing at a key shows that key's link and id, not its group's link; pointing inside a border or at a tab shows the group's link."
+verify = "In the editor's browser tests, Chromium and Firefox: with nothing pointed at or selected, no slot id and no anchor link is drawn; pointing at left/matrix-middle-top draws its id in a label below that key and its anchor link, and nothing for any other key; a selected left/thumbfan-mid-home keeps its label and link after the pointer leaves; pointing inside the thumbfan group's border draws its anchor link to matrix-middle-bottom; pointing at right/thumbfan-near-home labels it thumbfan-near-home."
+covers = ["R6"]
+after = [8]
+hitl = false
+risk = "low"
+
+[[entry]]
 id = 34
 type = "story"
 title = "Corney's keys survive a reload end to end"
 description = "The slice's e2e journey (spine Verification layer 6: one small journey per slice; epic R6), split from 13.8 (2026-11-14), crossing what no lower level fakes: the production build vite preview serves, with its model worker and browser storage, opened by a real launch (AGENTS.md's e2e bar). Within the Playwright run, which runs on Node (the epic's 'Node test'), Corney's design is built with its layout-command script and its autosaved design bundle written, not by a separate Vitest test, whose order pnpm smoke can't rely on; the journey seeds browser storage with it, and the app reopens it through 23.7's launch path, with no test entry point in the app (epic Decision 2026-10-30, planning); both halves are drawn; a key is added through 13.25's S and deleted through 13.24's Delete; a reload shows the same design. Adds a Firefox project to app/playwright.config.ts (Chromium only today), the repository's first screenshot baseline and its configuration, and the storage seeding. Sergii approves the screenshot baseline (AGENTS.md: a person approves every screenshot baseline)."
 verify = "pnpm smoke runs the journey in Chromium and Firefox and it passes: the seeded design opens with both halves drawn, the key added through S appears on the canvas and is gone after Delete, and after a reload the seeded design's keys are drawn and the added key is absent; its screenshot baseline is approved by Sergii."
 covers = ["R6"]
-after = [8]
+after = [8, 35]
 hitl = true
 risk = "medium"
 
@@ -290,6 +301,6 @@ title = "Refactor sweep"
 description = "Cleanup only, scoped at its start from the epic's plans and the review findings it deferred. Scope pushed out of another story becomes a new story, not part of this one."
 verify = "pnpm check and every test of the slice pass, and each cleanup item from the scope list is closed or recorded as deferred."
 covers = []
-after = [9, 16, 17, 21, 18, 2, 22, 3, 4, 6, 7, 26, 33, 32, 23, 24, 27, 29, 30, 25, 28, 8, 34, 31]
+after = [9, 16, 17, 21, 18, 2, 22, 3, 4, 6, 7, 26, 33, 32, 23, 24, 27, 29, 30, 25, 28, 8, 35, 34, 31]
 hitl = false
 risk = "low"
