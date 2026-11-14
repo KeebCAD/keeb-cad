@@ -3,14 +3,14 @@ title: 'Per-side overrides remove a part'
 type: 'feature'
 ticket: 33
 created: '2026-11-14'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '40326d150f9516a638921383f1848777497cfc03'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md'
@@ -136,9 +136,35 @@ Slots 1u (18 × 18), gap 1; form split reversible unless stated; `a`, `b` free s
 
 ## Implementation Notes
 
+- Decision (Sergii): row 1 is a `describe` in `app/src/right-half.spec.ts`, beside the helpers it uses, not in `app/src/testing/corney-script.ts`, because dependency-cruiser treats any non-spec file under `app/src` as production code, which may not import `reference-designs`, packages' testing subpaths or worker subpaths, and the fence change was refused. `per-side-overrides.spec.ts` was deleted. The four older specs keep their own copies of the helpers (deferred-work entry).
+- Decision (build): `isNullable` is true only for a field whose own schema is `v.nullable`, not an `optional` wrapping one, because the plan names `v.nullable` and no schema has the wrapped shape (its survivor in Stryker showed it untestable).
+- Decision (build): `null` is written through one `fieldValueOf` for top-level and nested value fields, not only nested ones, because the plan's Always says "writes `null` only in a field whose schema is `v.nullable`", any field; record entries still go through `codecValue` (row 8, `schema-kinds.spec.ts:228`).
+- Decision (build): `resolvesToSlot` (`overrides/override-target.ts`) and `isRefusedSwap` (`overrides/refused-swap.ts`) are files of their own, not inlined, because `checkSetOverride`, `overrideViolations` and `removedSideIds` share them (AGENTS.md "a new concept gets a new file"), so the command and the load can't disagree.
+- Decision (build): `checkStructure` keeps its generic `unknown-target` text for a new dangling override, not `unknownOverrideTargetMessage`, because row 17 asks only the kind and ids and the structural check names every reference kind alike.
+- Decision (build): builder defaults are a removal (`aSidePartOverride()`: `right/id`, `part: null`), not a swap, because AD-6 lets a reversible board, M1's one form, differ only by removal.
+- Rebase: after PR #61 (`f4df4b7`) deleted `tooling/lint`, the uncommitted work moved onto it; `baseline_revision` stays `40326d1`, so a diff since baseline also shows #61's deletion, which is not this story's.
+- Structural changes: none (`git diff --name-only` since baseline names no tsconfig, package.json, workspace, Vitest, ESLint, Stryker or dependency-cruiser file, no `declare global`/`module`).
+- Real-host run: no third-party fake in the diff (the specs' runners and storage backends are the repo's own); `@bgotink/kdl`'s `#null` round trip is proven by row 7 against the real library.
+- Toggled bugs (implementer): `createDerivations` passing an empty set for the removed ids turned row 1 red; `overrides` as `v.optional` in `designSchema` turned row 2 red; both restored.
+- Stryker: `write-kdl.ts` 100%; `schema-fields.ts` 99.08%, one survivor at `:93` (`option !== undefined` in `resolveObject`'s union branch), a line this story didn't change.
+- Verification: `pnpm test` 648 files, 5182 tests passed, no type errors (load average 16 at the end); typecheck, lint, depcruise, format:check clean. Three earlier full runs failed only by timeouts under another project's load (ESLint-backed specs, Firefox first-load waits); each failed non-lint file passed alone.
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+Pass 1 (quick, test-reviewer), diff against main `f4df4b7` (the baseline plus PR #61, which isn't this story's). Verdicts: 0 high, 0 medium, 9 low, 2 false. Nothing above low and no frozen line broken, so the review ends; its lows are logged, not patched.
+- low, logged: `right-half.spec.ts` row 1 builds its expected rows with a ternary on `REMOVED`, and its name says "as before" where it compares with the left half reflected (test-reviewer 1).
+- low, logged: `create-derivations.spec.ts` `placedWith` takes a `form` no caller passes (`:907`, every call at `:919-1006` omits it) (test-reviewer 2).
+- low, logged: `create-derivations.spec.ts` rows 20–25 assert whole override violations that `override-violations.spec.ts` also covers; the plan's rows 20–25 place them at createDerivations, so the fix would edit the plan (test-reviewer 3, AGENTS.md "Test a rule where it is defined").
+- low, logged: `check-set-override.spec.ts` row title `a swap on an id the design lacks, before the swap` reads oddly in the test name (test-reviewer 4).
+- low, logged: `side-id.spec.ts` names its rows `on %s` with a boolean expected, so the name doesn't say accepted or refused (quick 1).
+- low, logged: `check-set-override.spec.ts` `arrange` builds slot `b`, which no test there reads (quick 2).
+- low, logged: `place-layout.spec.ts` row 18b narrows to `fit` after a whole-value `toEqual` (quick 3).
+- low, logged: comments that restate the code above `isNullable` (`schema-fields.ts`), `runCorneyScript` (`right-half.spec.ts`) and in `removed-side-ids.ts` (quick 4).
+- low, logged: the plan's Code Map, Tasks and last Design Notes decision still describe `app/src/testing/corney-script.ts`; Implementation Notes record Sergii's change; the fix edits the plan (quick 6).
+- false: row 14's "no commit" shown by `store.current` staying the same object; `#write` (`design-store.ts:257-259`) sets a new `Committed` with seq + 1 on every commit, so an unchanged object means no commit (quick 5).
+- false: row 1 may read a layout one seq behind the issues; `layoutSetArrived` is true only when the posted parts' and layout's seqs both equal the store's current seq (`model-worker-lifecycle.ts:49-52`) (quick 7).
 
 ## Design Notes
 

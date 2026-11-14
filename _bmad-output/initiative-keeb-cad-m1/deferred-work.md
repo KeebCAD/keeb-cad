@@ -599,3 +599,6 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
   summary: ticket 13.33's description and verify still say part 'empty'; the spine now removes a part with `null` (4f45eb8). Sofia reconciles the ticket.
   evidence: spine AD-6 and Data Schema `Override`, Sergii 2026-11-14.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
+  summary: `app/src/{layout-set,corney-left-half,corney-column,blueprint-inputs}.spec.ts` each declare their own `runCorneyScript`/`committed`/`arrange` copies; a shared app test helper file is fenced out, since dependency-cruiser treats a non-spec file under `app/src` as production code.
+  evidence: AGENTS.md "Write a shared assertion once"; Sergii 2026-11-14 kept 13.33's row 1 in `right-half.spec.ts` instead of changing the fence.
