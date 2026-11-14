@@ -1282,7 +1282,7 @@ Raised in `directions-2026-10-30.md` (Open), `code-decisions-list-2026-10-30.md`
 | --- | --- | --- |
 | Vue 3.5 vs 3.6 (alien-signals in `@vue/reactivity`; 3.6.0-rc.14 on 2026-10-30) | AD-10, Stack | 3.6 goes stable |
 | Open in a read-only tab of a design id another tab holds the Web Lock on: Open writes a `file` point and sets the current revision, and AD-13 keeps Open available in read-only tabs | AD-13 | The story that codes the Web Lock and Take over |
-| Invalid states: suggest-only vs sometimes auto-apply fixes; whether AD-2's other refusals (a vertex in use, a referenced keymap layer) become flagged breaks (AD-3's cycle rejection stays a rejection, decided 2026-10-30); `unresolvable-reference` for the references beyond parts and anchors (AD-24) | AD-2, Violations | First break-and-fix story |
+| Invalid states: suggest-only vs sometimes auto-apply fixes; whether AD-2's other refusals (a vertex in use, a referenced keymap layer) become flagged breaks (AD-3's cycle rejection stays a rejection, decided 2026-10-30); `unresolvable-reference` for the references beyond parts, anchors and override targets (AD-24) | AD-2, Violations | First break-and-fix story |
 | Caching who-points-at as a computed for a live "used by" panel | AD-24 | A panel needs it |
 | Reka's `useHideOthers` puts `aria-hidden` on the whole page while a combobox is open: right for the modal palette, wrong for the inline expression autocomplete; no prop found to turn it off (an upstream issue, or glue) | AD-26 | First expression-field story |
 | Freeze rule for values that enter the graph from `library` and from workers (typed arrays can't be frozen) | AD-2, AD-11 | First background stage |
