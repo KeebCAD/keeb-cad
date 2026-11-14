@@ -578,3 +578,24 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-canvas-draws-group-borders-on-hover-and-selection-plan.md`
   summary: The ESLint-driven specs in `tooling/lint/` (`entry-files-re-export`, `no-inline-config`, `no-shared-spec-state`, `no-services-in-components`) time out at 15 s in some full `pnpm test` runs, then pass alone (`entry-files-re-export.spec.ts`: 10 tests in 22.6 s).
   evidence: maybe-false, medium if true, unverified. Seen on 2026-11-14 during 13.32 with seeds 1794643608223, 1794646024498 and 1794646518368, load average 10–12; the same files passed in the full run with seed 1794645433830. Flaky triage would settle it by replaying those seeds on `main` with and without `--no-file-parallelism`. Not caused by 13.32, which changes nothing they lint.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
+  summary: `packages/schema/src/testing/design.spec.ts` "keeps the %s it is given" passes the default for `libraryVersions` (`['libraryVersions', () => ({ libraryVersions: [aLibraryVersion()] })]`), so it can't fail if the builder ignores the field.
+  evidence: AGENTS.md "Give every test an `expect` that fails when the behaviour breaks"; found by 13.33's conformance review.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
+  summary: `unknown-target` texts are written inline in `model/src/layout-editing/check-set-anchor.ts` and `check-delete-node.ts` instead of a `violations/` message function.
+  evidence: spine Violations row "Each kind's message is built by one `model` function from its kind and ids"; 13.33 adds `unknownOverrideTargetMessage` for its own text.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
+  summary: `model/src/parts/create-derivations.ts` holds violation builders (`unresolved`, `inputInvalid`, `failure`) and helpers (`rectangleOf`, `partsOutputOf`, `firstPerOwner`) beside the derivation.
+  evidence: AGENTS.md "Give each file one kind of thing"; found by 13.33's conformance review.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
+  summary: a required design section (`library-versions`) is proven missing only through `app/src/launch/launch.spec.ts`'s `'has no library-versions'`, with no `schema`-level row.
+  evidence: AGENTS.md "Test a rule where it is defined"; 13.33 adds the schema row for `overrides` only.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
+  summary: 14.5's Fitted toggle re-ticks a side, which needs a way to clear a `side-part` override; 13.33 builds only SetOverride, and a swap is refused on a reversible board.
+  evidence: EXPERIENCE.md:128 "unticking unfits that side only"; Sergii 2026-11-14 left clearing out of 13.33.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
+  summary: a loaded file can repeat an override key; overrides are read one by one and nothing checks the repeat on load.
+  evidence: AD-23 "at most one each, replaced on a repeat" covers commands only; Sergii 2026-11-14 left a load check out of 13.33.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
+  summary: ticket 13.33's description and verify still say part 'empty'; the spine now removes a part with `null` (4f45eb8). Sofia reconciles the ticket.
+  evidence: spine AD-6 and Data Schema `Override`, Sergii 2026-11-14.
