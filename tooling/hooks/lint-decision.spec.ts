@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url'
 import { ESLint } from 'eslint'
 import { describe, expect, it } from 'vitest'
 
-import { COLD_CONFIG_TIMEOUT } from '../lint/cold-config-timeout'
+import { COLD_CONFIG_TIMEOUT } from './cold-config-timeout'
 import { lintDecision } from './lint-decision'
 
 const root = fileURLToPath(new URL('../..', import.meta.url))
