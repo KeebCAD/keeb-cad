@@ -3,7 +3,6 @@ import { expectOk } from '@keeb-cad/result/testing'
 import type { Node } from '@keeb-cad/schema'
 import {
   aBorder,
-  aBorderRegion,
   aFreeGroup,
   aLayoutRow,
   anId,
@@ -19,16 +18,17 @@ import {
   arrangeLayoutCanvas,
   canvas,
   designOf,
+  groupRow,
   key,
   keyAt,
   layoutOf,
   nextFrames,
+  rectangle,
 } from '../testing/layout-canvas'
 import { press } from '../testing/press'
 import type { LayoutRowOf } from '../testing/types'
 import type { Point } from '../viewport/types'
 import { switchGraceDelayMs } from '../workspace/layout/switch-grace-delay'
-import { HoveredGroup } from './hovered-group'
 
 // Frappé's tokens.
 const GROUP_BORDER = 'rgb(148, 156, 187)'
@@ -75,20 +75,6 @@ const selectedTab = (id: string, side: Side = 'left') => ({
 
 const group = (id: string, children: Node[]) => aFreeGroup({ id: anId(id), children })
 const slot = (id: string) => aSlot({ id: anId(id) })
-
-// A counter-clockwise rectangle from its bottom-left to its top-right corner, in model mm.
-function rectangle(left: number, bottom: number, right: number, top: number): Point[] {
-  return [
-    { x: left, y: bottom },
-    { x: right, y: bottom },
-    { x: right, y: top },
-    { x: left, y: top },
-  ]
-}
-
-function groupRow(outer: Point[], holes: Point[][] = []): LayoutRowOf {
-  return aLayoutRow({ kind: 'group', part: -1, border: aBorder([aBorderRegion({ outer, holes })]) })
-}
 
 function emptyGroupRow(fields: Partial<LayoutRowOf> = {}): LayoutRowOf {
   return aLayoutRow({ kind: 'group', part: -1, border: aBorder([]), ...fields })
@@ -559,7 +545,7 @@ describe('the group borders', () => {
   })
 
   describe('a commit', () => {
-    it('drops the selection and the hovered group at once when it deletes their group', async () => {
+    it('drops the selection and the hovered border at once when it deletes their group', async () => {
       const shell = await arrange(...bothHalves())
       await userEvent.hover(key('right/a'))
       await expect.poll(drawn).toEqual({
@@ -573,14 +559,13 @@ describe('the group borders', () => {
       expectOk(shell.store.run(DeleteNode, { ids: [anId('c')] }))
       await nextTick()
 
-      expect({
-        selected: shell.selection.ids,
-        hovered: shell.injector.resolve(HoveredGroup).id.getOrUndefined(),
-        drawn: drawn(),
-      }).toEqual({ selected: [], hovered: undefined, drawn: NOTHING })
+      expect({ selected: shell.selection.ids, drawn: drawn() }).toEqual({
+        selected: [],
+        drawn: NOTHING,
+      })
     })
 
-    it('keeps the selection and the hovered group when it deletes another node', async () => {
+    it('keeps the selection and the hovered border when it deletes another node', async () => {
       const shell = await arrange(...bothHalves([slot('z')]))
       await userEvent.hover(key('right/a'))
       await expect.poll(drawn).toEqual({
@@ -594,13 +579,8 @@ describe('the group borders', () => {
       expectOk(shell.store.run(DeleteNode, { ids: [anId('z')] }))
       await nextTick()
 
-      expect({
-        selected: shell.selection.ids,
-        hovered: shell.injector.resolve(HoveredGroup).id.getOrUndefined(),
-        drawn: drawn(),
-      }).toEqual({
+      expect({ selected: shell.selection.ids, drawn: drawn() }).toEqual({
         selected: [aPlacementId('right/a')],
-        hovered: aPlacementId('right/c'),
         drawn: {
           borders: [hoveredBorder('c', 'right')],
           tabs: [hoveredTab('c', 'right')],

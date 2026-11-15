@@ -18,18 +18,6 @@ export type GroupBorderRow = {
   shown: GroupBorderShown
 }
 
-// The surface whose pointer set the hovered group.
-export type HoverSource = 'canvas' | 'tree'
-
-export type UseHoveredGroupResult = {
-  pointAtGroup: (key: PlacementId) => void
-  pointAtTreeGroup: (nodeId: string) => void
-  pointAtSlot: (key: PlacementId) => void
-  leave: () => void
-  clear: () => void
-  clearTreeHover: () => void
-}
-
 export type GroupBorderProps = { row: GroupBorderRow; grayed: boolean }
 
 // `at` is the tab's bottom-left corner, in screen px. The tab is named by its side's id and

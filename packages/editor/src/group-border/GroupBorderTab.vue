@@ -2,14 +2,14 @@
 import { UiCanvasToggle } from '@keeb-cad/ui'
 import { computed, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
 
+import { useHoveredNode } from '../hover/use-hovered-node'
 import { useSelection } from '../selection/use-selection'
 import { groupBorderMarks } from './group-border-marks'
 import type { GroupBorderTabProps } from './types'
-import { useHoveredGroup } from './use-hovered-group'
 
 const props = defineProps<GroupBorderTabProps>()
 const { select } = useSelection()
-const { pointAtGroup, leave } = useHoveredGroup()
+const { pointAt, leave } = useHoveredNode()
 const label = useTemplateRef<SVGTextElement>('label')
 
 const { tabLabelInset: inset } = groupBorderMarks
@@ -42,7 +42,7 @@ const text = computed(() => {
     :pressed="selected"
     :transform="`translate(${at.x}, ${at.y})`"
     @press="select([placement])"
-    @pointerenter="pointAtGroup(placement)"
+    @pointerenter="pointAt(placement)"
     @pointerleave="leave"
   >
     <!-- The tab sits on its bottom-left corner, so it rises one tab height above it. -->

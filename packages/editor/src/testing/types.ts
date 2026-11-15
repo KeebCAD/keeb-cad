@@ -41,6 +41,8 @@ export type LayoutSetPost = {
 
 export type LayoutRowOf = LayoutOutput['rows'][number]
 
+export type Half = 'left' | 'right'
+
 export type TestRenameDesignInput = v.InferOutput<typeof testRenameDesignInputSchema>
 
 export type TestStoreNameInput = v.InferOutput<typeof testStoreNameInputSchema>

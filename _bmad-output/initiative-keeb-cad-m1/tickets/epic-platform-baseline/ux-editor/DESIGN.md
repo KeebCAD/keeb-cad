@@ -2,7 +2,7 @@
 name: keeb-cad editor
 description: Browser-only visual keyboard CAD for one expert builder. Catppuccin Frappé dark by default, Latte light; calm density; canvas first, chrome quiet.
 status: final
-updated: 2026-11-14
+updated: 2026-11-15
 colors:
   # Unsuffixed = dark (Catppuccin Frappé, primary). `-light` = Catppuccin Latte.
   # Comment = Catppuccin color name. Latte uses the same name unless a decided fix says otherwise.
@@ -310,6 +310,11 @@ components:
   group-border-tab:
     height: 17px
     radius: '{rounded.sm}'
+  slot-id-label:
+    height: '{components.group-border-tab.height}'
+    radius: '{rounded.sm}'
+    inset: 4px                   # text from each end of the label
+    gap: 3px                     # label top below the key's lowest point
   fitted-toggle:
     box-size: 16px
   button:
@@ -469,7 +474,7 @@ File menu, Export menu, Design info, Autocomplete dropdown and Context menu use 
 
 ### Canvas marks
 
-- **Canvas keys** — Layout: filled keycaps (`{colors.key-body}`, `{colors.key-edge}`, `{colors.key-top-face}`), selection outline `{colors.selection}`; no slot ids at rest: the pointed and the selected slot show their id in a label just below the key (`{colors.panel}` fill, 1px `{colors.key-edge}`, `{typography.canvas-label}` in `{colors.text}`), drawn in screen space above keys and borders; on the right half the id reads as authored, with no `right/`, since the half's position shows the side (Sergii 2026-11-14; → `mockups/canvas-legend-2.html` B2). Outline and PCB: keys as `{colors.key-outline-faint}` outlines. → `mockups/key-rendering-1.html` (option a).
+- **Canvas keys** — Layout: filled keycaps (`{colors.key-body}`, `{colors.key-edge}`, `{colors.key-top-face}`), selection outline `{colors.selection}`; no slot ids at rest: the pointed and the selected slot show their id in a label just below the key (`slot-id-label`: `{components.slot-id-label.height}`, `{components.slot-id-label.radius}`, `{colors.panel}` fill, 1px `{colors.key-edge}`, `{typography.canvas-label}` in `{colors.text}`), drawn in screen space above keys and borders; on the right half the id reads as authored, with no `right/`, since the half's position shows the side (Sergii 2026-11-14; → `mockups/canvas-legend-2.html` B2). Outline and PCB: keys as `{colors.key-outline-faint}` outlines. → `mockups/key-rendering-1.html` (option a).
 - **Right half** — body and top face at `{components.right-half.body-opacity}` until selected; edges, legends and marks stay at full opacity to keep 3:1 contrast `[ASSUMPTION]`.
 - **Mirror axis** — 1px dashed `{colors.mirror-axis}` line along `center`'s y-axis, between the halves, in every 2D workspace that draws both halves.
 - **Firmware legends** — keycaps with legends in `{colors.key-legend}`: transparent binding = faint ▽ in `{colors.text-faint}`; no binding (none) = empty cap; mod-tap / layer-tap = two lines, tap over hold; hardware-less action ▲ in the top-right corner.

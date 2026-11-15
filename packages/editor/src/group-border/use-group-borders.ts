@@ -1,12 +1,19 @@
 import { useService } from '@keeb-cad/di/vue'
-import { sideOf, sideQualifiedId, subtreeIds, subtreeIdsOf } from '@keeb-cad/model/main'
+import {
+  nearestGroupId,
+  nodeIdOf,
+  sideOf,
+  sideQualifiedId,
+  subtreeIds,
+  subtreeIdsOf,
+} from '@keeb-cad/model/main'
 import type { PlacementId } from '@keeb-cad/schema'
 import { computed, type ComputedRef } from 'vue'
 
 import { useOpenDesign } from '../design/use-open-design'
+import { HoveredNode } from '../hover/hovered-node'
 import { Selection } from '../selection/selection'
 import { usePlacedNodes } from '../workspace/layout/use-placed-nodes'
-import { HoveredGroup } from './hovered-group'
 import { tabPoint } from './tab-point'
 import type { GroupBorderRow, GroupBorderShown } from './types'
 
@@ -16,7 +23,7 @@ export function useGroupBorders(): ComputedRef<GroupBorderRow[]> {
   const placed = usePlacedNodes()
   const openDesign = useOpenDesign()
   const selection = useService(Selection)
-  const hovered = useService(HoveredGroup)
+  const hovered = useService(HoveredNode)
   return computed(() => {
     const design = openDesign.value
     if (design === undefined) return []
@@ -24,7 +31,14 @@ export function useGroupBorders(): ComputedRef<GroupBorderRow[]> {
     const placedSlots = new Set(
       placed.value.flatMap(({ kind, key }) => (kind === 'slot' ? [key] : [])),
     )
-    const hoveredId = hovered.id.getOrUndefined()
+    // A pointed key shows its innermost group's border, on its own side; a pointed group its own.
+    const hoveredId = hovered.id
+      .flatMap((node) =>
+        nearestGroupId(design.layout, nodeIdOf(node)).map((group) =>
+          sideQualifiedId(sideOf(node), group),
+        ),
+      )
+      .getOrUndefined()
     const shownOf = (key: PlacementId): GroupBorderShown =>
       selection.ids.includes(key) ? 'selected' : hoveredId === key ? 'hovered' : 'none'
     return (

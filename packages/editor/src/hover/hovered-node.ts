@@ -9,28 +9,28 @@ import { effectScope, shallowRef } from 'vue'
 import { hoverGraceDelayMs } from './hover-grace-delay'
 import type { HoverSource } from './types'
 
-// The group the pointer is at, through a key, a border, a tab or a Tree row, on one side.
-export class HoveredGroup implements Disposable {
+// The node the pointer is at, a key, or a group through its border, tab or Tree row, on one side.
+export class HoveredNode implements Disposable {
   get id(): Option<PlacementId> {
-    return this.#id.value
+    return Option.fromNullable(this.#id.value)
   }
 
-  // Entering a source replaces the hovered group and cancels a pending clear.
+  // Entering a source replaces the hovered node and cancels a pending clear.
   point(id: PlacementId, by: HoverSource): void {
     this.#timer.stop()
     this.#setBy = by
-    if (this.#id.value.getOrUndefined() !== id) this.#id.value = Option.some(id)
+    this.#id.value = id
   }
 
-  // The group stays for the grace, so the pointer can still reach its tab; a further leave while
-  // it runs, such as crossing a slot's row, does not push the clear back.
+  // The node stays for the grace, so the pointer can still reach its group's tab; a further leave
+  // while it runs, such as crossing a slot's row, does not push the clear back.
   leave(): void {
     if (!this.#timer.isPending.value) this.#timer.start()
   }
 
   clear(): void {
     this.#timer.stop()
-    this.#id.value = Option.none()
+    this.#id.value = undefined
   }
 
   // A surface that goes away takes its own hover with it, shown or within the grace, never
@@ -45,7 +45,7 @@ export class HoveredGroup implements Disposable {
   }
 
   readonly #store = inject(DesignStore)
-  readonly #id = shallowRef<Option<PlacementId>>(Option.none())
+  readonly #id = shallowRef<PlacementId | undefined>(undefined)
   #setBy: HoverSource = 'canvas'
   // Detached: the service is first resolved inside some component's setup, and a scope of that
   // component's would stop the timer when it unmounts.
@@ -53,21 +53,22 @@ export class HoveredGroup implements Disposable {
   readonly #timer = this.#runInScope(() =>
     useTimeoutFn(
       () => {
-        this.#id.value = Option.none()
+        this.#id.value = undefined
       },
       hoverGraceDelayMs,
       { immediate: false },
     ),
   )
-  // Nothing fires when a group goes away under a still pointer, so a commit drops it at once.
+  // Nothing fires when a node goes away under a still pointer, so a commit drops it at once.
   readonly #stopPruning = this.#store.events.on('commit', () => {
     this.#prune()
   })
 
   #prune(): void {
+    const id = this.#id.value
+    if (id === undefined) return
     const design = this.#store.current.map(({ design }) => design).getOrUndefined()
-    const held = this.#id.value.map((id) => design !== undefined && holdsPlacement(design, id))
-    if (!held.getOr(true)) this.clear()
+    if (design === undefined || !holdsPlacement(design, id)) this.clear()
   }
 
   #runInScope<T>(run: () => T): T {

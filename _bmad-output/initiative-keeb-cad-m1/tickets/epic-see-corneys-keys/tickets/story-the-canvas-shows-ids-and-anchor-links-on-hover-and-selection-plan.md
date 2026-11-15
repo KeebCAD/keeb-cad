@@ -3,14 +3,14 @@ title: 'The canvas shows ids and anchor links on hover and selection'
 type: 'feature'
 ticket: 35
 created: '2026-11-15'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: 'b6f626a41756ffa08927e5cd298561961494fad6'
 route: 'full'
 route_source: 'auto'
 risk: 'low'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/initiative-keeb-cad-m1/tickets/epic-platform-baseline/ux-editor/DESIGN.md'
@@ -90,15 +90,15 @@ Frames are model mm; "screen point of P" is `modelToScreen(P, view, size)` (unit
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] Docs on main before the branch -- spine Editor state: "Hover holds a `PlacementId` in its own service (`HoveredGroup`)" → "Hover holds the pointed node's `PlacementId`, a slot or a group, in its own service (`HoveredNode`), not the group a pointed key belongs to, because a pointed key shows its own id and anchor link (13.35)". `component-ownership.md` row "Canvas, viewport, selection …": add "13.35 (slot id label, anchor links on hover and selection)".
-- [ ] `packages/editor/src/hover/{hovered-node.ts,use-hovered-node.ts,hover-grace-delay.ts,types.ts}` -- `HoveredNode` (service): `HoveredGroup` moved, its ref holding `PlacementId | undefined`, getter `id` still `Option`; its comments, `hover-grace-delay.ts`'s and `HoverSource`'s say node, not group, and `services-classified.spec.ts`'s `notShown` reason names the borders, labels and links it drives. `useHoveredNode()` (function): `hovered` (computed `PlacementId | undefined`), `pointAt(placement)`, `pointAtTreeGroup`, `leave`, `clear`, `clearTreeHover`. `editor-module.ts`, `services-classified.spec.ts` follow. Rows 3a, 12–12a.
-- [ ] `packages/editor/src/group-border/{use-group-borders.ts,GroupBorder.vue,GroupBorderTab.vue,types.ts}`, `workspace/layout/CanvasSlot.vue`, `slide-out/TreeSlideOut.vue` -- callers use `pointAt`; borders show hovered mapped to `sideQualifiedId(sideOf(h), nearestGroupId(layout, nodeIdOf(h)))`. Rows 4–5, 11–11a.
-- [ ] `packages/editor/src/workspace/layout/{use-pointed-and-selected-nodes.ts,use-pointed-and-selected-nodes.spec.ts}` -- `usePointedAndSelectedNodes()` (function): the placed nodes whose key is selected or hovered, in placed order, each once. Row 14.
-- [ ] `packages/editor/src/workspace/layout/{use-slot-id-labels.ts,use-slot-id-labels.spec.ts}` -- `useSlotIdLabels(shown, modelToScreen)` (function): per shown slot with bounds, `{ key, id, at }`, `at` the screen point of the bounds' bottom middle; a shallow ref set in a `flush: 'post'` watch on the shown nodes (frames included) and the viewport. Rows 2, 8.
-- [ ] `packages/editor/src/workspace/layout/{SlotIdLabel.vue,slot-id-label-marks.ts,types.ts,LayoutCanvas.vue}` -- `SlotIdLabel` (component, neither tag: AD-25's split is for classes and functions; props `id`, `placement`, `at`, `grayed`): rect `h-slot-id-label`, `rounded-sm`, width the text's `useElementSize` width plus insets, top at `at.y + gap`. `AnchorLink.vue` and `AnchorLinkProps` gain `placement`, and the link's `<g>` takes `role="img"` and its name. `LayoutCanvas`: links over `usePointedAndSelectedNodes`, labels over `useSlotIdLabels`, between keys and tabs; `legends` and `:121`'s stale wording go. Rows 1–10.
-- [ ] `packages/ui/src/theme/theme.css`, DESIGN.md -- `components.slot-id-label` (height, radius), `--spacing-slot-id-label: 17px`. Row 9.
-- [ ] `packages/editor/src/workspace/layout/show-ids-and-links.spec.ts` -- rows 1, 3–7c, 9–12a (drawn result); `use-slot-id-labels.spec.ts` holds 2 and 8, `use-pointed-and-selected-nodes.spec.ts` holds 14; `group-border/group-borders.spec.ts` -- imports renamed, the delete test at `:562` asserts the drawn result only; `switch-grace.spec.ts` -- row 13, link by `getByRole('img', { name: 'left/a anchor link', exact: true })`, every test in the file named by role ("just before the grace", "on the grace", "just after") with ms in constants; the top face stays found by `querySelectorAll('rect')` (it has no role), logged to `deferred-work.md`.
-- [ ] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` -- `switch-grace.spec.ts`'s top face by position; hover's own grace and prune tests still in `group-border/group-borders.spec.ts` (`:234`, `:562`), not `hover/`.
+- [x] Docs on main before the branch -- spine Editor state: "Hover holds a `PlacementId` in its own service (`HoveredGroup`)" → "Hover holds the pointed node's `PlacementId`, a slot or a group, in its own service (`HoveredNode`), not the group a pointed key belongs to, because a pointed key shows its own id and anchor link (13.35)". `component-ownership.md` row "Canvas, viewport, selection …": add "13.35 (slot id label, anchor links on hover and selection)".
+- [x] `packages/editor/src/hover/{hovered-node.ts,use-hovered-node.ts,hover-grace-delay.ts,types.ts}` -- `HoveredNode` (service): `HoveredGroup` moved, its ref holding `PlacementId | undefined`, getter `id` still `Option`; its comments, `hover-grace-delay.ts`'s and `HoverSource`'s say node, not group, and `services-classified.spec.ts`'s `notShown` reason names the borders, labels and links it drives. `useHoveredNode()` (function): `hovered` (computed `PlacementId | undefined`), `pointAt(placement)`, `pointAtTreeGroup`, `leave`, `clear`, `clearTreeHover`. `editor-module.ts`, `services-classified.spec.ts` follow. Rows 3a, 12–12a.
+- [x] `packages/editor/src/group-border/{use-group-borders.ts,GroupBorder.vue,GroupBorderTab.vue,types.ts}`, `workspace/layout/CanvasSlot.vue`, `slide-out/TreeSlideOut.vue` -- callers use `pointAt`; borders show hovered mapped to `sideQualifiedId(sideOf(h), nearestGroupId(layout, nodeIdOf(h)))`. Rows 4–5, 11–11a.
+- [x] `packages/editor/src/workspace/layout/{use-pointed-and-selected-nodes.ts,use-pointed-and-selected-nodes.spec.ts}` -- `usePointedAndSelectedNodes()` (function): the placed nodes whose key is selected or hovered, in placed order, each once. Row 14.
+- [x] `packages/editor/src/workspace/layout/{use-slot-id-labels.ts,use-slot-id-labels.spec.ts}` -- `useSlotIdLabels(shown, modelToScreen)` (function): per shown slot with bounds, `{ key, id, at }`, `at` the screen point of the bounds' bottom middle; a shallow ref set in a `flush: 'post'` watch on the shown nodes (frames included) and the viewport. Rows 2, 8.
+- [x] `packages/editor/src/workspace/layout/{SlotIdLabel.vue,slot-id-label-marks.ts,types.ts,LayoutCanvas.vue}` -- `SlotIdLabel` (component, neither tag: AD-25's split is for classes and functions; props `id`, `placement`, `at`, `grayed`): rect `h-slot-id-label`, `rounded-sm`, width the text's `useElementSize` width plus insets, top at `at.y + gap`. `AnchorLink.vue` and `AnchorLinkProps` gain `placement`, and the link's `<g>` takes `role="img"` and its name. `LayoutCanvas`: links over `usePointedAndSelectedNodes`, labels over `useSlotIdLabels`, between keys and tabs; `legends` and `:121`'s stale wording go. Rows 1–10.
+- [x] `packages/ui/src/theme/theme.css`, DESIGN.md -- `components.slot-id-label` (height, radius), `--spacing-slot-id-label: 17px`. Row 9.
+- [x] `packages/editor/src/workspace/layout/show-ids-and-links.spec.ts` -- rows 1, 3–7c, 9–12a (drawn result); `use-slot-id-labels.spec.ts` holds 2 and 8, `use-pointed-and-selected-nodes.spec.ts` holds 14; `group-border/group-borders.spec.ts` -- imports renamed, the delete test at `:562` asserts the drawn result only; `switch-grace.spec.ts` -- row 13, link by `getByRole('img', { name: 'left/a anchor link', exact: true })`, every test in the file named by role ("just before the grace", "on the grace", "just after") with ms in constants; the top face stays found by `querySelectorAll('rect')` (it has no role), logged to `deferred-work.md`.
+- [x] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` -- `switch-grace.spec.ts`'s top face by position; hover's own grace and prune tests still in `group-border/group-borders.spec.ts` (`:234`, `:562`), not `hover/`.
 
 **Acceptance Criteria:**
 - Given the boundary table, when `pnpm test` runs, then each row passes at its level in Chromium and Firefox.
@@ -106,9 +106,49 @@ Frames are model mm; "screen point of P" is `modelToScreen(P, view, size)` (unit
 
 ## Implementation Notes
 
+- The docs task was already on main (b6f626a: spine Editor state row and `component-ownership.md`), so the branch carries no spine edit.
+- Decision (build): `CanvasItems` makes its registrations reactive (a `shallowRef` it only triggers on register and unregister, read by `bounds`, `allBounds`, `size` and `drawsAny`), not a plain `Set`, because Vue runs `LayoutCanvas`'s post-flush label watch before a newly mounted `CanvasSlot` registers its body (both are post jobs, ordered by component uid), so a label for a key mounted in the same flush, such as a duplicated key that is selected, would miss its bounds until the next hover. Writes never read the ref, so the effect that registers a key does not track its own registration. Citation: `show-ids-and-links.spec.ts` "shows the label and link of a selected id once a later set places it", Chromium, with baseline `canvas-items.ts` (b6f626a): `AssertionError: expected { labels: [], …(2) } to deeply equal { labels: [ 'left/new id' ], …(2) }`; with this change, passed.
+- Real-host run: the specs fake only the repo's own model worker (`workers/testing`'s `FakeWorker`, checked against the real one in `app` specs); `useElementSize` and `CanvasItems`' measuring run in real Chromium and Firefox in browser mode. No third-party fake.
+- No unplanned structural change: the diff since `baseline_revision` touches no `tsconfig*.json`, `package.json`, `pnpm-workspace.yaml`, or Vitest, ESLint, Stryker or dependency-cruiser config, and adds no `declare global` or `declare module`. `pnpm test`: 679 files, 5415 tests, exit 0; `pnpm typecheck`, `pnpm lint` clean.
+- Decision (build): the label's corners are CSS `rx: var(--radius-sm)` on the `<rect>`, as `GroupBorderTab.vue` does, not Tailwind's `rounded-sm`, because `border-radius` does not apply to an SVG `<rect>`.
+- Decision (build): the label's 4px text inset and 3px gap live in `slot-id-label-marks.ts`, not in DESIGN.md's `components.slot-id-label`, because the task names only height and radius for DESIGN.md, as `group-border-tab` keeps its inset in `group-border-marks.ts`.
+- Decision (build): row 7c arranges a second, placed key `a` beside the unplaced `k`, not `k` alone, because a set placing no slot shows the new-design hint and draws nothing, so the row could never go red.
+- Decision (build): row 6 sends the unfitted key a `pointerenter`, not a real pointer move, because an unfitted key draws no fill and only its 1px edge catches the pointer; Playwright's hover on it times out ("svg intercepts pointer events"). Logged to `deferred-work.md` as a question for Sergii: in the app, an unfitted slot can't be pointed at or clicked from its inside.
+- Decision (build): rows 2 and 8 measure the key and the label through `getBBox` and `getScreenCTM`, not `getBoundingClientRect`, because Firefox counts the stroke in an SVG element's client rect and Chromium does not (Firefox read the label 1px higher).
+- Decision (build): fixture T's group rows: `matrix-middle`'s border 1 mm outside its keys, `thumbfan`'s 4 mm above its keys, so row 4 has a point inside the border and on no key at zoom 4; the right half mirrored about x = 60 mm; canvas 648 × 448 px at centre (60, −5), zoom 4, not the fit, so screen points are known. These numbers come from no requirement.
+- Decision (build): `rectangle` and `groupRow` move from `group-borders.spec.ts` to `testing/layout-canvas.ts`, not copied, because the new specs build group rows too; `arrangeLayoutCanvas`'s `post` takes an optional parts output for row 8's 1.5u key.
+- Decision (build): `group-borders.spec.ts`'s other commit test (`:583`) also drops its read of the service and keeps the selection and the drawn result, not only `:562`, because it read `HoveredGroup` the same way and the hovered id is now the key, not the group.
+- Decision (build): the screen-space group of labels and links loses `aria-hidden`, not keeps it, because its children are now named images.
+- Toggled bugs, each alone, Chromium, the four specs of this story (baseline 41 green): every bug in the Acceptance list turned its named rows red and passed once restored. Two were toggled as nearest equivalents: "shown set from raw ids" as `usePlacedNodes` keeping unplaced rows (7c red; 7b's id has no posted row at all, so no raw-id variant reaches it), and "labels drawn for groups" as a label at a fixed point for a group (a group registers no canvas item, so a label through bounds can't appear). "Hover cleared on leave" turns only 3a's just-before row red, the other two expect the clear. Broad toggles (links for every node, hover dropped, `pointAt` recording the group) turn many rows red beyond those named.
+
+- Review pass 1 superseded two build records above: `useHoveredNode().hovered` was deleted (no caller read it), so the composable returns `pointAt`, `pointAtTreeGroup`, `leave`, `clear`, `clearTreeHover`; and DESIGN.md's `components.slot-id-label` now also holds `inset: 4px` and `gap: 3px`, as Sergii's decision names them, with `slot-id-label-marks.ts` keeping the same numbers for the canvas (unlike `group-border-tab`, whose inset is only in `group-border-marks.ts`).
+- Row 4a's patch kept the border-first arrange and instead freezes time, hovers the tab and advances the hover grace + 1 ms, so only the tab's own `pointAt` outlives the border's leave; toggled: `@pointerenter` removed from `GroupBorderTab.vue` → red (`expected { labels: [], links: [], borders: [] } …`), restored → green.
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+Pass 1 (quick, test-reviewer; 0 findings dropped for a missing quote). Verdicts: high 0, medium 1, low 12, false 1, maybe-false 0.
+- medium, patch -- row 4a "shows its link, no label, for a pointer on its tab" arranges the group already hovered through its border, so the grace keeps it shown if the tab's `pointAt` did nothing (test-reviewer). Patch: hover the tab from nothing hovered; toggle `@pointerenter` on `GroupBorderTab.vue`.
+- low, patch -- the drawing-order test pins link before label, which row 10 doesn't state (test-reviewer). Patch: assert row 10's relations only.
+- low, patch -- `line === null ? undefined : …` in the stale-colour test (test-reviewer). Patch: throwing lookup.
+- low, patch -- `use-slot-id-labels.spec.ts` comment cites DESIGN.md for the 3 px gap, which DESIGN.md didn't hold (quick). Patch: comment states the value only.
+- low, patch -- DESIGN.md's `components.slot-id-label` lacked the inset and gap Sergii's decision names (quick). Patch: `inset`, `gap` added.
+- low, patch -- `--spacing-slot-id-label: 17px` copies the tab's height instead of aliasing it, as DESIGN.md does (quick). Patch: `var(--spacing-group-border-tab)`.
+- low, patch -- `useHoveredNode().hovered` is returned and read by no caller (quick). Patch: deleted.
+- low, patch -- test helper `pointAt(x, y, side)` shares the hover API's name but mirrors a point (quick). Patch: renamed.
+- low, patch -- `switch-grace.spec.ts:119` steps 2 ms after the set, not today's 10 ms, contrary to row 13's "at the same times" (quick). Patch: 10 ms restored as a named constant.
+- low, defer (already logged) -- row 6 proves an unfitted slot's label only through a synthetic `pointerenter`; in the app an unfitted slot catches the pointer only on its 1px edge, which predates this change (both lenses). `deferred-work.md` holds it as a question for Sergii.
+- low, rejected -- the 3 px gap is checked to ±0.5 px (test-reviewer): screen positions come from float transforms, as `group-borders.spec.ts`'s `SCREEN_PX_DIGITS = 0` already accepts; a tighter bound has no browser-agnostic basis.
+- low, rejected -- row 10 can't catch a missing `pointer-events="none"` on the label or link themselves, since their parent group sets it (quick): the visible behaviour "catches no pointer" holds either way; the child attribute is redundant, not a defect.
+- low, rejected (test decision, not defect) -- `arrangeIdsAndLinks` resets the pointer on the status strip (test-reviewer note): a visible arrange step, named in the helper.
+- false -- `use-pointed-and-selected-nodes.spec.ts` builds a group `g` no row hovers or selects (test-reviewer): frozen row 14 arranges "placed `[a, b, g]`", so `g` is the requirement's input (a group in the placed set the shown set must leave out).
+
+Pass 2 (quick, test-reviewer on the pass-1 patches; 0 dropped). Verdicts: high 0, medium 0, low 6. Nothing above low and no frozen line broken: the review ends; lows logged, not patched.
+- low, logged -- row 10's `afterKeysAndBorders` uses `indexOf`, so a key or border missing from the DOM reads -1 and still passes that half; `beforeTabs` and the label and link lookups still fail on a missing name (both lenses).
+- low, logged -- the Implementation Notes decision on inset and gap, the `hover/` task's `hovered`, and pass 1's row 4a patch wording no longer matched the code (quick): corrected by appended Implementation Notes, not by editing the records.
+- low, logged -- `switch-grace.spec.ts` keeps its own inline lookup of `left/a`'s link line beside the new shared `anchorLinkLine` helper (quick).
+- low, logged -- the inset and gap now sit in DESIGN.md and `slot-id-label-marks.ts` with no check tying them, as `tooling/design-tokens.spec.ts` reads no `components` group (quick).
 
 ## Design Notes
 

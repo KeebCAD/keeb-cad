@@ -82,6 +82,7 @@
   --spacing-canvas-hit-radius: 8px;
   --spacing-focus-offset: 2px;
   --spacing-group-border-tab: 17px;
+  --spacing-slot-id-label: var(--spacing-group-border-tab);
 
   --radius-sm: 2px;
   --radius-md: 4px;
