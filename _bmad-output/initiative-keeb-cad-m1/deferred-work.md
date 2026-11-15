@@ -611,3 +611,12 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-both-halves-drawn-plan.md`
   summary: `editor`'s `group-border/use-hovered-group.ts` and `workspace/layout/use-placed-nodes.ts` have no spec of their own; they are proven only through the canvas specs.
   evidence: spine Editor state "a composable … tested on their own"; 13.8 gives its new composables (`use-tree-selection`, `use-mirror-axis`) their own specs.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-canvas-shows-ids-and-anchor-links-on-hover-and-selection-plan.md`
+  summary: `editor`'s `workspace/layout/switch-grace.spec.ts` still finds a key's top face by position (`querySelectorAll('rect')`), since the top face has no role or name.
+  evidence: AGENTS.md "Find elements by role, then label, then text"; 13.35 moved the anchor link to `getByRole` and left the top face.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-canvas-shows-ids-and-anchor-links-on-hover-and-selection-plan.md`
+  summary: `HoveredNode`'s own grace and commit-prune tests still live in `editor`'s `group-border/group-borders.spec.ts` (the hover grace rows and the `a commit` block), not beside the service in `hover/`.
+  evidence: AGENTS.md "Test a rule where it is defined"; 13.35 moved the service to `hover/` and kept its tests where 13.32 and 13.8 wrote them.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-canvas-shows-ids-and-anchor-links-on-hover-and-selection-plan.md`
+  summary: an unfitted slot or stand-in draws no fill, so only its 1px edge catches the pointer: it can't be pointed at (label, link, its group's border) or clicked to select from its inside. 13.35's row 6 test sends the key a `pointerenter` instead of moving the real pointer there. A question for Sergii, not a fix: whether an unfitted key's inside should catch the pointer.
+  evidence: `CanvasSlot.vue` sets `fill-none` on an unfitted key and the default `pointer-events: visiblePainted` skips an unfilled inside; Playwright's hover on that key times out with "svg intercepts pointer events" (13.35 build, 2026-11-15).

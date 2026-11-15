@@ -2,7 +2,7 @@
 import { type TreeRow, UiTree } from '@keeb-cad/ui'
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 
-import { useHoveredGroup } from '../group-border/use-hovered-group'
+import { useHoveredNode } from '../hover/use-hovered-node'
 import { useLandmark } from '../landmarks/use-landmark'
 import { useLayoutTree } from './use-layout-tree'
 import { useSlideOut } from './use-slide-out'
@@ -12,7 +12,7 @@ const root = useTemplateRef<HTMLElement>('root')
 const { returnFocus } = useSlideOut()
 const rows = useLayoutTree()
 const { selected, select } = useTreeSelection()
-const { pointAtTreeGroup, leave, clearTreeHover } = useHoveredGroup()
+const { pointAtTreeGroup, leave, clearTreeHover } = useHoveredNode()
 useLandmark('slide-out', root)
 
 // Its first meaningful item: the selected row, else the first row, else, empty, the root itself.

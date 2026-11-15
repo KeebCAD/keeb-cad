@@ -3,7 +3,7 @@ import { sideOf } from '@keeb-cad/model/main'
 import { UiCanvasToggle } from '@keeb-cad/ui'
 import { computed, useTemplateRef } from 'vue'
 
-import { useHoveredGroup } from '../../group-border/use-hovered-group'
+import { useHoveredNode } from '../../hover/use-hovered-node'
 import { useSelection } from '../../selection/use-selection'
 import { useCanvasItem } from '../../viewport/use-canvas-item'
 import { keycapProportions } from './keycap-proportions'
@@ -11,7 +11,7 @@ import type { CanvasSlotProps } from './types'
 
 const props = defineProps<CanvasSlotProps>()
 const { ids, select } = useSelection()
-const { pointAtSlot, leave } = useHoveredGroup()
+const { pointAt, leave } = useHoveredNode()
 const body = useTemplateRef<SVGRectElement>('body')
 useCanvasItem(() => props.placed.key, body)
 
@@ -55,7 +55,7 @@ const marks = computed(() => [
     :class="marks"
     :stroke-dasharray="fitted ? undefined : '4 3'"
     @press="select([placed.key])"
-    @pointerenter="pointAtSlot(placed.key)"
+    @pointerenter="pointAt(placed.key)"
     @pointerleave="leave"
   >
     <rect

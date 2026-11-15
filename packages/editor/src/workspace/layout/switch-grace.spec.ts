@@ -12,7 +12,7 @@ import {
 } from '@keeb-cad/schema/testing'
 import type { FakeWorker } from '@keeb-cad/workers/testing'
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
-import { page } from 'vitest/browser'
+import { page, userEvent } from 'vitest/browser'
 import { nextTick } from 'vue'
 
 import { emulateColorScheme } from '../../testing/color-scheme'
@@ -33,6 +33,12 @@ const KEY_BODY = 'rgb(98, 104, 128)'
 const KEY_TOP_FACE = 'rgb(148, 156, 187)'
 const KEY_EDGE = 'rgb(148, 156, 187)'
 const ANCHOR_LINK = 'rgb(129, 200, 190)'
+// The spine's Switch grace.
+const GRACE_MS = 200
+const JUST_BEFORE_GRACE_MS = GRACE_MS - 1
+const JUST_AFTER_GRACE_MS = GRACE_MS + 1
+// How long the test looks after the late set arrives.
+const AFTER_SET_MS = 10
 const DRAWN = { body: KEY_BODY, topFace: KEY_TOP_FACE, edge: KEY_EDGE, anchorLink: ANCHOR_LINK }
 const GRAYED = { body: STALE, topFace: STALE, edge: STALE, anchorLink: STALE }
 
@@ -63,8 +69,10 @@ async function arrange({ commitAfterSet }: { commitAfterSet: boolean }) {
     vi.useRealTimers()
   })
   return {
+    // Slot a is pointed at, so its anchor link shows.
     switchToLayout: async () => {
       await shell.router.push({ name: 'layout', params: { id: 'corne' } })
+      await pointAtA()
     },
     advance: async (milliseconds: number) => {
       vi.advanceTimersByTime(milliseconds)
@@ -77,14 +85,20 @@ async function arrange({ commitAfterSet }: { commitAfterSet: boolean }) {
   }
 }
 
+async function pointAtA(): Promise<void> {
+  await userEvent.hover(page.getByRole('button', { name: 'left/a', exact: true }))
+}
+
 function shown() {
   const key = page.getByRole('button', { name: 'left/a', exact: true }).element()
   const strip = page.getByRole('contentinfo', { name: 'Status strip' }).element()
   const [, topFace] = key.querySelectorAll('rect')
   if (topFace === undefined) throw new Error('Expected a keycap top face.')
-  // Slot a's anchor link, the canvas's only line.
-  const link = page.getByRole('main', { name: 'Canvas' }).element().querySelector('line')
-  if (link === null) throw new Error("Expected slot a's anchor link.")
+  const link = page
+    .getByRole('img', { name: 'left/a anchor link', exact: true })
+    .element()
+    .querySelector('line')
+  if (link === null) throw new Error("Slot a's anchor link draws a line.")
   return {
     body: getComputedStyle(key).fill,
     topFace: getComputedStyle(topFace).fill,
@@ -97,14 +111,14 @@ function shown() {
 describe('the switch grace', () => {
   beforeEach(() => emulateColorScheme('dark'))
 
-  it('never grays a set that arrives 199 ms after the switch', async () => {
+  it('never grays a set that arrives just before the grace ends', async () => {
     const { switchToLayout, advance, postSet } = await arrange({ commitAfterSet: true })
     await switchToLayout()
 
-    await advance(199)
+    await advance(JUST_BEFORE_GRACE_MS)
     const before = shown()
     await postSet()
-    await advance(10)
+    await advance(AFTER_SET_MS)
 
     expect({ before, after: shown() }).toEqual({
       before: { ...DRAWN, updating: false },
@@ -112,20 +126,20 @@ describe('the switch grace', () => {
     })
   })
 
-  it('does not gray on the grace itself, 200 ms after the switch', async () => {
+  it('does not gray on the grace itself', async () => {
     const { switchToLayout, advance } = await arrange({ commitAfterSet: true })
     await switchToLayout()
 
-    await advance(200)
+    await advance(GRACE_MS)
 
     expect(shown()).toEqual({ ...DRAWN, updating: false })
   })
 
-  it('grays the marks and shows updating 201 ms after the switch with no set', async () => {
+  it('grays the marks and shows updating just after the grace with no set', async () => {
     const { switchToLayout, advance } = await arrange({ commitAfterSet: true })
     await switchToLayout()
 
-    await advance(201)
+    await advance(JUST_AFTER_GRACE_MS)
 
     expect(shown()).toEqual({ ...GRAYED, updating: true })
   })
@@ -133,7 +147,7 @@ describe('the switch grace', () => {
   it('ungrays and drops updating once the late set arrives', async () => {
     const { switchToLayout, advance, postSet } = await arrange({ commitAfterSet: true })
     await switchToLayout()
-    await advance(201)
+    await advance(JUST_AFTER_GRACE_MS)
 
     await postSet()
 
@@ -144,7 +158,7 @@ describe('the switch grace', () => {
     const { switchToLayout, advance } = await arrange({ commitAfterSet: false })
     await switchToLayout()
 
-    await advance(201)
+    await advance(JUST_AFTER_GRACE_MS)
 
     expect(shown()).toEqual({ ...DRAWN, updating: false })
   })
@@ -164,13 +178,14 @@ describe('the switch grace', () => {
     })
 
     await shell.router.push({ name: 'layout', params: { id: 'corne' } })
-    vi.advanceTimersByTime(201)
+    await pointAtA()
+    vi.advanceTimersByTime(JUST_AFTER_GRACE_MS)
     await nextTick()
 
     expect(shown()).toEqual({ ...GRAYED, updating: true })
   })
 
-  it('shows no updating 201 ms after a switch away from Layout with no set', async () => {
+  it('shows no updating just after the grace of a switch away from Layout with no set', async () => {
     const shell = await mountShell({ path: '/design/corne/layout', design: DESIGN, spawn: true })
     const worker = only(shell.spawned)
     postLayoutSet(worker, { seq: seqOf(shell.store), layout: LAYOUT, parts: PARTS })
@@ -181,7 +196,7 @@ describe('the switch grace', () => {
     })
 
     await shell.router.push({ name: 'outline', params: { id: 'corne' } })
-    vi.advanceTimersByTime(201)
+    vi.advanceTimersByTime(JUST_AFTER_GRACE_MS)
     await nextTick()
 
     const strip = page.getByRole('contentinfo', { name: 'Status strip' }).element()
