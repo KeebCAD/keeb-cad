@@ -3,7 +3,7 @@ title: 'The canvas shows ids and anchor links on hover and selection'
 type: 'feature'
 ticket: 35
 created: '2026-11-15'
-status: 'built'
+status: 'done'
 baseline_revision: 'b6f626a41756ffa08927e5cd298561961494fad6'
 route: 'full'
 route_source: 'auto'
