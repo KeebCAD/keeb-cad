@@ -19,7 +19,7 @@ pnpm install
 pnpm check
 ```
 
-This runs typecheck, lint, format check, depcruise (AD-10), unit tests, build and the Playwright smoke test (Chromium, against `vite preview` on port 4173) for the whole workspace.
+This runs typecheck, lint, format check, depcruise (AD-10), unit tests, build and the Playwright smoke test (Chromium and Firefox, against `vite preview` on port 4173) for the whole workspace.
 
 `pnpm install` sets up a pre-commit hook that runs the fast part (`pnpm check:fast`: lint, format check, depcruise).
 

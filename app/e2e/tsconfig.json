@@ -1,8 +1,10 @@
 {
-  "extends": "@tsconfig/node26/tsconfig.json",
+  "extends": ["@tsconfig/node26/tsconfig.json", "../../tsconfig.base.json"],
   "include": ["./**/*"],
   "compilerOptions": {
-    "types": ["node"],
+    // page.evaluate bodies run in the page and use IndexedDB.
+    "lib": ["es2025", "DOM", "DOM.Iterable"],
+    "types": ["node", "vite/client"],
 
     // Type-check only; `vue-tsc --build` must not emit JS next to the specs.
     "noEmit": true,
