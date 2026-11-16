@@ -3,7 +3,7 @@ title: "Corney's keys survive a reload end to end"
 type: 'feature'
 ticket: 34
 created: '2026-11-16'
-status: 'built'
+status: 'done'
 baseline_revision: 'a58847acf9d0998f974e40626816aa1af469820f'
 route: 'full'
 route_source: 'auto'
