@@ -17,18 +17,10 @@ import {
   screenOf,
   statusStrip,
 } from '../../testing/ids-and-links'
-import {
-  canvas,
-  canvasSvg,
-  designOf,
-  designWith,
-  groupRow,
-  key,
-  keyAt,
-  layoutOf,
-  nextFrames,
-  rectangle,
-} from '../../testing/layout-canvas'
+import { canvas, canvasSvg, key } from '../../testing/canvas-queries'
+import { designOf, designWith } from '../../testing/designs'
+import { groupRow, keyAt, layoutOf, rectangle } from '../../testing/layout-rows'
+import { nextFrames } from '../../testing/next-frames'
 import { matrixAndThumbfan } from '../../testing/matrix-and-thumbfan'
 import type { Point } from '../../viewport/types'
 

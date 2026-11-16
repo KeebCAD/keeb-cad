@@ -1,7 +1,7 @@
 import { compose, reflectionAcrossY, type Matrix } from '@keeb-cad/geometry'
 import { Option } from '@keeb-cad/result'
 import {
-  compareId,
+  compareCodeUnits,
   type Frozen,
   type Gap,
   type Group,
@@ -73,7 +73,7 @@ export function placeLayout(
       )
     }
   }
-  const ids = [...rows.keys()].toSorted(compareId)
+  const ids = [...rows.keys()].toSorted(compareCodeUnits)
   return { ids, rows: ids.map((id) => rows.get(id) as LayoutRow) }
 }
 

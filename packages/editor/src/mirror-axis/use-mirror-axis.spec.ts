@@ -2,15 +2,11 @@ import { aLayoutRow } from '@keeb-cad/schema/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { emulateColorScheme } from '../testing/color-scheme'
-import {
-  arrangeLayoutCanvas,
-  canvas,
-  designWith,
-  key,
-  keyAt,
-  layoutOf,
-  nextFrames,
-} from '../testing/layout-canvas'
+import { canvas, key } from '../testing/canvas-queries'
+import { designWith } from '../testing/designs'
+import { arrangeLayoutCanvas } from '../testing/layout-canvas'
+import { keyAt, layoutOf } from '../testing/layout-rows'
+import { nextFrames } from '../testing/next-frames'
 import type { LayoutRowOf } from '../testing/types'
 import type { Point } from '../viewport/types'
 import { zoomForPercent } from '../viewport/zoom-percent'

@@ -1,22 +1,15 @@
 import { NewDesign } from '@keeb-cad/commands'
-import { DesignStore } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
 import { expectOk } from '@keeb-cad/result/testing'
-import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
 import { ModelWorkerLifecycle } from '@keeb-cad/workers'
 import { describe, expect, it, onTestFinished } from 'vitest'
 
-import { mainModules } from './main-modules'
+import { arrangeStore } from './testing/arrange-store'
 
 async function arrange() {
   const container = new Container()
-  for (const module of mainModules) container.addModule(module)
-  container.override(storageBackend).useValue(new MemoryBackend())
-  await container.autoLoad()
-  return {
-    store: container.resolve(DesignStore),
-    lifecycle: container.resolve(ModelWorkerLifecycle),
-  }
+  const store = await arrangeStore(container)
+  return { store, lifecycle: container.resolve(ModelWorkerLifecycle) }
 }
 
 describe("the model worker's entry", () => {

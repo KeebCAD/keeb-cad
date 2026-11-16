@@ -8,7 +8,7 @@ import UiTabs from '../src/tabs/UiTabs.vue'
 import UiTextField from '../src/text-field/UiTextField.vue'
 import UiTooltip from '../src/tooltip/UiTooltip.vue'
 import UiTree from '../src/tree/UiTree.vue'
-import CanvasToggleFrame from './CanvasToggleFrame.vue'
+import CanvasToggleHost from './CanvasToggleHost.vue'
 import DialogHost from './DialogHost.vue'
 import { buttonStates } from './states/button-states'
 import { canvasToggleStates } from './states/canvas-toggle-states'
@@ -32,7 +32,7 @@ export const widgets: readonly Widget[] = [
   { title: 'Icon', component: UiIcon, states: iconStates },
   { title: 'Rail button', component: UiRailButton, states: railButtonStates },
   { title: 'Severity count', component: UiSeverityCount, states: severityCountStates },
-  { title: 'Canvas toggle', component: CanvasToggleFrame, states: canvasToggleStates },
+  { title: 'Canvas toggle', component: CanvasToggleHost, states: canvasToggleStates },
   { title: 'Tree', component: UiTree, states: treeStates },
   { title: 'Dialog', component: DialogHost, states: dialogStates },
   { title: 'Text field', component: UiTextField, states: textFieldStates },

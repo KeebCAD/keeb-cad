@@ -31,7 +31,7 @@ Ergogen runs from source because its lockfile pins the GitHub-hosted deps by com
 
 Both designs come from the one run. They share `points` and differ only in the PCB.
 
-| Design     | Key poses                    | PCB                                             |
+| Design     | Key frames                   | PCB                                             |
 | ---------- | ---------------------------- | ----------------------------------------------- |
 | `wired`    | `ergogen/points/points.yaml` | `ergogen/pcbs/corney_island.kicad_pcb`          |
 | `wireless` | `ergogen/points/points.yaml` | `ergogen/pcbs/corney_island_wireless.kicad_pcb` |

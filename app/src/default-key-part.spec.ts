@@ -1,7 +1,6 @@
 import type { BlueprintPin, EngineUnavailable, LaneFailure, LaneOutput } from '@keeb-cad/blueprint'
 import { argumentHash, blueprintWorkerModule, LaneRunner } from '@keeb-cad/blueprint/worker'
 import { DeletePart, NewDesign } from '@keeb-cad/commands'
-import { DesignStore } from '@keeb-cad/design'
 import { DesignMirror, DesignMirrorWriter, designWorkerModule } from '@keeb-cad/design/worker'
 import { Container } from '@keeb-cad/di'
 import { libraryData } from '@keeb-cad/library/worker'
@@ -18,24 +17,12 @@ import {
   aRoutingFile,
   aSlot,
 } from '@keeb-cad/schema/testing'
-import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
 import { ModelWorkerLifecycle } from '@keeb-cad/workers'
 import { describe, expect, it, onTestFinished } from 'vitest'
 
-import { mainModules } from './main-modules'
+import { arrangeStore } from './testing/arrange-store'
 
 const EXPECTED_1U_KEYCAP = { w: 18, h: 18 }
-
-async function arrange() {
-  const container = new Container()
-  for (const module of mainModules) container.addModule(module)
-  container.override(storageBackend).useValue(new MemoryBackend())
-  await container.autoLoad()
-  return {
-    store: container.resolve(DesignStore),
-    lifecycle: container.resolve(ModelWorkerLifecycle),
-  }
-}
 
 class RecordingRunner extends LaneRunner {
   readonly received: (readonly BlueprintPin[])[] = []
@@ -127,7 +114,7 @@ describe('the parts lane, wired by hand', () => {
 
 describe('parts.deletePart through mainModules', () => {
   it('refuses to delete key with default-part-required', async () => {
-    const { store } = await arrange()
+    const store = await arrangeStore(new Container())
     expectOk(await store.run(NewDesign, {}))
 
     const result = store.run(DeletePart, { id: 'key' })
@@ -139,7 +126,9 @@ describe('parts.deletePart through mainModules', () => {
 
 describe("the real model worker's parts lane", () => {
   it('posts no violation from the real worker entry for a slot on key', async () => {
-    const { store, lifecycle } = await arrange()
+    const container = new Container()
+    const store = await arrangeStore(container)
+    const lifecycle = container.resolve(ModelWorkerLifecycle)
     const posts: unknown[] = []
     lifecycle.start(() => {
       const worker = new Worker(new URL('model.worker.ts', import.meta.url), { type: 'module' })

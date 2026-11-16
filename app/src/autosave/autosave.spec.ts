@@ -1,11 +1,5 @@
 import { DesignLoader, NewDesign } from '@keeb-cad/commands'
-import {
-  type Command,
-  type Committed,
-  DesignStore,
-  registerCommand,
-  type Writable,
-} from '@keeb-cad/design'
+import { type Command, DesignStore, registerCommand, type Writable } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
 import { Option, Result } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
@@ -18,6 +12,7 @@ import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
 import { mainModules } from '../main-modules'
+import { committed } from '../testing/committed'
 import { Autosave } from './autosave'
 
 const renameDesignInputSchema = v.object({ name: v.string() })
@@ -48,12 +43,6 @@ async function arrange(
   register(container)
   await container.autoLoad()
   return container
-}
-
-function committed(store: DesignStore): Committed {
-  const current = store.current
-  if (current.isNone()) throw new Error('Expected a committed design.')
-  return current.value
 }
 
 // Each kept version's revision and reason, newest first, with the newest's texts.

@@ -1,13 +1,11 @@
-import { DesignStore } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
 import { corneyIslandLayout, corneyIslandTestOverrides } from '@keeb-cad/reference-designs/scripts'
-import { expectOk } from '@keeb-cad/result/testing'
-import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
 import { afterEach, describe, expect, it, onTestFinished } from 'vitest'
 import { page } from 'vitest/browser'
 
 import { Launch } from './launch/launch'
-import { mainModules } from './main-modules'
+import { arrangeStore } from './testing/arrange-store'
+import { runSteps } from './testing/run-steps'
 
 // The slot corneyIslandTestOverrides removes on the right.
 const REMOVED = 'thumbfan-far-home'
@@ -21,9 +19,7 @@ const key = (name: string) => page.getByRole('button', { name, exact: true })
 async function arrange() {
   history.replaceState(null, '', location.pathname + location.search)
   const container = new Container()
-  for (const module of mainModules) container.addModule(module)
-  container.override(storageBackend).useValue(new MemoryBackend())
-  await container.autoLoad()
+  const store = await arrangeStore(container)
   const root = document.createElement('div')
   root.id = `both-halves-${crypto.randomUUID()}`
   document.body.append(root)
@@ -36,7 +32,7 @@ async function arrange() {
     onTestFinished(() => worker.terminate())
     return worker
   })
-  return { store: container.resolve(DesignStore) }
+  return { store }
 }
 
 // How a key is drawn: filled or not, and with a dashed or a solid outline.
@@ -53,9 +49,7 @@ describe('both halves on the Layout canvas', () => {
   it("draws the right key an override removed as unfitted, its left key fitted, after Corney's script", async () => {
     const { store } = await arrange()
 
-    for (const { command, input } of [...corneyIslandLayout, ...corneyIslandTestOverrides]) {
-      expectOk(store.runById(command, input))
-    }
+    runSteps(store, [...corneyIslandLayout, ...corneyIslandTestOverrides])
 
     await expect
       .poll(() => drawnAs(`right/${REMOVED}`), FIRST_LOAD)

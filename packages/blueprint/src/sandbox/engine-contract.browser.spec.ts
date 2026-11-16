@@ -1,7 +1,7 @@
 import { QuickJS } from 'quickjs-wasi'
 import { describe, expect, it, onTestFinished } from 'vitest'
 
-import { MIB } from '../testing/a-pinned-blueprint'
+import { MIB } from '../testing/mib'
 import { EngineLoader } from './engine-loader'
 import { StepBudget } from './step-budget'
 import { vmOptions } from './vm-options'

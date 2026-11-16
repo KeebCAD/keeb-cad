@@ -1,4 +1,4 @@
-import { type Committed, DesignStore } from '@keeb-cad/design'
+import { DesignStore } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
 import { AsyncResult, Option, Result } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
@@ -25,6 +25,7 @@ import { page, userEvent } from 'vitest/browser'
 import { Autosave } from '../autosave/autosave'
 import { devSeedModule } from '../dev-seed/dev-seed-module'
 import { mainModules } from '../main-modules'
+import { committed } from '../testing/committed'
 import { Launch } from './launch'
 
 const insecure = 'The operation is insecure.'
@@ -166,9 +167,9 @@ async function arrange({
   return {
     store: container.resolve(DesignStore),
     storage: designStorage,
+    storedIds: stored.map(({ design }) => design.meta.id),
     backend: container.resolve(storageBackend),
     autosave: container.resolve(Autosave),
-    storedIds: stored.map(({ design }) => design.meta.id),
     workers,
     unmount,
     launch: () => container.resolve(Launch).run(`#${root.id}`, spawn),
@@ -178,21 +179,21 @@ async function arrange({
 type Arranged = Awaited<ReturnType<typeof arrange>>
 
 function opened(arranged: Arranged) {
-  const { id, name } = openBundle(arranged).design.meta
+  const { id, name } = committed(arranged.store).design.meta
   return { id, name }
 }
 
-function openBundle({ store }: Arranged): Committed {
-  const current = store.current
-  if (current.isNone()) throw new Error('Expected a committed design.')
-  return current.value
+// The versions kept for a design, newest first.
+async function versionsOf({ storage }: Arranged, id: Id) {
+  const versions = await storage.listVersions(id)
+  expectOk(versions)
+  return versions.value.map(({ version }) => version)
 }
 
 // The read of each version kept for a design, newest first.
-async function keptTexts({ storage, backend }: Arranged, id: Id) {
-  const versions = await storage.listVersions(id)
-  expectOk(versions)
-  return Promise.all(versions.value.map(({ version }) => backend.read(version)))
+async function keptTexts(arranged: Arranged, id: Id) {
+  const versions = await versionsOf(arranged, id)
+  return Promise.all(versions.map((version) => arranged.backend.read(version)))
 }
 
 afterEach(() => {
@@ -207,7 +208,6 @@ describe('Launch', () => {
 
       await arranged.launch()
 
-      expect(arranged.storedIds).not.toContain(opened(arranged).id)
       expect(location.hash).toBe(`#/design/${opened(arranged).id}/layout`)
     })
 
@@ -230,10 +230,13 @@ describe('Launch', () => {
 
     it('opens a new design when the newest is broken, never trying the older', async () => {
       const arranged = await arrange({ hash: '', stored: [intact(older), broken(newer)] })
+      const olderVersions = await versionsOf(arranged, anId('older'))
+      const read = vi.spyOn(arranged.backend, 'read')
 
       await arranged.launch()
 
       expect(arranged.storedIds).not.toContain(opened(arranged).id)
+      expect(read.mock.calls.filter(([version]) => olderVersions.includes(version))).toEqual([])
     })
 
     it.each([
@@ -308,10 +311,13 @@ describe('Launch', () => {
         hash: '#/design/newer/layout',
         stored: [intact(older), broken(newer)],
       })
+      const olderVersions = await versionsOf(arranged, anId('older'))
+      const read = vi.spyOn(arranged.backend, 'read')
 
       await arranged.launch()
 
       expect(arranged.storedIds).not.toContain(opened(arranged).id)
+      expect(read.mock.calls.filter(([version]) => olderVersions.includes(version))).toEqual([])
     })
 
     it('opens a new design, not the newer, when the reset save is refused for space', async () => {
@@ -364,7 +370,7 @@ describe('Launch', () => {
 
         await arranged.launch()
 
-        expect(arranged.storedIds).not.toContain(opened(arranged).id)
+        expect(location.hash).toBe(`#/design/${opened(arranged).id}/layout`)
         await expect
           .poll(() => arranged.autosave.failure)
           .toEqual(
@@ -432,7 +438,7 @@ describe('Launch', () => {
       const hash = '#/design/older/layout'
       const first = await arrange({ hash, stored: [intact(older)], storage: { database } })
       await first.launch()
-      const { revision } = openBundle(first)
+      const { revision } = committed(first.store)
       await expect
         .poll(async () => (await first.storage.listDesigns()).map((list) => list[0]?.revision))
         .toMatchObject({ value: revision })
@@ -441,7 +447,7 @@ describe('Launch', () => {
       const second = await arrange({ hash, storage: { database } })
       await second.launch()
 
-      expect(writeBundle(openBundle(second))).toEqual(textsOf(older))
+      expect(writeBundle(committed(second.store))).toEqual(textsOf(older))
     })
 
     it('reopens the design the first launch opened, showing it on the page', async () => {
@@ -475,7 +481,7 @@ describe('Launch', () => {
         .getByRole('button', { name: 'Restart' })
 
     function currentSeq(arranged: Arranged): number {
-      return openBundle(arranged).seq
+      return committed(arranged.store).seq
     }
 
     function lastEpoch({ workers }: Arranged): number {

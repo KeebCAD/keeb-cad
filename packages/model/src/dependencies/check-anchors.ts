@@ -1,5 +1,5 @@
 import { Option } from '@keeb-cad/result'
-import { compareId, type Frozen, type Group, type Id } from '@keeb-cad/schema'
+import { compareCodeUnits, type Frozen, type Group, type Id } from '@keeb-cad/schema'
 
 import { dependencyGraph, resolvedDependency, resolves } from './dependency-graph'
 import type { AnchorCheck, DependencyGraph } from './types'
@@ -11,7 +11,7 @@ export function checkAnchors(layout: Frozen<Group>): AnchorCheck {
   const unresolvable = [...graph]
     .filter(([, { dependency }]) => dependency?.kind === 'explicit' && !resolves(graph, dependency))
     .map(([id]) => id)
-    .toSorted(compareId)
+    .toSorted(compareCodeUnits)
   const cycles = cyclesOf(graph)
   return { cycles, unresolvable, unplaced: unplacedOf(graph, cycles, unresolvable) }
 }
@@ -32,11 +32,11 @@ function cyclesOf(graph: DependencyGraph): Id[][] {
     }
     for (const id of path) done.add(id)
   }
-  return cycles.toSorted(([a], [b]) => compareId(a as Id, b as Id))
+  return cycles.toSorted(([a], [b]) => compareCodeUnits(a as Id, b as Id))
 }
 
 function fromLowest(cycle: Id[]): Id[] {
-  const lowest = cycle.toSorted(compareId)[0] as Id
+  const lowest = cycle.toSorted(compareCodeUnits)[0] as Id
   const at = cycle.indexOf(lowest)
   return [...cycle.slice(at), ...cycle.slice(0, at)]
 }

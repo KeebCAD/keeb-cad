@@ -1,12 +1,6 @@
-import { NewDesign } from '@keeb-cad/commands'
-import { type Committed, DesignStore } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
 import { unsupportedFormMessage } from '@keeb-cad/model/worker'
-import {
-  corneyIslandLayout,
-  corneyIslandTestOverrides,
-  type LayoutScript,
-} from '@keeb-cad/reference-designs/scripts'
+import { corneyIslandTestOverrides } from '@keeb-cad/reference-designs/scripts'
 import { Option } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
 import type { LayoutOutput } from '@keeb-cad/schema'
@@ -19,11 +13,12 @@ import {
   aSplitForm,
   aUnibodyForm,
 } from '@keeb-cad/schema/testing'
-import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
-import { ModelWorkerLifecycle } from '@keeb-cad/workers'
-import { describe, expect, it, onTestFinished } from 'vitest'
+import type { ModelWorkerLifecycle } from '@keeb-cad/workers'
+import { describe, expect, it } from 'vitest'
 
-import { mainModules } from './main-modules'
+import { arrangeModelWorker } from './testing/arrange-model-worker'
+import { committed } from './testing/committed'
+import { runCorneyScript } from './testing/run-corney-script'
 
 const DIGITS = 9
 const LEFT = 'left/'
@@ -35,36 +30,8 @@ const REMOVED = 'thumbfan-far-home'
 // two seconds while the rest of the suite ran beside it.
 const FIRST_LOAD = { timeout: 10_000 }
 
-async function arrange() {
-  const container = new Container()
-  for (const module of mainModules) container.addModule(module)
-  container.override(storageBackend).useValue(new MemoryBackend())
-  await container.autoLoad()
-  const lifecycle = container.resolve(ModelWorkerLifecycle)
-  lifecycle.start(() => {
-    const worker = new Worker(new URL('model.worker.ts', import.meta.url), { type: 'module' })
-    onTestFinished(() => worker.terminate())
-    return worker
-  })
-  return { store: container.resolve(DesignStore), lifecycle }
-}
-
-function committed(store: DesignStore): Committed {
-  const current = store.current
-  if (current.isNone()) throw new Error('Expected a committed design.')
-  return current.value
-}
-
-// Corney's script, then any test-only steps after it.
-async function runCorneyScript(store: DesignStore, steps: LayoutScript = []): Promise<void> {
-  expectOk(await store.run(NewDesign, {}))
-  for (const { command, input } of [...corneyIslandLayout, ...steps]) {
-    expectOk(store.runById(command, input))
-  }
-}
-
 // One side's posted rows in id order, the side prefix dropped from each id.
-function sideOf(lifecycle: ModelWorkerLifecycle, prefix: string) {
+function rowsOfSide(lifecycle: ModelWorkerLifecycle, prefix: string) {
   const ids = lifecycle.layout.map(({ output }) => output.ids).getOr([])
   return ids
     .filter((id) => id.startsWith(prefix))
@@ -96,18 +63,18 @@ function reflected({ frame, anchorAt, ...fields }: LayoutOutput['rows'][number])
 
 describe('the right half on main', () => {
   it("posts every right row of Corney's script as its left row reflected across center's y-axis", async () => {
-    const { store, lifecycle } = await arrange()
+    const { store, lifecycle } = await arrangeModelWorker(new Container())
 
     await runCorneyScript(store)
     await expect.poll(() => lifecycle.layoutSetArrived, FIRST_LOAD).toBe(true)
     const { seq } = committed(store)
     await expect.poll(() => lifecycle.issues.map((issues) => issues.seq)).toEqual(Option.some(seq))
 
-    const left = sideOf(lifecycle, LEFT)
-    expect(sideOf(lifecycle, RIGHT)).toEqual(
+    const left = rowsOfSide(lifecycle, LEFT)
+    expect(rowsOfSide(lifecycle, RIGHT)).toEqual(
       left.map(({ id, row }) => ({ id, row: row.map(reflected) })),
     )
-    expect(lifecycle.layoutRow(`${RIGHT}left-half`).map(({ frame }) => frame)).toEqual(
+    expect(lifecycle.layoutRow('right/left-half').map(({ frame }) => frame)).toEqual(
       Option.some({
         x: expect.closeTo(EXPECTED_RIGHT_HALF_X, DIGITS),
         y: expect.closeTo(0, DIGITS),
@@ -124,7 +91,7 @@ describe('the right half on main', () => {
   ])(
     'posts only unsupported-form, naming the design, and zero rows for %s',
     async (_role, form) => {
-      const { store, lifecycle } = await arrange()
+      const { store, lifecycle } = await arrangeModelWorker(new Container())
       const design = anId('d')
 
       expectOk(
@@ -167,17 +134,17 @@ describe('the right half on main', () => {
 
 describe('a per-side override on main', () => {
   it("posts the removed right slot empty in its left slot's reflected space, every other right row as before", async () => {
-    const { store, lifecycle } = await arrange()
+    const { store, lifecycle } = await arrangeModelWorker(new Container())
 
     await runCorneyScript(store, corneyIslandTestOverrides)
     await expect.poll(() => lifecycle.layoutSetArrived, FIRST_LOAD).toBe(true)
     const { seq } = committed(store)
     await expect.poll(() => lifecycle.issues.map((issues) => issues.seq)).toEqual(Option.some(seq))
 
-    const left = sideOf(lifecycle, LEFT)
+    const left = rowsOfSide(lifecycle, LEFT)
     expect({
-      right: sideOf(lifecycle, RIGHT),
-      leftFit: lifecycle.layoutRow(`${LEFT}${REMOVED}`).map(({ fit }) => fit),
+      right: rowsOfSide(lifecycle, RIGHT),
+      leftFit: lifecycle.layoutRow('left/thumbfan-far-home').map(({ fit }) => fit),
       violations: lifecycle.issues.map(({ violations }) => violations),
     }).toEqual({
       right: left.map(({ id, row }) => ({

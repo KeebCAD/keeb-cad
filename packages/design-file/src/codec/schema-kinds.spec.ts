@@ -213,7 +213,7 @@ describe('the KDL codec over every schema kind it supports', () => {
     )
   })
 
-  it('writes record entries in compareId order, however they were given', () => {
+  it('writes record entries in compareCodeUnits order, however they were given', () => {
     const schema = v.strictObject({ map: v.record(v.string(), v.string()) })
 
     expect(writeKdl(schema, { map: { b: 'x', B: 'y', a: 'z' } })).toBe(

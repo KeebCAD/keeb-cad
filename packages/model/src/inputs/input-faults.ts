@@ -1,7 +1,7 @@
 import {
   type BlueprintDeclaration,
   type BlueprintInputs,
-  compareId,
+  compareCodeUnits,
   type Frozen,
 } from '@keeb-cad/schema'
 import * as v from 'valibot'
@@ -9,14 +9,14 @@ import * as v from 'valibot'
 import { inputValueSchema } from './input-value-schema'
 import type { BlueprintInputInvalid, InputOwner } from './types'
 
-// Every fault in the owner's inputs, by input in compareId order.
+// Every fault in the owner's inputs, by input in compareCodeUnits order.
 export function inputFaults(
   declaration: BlueprintDeclaration,
   owner: InputOwner,
   inputs: Frozen<BlueprintInputs>,
 ): BlueprintInputInvalid[] {
   return Object.keys(inputs)
-    .toSorted(compareId)
+    .toSorted(compareCodeUnits)
     .flatMap((input): BlueprintInputInvalid[] => {
       const declared = declaration.inputs[input]
       if (declared === undefined) return [{ owner, input, reason: 'unknown' }]

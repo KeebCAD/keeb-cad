@@ -391,6 +391,16 @@ export default defineConfigWithVueTs(
   },
 
   {
+    // The key-centres harness names a key's centre and rotation its key frame, the glossary's frame
+    // (a position + rotation in the plane), not a CSS keyframe.
+    name: 'keeb-cad/key-frames-are-frames',
+    files: ['reference-designs/src/**'],
+    rules: {
+      'unicorn/consistent-compound-words': ['error', { replacements: { keyFrame: false } }],
+    },
+  },
+
+  {
     // AsyncResult wraps a promise and is awaited like one, so it chains with `then` throughout.
     name: 'keeb-cad/async-result-is-thenable',
     files: ['packages/result/src/async-result.ts'],

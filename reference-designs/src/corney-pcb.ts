@@ -6,7 +6,7 @@
 import { readFixture, readYaml } from './fixture-files'
 import { readKicadPcb, type Footprint, type KicadPcb, type Point, type Segment } from './kicad-pcb'
 import type { Variant } from './key-centres'
-import { DESIGN_PCB } from './load-key-poses'
+import { DESIGN_PCB } from './load-key-frames'
 import { boundsOf, centreOf, chainLoops, type Cutout } from './pcb-geometry'
 
 /** The front plate; wired and wireless share it. */

@@ -9,6 +9,7 @@ import { aLibraryVersion } from './library-version'
 import { anId } from './id'
 import { aMeta } from './meta'
 import { aSidePartOverride } from './override'
+import { aVersion } from './version'
 
 describe('aDesign', () => {
   it('builds a value its schema accepts', () => {
@@ -17,7 +18,7 @@ describe('aDesign', () => {
 
   it.each([
     ['meta', () => ({ meta: aMeta({ name: 'Other' }) })],
-    ['libraryVersions', () => ({ libraryVersions: [aLibraryVersion()] })],
+    ['libraryVersions', () => ({ libraryVersions: [aLibraryVersion({ version: aVersion(2) })] })],
     ['parts', () => ({ parts: [aBlueprintDesignPart({ id: anId('other') })] })],
     ['layout', () => ({ layout: aLayout({ children: [aSlot()] }) })],
     ['overrides', () => ({ overrides: [aSidePartOverride()] })],

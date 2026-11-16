@@ -1,4 +1,5 @@
 import { InvariantError } from '@keeb-cad/result'
+import { match, P } from 'ts-pattern'
 import * as v from 'valibot'
 
 import type { CodecSchema, FieldForm, FieldMetadata, Fields, ObjectLikeSchema } from './types'
@@ -23,26 +24,12 @@ const supported = new Set<string>([
 // What the codec reads from a schema. An unsupported kind throws, so a Valibot upgrade that
 // changes schema internals fails loudly rather than writing a different file.
 export function fieldForm(schema: v.GenericSchema): FieldForm {
-  const codecSchema = codecSchemaOf(schema)
-  switch (codecSchema.type) {
-    case 'string':
-    case 'number':
-    case 'boolean':
-    case 'literal':
-    case 'picklist':
-    case 'union': {
-      return 'value'
-    }
-    case 'record': {
-      return 'record'
-    }
-    case 'array': {
-      return 'list'
-    }
-    default: {
-      return 'object'
-    }
-  }
+  return match(codecSchemaOf(schema).type)
+    .returnType<FieldForm>()
+    .with('string', 'number', 'boolean', 'literal', 'picklist', 'union', () => 'value')
+    .with('record', () => 'record')
+    .with('array', () => 'list')
+    .otherwise(() => 'object')
 }
 
 export function fieldMetadata(schema: v.GenericSchema): FieldMetadata {
@@ -71,35 +58,29 @@ export function resolveObject(
   schema: v.GenericSchema,
   value: Fields,
 ): ObjectLikeSchema | undefined {
-  const codecSchema = codecSchemaOf(schema)
-  switch (codecSchema.type) {
-    case 'lazy': {
-      return resolveObject(codecSchema.getter(value), value)
-    }
-    case 'variant': {
-      return codecSchema.options
+  return match(codecSchemaOf(schema))
+    .returnType<ObjectLikeSchema | undefined>()
+    .with({ type: 'lazy' }, (lazy) => resolveObject(lazy.getter(value), value))
+    .with({ type: 'variant' }, (variant) =>
+      variant.options
         .map((option) => resolveObject(option as v.GenericSchema, value))
         .find(
           (option) =>
             option !== undefined &&
             // Every variant option defines its discriminator.
-            v.is(option.entries[codecSchema.key] as v.GenericSchema, value[codecSchema.key]),
-        )
-    }
-    case 'union': {
-      return codecSchema.options
+            v.is(option.entries[variant.key] as v.GenericSchema, value[variant.key]),
+        ),
+    )
+    .with({ type: 'union' }, (union) =>
+      union.options
         .filter((option) => fieldForm(option as v.GenericSchema) === 'object')
         .map((option) => resolveObject(option as v.GenericSchema, value))
-        .find((option) => option !== undefined && v.is(option, value))
-    }
-    case 'object':
-    case 'strict_object': {
-      return codecSchema
-    }
-    default: {
-      throw new InvariantError(`A ${codecSchema.type} schema is not an object.`)
-    }
-  }
+        .find((option) => option !== undefined && v.is(option, value)),
+    )
+    .with({ type: P.union('object', 'strict_object') }, (object) => object)
+    .otherwise((other) => {
+      throw new InvariantError(`A ${other.type} schema is not an object.`)
+    })
 }
 
 // Whether a field's schema lets its value be null, which the codec then writes as KDL's null.

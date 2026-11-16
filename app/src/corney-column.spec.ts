@@ -1,90 +1,83 @@
-import { argumentHash, blueprintWorkerModule, LaneRunner } from '@keeb-cad/blueprint/worker'
-import { NewDesign } from '@keeb-cad/commands'
-import { type Committed, DesignStore } from '@keeb-cad/design'
-import { DesignMirror, DesignMirrorWriter, designWorkerModule } from '@keeb-cad/design/worker'
+import { argumentHash } from '@keeb-cad/blueprint/worker'
 import { Container } from '@keeb-cad/di'
-import { libraryData } from '@keeb-cad/library/worker'
-import { createDerivations } from '@keeb-cad/model/worker'
-import { corneyIslandLayout } from '@keeb-cad/reference-designs/scripts'
 import { expectOk } from '@keeb-cad/result/testing'
-import { compareId, type LayoutOutput } from '@keeb-cad/schema'
+import type { LayoutOutput } from '@keeb-cad/schema'
 import { aLayoutRow } from '@keeb-cad/schema/testing'
 import { readBundle, writeBundle } from '@keeb-cad/storage'
-import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
 import { describe, expect, it } from 'vitest'
 
-import { mainModules } from './main-modules'
-
-async function arrangeStore(): Promise<DesignStore> {
-  const container = new Container()
-  for (const module of mainModules) container.addModule(module)
-  container.override(storageBackend).useValue(new MemoryBackend())
-  await container.autoLoad()
-  return container.resolve(DesignStore)
-}
-
-// The model worker's parts lane and placements, wired by hand on a mirror fed the store's design.
-async function arrangePlacements() {
-  const container = new Container().addModule(designWorkerModule).addModule(blueprintWorkerModule)
-  await container.autoLoad()
-  const runner = container.resolve(LaneRunner)
-  runner.useLibrary(libraryData)
-  const derivations = createDerivations(container.resolve(DesignMirror), libraryData, runner)
-  const writer = container.resolve(DesignMirrorWriter)
-  return async ({ design, revision }: Committed) => {
-    writer.replace(design, revision)
-    await runner.pause(derivations.pins.value)
-    return { placements: derivations.placements.value, parts: derivations.parts.value }
-  }
-}
-
-function committed(store: DesignStore): Committed {
-  const current = store.current
-  if (current.isNone()) throw new Error('Expected a committed design.')
-  return current.value
-}
-
-async function runCorneyScript(store: DesignStore): Promise<void> {
-  expectOk(await store.run(NewDesign, {}))
-  for (const { command, input } of corneyIslandLayout) expectOk(store.runById(command, input))
-}
+import { arrangePlacements } from './testing/arrange-placements'
+import { arrangeStore } from './testing/arrange-store'
+import { committed } from './testing/committed'
+import { runCorneyScript } from './testing/run-corney-script'
 
 // The script's left-half offset, and the 1u keycap plus the 1 mm gap a y chain steps by.
 const EXPECTED_HALF_X = -140
 const EXPECTED_ROW_STEP = 19
-const EXPECTED_NODE_IDS = [
-  'left-half',
-  'matrix',
-  'matrix-outer',
-  'matrix-outer-bottom',
-  'matrix-outer-home',
-  'matrix-outer-top',
-  'matrix-pinky',
-  'matrix-pinky-bottom',
-  'matrix-pinky-home',
-  'matrix-pinky-top',
-  'matrix-ring',
-  'matrix-ring-bottom',
-  'matrix-ring-home',
-  'matrix-ring-top',
-  'matrix-middle',
-  'matrix-middle-bottom',
-  'matrix-middle-home',
-  'matrix-middle-top',
-  'matrix-index',
-  'matrix-index-bottom',
-  'matrix-index-home',
-  'matrix-index-top',
-  'matrix-inner',
-  'matrix-inner-bottom',
-  'matrix-inner-home',
-  'matrix-inner-top',
-  'thumbfan',
-  'thumbfan-near-home',
-  'thumbfan-mid-home',
-  'thumbfan-far-home',
+// Every node of Corney's script on each side, the root aside, in code-unit order.
+const EXPECTED_IDS = [
+  'left/left-half',
+  'left/matrix',
+  'left/matrix-index',
+  'left/matrix-index-bottom',
+  'left/matrix-index-home',
+  'left/matrix-index-top',
+  'left/matrix-inner',
+  'left/matrix-inner-bottom',
+  'left/matrix-inner-home',
+  'left/matrix-inner-top',
+  'left/matrix-middle',
+  'left/matrix-middle-bottom',
+  'left/matrix-middle-home',
+  'left/matrix-middle-top',
+  'left/matrix-outer',
+  'left/matrix-outer-bottom',
+  'left/matrix-outer-home',
+  'left/matrix-outer-top',
+  'left/matrix-pinky',
+  'left/matrix-pinky-bottom',
+  'left/matrix-pinky-home',
+  'left/matrix-pinky-top',
+  'left/matrix-ring',
+  'left/matrix-ring-bottom',
+  'left/matrix-ring-home',
+  'left/matrix-ring-top',
+  'left/thumbfan',
+  'left/thumbfan-far-home',
+  'left/thumbfan-mid-home',
+  'left/thumbfan-near-home',
+  'right/left-half',
+  'right/matrix',
+  'right/matrix-index',
+  'right/matrix-index-bottom',
+  'right/matrix-index-home',
+  'right/matrix-index-top',
+  'right/matrix-inner',
+  'right/matrix-inner-bottom',
+  'right/matrix-inner-home',
+  'right/matrix-inner-top',
+  'right/matrix-middle',
+  'right/matrix-middle-bottom',
+  'right/matrix-middle-home',
+  'right/matrix-middle-top',
+  'right/matrix-outer',
+  'right/matrix-outer-bottom',
+  'right/matrix-outer-home',
+  'right/matrix-outer-top',
+  'right/matrix-pinky',
+  'right/matrix-pinky-bottom',
+  'right/matrix-pinky-home',
+  'right/matrix-pinky-top',
+  'right/matrix-ring',
+  'right/matrix-ring-bottom',
+  'right/matrix-ring-home',
+  'right/matrix-ring-top',
+  'right/thumbfan',
+  'right/thumbfan-far-home',
+  'right/thumbfan-mid-home',
+  'right/thumbfan-near-home',
 ]
-const OUTER_COLUMN = ['matrix-outer-bottom', 'matrix-outer-home', 'matrix-outer-top']
+const OUTER_COLUMN = ['left/matrix-outer-bottom', 'left/matrix-outer-home', 'left/matrix-outer-top']
 
 const KEY_1U_RUN = `key@${argumentHash({ size: '1u' })}`
 
@@ -92,19 +85,19 @@ const slotAt = (x: number, y: number, part: number) =>
   aLayoutRow({ frame: { x, y, rot: 0, mirrored: false }, anchorAt: { x, y }, part })
 
 function rowOf(placements: LayoutOutput, id: string) {
-  return placements.rows[placements.ids.indexOf(`left/${id}`)]
+  return placements.rows[placements.ids.indexOf(id)]
 }
 
 describe("Corney Island's outer column", () => {
   it("steps the outer column's keys up one row at a time from the left half's origin", async () => {
-    const store = await arrangeStore()
-    const placementsOf = await arrangePlacements()
+    const store = await arrangeStore(new Container())
+    const derivationsOf = await arrangePlacements(new Container())
 
     await runCorneyScript(store)
-    const { placements, parts } = await placementsOf(committed(store))
+    const { placements, parts } = await derivationsOf(committed(store))
 
-    const part = parts.output.ids.indexOf(KEY_1U_RUN)
-    expect(OUTER_COLUMN.map((id) => rowOf(placements, id))).toEqual([
+    const part = parts.value.output.ids.indexOf(KEY_1U_RUN)
+    expect(OUTER_COLUMN.map((id) => rowOf(placements.value, id))).toEqual([
       slotAt(EXPECTED_HALF_X, 0, part),
       slotAt(EXPECTED_HALF_X, EXPECTED_ROW_STEP, part),
       slotAt(EXPECTED_HALF_X, 2 * EXPECTED_ROW_STEP, part),
@@ -112,21 +105,23 @@ describe("Corney Island's outer column", () => {
   })
 
   it('places every node the same after the design is written to a bundle, read back and replaced', async () => {
-    const store = await arrangeStore()
-    const placementsOf = await arrangePlacements()
+    const store = await arrangeStore(new Container())
+    const derivationsOf = await arrangePlacements(new Container())
     await runCorneyScript(store)
-    const { placements: before } = await placementsOf(committed(store))
-    const root = committed(store).design.layout.id
-    expect(before.ids).toEqual(
-      [root, ...EXPECTED_NODE_IDS]
-        .flatMap((id) => [`left/${id}`, `right/${id}`])
-        .toSorted(compareId),
-    )
+    const before = (await derivationsOf(committed(store))).placements.value
+    const roots = [
+      `left/${committed(store).design.layout.id}`,
+      `right/${committed(store).design.layout.id}`,
+    ]
+    expect({
+      ids: before.ids.filter((id) => !roots.includes(id)),
+      roots: before.ids.filter((id) => roots.includes(id)),
+    }).toEqual({ ids: EXPECTED_IDS, roots })
 
     const read = readBundle(writeBundle(committed(store)))
     expectOk(read)
     expectOk(store.replaceDesign(read.value))
 
-    expect((await placementsOf(committed(store))).placements).toEqual(before)
+    expect((await derivationsOf(committed(store))).placements.value).toEqual(before)
   })
 })

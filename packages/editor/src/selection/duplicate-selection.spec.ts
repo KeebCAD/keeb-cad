@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { page } from 'vitest/browser'
 
 import { emulateColorScheme } from '../testing/color-scheme'
-import { designWith } from '../testing/layout-canvas'
+import { designWith } from '../testing/designs'
 import { mountShell } from '../testing/mount-shell'
 import { pressKey } from '../testing/press'
 import { DuplicateSelection } from './duplicate-selection'

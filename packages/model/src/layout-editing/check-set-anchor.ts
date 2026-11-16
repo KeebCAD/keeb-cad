@@ -5,6 +5,8 @@ import { anchorCycle } from '../dependencies/anchor-cycle'
 import { dependencyGraph } from '../dependencies/dependency-graph'
 import { reject } from '../reject/reject'
 import { dependencyCycleMessage } from '../violations/dependency-cycle-message'
+import { unknownAnchorTargetMessage } from '../violations/unknown-anchor-target-message'
+import { unknownNodeMessage } from '../violations/unknown-node-message'
 import { isGroup } from './node-tree'
 
 // The node first, then the target, then the loop the new dependency would close. Removing an
@@ -17,7 +19,7 @@ export function checkSetAnchor(
   const graph = dependencyGraph(design.layout)
   const entry = graph.get(id)
   if (entry === undefined) {
-    return Result.err(reject('unknown-target', [id], `The design has no node with the id "${id}".`))
+    return Result.err(reject('unknown-target', [id], unknownNodeMessage([id])))
   }
   const parent = entry.parent === undefined ? undefined : graph.get(entry.parent)
   if (parent !== undefined && isGroup(parent.node) && parent.node.arrangement === 'chain') {
@@ -34,11 +36,7 @@ export function checkSetAnchor(
     const namesGroup = anchor.type === 'group'
     if (target === undefined || isGroup(target.node) !== namesGroup) {
       return Result.err(
-        reject(
-          'unknown-target',
-          [anchor.ref],
-          `The design has nothing of the right kind with the id "${anchor.ref}".`,
-        ),
+        reject('unknown-target', [anchor.ref], unknownAnchorTargetMessage([anchor.ref])),
       )
     }
   }

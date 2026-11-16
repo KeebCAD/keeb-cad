@@ -1,41 +1,28 @@
-import { DesignStore, designModule } from '@keeb-cad/design'
-import { Container } from '@keeb-cad/di'
 import { checkDeletePart } from '@keeb-cad/model/main'
-import { expectErr, expectOk } from '@keeb-cad/result/testing'
 import { aBlueprintDesignPart, aDesign, aMeta, anId, aPartRef } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { settled } from '../testing/settled'
 import { DeletePart } from './delete-part'
-import { partsCommandsModule } from './parts-commands-module'
-
-async function arrange(design = aDesign()) {
-  const container = new Container().addModule(designModule).addModule(partsCommandsModule)
-  await container.autoLoad()
-  const store = container.resolve(DesignStore)
-  expectOk(store.replaceDesign({ design, unreadable: [] }))
-  return store
-}
 
 describe('DeletePart', () => {
-  it("refuses meta.defaultPart's part naming key, the design unchanged", async () => {
-    const store = await arrange()
-    const before = store.current.getOrUndefined()?.design
+  it("refuses meta.defaultPart's part naming key, the draft unchanged", () => {
+    const draft = aDesign()
 
-    const result = store.run(DeletePart, { id: 'key' })
+    const rejection = new DeletePart().apply(draft, { id: anId('key') })
 
-    expectErr(result)
-    expect(result.error).toMatchObject({ kind: 'default-part-required', ids: ['key'] })
-    expect(store.current.getOrUndefined()?.design).toEqual(before)
+    expect(rejection).toMatchObject({ kind: 'default-part-required', ids: ['key'] })
+    expect(draft).toEqual(aDesign())
   })
 
-  it('removes another part named by no slot or group', async () => {
-    const other = aBlueprintDesignPart({ id: anId('other') })
-    const store = await arrange(aDesign({ parts: [aBlueprintDesignPart(), other] }))
+  it('removes another part named by no slot or group', () => {
+    const draft = aDesign({
+      parts: [aBlueprintDesignPart(), aBlueprintDesignPart({ id: anId('other') })],
+    })
 
-    expectOk(store.run(DeletePart, { id: 'other' }))
+    new DeletePart().apply(draft, { id: anId('other') })
 
-    expect(store.current.getOrUndefined()?.design.parts).toEqual([aBlueprintDesignPart()])
+    expect(draft.parts).toEqual([aBlueprintDesignPart()])
   })
 })
 

@@ -300,7 +300,7 @@ describe('createDerivations', () => {
     expect(runner.runs).toEqual([])
   })
 
-  it('reports one violation per failed run, the part then its slots in compareId order', async () => {
+  it('reports one violation per failed run, the part then its slots in compareCodeUnits order', async () => {
     const { parts, runner } = await arrange(
       withLayout(onSlots({ id: anId('zed') }, { id: anId('abe') })),
     )
@@ -338,7 +338,7 @@ describe('createDerivations', () => {
     expect(parts.value.slots[slotId]).toEqual({ run: 'stand-in', fit: 'stand-in' })
   })
 
-  it('sorts the runs by compareId, each row at its id', async () => {
+  it('sorts the runs by compareCodeUnits, each row at its id', async () => {
     const zed = aBlueprintDesignPart({ id: anId('zed') })
     const abe = aBlueprintDesignPart({ id: anId('abe') })
     const { parts, runner } = await arrange(

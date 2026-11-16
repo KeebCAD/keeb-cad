@@ -1,6 +1,7 @@
 import { aChainGroup, aFreeGroup, aLayoutRow, anId, aSlot } from '@keeb-cad/schema/testing'
 
-import { designOf, groupRow, layoutOf, rectangle } from './layout-canvas'
+import { designOf } from './designs'
+import { groupRow, layoutOf, rectangle } from './layout-rows'
 import type { Half, LayoutRowOf } from './types'
 
 // The right half's rows sit mirrored about x = 60 mm.

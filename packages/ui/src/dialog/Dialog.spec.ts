@@ -5,12 +5,12 @@ import { h, shallowRef } from 'vue'
 
 import DialogHost from '../../workbench/DialogHost.vue'
 import { dialogStates } from '../../workbench/states/dialog-states'
+import { expectedScrim } from '../testing/scrim'
 import '../theme/theme.css'
 import UiDialog from './UiDialog.vue'
 
 const TITLE = 'Add group'
 const CONTENT = 'The id field goes here.'
-const expectedScrim = 'rgba(35, 38, 52, 0.45)'
 
 const slots = { title: () => TITLE, default: () => h('p', CONTENT) }
 

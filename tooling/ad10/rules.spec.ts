@@ -286,6 +286,11 @@ describe('the rules on cruised trees', async () => {
             'packages/storage/src/index.ts',
             '@keeb-cad/schema/testing',
           ),
+          v(
+            'only-tests-import-testing',
+            'packages/editor/src/ui-testing-import.ts',
+            '@keeb-cad/ui/testing',
+          ),
           v('only-ui-imports-its-widget-libraries', 'packages/editor/src/index.ts', '@lucide/vue'),
           v(
             'only-ui-imports-its-widget-libraries',
@@ -412,6 +417,17 @@ describe('the rules on cruised trees', async () => {
         ['@keeb-cad/model/worker', '@keeb-cad/design/worker', '@keeb-cad/library/worker'],
       ],
       [
+        "app's spec helpers",
+        'its worker subpaths and reference-designs',
+        'app/src/testing/helper.ts',
+        [
+          '@keeb-cad/model/worker',
+          '@keeb-cad/design/worker',
+          '@keeb-cad/library/worker',
+          '@keeb-cad/reference-designs/scripts',
+        ],
+      ],
+      [
         'the case worker entry',
         'library/worker',
         'app/src/case.worker.ts',
@@ -503,6 +519,12 @@ describe('the rules on cruised trees', async () => {
         'the workbench',
         'packages/ui/src/button/Button.spec.ts',
         ['packages/ui/workbench/states/button-states.ts'],
+      ],
+      [
+        'an editor spec',
+        'ui/testing',
+        'packages/editor/src/modal.spec.ts',
+        ['@keeb-cad/ui/testing'],
       ],
       [
         'editor',

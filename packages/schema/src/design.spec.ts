@@ -5,13 +5,17 @@ import { designSchema } from './design'
 import { aDesign } from './testing'
 
 describe('designSchema', () => {
-  it('refuses a design with no overrides section, at overrides', () => {
-    const { meta, libraryVersions, parts, layout } = aDesign()
+  it.each(['overrides', 'libraryVersions'] as const)(
+    'refuses a design with no %s section, at that section',
+    (section) => {
+      const design = Object.fromEntries(
+        Object.entries(aDesign()).filter(([key]) => key !== section),
+      )
 
-    const result = v.safeParse(designSchema, { meta, libraryVersions, parts, layout })
-
-    expect((result.issues ?? []).map((issue) => (issue.path ?? []).map(({ key }) => key))).toEqual([
-      ['overrides'],
-    ])
-  })
+      expect(v.safeParse(designSchema, design)).toMatchObject({
+        success: false,
+        issues: [{ path: [{ key: section }] }],
+      })
+    },
+  )
 })

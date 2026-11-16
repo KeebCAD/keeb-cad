@@ -3,18 +3,10 @@ import { describe, expect, it, onTestFinished } from 'vitest'
 
 import type { HandleTable } from '../lane/handle-table'
 import type { StageCalls } from '../lane/types'
-import {
-  aPin,
-  laneFailed,
-  laneOf,
-  MIB,
-  noArgs,
-  withInputs,
-  withPulls,
-  noCalls,
-  okValue,
-  returning,
-} from '../testing/a-pinned-blueprint'
+import { aPin, laneOf } from '../testing/a-pin'
+import { returning } from '../testing/lane-script'
+import { MIB } from '../testing/mib'
+import { laneFailed, noArgs, noCalls, okValue, withInputs, withPulls } from '../testing/stage-calls'
 import { blueprintWorkerModule } from './blueprint-worker-module'
 import type { BlueprintVm } from './blueprint-vm'
 import type { PinnedBlueprint } from './types'

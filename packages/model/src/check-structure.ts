@@ -1,6 +1,6 @@
 import { InvariantError, Result } from '@keeb-cad/result'
 import {
-  compareId,
+  compareCodeUnits,
   type Design,
   type Frozen,
   type Id,
@@ -48,7 +48,8 @@ function checkReferences(previous: Frozen<Design>, next: Frozen<Design>): Result
   )
 }
 
-// Of several new cycles, the one whose changed member is lowest by compareId, listed from it.
+// Of several new cycles, the one whose changed member is lowest by compareCodeUnits, listed from
+// it.
 function checkCycles(previous: Frozen<Design>, next: Frozen<Design>): Result<void, Rejection> {
   const before = new Set(checkAnchors(previous.layout).cycles.map(cycleKey))
   const fresh = checkAnchors(next.layout).cycles.filter((cycle) => !before.has(cycleKey(cycle)))
@@ -57,7 +58,7 @@ function checkCycles(previous: Frozen<Design>, next: Frozen<Design>): Result<voi
   const is = dependencyGraph(next.layout)
   const [first] = fresh
     .map((cycle) => fromChanged(cycle, was, is))
-    .toSorted(([a], [b]) => compareId(a as Id, b as Id))
+    .toSorted(([a], [b]) => compareCodeUnits(a as Id, b as Id))
   const ids = first as Id[]
   return Result.err(reject('dependency-cycle', ids, dependencyCycleMessage(ids)))
 }
@@ -65,7 +66,7 @@ function checkCycles(previous: Frozen<Design>, next: Frozen<Design>): Result<voi
 function fromChanged(cycle: readonly Id[], was: DependencyGraph, is: DependencyGraph): Id[] {
   const [changed] = cycle
     .filter((id) => dependencyKey(was, id) !== dependencyKey(is, id))
-    .toSorted(compareId)
+    .toSorted(compareCodeUnits)
   // A cycle whose every member kept its dependency was already there, so it is not new.
   if (changed === undefined) throw new InvariantError('A new cycle has no changed member.')
   const at = cycle.indexOf(changed)
@@ -78,7 +79,7 @@ function dependencyKey(graph: DependencyGraph, id: Id): string | undefined {
 }
 
 function cycleKey(cycle: readonly Id[]): string {
-  return cycle.toSorted(compareId).join(' ')
+  return cycle.toSorted(compareCodeUnits).join(' ')
 }
 
 function referenceKey({ kind, target }: Reference): string {

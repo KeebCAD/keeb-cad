@@ -1,6 +1,6 @@
 import { Result } from '@keeb-cad/result'
 import {
-  compareId,
+  compareCodeUnits,
   type Design,
   type Frozen,
   type LibraryData,
@@ -14,7 +14,8 @@ import { designFaults } from './design-faults'
 import type { BlueprintInputInvalid } from './types'
 
 // Refuses only a fault the edit introduced, so an input a loaded file already broke blocks no
-// unrelated edit. Of several new faults, the one whose owner, then input, is lowest by compareId.
+// unrelated edit. Of several new faults, the one whose owner, then input, is lowest by
+// compareCodeUnits.
 export function checkInputs(
   previous: Frozen<Design>,
   next: Frozen<Design>,
@@ -23,7 +24,9 @@ export function checkInputs(
   const before = new Set(faultsOf(previous, declarations).map(faultKey))
   const [first] = faultsOf(next, declarations)
     .filter((fault) => !before.has(faultKey(fault)))
-    .toSorted((a, b) => compareId(a.owner.id, b.owner.id) || compareId(a.input, b.input))
+    .toSorted(
+      (a, b) => compareCodeUnits(a.owner.id, b.owner.id) || compareCodeUnits(a.input, b.input),
+    )
   return first === undefined
     ? Result.ok()
     : Result.err(

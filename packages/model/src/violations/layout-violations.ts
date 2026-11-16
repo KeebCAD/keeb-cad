@@ -4,7 +4,7 @@ import type { AnchorCheck } from '../dependencies/types'
 import { dependencyCycleMessage } from './dependency-cycle-message'
 import { unresolvableReferenceMessage } from './unresolvable-reference-message'
 
-// Cycles, then unresolvable anchors, each already in compareId order of its first id.
+// Cycles, then unresolvable anchors, each already in compareCodeUnits order of its first id.
 export function layoutViolations({ cycles, unresolvable }: AnchorCheck): Violation[] {
   return [
     ...cycles.map((ids): Violation => ({

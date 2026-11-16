@@ -11,5 +11,5 @@ export function filesContaining(dir: string, text: string): string[] {
   if (files.length === 0) throw new Error(`No files to check in: ${dir}`)
   return files
     .filter((file) => readFileSync(file).includes(text))
-    .toSorted((a, b) => a.localeCompare(b))
+    .toSorted((a, b) => Number(a > b) - Number(a < b))
 }

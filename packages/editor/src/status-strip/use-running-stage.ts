@@ -4,15 +4,8 @@ import { ModelWorkerLifecycle } from '@keeb-cad/workers'
 import { useTimeoutFn } from '@vueuse/core'
 import { computed, type ComputedRef, shallowRef, watch } from 'vue'
 
+import { SHOWN_AFTER_MS, toNextChange } from './running-stage-timing'
 import type { ShownRunningStage } from './types'
-
-const SHOWN_AFTER_MS = 1000
-
-function toNextChange(elapsed: number): number {
-  const next =
-    elapsed <= SHOWN_AFTER_MS ? SHOWN_AFTER_MS + 1 : (Math.floor(elapsed / 1000) + 1) * 1000
-  return next - elapsed
-}
 
 export function useRunningStage(): ComputedRef<ShownRunningStage | undefined> {
   const lifecycle = useService(ModelWorkerLifecycle)

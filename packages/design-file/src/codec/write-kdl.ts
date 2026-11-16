@@ -1,6 +1,6 @@
 import { Document, format, Node } from '@bgotink/kdl'
 import { InvariantError } from '@keeb-cad/result'
-import { compareId } from '@keeb-cad/schema'
+import { compareCodeUnits } from '@keeb-cad/schema'
 import type * as v from 'valibot'
 
 import { codecValue } from './codec-value'
@@ -55,7 +55,7 @@ function childNodes(key: string, field: v.GenericSchema, value: unknown): Node[]
 
 function writeRecord(name: string, entry: v.GenericSchema, record: Fields): Node {
   const node = Node.create(name)
-  for (const key of Object.keys(record).toSorted(compareId)) {
+  for (const key of Object.keys(record).toSorted(compareCodeUnits)) {
     node.appendNode(writeEntry(key, entry, record[key]))
   }
   return node

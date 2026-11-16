@@ -3,14 +3,14 @@ title: 'Refactor sweep'
 type: 'refactor'
 ticket: '13'
 created: '2026-11-16'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '270c7eab9a93f54defc69954c8c6dcbaefa4e309'
 route: 'full'
 route_source: 'auto'
 risk: 'low'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context: []
 ---
@@ -45,8 +45,8 @@ context: []
 | module boundaries | `useViolationCounts`, behind | one error and one warning posted at main's seq − 1 | `{ errors: 1, warnings: 1, dimmed: true }` | browser, `editor` |
 | module boundaries | `useViolationCounts`, on | the same posted at main's seq | `{ errors: 1, warnings: 1, dimmed: false }` | browser, `editor` |
 | module boundaries | `useViolationCounts`, none posted | a committed design, no issues | `{ errors: 0, warnings: 0, dimmed: true }` | browser, `editor` |
-| module boundaries | `usePlacedNodes`, one set | design committed, only the Layout set posted | `[]` | browser, `editor` |
-| module boundaries | `usePlacedNodes`, both sets | root `r` holding group `g` with slot `a`, both sets posted | `[{ kind: 'group', key: 'left/g', … }, { kind: 'slot', key: 'left/a', w, h, … }]`, no row for `r` | browser, `editor` |
+| module boundaries | `usePlacedNodes`, no set | a committed design, no Layout set posted yet | `[]` | browser, `editor` |
+| module boundaries | `usePlacedNodes`, set posted | root `root` holding group `g` with slot `a`, its Layout set posted | `[{ kind: 'slot', key: 'left/a', w, h, … }, { kind: 'group', key: 'left/g', … }]` in posted order, no row for `root` | browser, `editor` |
 | module boundaries | `useFlowHost` | no flow; a flow whose handle has a view; one without | `undefined`; `{ view, entry }`; `undefined` | browser, `editor` |
 | module boundaries | `useOpenFlow` | open flow; `update(draft)`; availability refused; read before opening | its draft; the new draft; `rejectionText` of the refusal; throws `InvariantError` | browser, `editor` |
 | module boundaries | `useGroupBorders` | no design; `left/a` in group `g` hovered | `[]`; the `left/g` row shown as hovered, no `right/g` | browser, `editor` |
@@ -60,7 +60,7 @@ context: []
 | rules | `unknownNodeMessage`, several | ids `['a', 'b']` (Delete's missing ids, `check-delete-node.ts:17-18`) | `The design has no node with the id "a", "b".` | unit, `model` |
 | module boundaries | `ui/testing` fence | a spec, and a non-spec `editor` file, importing `@keeb-cad/ui/testing` | allowed; reported | unit, `tooling` |
 | module boundaries | `useWorkerFailure` | worker running; failed in `plates`; failed with no stage | `undefined`; `'failed: plates: <message>'`; `'failed: <message>'` | browser, `editor` |
-| module boundaries | `useZoomReadout` | zoom 2 | `'200%'` | browser, `editor` |
+| module boundaries | `useZoomReadout` | `zoomForPercent(200)` | `'200%'` | browser, `editor` |
 | module boundaries | `useCanvasItem` | an SVG element; `null`; unmounted | registered under its id; nothing registered; unregistered | browser, `editor` |
 | module boundaries | `useCanvasItemsRoot` | both refs set; one `null`; unmounted | root registered; none; unregistered | browser, `editor` |
 | module boundaries | `useViewport` | 200×100 canvas, centre (0, 0), zoom 1; `fitOnce` twice | `modelToScreen({ x: 10, y: 10 })` is `{ x: 110, y: 40 }` (y flipped); the view fitted by the first call only | browser, `editor` |
@@ -92,6 +92,16 @@ Decision (Sergii, 2026-11-16): all 21 composables get their own spec here, not a
 Decision (Sergii, 2026-11-16): one code-unit comparator, `schema`'s `compareId` renamed `compareCodeUnits` (its callers, `design/src/parsing/format-issue-paths.ts` and `app/e2e/ordering/by-code-unit.ts` use it; the spine's `schema` paragraph renamed), not exported from `hashing`, because `compareId` is not id-specific (`UTF-16 code-unit order`) and `AGENTS.md` says `Name a thing for what it does`; `hashing/src/canonical-encoding.ts:19` keeps its copy, since a kernel may import only `result`.
 
 Decision (Sergii, 2026-11-16): the constant `expectedScrim` lives in a new `@keeb-cad/ui/testing` subpath, not a copy in each spec, because `AGENTS.md` says `Write a shared assertion once`; the spine's `ui` sentence (`only editor imports it, through its root and its one stylesheet subpath`) gains `and, for specs, ui/testing`, matching the Test builders row, with a fixture in `tooling/ad10/violations/` showing a non-spec import refused.
+
+Decision (Sergii, 2026-11-16, after the build): the `usePlacedNodes` rows become "no set posted yet" and "set posted, in posted order", not "only the Layout set" and group-first, because one layout-set post carries both outputs and the posted order is the worker's; the `useZoomReadout` row's input is `zoomForPercent(200)`, not a raw zoom of 2, because `Viewport.zoom` is in px per mm.
+
+Decision (Sergii, 2026-11-16, after the build): `check-nested-inputs.ts`'s guard on a nested default that fails to parse is removed with its row, not kept behind `'wide' as Expression`, because with `schema`'s inferred types no typed value reaches it and `AGENTS.md` says `test a runtime check with a value the types accept`; the one production change this sweep makes.
+
+Decision (Sergii, 2026-11-16, after the build): `right-half.spec.ts`'s `reflected`, `corney-column.spec.ts`'s round trip and `layout-set.spec.ts`'s `KEY_RUN` stay, not literal rows, because their requirements are relations (the right half is the left reflected; a reload gives the same placements) whose only literal source would be a run, and `argumentHash` is named by BP-5 with its own tests; their cards close as accepted.
+
+Decision (Sergii, 2026-11-16, after the build): Stryker's three equivalent mutants (`read-kdl.ts:34`, `:136`, `:156`) get point-wise `// Stryker disable next-line` exclusions with their reasons, not left surviving; `schema-fields.ts:78` gets a `deferred-work.md` card, owned by the first Data Schema union with a variant no option takes.
+
+Decision (Sergii, 2026-11-16, review pass 2): `filesContaining` sorts in code-unit order, not `localeCompare`, because every ordering in the repo is locale-free (`compareCodeUnits`: `so an ordering never depends on a locale`) and nothing reads the list's order; inlined, since tooling can't import `schema`.
 
 Decision (Sergii, 2026-11-16): the `app/src/testing/` helpers are functions taking the store or container they act on, not `di` services, because AD-25's `Functions with state passed around by hand are not used` governs production wiring, the helpers hold no state, and each spec's `arrange` builds the real container, as `editor/src/testing/post-layout-set.ts` and `mount-shell.ts` do.
 
@@ -146,39 +156,39 @@ Ledger (cards by summary). Lines read at `eb1872a`.
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `packages/blueprint/src/testing/` -- `a-pinned-blueprint.ts` split by concept: `a-contract.ts` (`aContract` (function), built on `aBlueprintDeclaration`), `lane-script.ts` (the constant `STAGE`; `laneScript`, `aScript`, `returning` (function each)), `a-pin.ts` (`aPin`, `laneOf` (function)), `stage-calls.ts` (`noCalls`, `noArgs`, `withInputs`, `withPulls`, `okValue`, `laneFailed` (function each)), `mib.ts` (`MIB`); importers updated.
-- [ ] `packages/blueprint/src/lane/` -- `schema`'s inferred type replaces `NestedInputDeclaration` and the cast.
-- [ ] `packages/pipeline/src/pipeline/pipeline.spec.ts` -- recording starts in each test after `arrange`.
-- [ ] `packages/model/src/parts/` -- each helper or builder in a file named for it (function).
-- [ ] `packages/commands/src/parts/` -- `types.ts` takes `DeletePartInput`; no cast; `delete-part.spec.ts` keeps unit rows on a draft built with `aDesign`; wiring rows move to `app/src/delete-part.spec.ts`.
-- [ ] `packages/workers/src/model-worker/model-worker-lifecycle.ts` -- delete the two comments.
-- [ ] `place-layout.spec.ts`, `layout-output-codec.spec.ts` -- numbers into parameters or `expected*` constants.
-- [ ] `packages/geometry/src/compose.spec.ts` -- the `compose` describe, moved whole.
-- [ ] `packages/schema/src/` -- the three schema rows.
-- [ ] `packages/model/src/violations/` -- `unknown-node-message.ts` (`unknownNodeMessage` (function)) and `unknown-anchor-target-message.ts` (`unknownAnchorTargetMessage` (function)), each taking `ids: readonly ItemId[]` as `unknown-override-target-message.ts` does, texts unchanged, each with its spec row.
-- [ ] `packages/commands/src/layout/layout-commands.spec.ts` -- `offset` built in each case.
-- [ ] `packages/schema/src/compare-code-units.ts` -- `compareId` renamed `compareCodeUnits` (function) with its file and its callers; `design/src/parsing/format-issue-paths.ts` and `app/e2e/ordering/by-code-unit.ts`'s users use it, and `by-code-unit.ts` goes.
-- [ ] `packages/design-file/` -- `match` over tags; `ts-pattern: catalog:` in `package.json`; Stryker on `schema-fields.ts` and `read-kdl.ts`, each survivor given a verdict (mutation-loop).
-- [ ] `.dependency-cruiser.mts`, `tooling/ad10/violations/app/src/testing/`, `tooling/ad10/rules.spec.ts` -- the `app/src/testing/` fences and their fixture rows.
-- [ ] Spine (`_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md`) -- the Reference designs row and AD-10's `app` sentence name `app/src/testing/`; `key poses` becomes `key frames`; every `compareId` (9 mentions: Shared kinds, Data Schema and its sketch, stage outputs, `design-file`'s codec, the package tree) becomes `compareCodeUnits`; the `ui` sentence gains `ui/testing` for specs.
-- [ ] `app/src/testing/` -- one file each: `committed.ts`, `run-corney-script.ts`, `arrange-store.ts`, `arrange-placements.ts`, `arrange-model-worker.ts` (function each); the specs import them.
-- [ ] The app specs in the ledger -- literal expected ids and rows from Corney's script, `it.each` over the steps instead of the loop, `rowsOfSide` for the local `sideOf`, launch assertions that fail when the older is opened.
-- [ ] `reference-designs/` and `app/src/corney-left-half.spec.ts` -- the pose rename, files included (`KeyFrame`, `CandidateKeyFrame` types; `compareKeyFrames`, `keyFramesFrom`, `loadKeyFrames` (function each)).
-- [ ] `tooling/check-dist/files-containing.spec.ts` -- the ordering row.
-- [ ] `editor/src/status-strip/running-stage-timing.ts` -- `SHOWN_AFTER_MS` and `toNextChange` (function), out of `use-running-stage.ts`.
-- [ ] `ui/src/theme/theme-choice.ts` -- `THEME_CHOICES` and `isThemeChoice` (function), out of `use-theme-choice.ts`.
-- [ ] `editor/src/devtools/devtools-plugin.spec.ts` -- the two glue rows.
-- [ ] `editor/src/testing/layout-canvas.ts` -- split by concept: design builders (`designWith`, `designOf`) to `designs.ts`; row builders (`layoutOf`, `keyAt`, `rectangle`, `groupRow`) to `layout-rows.ts`; page queries (`canvas`, `key`, `canvasSvg`, `clientAt`) to `canvas-queries.ts`; `arrangeLayoutCanvas`, `sizeCanvasAndWait` stay; `nextFrames` to `next-frames.ts` (function each); importers updated.
-- [ ] `editor/src/selection/delete-selection.spec.ts` -- `selected` passed by each test; `nextFrames()` for the wait.
-- [ ] `editor/src/workspace/layout/use-slot-id-labels.spec.ts` -- the first test's name claims its border expect too; `WIDE_KEY` built inside the tests that use it.
-- [ ] `ui/workbench/` -- `CanvasToggleFrame` becomes `CanvasToggleHost`.
-- [ ] `ui/src/testing/scrim.ts` (the constant `expectedScrim`), `ui/src/testing/index.ts` (re-exports it and `css-rgb.ts`), `ui/package.json` (`./testing`), `tooling/ad10/violations/` (a non-spec import of it) -- both specs import it.
-- [ ] `editor/src/design/use-open-design.spec.ts` -- `arrange` takes the design to commit; the first test commits none and returns no `commit`.
-- [ ] `ui/src/tree/Tree.spec.ts` -- rows built in each test.
-- [ ] `editor/src/hover/hovered-node.spec.ts` -- the `HoveredNode` tests moved from `group-borders.spec.ts`, against the service.
-- [ ] `editor/src/**/use-*.spec.ts` -- one spec per listed composable, per the boundary table.
-- [ ] Flaky reports -- flaky-triage on each logged seed; verdict on the card.
-- [ ] `deferred-work.md` -- `closed: 2026-11-16, …` lines per the ledger; one card for Sofia listing the starred owners.
+- [x] `packages/blueprint/src/testing/` -- `a-pinned-blueprint.ts` split by concept: `a-contract.ts` (`aContract` (function), built on `aBlueprintDeclaration`), `lane-script.ts` (the constant `STAGE`; `laneScript`, `aScript`, `returning` (function each)), `a-pin.ts` (`aPin`, `laneOf` (function)), `stage-calls.ts` (`noCalls`, `noArgs`, `withInputs`, `withPulls`, `okValue`, `laneFailed` (function each)), `mib.ts` (`MIB`); importers updated.
+- [x] `packages/blueprint/src/lane/` -- `schema`'s inferred type replaces `NestedInputDeclaration` and the cast.
+- [x] `packages/pipeline/src/pipeline/pipeline.spec.ts` -- recording starts in each test after `arrange`.
+- [x] `packages/model/src/parts/` -- each helper or builder in a file named for it (function).
+- [x] `packages/commands/src/parts/` -- `types.ts` takes `DeletePartInput`; no cast; `delete-part.spec.ts` keeps unit rows on a draft built with `aDesign`; wiring rows move to `app/src/delete-part.spec.ts`.
+- [x] `packages/workers/src/model-worker/model-worker-lifecycle.ts` -- delete the two comments.
+- [x] `place-layout.spec.ts`, `layout-output-codec.spec.ts` -- numbers into parameters or `expected*` constants.
+- [x] `packages/geometry/src/compose.spec.ts` -- the `compose` describe, moved whole.
+- [x] `packages/schema/src/` -- the three schema rows.
+- [x] `packages/model/src/violations/` -- `unknown-node-message.ts` (`unknownNodeMessage` (function)) and `unknown-anchor-target-message.ts` (`unknownAnchorTargetMessage` (function)), each taking `ids: readonly ItemId[]` as `unknown-override-target-message.ts` does, texts unchanged, each with its spec row.
+- [x] `packages/commands/src/layout/layout-commands.spec.ts` -- `offset` built in each case.
+- [x] `packages/schema/src/compare-code-units.ts` -- `compareId` renamed `compareCodeUnits` (function) with its file and its callers; `design/src/parsing/format-issue-paths.ts` and `app/e2e/ordering/by-code-unit.ts`'s users use it, and `by-code-unit.ts` goes.
+- [x] `packages/design-file/` -- `match` over tags; `ts-pattern: catalog:` in `package.json`; Stryker on `schema-fields.ts` and `read-kdl.ts`, each survivor given a verdict (mutation-loop).
+- [x] `.dependency-cruiser.mts`, `tooling/ad10/violations/app/src/testing/`, `tooling/ad10/rules.spec.ts` -- the `app/src/testing/` fences and their fixture rows.
+- [x] Spine (`_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md`) -- the Reference designs row and AD-10's `app` sentence name `app/src/testing/`; `key poses` becomes `key frames`; every `compareId` (9 mentions: Shared kinds, Data Schema and its sketch, stage outputs, `design-file`'s codec, the package tree) becomes `compareCodeUnits`; the `ui` sentence gains `ui/testing` for specs.
+- [x] `app/src/testing/` -- one file each: `committed.ts`, `run-corney-script.ts`, `arrange-store.ts`, `arrange-placements.ts`, `arrange-model-worker.ts` (function each); the specs import them.
+- [x] The app specs in the ledger -- literal expected ids and rows from Corney's script, `it.each` over the steps instead of the loop, `rowsOfSide` for the local `sideOf`, launch assertions that fail when the older is opened.
+- [x] `reference-designs/` and `app/src/corney-left-half.spec.ts` -- the pose rename, files included (`KeyFrame`, `CandidateKeyFrame` types; `compareKeyFrames`, `keyFramesFrom`, `loadKeyFrames` (function each)).
+- [x] `tooling/check-dist/files-containing.spec.ts` -- the ordering row.
+- [x] `editor/src/status-strip/running-stage-timing.ts` -- `SHOWN_AFTER_MS` and `toNextChange` (function), out of `use-running-stage.ts`.
+- [x] `ui/src/theme/theme-choice.ts` -- `THEME_CHOICES` and `isThemeChoice` (function), out of `use-theme-choice.ts`.
+- [x] `editor/src/devtools/devtools-plugin.spec.ts` -- the two glue rows.
+- [x] `editor/src/testing/layout-canvas.ts` -- split by concept: design builders (`designWith`, `designOf`) to `designs.ts`; row builders (`layoutOf`, `keyAt`, `rectangle`, `groupRow`) to `layout-rows.ts`; page queries (`canvas`, `key`, `canvasSvg`, `clientAt`) to `canvas-queries.ts`; `arrangeLayoutCanvas`, `sizeCanvasAndWait` stay; `nextFrames` to `next-frames.ts` (function each); importers updated.
+- [x] `editor/src/selection/delete-selection.spec.ts` -- `selected` passed by each test; `nextFrames()` for the wait.
+- [x] `editor/src/workspace/layout/use-slot-id-labels.spec.ts` -- the first test's name claims its border expect too; `WIDE_KEY` built inside the tests that use it.
+- [x] `ui/workbench/` -- `CanvasToggleFrame` becomes `CanvasToggleHost`.
+- [x] `ui/src/testing/scrim.ts` (the constant `expectedScrim`), `ui/src/testing/index.ts` (re-exports it and `css-rgb.ts`), `ui/package.json` (`./testing`), `tooling/ad10/violations/` (a non-spec import of it) -- both specs import it.
+- [x] `editor/src/design/use-open-design.spec.ts` -- `arrange` takes the design to commit; the first test commits none and returns no `commit`.
+- [x] `ui/src/tree/Tree.spec.ts` -- rows built in each test.
+- [x] `editor/src/hover/hovered-node.spec.ts` -- the `HoveredNode` tests moved from `group-borders.spec.ts`, against the service.
+- [x] `editor/src/**/use-*.spec.ts` -- one spec per listed composable, per the boundary table.
+- [x] Flaky reports -- flaky-triage on each logged seed; verdict on the card.
+- [x] `deferred-work.md` -- `closed: 2026-11-16, …` lines per the ledger; one card for Sofia listing the starred owners.
 
 **Acceptance Criteria:**
 - Given the sweep is finished, when `pnpm check` and `pnpm test` run, then both pass.
@@ -187,9 +197,111 @@ Ledger (cards by summary). Lines read at `eb1872a`.
 
 ## Implementation Notes
 
+Stryker, `schema-fields.ts` and `read-kdl.ts` (2026-11-16): score 98.33, 221 killed, 14 timed out, 4 survived, none on a changed line.
+- `read-kdl.ts:34` ConditionalExpression `flattened === undefined ? …` → `false`: equivalent; `propertyLines` has only camel-cased string keys, so `get(undefined)` is `undefined`, as the guard gives. Proposed for a person: `// Stryker disable next-line ConditionalExpression: propertyLines has only string keys, so get(undefined) is undefined as the guard gives`.
+- `read-kdl.ts:136`, `:156` OptionalChaining `getLocation(x)?.start` → `getLocation(x).start`: equivalent over reachable inputs; every node and entry comes from `parseKdl`, which parses with `storeLocations: true`. Proposed: `// Stryker disable next-line OptionalChaining: every node and entry comes from parseKdl, which stores locations`.
+- `schema-fields.ts:78` ConditionalExpression `option !== undefined && v.is(option, value)` → `true && …`: implementation boundary; only a union holding a variant no option takes reaches it, and no Data Schema union does. No test; a person decides.
+
+Flaky reports: the `tooling/lint/` cards are stale (specs removed, f4df4b7). Full run 1 of `pnpm check` (seed 1794818345649) failed four Firefox editor tests, each a 15 s timeout inside Playwright's `hover`/`click` with no assertion failed: `slide-out.spec.ts` "opens and closes from the rail button, which says whether it is expanded" (the card's test), `group-borders.spec.ts` "strokes a group for a pointer inside a hole of its border, and a click there selects it", and `show-ids-and-links.spec.ts` "shows nothing while the pointer is over a slot's row" and "drops a pointed key's label, link and border at once when it deletes the key's group". `pnpm vitest run --sequence.seed=1794818345649 --project '@keeb-cad/editor (firefox)'` passed whole (72 files, 635 tests): not order. Source not confirmed (machine load during the full run is the candidate left); for a person to decide. No test, timeout or config changed.
+
+Decisions (agents, 2026-11-16), each for review:
+- `NestedInputDeclaration` is `DeclaredInput | ReferenceInputDeclaration`, not `DeclaredInput` alone, because `schema` declares no part, anchor or asset input yet and the spine's Data Schema must define them first.
+- `aContract` writes its lane key `parts`, not `[STAGE]`, because `lane-script.ts` imports `aContract` and the reverse import would be a cycle.
+- The moved parts builders are `unresolvedViolation`, `inputInvalidViolation`, `laneFailureViolation`, not `unresolved`, `inputInvalid`, `failure`, because `Name a thing for what it does` and `unsupportedFormViolation` is the pattern.
+- `unknownAnchorTargetMessage` names the first id, not every id, as `unknownOverrideTargetMessage` does, because SetAnchor refuses one target.
+- `app/src/testing/` gets its own `APP_TESTING` in the reference-designs and worker-entry fences, not the whole widened `TESTING_FOLDER`, because only app's helpers need it; `ui/testing` needs no new rule, because `only-tests-import-testing` already fences every `@keeb-cad/*/testing`.
+- `launch.spec.ts` asserts the opened design is a new `Untitled design`, not "not a stored id", and spies `backend.read` after arrange for "never trying the older", because those fail when the older is opened or tried.
+- `runCorneyScript` asserts the refused steps as one whole value, not `expectOk` per step, because `AGENTS.md` bans a loop around `expect`; `layout-set.spec.ts` adds the per-step `it.each`.
+- Composable specs build their own container with only the services the composable resolves, not `editorModule` or `mountShell`, because the arrangement copies `use-open-design.spec.ts`.
+- `useViolationCounts`' behind row posts at main's seq and then commits again, not a post at seq − 1, because the dispatcher drops a post below the latest seq it sent.
+- `hovered-node.spec.ts`'s moved tests assert the service (`hovered.id`, `selection.ids`), names kept, not drawn borders, because the task says `against the service`; `GRACE_MS = 300` is an expected constant, not `hoverGraceDelayMs`. `group-borders.spec.ts`'s Tree block keeps the canvas-level "clears the hovered group once the slide-out closes", which proves `TreeSlideOut`'s unmount calls `clearTreeHover` (toggled bug: that call commented out, red in Chromium and Firefox, restored).
+- `devtools-plugin.spec.ts` declares a spec-local `FailWithoutKind` action, not `TestBrokenStoreName`, because that one throws instead of answering an error with no `kind`.
+
+Decision (build): `eslint.config.ts` gains the file override `keeb-cad/key-frames-are-frames`, letting `unicorn/consistent-compound-words` accept `keyFrame` in `reference-designs/src`, not the rule's `Keyframe`, because Decision (Sergii, 2026-11-16) names `KeyFrame` (`CandidateKeyFrame`, `compareKeyFrames`, `keyFramesFrom`, `loadKeyFrames`) for the glossary's frame, and CSS's `keyframe` is another thing. Without it lint reports "Prefer `Keyframe` over `KeyFrame`" and "Prefer `CandidateKeyframe` over `CandidateKeyFrame`" (`unicorn/consistent-compound-words`, e.g. `key-centres/compare-key-frames.ts:2`).
+
+Decision (build): with the guard removed (Decision (Sergii, 2026-11-16, after the build)), `check-nested-inputs.ts`'s quantity default throws `InvariantError` on a parse failure, not a `nested-input` lane failure, because `parseExpression` returns a `Result` whose err branch must go somewhere and `model/src/placement/literal-value.ts` throws `InvariantError` for the same unreachable literal.
+
+Stryker exclusions (Decision (Sergii, 2026-11-16, after the build)): `read-kdl.ts`'s three equivalent mutants carry `// Stryker disable next-line` with the reasons above; lint accepts them (`no-warning-comments` bans only `eslint` terms; `storage` has the same comments).
+
+- Real-host run: `FakeWorker` stands in for the browser `Worker` in the status-strip and layout composable specs. `pnpm check` (exit 0, seed 1794822678964) runs app's real-worker specs (`app/src/layout-set.spec.ts`, `both-halves.spec.ts`) and the e2e journey, which spawn the real model worker in Chromium and Firefox, through the same lifecycle posts the specs fake.
+
 ## Plan Change Log
 
+2026-11-16, for Sergii (the frozen block is unchanged; these rows were built otherwise):
+- `usePlacedNodes`, one set: unreachable, since a `layout-set` post carries the Layout and parts outputs together and a commit clears both; built as "nothing before a set arrives → `[]`".
+- `usePlacedNodes`, both sets: rows in the worker's code-unit order, slot `left/a` before group `left/g`, not the table's order; the root is `root` (`designOf`), not `r`.
+- `useZoomReadout`: a raw zoom of 2 px/mm reads 53% (100% is 96/25.4 px/mm); built with `zoomForPercent(200)` reading `'200%'`.
+- App specs: `right-half.spec.ts`'s `reflected` still negates the left rows (the 31 right rows have no source but a run), and `corney-column.spec.ts`'s round trip still compares with the placements before the save; both cards stay open for Sergii.
+
+2026-11-16, review round 4 (Sergii chose a fourth patch round after pass 3):
+- `filesContaining`, ordering: built as `a.js`, `c.js`, `B/x.js` → `[B/x.js, a.js, c.js]`, not two flat files, because this tmpfs lists names sorted, so no flat write order fails without the sort; the recursive listing gives a nested file last. The row's rule (code-unit order, Sergii's pass-2 decision) is unchanged.
+- The `HoveredNode` canvas tests are back in `group-borders.spec.ts` beside the service copies, superseding the Implementation Notes line that only "clears the hovered group once the slide-out closes" stays: the frozen block allows no test removed, and each canvas test failed with its component line broken.
+- `launch.spec.ts` asserts the opened id is none of the stored ids (with stored designs present) and spies `backend.read` for "trying only it", superseding the Implementation Notes line on `Untitled design` (`A_NEW_DESIGN` tested `NewDesign`'s rule from `app`).
+
 ## Review Triage Log
+
+Pass 1, lenses quick and test-reviewer. 21 findings (8 quick, 13 test-reviewer), none dropped; 18 after merging the three both lenses raised. Verdicts: medium 4, low 12, false 2.
+
+| # | Lens | Finding | Verdict | Route | Evidence |
+|---|---|---|---|---|---|
+| 1 | quick | `committed` still copied in `launch.spec.ts:186`, `autosave.spec.ts:55`, `autosave-round-trip.spec.ts:32`, `bundle-round-trip.spec.ts:19`, while the A3 card says it lives once | medium | patch | grep finds the four copies; the closed card claims otherwise |
+| 2 | quick | `both-halves.spec.ts:56-57` loops `expectOk` over the script and builds its own worker `arrange` | medium | patch | `for (const { command, input } of …) { expectOk(…) }`; `AGENTS.md` `No if or loop around expect`; the duplicated-helpers card is closed |
+| 3 | quick | seven composable specs add the whole `editorModule` against the build's own decision | medium | patch | `use-selection.spec.ts:13` `.addModule(editorModule)`; `useSelection` resolves only `Selection`; `Arrange only what the test uses` |
+| 4 | both | `use-workspace.spec.ts` "leaves the location unchanged…" reads synchronously after an async setter | medium | patch | `use-workspace.ts` switches through `void invoke(…)`; the sibling needs `expect.poll`, so a wrongly allowed navigation lands after the read |
+| 5 | both | devtools rows' names say "titled" where the expects assert the subtitle | low | patch | `devtools-plugin.ts` sets `title: id`, `subtitle: #outcome`; direct rename |
+| 6 | quick | devtools spec declares `const emptyInputSchema = v.object({})` | low | patch | `commands/src/empty-input-schema.ts:3` exports the shared `v.strictObject({})`, which `AGENTS.md` names |
+| 7 | both | `files-containing.spec.ts` ordering row can pass with no sort and doesn't pin `localeCompare` | low | patch | `/tmp` is tmpfs (`df -T`), whose readdir lists newest first, so writing `b` then `a` already returns `[a, b]`; `a.js`/`b.js` sort the same under code units and `localeCompare` |
+| 8 | quick | `use-canvas-item*.spec.ts` assert `isSome()` booleans | low | patch | `use-canvas-items-root.spec.ts:39` `expect(items.size().isSome()).toBe(true)`; `assert whole values` |
+| 9 | quick | `id.spec.ts` asserts the empty id's issues twice | low | patch | the new `''` row (`:19`) and the kept test at `:24` assert one list; drop the row, the existing test stays |
+| 10 | test-reviewer | `use-hovered-node.spec.ts:53` advances by production's `hoverGraceDelayMs + 1` | low | patch | expected time from production; a spec-local `expected*` constant, as `hovered-node.spec.ts`'s `GRACE_MS` |
+| 11 | test-reviewer | `use-switch-grace.spec.ts` advances by production's `switchGraceDelayMs + 1` | low | patch | same as 10 |
+| 12 | test-reviewer | `hovered-node.spec.ts` "keeps a key's group shown…" asserts the hovered key | low | reject | the frozen block keeps moved tests' names and the task asserts the service; the hovered key is what decides the shown group |
+| 13 | test-reviewer | `use-worker-failure.spec.ts` copies `CRASH_CAP = 3` from production | false | reject | 23.23's verify states it: `three crashes each after a stage-started for plates end in failed` |
+| 14 | test-reviewer | `use-open-flow.spec.ts` builds an unopened entry by hand | low | reject | the frozen row asks for `read before opening`; no command reaches it, and the throw is the invariant |
+| 15 | test-reviewer | `corney-column.spec.ts` root ids read from the arranged design | low | reject | Sergii's decision keeps the round trip as a relation check |
+| 16 | test-reviewer | `layout-set.spec.ts` step rows ignore earlier steps' results | low | reject | a broken earlier step fails its own row first; a misleading name only on a cascade |
+| 17 | test-reviewer | `launch.spec.ts` asserts `read.mock.calls` | false | reject | the call is the behaviour ("never trying"), on the backend boundary; `AGENTS.md` allows `toHaveBeenCalled*` when the call is the behaviour |
+| 18 | test-reviewer | `check-nested-inputs.ts`'s new `InvariantError` has no test | low | reject | Sergii's decision: no typed value reaches it |
+
+
+Pass 2, lenses quick and test-reviewer, on the patched files. 13 findings (7 quick, 6 test-reviewer), none dropped. Verdicts: medium 4, low 6, false 3.
+
+| # | Lens | Finding | Verdict | Route | Evidence |
+|---|---|---|---|---|---|
+| 19 | test-reviewer | `files-containing.spec.ts` pins `localeCompare`, an ordering no one decided | medium | asked | Sergii: code-unit order, inlined in `files-containing.ts` (tooling can't import `schema`); row `c.js, a.js, B.js` → `[B, a, c]` |
+| 20 | quick | `both-halves.spec.ts` runs `runCorneyScript`, whose `NewDesign` replaces the design `Launch` opened | medium | patch | `run-corney-script.ts:11` `expectOk(await store.run(NewDesign, {}))`; `launch.ts:21-23` routes the first design; `Arrange only a state real commands could reach` |
+| 21 | quick | the canvas test that a key's border survives the slide-out closing moved to the service only | medium | patch | `hovered-node.spec.ts:130` calls `clearSetBy('tree')` directly; `TreeSlideOut.vue:26-28` swapped to `clear()` would pass every test; frozen `no test deleted or weakened` |
+| 22 | quick | `anchors.spec.ts:26-45`, `model-worker-entry.spec.ts:11-20` keep copies of `arrangeStore` and the derivations wiring | medium | patch | same bodies as `app/src/testing/arrange-store.ts`, `arrange-placements.ts`; the cards are closed |
+| 23 | quick | `use-hovered-node.spec.ts:95` comment cites 13.32's plan | low | patch | `AGENTS.md` `No AD-n or ticket references`; direct deletion of the reference |
+| 24 | quick | `devtools-plugin.spec.ts:402` arranges a design `FailWithoutKind` doesn't use | low | patch | the action's `available()` returns true and ignores the design; direct deletion |
+| 25 | quick | `launch.spec.ts:270-277` builds its own `MemoryBackend` that `arrange` already returns | low | patch | `arranged.backend` (`launch.spec.ts:170`); direct simplification |
+| 26 | quick | `devtools-plugin.spec.ts:374` no blank line before a test | low | patch | direct; prettier doesn't enforce it |
+| 27 | test-reviewer | composable grace rows lack just-below and on | false | reject | the thresholds live in `hovered-node.spec.ts:54-57,101-104` and `switch-grace.spec.ts:118-150`; `Test a rule where it is defined` |
+| 28 | test-reviewer | 200 ms taken as exact where the spine says about 200 | false | reject | `switch-grace.spec.ts:37` already pins `GRACE_MS = 200` on `main`; this change copies it |
+| 29 | test-reviewer | `use-workspace.spec.ts` absence check after a frame wait | low | reject | the build's toggle (a wrong navigation) went red with the settle and green without; a later-landing navigation needs an async invoke no entry has |
+| 30 | test-reviewer | `use-canvas-item.spec.ts` leaves x and y as `expect.any(Number)` | low | reject | x and y depend on the page's layout of the SVG; the size is the requirement |
+| 31 | test-reviewer | `use-group-borders.spec.ts` `arrange` branches on a given design | false | reject | an `if` in arrange, not around `expect`; `AGENTS.md` bans `if` or loop around `expect` |
+
+Pass 3, lenses quick and test-reviewer, on the pass-2 patches. 6 findings (5 quick, 1 test-reviewer, one raised by both), none dropped. Verdicts: medium 4, low 1. Above low on the third pass: halted for Sergii.
+
+| # | Lens | Finding | Verdict | Route | Evidence |
+|---|---|---|---|---|---|
+| 32 | both | `files-containing.spec.ts:51-56` passes with no sort | medium | patch (round 4, Sergii) | writing `c.js, a.js, B.js` lists `['B.js', 'a.js', 'c.js']` (node run, 2026-11-16), the expected order. Correction: this tmpfs lists names in sorted order, not newest first as rows 7 and 32 said; any flat write order passes unsorted, so the row nests `B/x.js`, which the recursive listing gives last |
+| 33 | quick | moving the grace tests to the service leaves `TreeSlideOut.vue:35` `leave()` and `GroupBorderTab.vue:45` `pointerenter` with no canvas test | medium | patch (round 4, Sergii) | the canvas tests "crosses slot rows" and "reaches its tab within the grace" now live only in `hovered-node.spec.ts:72,106`, which call the service; frozen `no test deleted or weakened` |
+| 34 | quick | `launch.spec.ts:311` "…trying only it" asserts only the opened design | medium | patch (round 4, Sergii) | its expect is `expect(opened(arranged)).toEqual(A_NEW_DESIGN)`; nothing checks the older is not read |
+| 35 | quick | `launch.spec.ts:36` `A_NEW_DESIGN` asserts `NewDesign`'s name, a pattern 23.7's review removed | medium | patch (round 4, Sergii) | `{ id: expect.any(String), name: 'Untitled design' }`; `Test a rule where it is defined` (`new-design.spec.ts:30`) |
+| 36 | quick | `app/src/layout-commands.spec.ts:18-26` copies `arrangeStore` | low | patch (round 4, Sergii) | same body as `app/src/testing/arrange-store.ts`; the duplicated-helpers card is closed |
+
+Pass 4, lenses quick and test-reviewer, on the round-4 patches. 8 findings (6 quick, 2 test-reviewer), none dropped; 4 of the quick ones were plan and ledger bookkeeping, fixed in the documents. Verdicts on code: low 4, false 1. Nothing above low: the loop ends, lows logged, not patched.
+
+| # | Lens | Finding | Verdict | Route | Evidence |
+|---|---|---|---|---|---|
+| 37 | quick | canvas and service `HoveredNode` tests share names; the card closed while its summary holds | false | reject | the canvas copies test wiring (each red with its component line broken), the service copies the rule; card's closing line updated to say so |
+| 38 | quick | `group-borders.spec.ts` reorders tests and drops a blank line | low | logged | no behaviour change; prettier passes |
+| 39 | quick | `launch.spec.ts:239,320` filter `read.mock.calls` before comparing | low | logged | the spy is the behaviour (#17); a filter over the older versions is the claim, not a narrowing of a returned value |
+| 40 | test-reviewer | "opens a new design on empty storage…" checks only the URL | low | logged | with nothing stored, "new" has no other observable; the removed check was vacuous |
+| 41 | test-reviewer | storage-unavailable row's URL check can't tell `older` | low | logged | nothing loads with storage unavailable, so `older` can't open; the URL check fails if launch keeps the old route |
+| — | quick | triage #33-36 still `asked`; Implementation Notes lines 213 and 217 stale; no change-log entry for the `filesContaining` row | — | fixed (docs) | rows set to `patch (round 4, Sergii)`; Plan Change Log entry added |
 
 ## Design Notes
 
