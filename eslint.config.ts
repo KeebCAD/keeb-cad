@@ -400,5 +400,15 @@ export default defineConfigWithVueTs(
     },
   },
 
+  {
+    // Playwright reads a fixture's dependencies from its first parameter's destructuring, which
+    // must be written even when, as for corney, there are none.
+    name: 'keeb-cad/fixture-without-dependencies',
+    files: ['app/e2e/corney-bundle/corney-test.ts'],
+    rules: {
+      'no-empty-pattern': 'off',
+    },
+  },
+
   skipFormatting,
 )
