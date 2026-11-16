@@ -120,6 +120,35 @@ describe('Pipeline', () => {
     ])
   })
 
+  it('posts the routing a patches message restores with the next derived files', async () => {
+    const { main } = await arrange()
+    const posts = recordPosts(main)
+    const loaded = aRoutingFile({ revision: aRevision('loaded') })
+    const restored = aRoutingFile({ revision: aRevision('restored') })
+
+    main.postMessage({ ...designMessage(1), routing: loaded })
+    main.postMessage({ ...patchesMessage(2), routing: restored })
+    await expect.poll(() => posts).toHaveLength(2 * POSTS_PER_SEQ)
+
+    expect(posts.slice(POSTS_PER_SEQ)).toContainEqual(
+      expect.objectContaining({ kind: 'derived-files', seq: 2, routing: restored }),
+    )
+  })
+
+  it("keeps the whole design's routing for a patches message that carries none", async () => {
+    const { main } = await arrange()
+    const posts = recordPosts(main)
+    const loaded = aRoutingFile({ revision: aRevision('loaded') })
+
+    main.postMessage({ ...designMessage(1), routing: loaded })
+    main.postMessage(patchesMessage(2))
+    await expect.poll(() => posts).toHaveLength(2 * POSTS_PER_SEQ)
+
+    expect(posts.slice(POSTS_PER_SEQ)).toContainEqual(
+      expect.objectContaining({ kind: 'derived-files', seq: 2, routing: loaded }),
+    )
+  })
+
   it('replaces the mirror with a later whole design', async () => {
     const { main, mirror } = await arrange()
     const posts = recordPosts(main)

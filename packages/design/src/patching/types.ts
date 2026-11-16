@@ -6,6 +6,7 @@ export type Writable<T> = Draft<T>
 export interface Changed {
   design: Frozen<Design>
   patches: readonly DesignPatch[]
+  inverse: readonly DesignPatch[]
 }
 
 export type Edit = (draft: Writable<Design>) => void | Rejection

@@ -220,6 +220,35 @@ describe('ModelWorkerLifecycle', () => {
       })
     })
 
+    it("forwards an undo's patches with the routing it restores, and a command's without", async () => {
+      const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true, renamable: true })
+      const loaded = committed(store)
+      lifecycle.start(spawn)
+      expectOk(store.run(RenameDesign, { name: 'Corne v2' }))
+      const renamed = committed(store)
+
+      expectOk(store.undo())
+
+      expect(latest(spawned).received.slice(-2)).toEqual([
+        {
+          kind: 'patches',
+          epoch: 1,
+          seq: renamed.seq,
+          patches: [{ op: 'replace', path: ['meta', 'name'], value: 'Corne v2' }],
+          revision: renamed.revision,
+        },
+        {
+          kind: 'patches',
+          epoch: 1,
+          seq: renamed.seq + 1,
+          patches: [{ op: 'replace', path: ['meta', 'name'], value: loaded.design.meta.name }],
+          revision: loaded.revision,
+          routing: loaded.routing,
+        },
+      ])
+      expect(latest(spawned).received.at(-2)).not.toHaveProperty('routing')
+    })
+
     it('sends a replaced design whole', async () => {
       const { store, lifecycle, spawn, spawned } = await arrange({ loaded: true })
       lifecycle.start(spawn)

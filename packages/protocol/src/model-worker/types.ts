@@ -25,7 +25,13 @@ export type ModelWorkerMessage = Stamp &
       }
     // Not Frozen: it would turn a patch's unknown value into {} and its path readonly, which
     // the patcher's apply refuses; the commit event hands patches over as this same type.
-    | { kind: 'patches'; patches: readonly DesignPatch[]; revision: Revision }
+    | {
+        kind: 'patches'
+        patches: readonly DesignPatch[]
+        revision: Revision
+        // Only undo and redo send it: the routing file they restore.
+        routing?: Frozen<RoutingFile>
+      }
     | { kind: 'focus'; workspace: Workspace }
     | { kind: 'issues'; violations: Frozen<Violation[]> }
     | { kind: 'stage-started'; stage: StageId }

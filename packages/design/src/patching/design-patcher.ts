@@ -12,13 +12,13 @@ export class DesignPatcher {
 
   change(design: Frozen<Design>, edit: Edit): Result<Changed, Rejection> {
     let rejection: Option<Rejection> = Option.none()
-    const [next, patches] = this.#immer.produceWithPatches(design, (draft) => {
+    const [next, patches, inverse] = this.#immer.produceWithPatches(design, (draft) => {
       const outcome = edit(draft)
       if (outcome !== undefined) rejection = Option.some(outcome)
     })
     return rejection.match<Result<Changed, Rejection>>({
       some: (refused) => Result.err(refused),
-      none: () => Result.ok({ design: next, patches }),
+      none: () => Result.ok({ design: next, patches, inverse }),
     })
   }
 

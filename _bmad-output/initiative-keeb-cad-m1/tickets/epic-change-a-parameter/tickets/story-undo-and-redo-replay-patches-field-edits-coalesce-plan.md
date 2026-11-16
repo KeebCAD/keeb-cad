@@ -3,14 +3,14 @@ title: 'Undo and redo replay patches, field edits coalesce'
 type: 'feature'
 ticket: '1'
 created: '2026-11-16'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '8f34d1e8a8fc7ba12c7c2805e7cc02cddf1da390'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick', 'test-reviewer']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md'
@@ -69,18 +69,18 @@ See `## Boundary table` (frozen with this block).
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `packages/design/src/patching/types.ts`, `design-patcher.ts`, `design-patcher.spec.ts` -- `Changed` gains `inverse: readonly DesignPatch[]`; `DesignPatcher.change` (existing method of a service) returns it; row U0.
-- [ ] `packages/design/src/history/types.ts`, `undo-history.ts` -- `UndoHistory` (service): private fields for the undo records' routing references, the undo entries `{ coalesce: Option<string>, forward, inverse }`, the cursor and the open session's key; no reactive state, since nothing in 14.1 reads it reactively. Methods: `reset(routing)`, `record(changed, routing, coalesce?)` (append, or fold when the open session's key equals `coalesce`; drops redo entries; the undo record it reaches takes `routing`), `undo(): Option<PatchReplay>`, `redo(): Option<PatchReplay>` (`PatchReplay` = the patches to apply and the routing to restore, named for the ticket's "replay patches"; both close the session), and `acceptRouting(routing)` (swaps the current undo record's reference).
-- [ ] `packages/design/src/design-module.ts` -- register `UndoHistory` (not eager).
-- [ ] `packages/design/src/store/types.ts`, `design-store.ts` -- `DesignStore` (service) gains methods `undo()` and `redo()`. `RunOptions { coalesce?: string }` in `types.ts`; the command overload of `run` takes `options?: RunOptions`; a commit records into `UndoHistory` with the routing current at it; `undo`/`redo` apply the step's patches, `#write` with the restored routing and current fingerprints, emit `{ kind: 'patches', patches, seq, revision, routing }`; an empty side returns `{ kind: 'unavailable', command: 'design.undo' | 'design.redo' }`; `replaceDesign` resets the history; `acceptDerivedFiles` at the current seq calls `acceptRouting`. `CommitEvent`'s `patches` variant gains `routing?: Frozen<RoutingFile>` (present only for undo and redo).
-- [ ] `packages/design/src/index.ts` -- export `RunOptions`.
-- [ ] `packages/protocol/src/model-worker/types.ts` -- `patches` message gains `routing?: Frozen<RoutingFile>`.
-- [ ] `packages/workers/src/model-worker/model-worker-lifecycle.ts` -- `ModelWorkerLifecycle` (service): `#commit` forwards `event.routing` when present.
-- [ ] `packages/pipeline/src/pipeline/pipeline.ts` -- `Pipeline` (service): `#receivePatches` replaces `#routing` (deep-frozen) when the message carries one.
-- [ ] `packages/design/src/store/design-store-undo.spec.ts` -- boundary rows U1-U30, with spec-local test commands (test fixtures, untagged).
-- [ ] `packages/design/src/mirror/mirror-follows-the-store.spec.ts` -- rows M*.
-- [ ] `packages/workers/src/model-worker/model-worker-lifecycle.spec.ts`, `packages/pipeline/src/pipeline/pipeline.spec.ts` -- rows W*, P*.
-- [ ] `app/src/undo-redo.spec.ts` -- rows A*.
+- [x] `packages/design/src/patching/types.ts`, `design-patcher.ts`, `design-patcher.spec.ts` -- `Changed` gains `inverse: readonly DesignPatch[]`; `DesignPatcher.change` (existing method of a service) returns it; row U0.
+- [x] `packages/design/src/history/types.ts`, `undo-history.ts` -- `UndoHistory` (service): private fields for the undo records' routing references, the undo entries `{ coalesce: Option<string>, forward, inverse }`, the cursor and the open session's key; no reactive state, since nothing in 14.1 reads it reactively. Methods: `reset(routing)`, `record(changed, routing, coalesce?)` (append, or fold when the open session's key equals `coalesce`; drops redo entries; the undo record it reaches takes `routing`), `undo(): Option<PatchReplay>`, `redo(): Option<PatchReplay>` (`PatchReplay` = the patches to apply and the routing to restore, named for the ticket's "replay patches"; both close the session), and `acceptRouting(routing)` (swaps the current undo record's reference).
+- [x] `packages/design/src/design-module.ts` -- register `UndoHistory` (not eager).
+- [x] `packages/design/src/store/types.ts`, `design-store.ts` -- `DesignStore` (service) gains methods `undo()` and `redo()`. `RunOptions { coalesce?: string }` in `types.ts`; the command overload of `run` takes `options?: RunOptions`; a commit records into `UndoHistory` with the routing current at it; `undo`/`redo` apply the step's patches, `#write` with the restored routing and current fingerprints, emit `{ kind: 'patches', patches, seq, revision, routing }`; an empty side returns `{ kind: 'unavailable', command: 'design.undo' | 'design.redo' }`; `replaceDesign` resets the history; `acceptDerivedFiles` at the current seq calls `acceptRouting`. `CommitEvent`'s `patches` variant gains `routing?: Frozen<RoutingFile>` (present only for undo and redo).
+- [x] `packages/design/src/index.ts` -- export `RunOptions`.
+- [x] `packages/protocol/src/model-worker/types.ts` -- `patches` message gains `routing?: Frozen<RoutingFile>`.
+- [x] `packages/workers/src/model-worker/model-worker-lifecycle.ts` -- `ModelWorkerLifecycle` (service): `#commit` forwards `event.routing` when present.
+- [x] `packages/pipeline/src/pipeline/pipeline.ts` -- `Pipeline` (service): `#receivePatches` replaces `#routing` (deep-frozen) when the message carries one.
+- [x] `packages/design/src/store/design-store-undo.spec.ts` -- boundary rows U1-U30, with spec-local test commands (test fixtures, untagged).
+- [x] `packages/design/src/mirror/mirror-follows-the-store.spec.ts` -- rows M*.
+- [x] `packages/workers/src/model-worker/model-worker-lifecycle.spec.ts`, `packages/pipeline/src/pipeline/pipeline.spec.ts` -- rows W*, P*.
+- [x] `app/src/undo-redo.spec.ts` -- rows A*.
 
 **Acceptance Criteria:**
 - Given Corney's script run on a new design, when every step is undone and then redone, then the bundle texts after each undo and redo equal the texts recorded at that revision, and a same-thread mirror fed from the commit events equals the store's design after each.
@@ -89,9 +89,32 @@ See `## Boundary table` (frozen with this block).
 
 ## Implementation Notes
 
+- Decision (Sergii, 2026-11-16): an undo or redo that finds its side empty leaves an open coalesce session open, not closes it, because it changes nothing, as with a command that produces no patches.
+- Decision (build): `UndoHistory.record` drops redo entries, not the store, because the plan's task puts it there ("drops redo entries").
+- Real-host run: a temporary `app` spec on the real model worker (`arrangeModelWorker`): `NewDesign`, `AddGroup { arrangement: 'free' }`, wait for the worker's accept at seq 2, `acceptDerivedFiles` a routing file tagged `ry` at seq 2, undo, redo, wait for the worker's accept at seq 4; `committed(store).routing.revision` is `ry` (2 passed, Chromium and Firefox). With the pipeline's routing line removed: `expected '21cbbae8…' to be 'ry'` (2 failed). Spec removed afterwards.
+- Toggled bugs (implementer): fold inverse order reversed, `acceptRouting` a no-op, session left open on undo/redo, undo applying forward patches, pipeline routing line removed, workers forward removed: each turned its rows red.
+- Verification: `pnpm vitest run packages/design packages/workers packages/pipeline app/src/undo-redo.spec.ts`: 52 files, 562 tests passed; `pnpm test`: 757 files, 5771 tests passed, no type errors.
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+Pass 1 (quick, test-reviewer) on the diff since `8f34d1e`: high 0, medium 0, low 10, false 1, maybe-false 0. Patched: 9 entries (all low; direct fixes).
+- low, patch: `model-worker-lifecycle.ts:126` sets `routing: undefined` on a command's message, against the task's "when present"; W1's `toEqual` cannot see it (quick + test-reviewer, one root cause). Conditional key; W1 asserts no `routing` property.
+- low, patch: Sergii's empty-side decision has no failing test; `records a session after an unavailable undo` runs before any session opens (test-reviewer). New test: open session, empty redo, same key, one entry.
+- low, patch: U9's test asserts only the rejection, not "design and seq unchanged" (quick).
+- low, patch: module-level `R0`…`REFUSAL` deep-frozen in place by `replaceDesign`/`acceptDerivedFiles` (`deep-freeze.ts`, Immer `freeze(value, true)`), shared across tests (quick + test-reviewer).
+- low, patch: the coalescing `it.each` loops over `rename`, which calls `expectOk` (quick).
+- low, patch: U10 asserts `current` twice (quick).
+- low, patch: A2 folds the cascade precondition into the claim's assertion (quick + test-reviewer).
+- low, patch: `app` `replayAll` has no bound, so a runaway history hangs instead of failing (quick).
+- low, patch: P2's expected `'r0'` comes from `designMessage`'s hidden `derivedFiles()` default (quick).
+- false: "Review Triage Log empty while `lenses_ran` is set" -- triage of this pass is this entry.
+
+Pass 2 (quick, test-reviewer) on the patch diff since pass 1: high 0, medium 0, low 3, false 0, maybe-false 0. Nothing above low and no frozen-block break: the loop ends; lows logged, not patched.
+- low, logged: U9's test now asserts "design and seq unchanged" under a name about recording a session, narrowed to `{ design, seq }`, repeating U10's whole-value check (quick + test-reviewer).
+- low, logged: the coalescing `it.each` narrows each run's `Result` to `.kind` and restates `rename`'s options ternary (quick + test-reviewer).
+- low, logged: W1 picks the command's message by index (`received.at(-2)`), so an extra message would make `not.toHaveProperty('routing')` inspect the wrong one (test-reviewer).
 
 ## Design Notes
 

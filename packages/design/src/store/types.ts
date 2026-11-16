@@ -21,8 +21,19 @@ export interface Committed {
 }
 
 export type CommitEvent =
-  | { kind: 'patches'; patches: readonly DesignPatch[]; seq: number; revision: Revision }
+  | {
+      kind: 'patches'
+      patches: readonly DesignPatch[]
+      seq: number
+      revision: Revision
+      // Only undo and redo carry it: the routing file they restore.
+      routing?: Frozen<RoutingFile>
+    }
   | { kind: 'whole'; committed: Committed }
+
+export interface RunOptions {
+  coalesce?: string
+}
 
 export type DesignStoreEvents = {
   commit: (event: CommitEvent) => void

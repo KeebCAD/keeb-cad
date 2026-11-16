@@ -13,6 +13,7 @@ import type { Writable } from '../patching/types'
 import { DesignStore } from '../store/design-store'
 import type { Committed, CommitEvent } from '../store/types'
 import { expectDeeplyFrozen } from '../testing'
+import { findUnfrozen } from '../testing/find-unfrozen'
 import { designWorkerModule } from '../worker-module'
 import { DesignMirror } from './design-mirror'
 import { DesignMirrorWriter } from './design-mirror-writer'
@@ -89,5 +90,27 @@ describe('the design mirror', () => {
       design: committed(store).design,
       revision: committed(store).revision,
     })
+  })
+
+  it('follows the store through commands, an undo and a redo, deeply frozen after each', async () => {
+    const { store, writer, mirror } = await arrange()
+    const followed: { mirror: Frozen<Design>; store: Frozen<Design> }[] = []
+    store.events.on('commit', (event) => {
+      if (event.kind !== 'patches') return
+      writer.apply(structuredClone(event.patches), event.revision)
+      followed.push({ mirror: mirror.value, store: committed(store).design })
+    })
+
+    expectOk(store.run(RenameDesign, { name: 'A' }))
+    expectOk(store.run(RenameDesign, { name: 'B' }))
+    expectOk(store.undo())
+    expectOk(store.redo())
+
+    const names = followed.map(({ store: design }) => design.meta.name)
+    expect(names).toEqual(['A', 'B', 'A', 'B'])
+    expect(followed.map(({ mirror: design }) => design)).toEqual(
+      followed.map(({ store: design }) => design),
+    )
+    expect(followed.map(({ mirror: design }) => findUnfrozen(design))).toEqual([[], [], [], []])
   })
 })

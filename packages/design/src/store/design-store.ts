@@ -20,6 +20,8 @@ import type * as v from 'valibot'
 
 import { actions, commands } from '../entries/tokens'
 import type { ActionError, ActionHandle, CommandHandle } from '../entries/types'
+import type { PatchReplay } from '../history/types'
+import { UndoHistory } from '../history/undo-history'
 import { formatIssuePaths } from '../parsing/format-issue-paths'
 import { parse } from '../parsing/parse'
 import { deepFreeze } from '../patching/deep-freeze'
@@ -34,6 +36,7 @@ import type {
   Committed,
   DerivedFiles,
   DesignStoreEvents,
+  RunOptions,
   Subscribable,
   TypedEmitter,
 } from './types'
@@ -52,7 +55,11 @@ export class DesignStore {
     return Option.fromNullable(this.#current.value)
   }
 
-  run<H extends CommandHandle>(handle: H, input: v.InferInput<H['input']>): Result<void, Rejection>
+  run<H extends CommandHandle>(
+    handle: H,
+    input: v.InferInput<H['input']>,
+    options?: RunOptions,
+  ): Result<void, Rejection>
   run<H extends ActionHandle>(
     handle: H,
     input: v.InferInput<H['input']>,
@@ -60,11 +67,12 @@ export class DesignStore {
   run(
     handle: CommandHandle | ActionHandle,
     input: unknown,
+    options: RunOptions = {},
   ): Result<void, Rejection> | AsyncResult<void, unknown> {
     return match(handle)
       .with(
         P.when((entry): entry is CommandHandle => entry.kind === 'command'),
-        (command) => this.#runCommand(command, input),
+        (command) => this.#runCommand(command, input, options.coalesce),
       )
       .with(
         P.when((entry): entry is ActionHandle => entry.kind === 'action'),
@@ -79,6 +87,14 @@ export class DesignStore {
     return handle === undefined
       ? Result.err({ kind: 'unknown-command', command })
       : this.#runCommand(handle, input)
+  }
+
+  undo(): Result<void, Rejection> {
+    return this.#replay(this.#history.undo(), 'design.undo')
+  }
+
+  redo(): Result<void, Rejection> {
+    return this.#replay(this.#history.redo(), 'design.redo')
   }
 
   // Parses before it checks, as run does, so a check only ever sees input its schema accepts.
@@ -121,6 +137,7 @@ export class DesignStore {
         ),
         revision,
       })
+      this.#history.reset(committed.routing)
       const emptied = [routing, fingerprints].flatMap((read) =>
         read.match({ ok: (): Emptied[] => [], err: (reason) => [reason] }),
       )
@@ -143,17 +160,19 @@ export class DesignStore {
       fingerprints: deepFreeze(files.fingerprints),
     }
     this.#current.value = committed
+    this.#history.acceptRouting(committed.routing)
     this.#emitter.emit('accept', committed)
   }
 
   readonly #patcher = inject(DesignPatcher)
+  readonly #history = inject(UndoHistory)
   readonly #commands = inject(commands)
   readonly #actions = inject(actions)
   readonly #injector = inject(InjectorToken)
   readonly #emitter: TypedEmitter<DesignStoreEvents> = createNanoEvents<DesignStoreEvents>()
   readonly #current = shallowRef<Committed | undefined>(undefined)
 
-  #runCommand(handle: CommandHandle, input: unknown): Result<void, Rejection> {
+  #runCommand(handle: CommandHandle, input: unknown, coalesce?: string): Result<void, Rejection> {
     this.#ensureRegistered(this.#commands, handle)
     const copied = this.#copyInput(input)
     const current = this.#committed()
@@ -166,7 +185,8 @@ export class DesignStore {
           ),
         ),
       )
-      .flatMap(({ design: next, patches }): Result<void, Rejection> => {
+      .flatMap((changed): Result<void, Rejection> => {
+        const { design: next, patches } = changed
         if (patches.length === 0) return Result.ok()
         this.#ensureValidDesign(next, handle.id)
         return checkStructure(design, next)
@@ -177,9 +197,28 @@ export class DesignStore {
               design: next,
               revision: revisionOf(next),
             })
+            this.#history.record(changed, current.routing, coalesce)
             this.#emitter.emit('commit', { kind: 'patches', patches, seq, revision })
           })
       })
+  }
+
+  #replay(replay: Option<PatchReplay>, command: string): Result<void, Rejection> {
+    return replay.match<Result<void, Rejection>>({
+      none: () => Result.err({ kind: 'unavailable', command }),
+      some: ({ patches, routing }) => {
+        const current = this.#committed()
+        const design = this.#patcher.apply(current.design, patches)
+        const { seq, revision } = this.#write({
+          ...current,
+          design,
+          routing,
+          revision: revisionOf(design),
+        })
+        this.#emitter.emit('commit', { kind: 'patches', patches, seq, revision, routing })
+        return Result.ok()
+      },
+    })
   }
 
   #runAction(handle: ActionHandle, input: unknown): AsyncResult<void, unknown> {
