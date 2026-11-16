@@ -56,6 +56,7 @@ export class Pipeline {
 
   #receivePatches(endpoint: Endpoint, message: PatchesMessage): void {
     this.#writer.apply(message.patches, message.revision)
+    if (message.routing !== undefined) this.#routing.value = deepFreeze(message.routing)
     this.#enterPause(endpoint, message)
   }
 

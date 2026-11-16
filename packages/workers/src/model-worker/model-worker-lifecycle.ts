@@ -123,6 +123,7 @@ export class ModelWorkerLifecycle {
       seq: event.seq,
       patches: event.patches,
       revision: event.revision,
+      ...(event.routing === undefined ? {} : { routing: event.routing }),
     })
   }
 

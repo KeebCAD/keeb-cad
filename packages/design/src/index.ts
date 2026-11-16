@@ -9,6 +9,7 @@ export type {
   CommitEvent,
   DerivedFiles,
   DesignStoreEvents,
+  RunOptions,
   Subscribable,
   TypedEmitter,
 } from './store/types'

@@ -26,7 +26,20 @@ describe('DesignPatcher', () => {
     expect(changed.value).toEqual({
       design: { ...design, meta: { ...design.meta, name: 'Corne v2' } },
       patches: [{ op: 'replace', path: ['meta', 'name'], value: 'Corne v2' }],
+      inverse: [{ op: 'replace', path: ['meta', 'name'], value: design.meta.name }],
     })
+  })
+
+  it('returns inverse patches that take the changed design back to the original', () => {
+    const { patcher, design } = arrange()
+    const changed = patcher.change(design, (draft) => {
+      draft.meta.name = 'Corne v2'
+    })
+    expectOk(changed)
+
+    const restored = patcher.apply(changed.value.design, changed.value.inverse)
+
+    expect(restored).toEqual(design)
   })
 
   it('returns the rejection an edit returns and leaves the design as it was', () => {
