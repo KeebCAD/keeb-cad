@@ -10,14 +10,14 @@ import {
   linkEnds,
   screenOf,
 } from '../../testing/ids-and-links'
-import { designWith, key, layoutOf } from '../../testing/layout-canvas'
+import { key } from '../../testing/canvas-queries'
+import { designWith } from '../../testing/designs'
+import { layoutOf } from '../../testing/layout-rows'
 import { matrixAndThumbfan } from '../../testing/matrix-and-thumbfan'
 import type { Point } from '../../viewport/types'
 
 // The gap between the key's lowest point and the label's top.
 const LABEL_GAP_PX = 3
-// A 1.5u key.
-const WIDE_KEY = { w: 27, h: 18 }
 // Browser-measured boxes come from float transforms, so they agree to the nearest pixel, ±0.5 px.
 const MEASURED_PX_DIGITS = 0
 // Link ends are written as attributes from the same floats, so they agree far below a pixel.
@@ -72,7 +72,7 @@ async function expectLabelUnderKey(placement: string): Promise<void> {
 describe("a pointed slot's id label", () => {
   beforeEach(() => emulateColorScheme('dark'))
 
-  it('reads the id, centred under the key, and the link runs from the anchor point to the frame', async () => {
+  it("reads the id, centred under the key, with the link from the anchor point to the frame and its group's border", async () => {
     const { design, layout } = matrixAndThumbfan()
     await arrangeIdsAndLinks(design, layout)
 
@@ -94,10 +94,11 @@ describe("a pointed slot's id label", () => {
   it.each([0, 30, 90])(
     'sits under the lowest drawn point of a 1.5u key turned %i°',
     async (rot) => {
+      const wideKey = { w: 27, h: 18 }
       await arrangeIdsAndLinks(
         designWith('k'),
         layoutOf({ k: aLayoutRow({ frame: { x: 0, y: 0, rot, mirrored: false } }) }),
-        aPartsOutput({ ids: ['key@a'], rows: [WIDE_KEY] }),
+        aPartsOutput({ ids: ['key@a'], rows: [wideKey] }),
       )
 
       await userEvent.hover(key('left/k'))

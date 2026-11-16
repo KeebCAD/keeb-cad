@@ -14,6 +14,7 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-workspace-matches-the-2026-10-30-spine-plan.md`
   summary: Add a spine-wide no-Pinia dependency-cruiser fence; today `app/` and `packages/ui/` may import pinia (and ui vue-router) because `only-editor-imports-vue` exempts both; after 23.1 the Vue exemption moves from `app/` to `packages/editor/` (spine b9b4ec5).
   evidence: AD-10 says "No Pinia"; `only-editor-imports-vue` has `from.pathNot: ['^app/', '^packages/ui/']`, so pinia in VUE names fences only packages that may not import Vue at all. The app exemption predates 13.9.
+  closed: 2026-11-16, accepted, by 13.13 (Decision (Sergii, 2026-11-16)): no no-Pinia rule, because pinia is in no package.json and `catalogMode: strict` makes adding it a reviewed catalog change.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/tickets/story-the-thread-plumbing-matches-the-spine-plan.md`
   summary: AGENTS.md's "proven by the violation tree in tooling/ad10/" is stale; the graph rules are now proven by a tree rules.spec.ts generates from GRAPH, the committed tree only holds subpath, fence, kernel and npm fixtures.
   evidence: 23.1 review pass 1, finding 5; AGENTS.md line 17 vs tooling/ad10/rules.spec.ts.
@@ -313,15 +314,17 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
   summary: E11: `spawn()` throwing synchronously; `writeBundle` throwing inside the commit emit, skipping later listeners; `Autosave` and `ModelWorkerLifecycle` not disposable; (not verified) `indexedDB` read eagerly where the accessor itself throws.
   evidence: `packages/workers/src/model-worker/model-worker-lifecycle.ts:103`, `app/src/autosave/autosave.ts:28`, `packages/storage/src/browser/browser-storage-access.ts:3`. Unreachable today.
-  owner: the next refactor sweep.
+  owner: Sofia slices E11 as its own story (Decision (Sergii, 2026-11-16) at 13.13: guards and disposables change behaviour, and the sweep is cleanup only); see 13.13's card for Sofia.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
   summary: A3: small duplications: plain-object check, code-unit comparator, `Dispatcher` registration, a `committed` helper in four specs.
   evidence: `packages/hashing/src/is-plain-object.ts:2-3`, `packages/messaging/src/sending/assert-plain.ts:20-21`, `packages/hashing/src/canonical-encoding.ts:19`, `packages/design/src/parsing/format-issue-paths.ts:6`.
   owner: the next refactor sweep.
+  closed: 2026-11-16, by 13.13: the comparator is `schema`'s one `compareCodeUnits` (`by-code-unit.ts` gone, `format-issue-paths.ts` uses it; `hashing` keeps its copy, a kernel may import only `result`); `committed` lives once in `app/src/testing/committed.ts`; the plain-object check and the `Dispatcher` registration stay as they are, accepted (13.13 plan, Design Notes).
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
   summary: A4: hand-written `switch` on tags in `design-file`, where other packages use ts-pattern.
   evidence: `packages/design-file/src/codec/schema-fields.ts:23`, `read-kdl.ts:67`.
   owner: the next refactor sweep.
+  closed: 2026-11-16, by 13.13: `design-file`'s `schema-fields.ts` and `read-kdl.ts` match tags with ts-pattern's `match`.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-a-new-design-opens/epic-a-new-design-opens-retrospective.md`
   summary: E9: should opening a design with no edit write autosave and move `savedAt`, which orders `listDesigns`?
   evidence: In the served build the stored version went from 2 to 4 with no edit; `app/src/autosave/autosave.ts:10-11` saves on `commit` and `accept`.
@@ -354,24 +357,31 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-library-blueprints-build-and-run-in-the-model-worker-plan.md`
   summary: Add BP-8's refusal of an anchor input on a `parts` lane with the story that adds `InputValue`'s anchor variant.
   evidence: 13.21 fails every anchor input at build, so no source can reach the check. Decision, Sergii, 2026-11-09.
+  owner: Sofia folds it into the story that adds `InputValue`'s anchor variant; see 13.13's card for Sofia.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-library-blueprints-build-and-run-in-the-model-worker-plan.md`
   summary: Split `packages/blueprint/src/testing/a-pinned-blueprint.ts` by concept and build `aContract` on `aBlueprintDeclaration`.
   evidence: `export const MIB = 1024 * 1024` beside pins and scripts; AGENTS.md `helpers over one concept share a file named for it`, `never a copied literal`.
+  closed: 2026-11-16, by 13.13: split into `a-contract.ts` (built on `aBlueprintDeclaration`), `lane-script.ts`, `a-pin.ts`, `stage-calls.ts` and `mib.ts`.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-library-blueprints-build-and-run-in-the-model-worker-plan.md`
   summary: Import `devtoolsPluginId` in `tooling/check-dist/check-dist.ts` through a package export.
   evidence: `from '../../packages/editor/src/devtools/plugin-id.ts'`; spine `Each closes its public surface through package \`exports\``.
+  closed: 2026-11-16, accepted, by 13.13 (Decision (Sergii, 2026-11-16)): tooling sits outside the package graph, so an `exports` subpath would exist only for it.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-library-blueprints-build-and-run-in-the-model-worker-plan.md`
   summary: Decide or pin `filesContaining`'s `localeCompare` sort, its throw on an empty folder and an empty needle.
   evidence: `tooling/check-dist/files-containing.ts` `.toSorted((a, b) => a.localeCompare(b))`; no test has two results; AGENTS.md `Give every threshold three rows`.
+  closed: 2026-11-16, by 13.13: the order is pinned by `files-containing.spec.ts`'s ordering row; the empty needle is left out (Decision (Sergii, 2026-11-16): only a hand-edited Corney script reaches it, and the check then fails loudly).
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-library-blueprints-build-and-run-in-the-model-worker-plan.md`
   summary: Replace the cast in `check-nested-inputs.ts` and the parallel `NestedInputDeclaration` with `schema`'s types.
   evidence: `(value as { value: string }).value`; AD-24 `A type whose value has a schema is inferred from it`.
+  closed: 2026-11-16, by 13.13: `check-nested-inputs.ts` uses `schema`'s inferred type, no cast.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-library-blueprints-build-and-run-in-the-model-worker-plan.md`
   summary: Move recording out of `arrange()` in `packages/pipeline/src/pipeline/pipeline.spec.ts`.
   evidence: `port2.addEventListener('message', (event) => posts.push(event.data))` inside `arrange`; AGENTS.md `Start recording after arrange`.
+  closed: 2026-11-16, by 13.13: each test starts recording after `arrange`.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-library-blueprints-build-and-run-in-the-model-worker-plan.md`
   summary: 13.18 re-enters the backoff after running stages when a VM was lost mid-stage.
   evidence: `blueprint-pause.ts` reads `hasUnavailable` only after its own pause; no stage calls `runLane` until 13.18. Decision, Sergii, 2026-11-09; on 13.18's ticket.
+  closed: 2026-11-16, stale, at 13.13: 13.18 built it; `pipeline/src/pause/blueprint-pause.ts:40` reads `hasUnavailable` after the run.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-a-new-design-holds-a-default-key-part-plan.md`
   summary: Show a part's last good output for a later failing run.
   evidence: 13.18 stands the slot in on every failure; no command changes a part's inputs yet, so only 13.4 can reach a later failing run. Decision (plan).
@@ -380,6 +390,7 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-a-new-design-holds-a-default-key-part-plan.md`
   summary: Report a lane's `problems` as violations once the `blueprint` violation kind arrives.
   evidence: `createDerivations` reads only a run's `rectangle` output; BP-8 `problems` become `blueprint` violations; `ViolationKind` has no `blueprint` member.
+  owner: Sofia folds it into the story that adds the `blueprint` violation kind; see 13.13's card for Sofia.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-a-new-design-holds-a-default-key-part-plan.md`
   summary: Pass quantity inputs to lanes as numbers once `expr` has an evaluator.
   evidence: `createDerivations` hands lanes the resolved inputs as written, a quantity as `{ type: 'quantity', value }`; BP-8 `quantities as numbers in mm or deg`; `expr` exports only `parseExpression`.
@@ -389,38 +400,48 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
   summary: Sofia updates 13.22's ticket: model's layout rows already carry `part` as the PartsOutput row index, so the LayoutOutput codec no longer turns a run id into a row.
   evidence: Sergii's answer on 13.2 (2026-11-10); the spine's Data Schema `LayoutOutput.part` line was updated to match; the build workflow never writes ticket files.
+  closed: 2026-11-16, stale, at 13.13: 13.22's ticket already says it (tickets.toml lines 90-91).
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
   summary: Sofia adds to 13.3's ticket that DuplicateNode remaps references inside the copy through the reference walk, with its tests, now that anchors make a node-to-node reference reachable.
   evidence: Sergii, 2026-11-10: nothing in 13.2's schema points at a node, so the remap can't be tested there; spine AD-2 updated to say it lands with 13.3's anchors.
+  closed: 2026-11-16, stale, at 13.13: 13.3's ticket already says it (tickets.toml lines 101-102), and `model/src/layout-editing/duplicate-node.spec.ts:77` tests the remap.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
   summary: Precedent fix: packages/model/src/parts/create-derivations.ts holds rectangleOf, partsOutputOf, unresolved and failure beside createDerivations; move each helper to its own file.
   evidence: AGENTS.md "Give each file one kind of thing"; found by 13.2's conformance review.
+  closed: 2026-11-16, by 13.13: each helper and builder in its own file in `model/src/parts/`.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
   summary: Precedent fix: DeletePartInput sits in packages/commands/src/types.ts; move it to packages/commands/src/parts/types.ts.
   evidence: AGENTS.md "type RenameDesignInput = v.InferOutput<typeof renameDesignInputSchema> in the folder's types.ts"; found by 13.2's conformance review.
+  closed: 2026-11-16, by 13.13: `DeletePartInput` is in `commands/src/parts/types.ts`.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
   summary: Precedent fix: app/src/default-key-part.spec.ts arrange() returns lifecycle, which the parts.deletePart test never uses.
   evidence: AGENTS.md "Arrange only what the test uses, passed as arguments to an arrange helper"; found by 13.2's conformance review (low).
+  closed: 2026-11-16, by 13.13: `arrange` returns only what the tests use.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
   summary: Precedent fix: packages/commands/src/parts/delete-part.spec.ts wires DesignStore and modules inside commands; move that wiring to an app integration test and keep a unit test of DeletePart.apply.
   evidence: AGENTS.md "test wiring between packages as integration in pipeline or app"; found by 13.2's final conformance pass.
+  closed: 2026-11-16, by 13.13: `delete-part.spec.ts` keeps unit rows on an `aDesign` draft; the wiring rows are `app/src/delete-part.spec.ts`.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
   summary: Precedent fix: packages/commands/src/parts/delete-part.ts casts the draft with "as Mutable<Design>", which hides AD-2's compile check that Writable<Design> is assignable to Mutable<Design>; drop the cast.
   evidence: spine AD-2 "Writable<Design> must be assignable to Mutable<Design>, checked by the compiler"; found by 13.2's final conformance pass.
+  closed: 2026-11-16, by 13.13: the cast is gone; `tsc` checks `Writable<Design>` against `Mutable<Design>` again.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
   summary: Flaky under full-suite load, untouched by 13.2: tooling/lint/no-focused-tests.spec.ts "allows a plain it" failed once in pnpm test and passed alone three times; it loads the ESLint config cold under COLD_CONFIG_TIMEOUT. Run flaky-triage on it.
   evidence: 2026-11-10, 13.2 branch, full run 1 after review patches; 3 isolated passes; git diff since baseline touches nothing under tooling/lint.
+  closed: 2026-11-16, stale, at 13.13: the `tooling/lint/` specs were removed (f4df4b7).
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-one-corney-column-resolves-from-a-chain-plan.md`
   summary: Flaky under full-suite load, untouched by 13.2: packages/editor/src/slide-out/slide-out.spec.ts (Firefox) "opens and closes from the rail button, which says whether it is expanded" failed once in pnpm test and passed alone twice. Run flaky-triage on it.
   evidence: 2026-11-10, 13.2 branch, full run 2 after review patches; 2 isolated passes; the branch changes nothing in packages/editor.
+  progress: 2026-11-16, 13.13: recurred in `pnpm check` run 1 (seed 1794818345649, load average 10-12) with three other Firefox editor tests (`group-borders.spec.ts` hole hover, `show-ids-and-links.spec.ts` Tree row and commit rows), each a 15 s timeout inside Playwright's `hover`/`click`, no assertion failed; the seed replayed green on `@keeb-cad/editor (firefox)` alone (635 tests) and run 2 (seed 1794818670409) passed whole. Not order; source not confirmed (machine load is the candidate left). No test, timeout or config changed. Again in `pnpm test` (seed 1794819742983, load average 23-25 just after a Stryker run): Firefox `show-ids-and-links.spec.ts` "shows its link, no label, for a pointer inside its border off the keys", the same 15 s timeout in `userEvent.hover`; not rerun.
+  owner: Sergii, timing analysis (flaky-triage hands a race to a person).
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-layout-set-reaches-main-plan.md`
   summary: Focus reordering in pipeline (AD-11 Newer seqs): sets ordered by the workspace table, a yield between stages, and a focus arriving during the hidden phase getting its set next, with its test; goes to the first story that fills a second workspace set (shapes or plates for Outline, pcb placement for PCB, firmware).
@@ -429,71 +450,91 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-layout-set-reaches-main-plan.md`
   summary: Precedent fix: packages/workers/src/model-worker/model-worker-lifecycle.ts comments restate the code ("// The whole list of the last post the gate accepted, with that post's seq.", "// Returns the call that stops watching the worker and terminates it."); delete them.
   evidence: AGENTS.md "Write a comment only for a why the code can't say"; found by 13.22's final conformance pass.
+  closed: 2026-11-16, by 13.13: the two comments are deleted.
 
 - source_plan: none
   summary: Split from 13.7 — the Layout canvas viewport: a viewport service stored per design id in localStorage and shared across 2D workspaces; wheel zoom toward the cursor x1.1 per notch between 10% and 2000%; middle or Space drag and trackpad pan; F fits the selection, else the whole board, with 24 px padding; the status strip's cursor coordinates (model mm through 23.6's formatter, 'x 12.34 y -5.67') and zoom as a whole percent; the tunable constants in one place; the handle hit-radius check at 50%, 100% and 400%.
   evidence: Sergii 2026-11-10, 13.7 build step 1 multi-goal check: 13.7 held three independently shippable goals (canvas with selection; viewport; canvas editing) far past the 3000-token plan cap; split as A (canvas, 13.7 keeps) → B (this) → C. Tree search for 13.7 and this goal's terms: 14.6 (epic-change-a-parameter/tickets/tickets.toml:77, after ["13.3", "13.7"]; verify "clicking it selects both keys and fits them") needs fit; 15.4 (epic-drag-keys/tickets/tickets.toml:43, after ["13.7", 2, "16.4"]) drags on the canvas in model mm; 23.8 (done) and epic-a-new-design-opens R3 name "cursor and zoom arrive with epic-see-corneys-keys's viewport".
+  closed: 2026-11-16, stale, at 13.13: built as 13.23.
 
 - source_plan: none
   summary: Split from 13.7 — editing from the Layout canvas: G adds a free group and S a slot through an add flow with an optional id field, pre-filled with a minted id and editable before commit (13.2's id input; an id already in the design refused; ids never change afterwards); Ctrl+D duplicates the selection after the original and Delete deletes it (one DeleteNode with the selected ids), each through the design store.
   evidence: Sergii 2026-11-10, 13.7 build step 1 multi-goal check (same split as the viewport entry; C after A, independent of B). Tree search: 19.2 (epic-plates-to-dxf/tickets/tickets.toml:9, "through the add flow's optional id field pre-filled with a minted id (13.7)") reuses this goal's add flow; 14.5 (epic-change-a-parameter/tickets/tickets.toml:66, after ["13.7", "13.8"]) edits the selection that 13.7 keeps; 13.8 (epic-see-corneys-keys) and the epic's R6 "G, S, Ctrl+D and Delete add, duplicate and delete".
+  closed: 2026-11-16, stale, at 13.13: built as 13.24 and 13.25.
 
 - source_plan: none
   summary: Ctrl+D on a multi-selection: 13.24 duplicates only a single selected node (DuplicateNode takes one id; DuplicateSelection is unavailable otherwise); duplicating several nodes, as one command and one undo step, goes to the story that brings multi-selection (15.4's box select or Shift-click), with the test that DuplicateSelection is unavailable for several selected nodes.
   evidence: Sergii 2026-11-10, re-slice of 13.7: packages/commands/src/layout/duplicate-node-input-schema.ts is v.strictObject({ id: idSchema }); no story before 15.4 can select several nodes. Rejected: DuplicateNode taking ids now (a spine change for an unreachable case) and running it once per id (several undo steps for one keypress).
+  owner: 15.4 (Sofia folds it into that ticket; see 13.13's card for Sofia).
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-draws-resolved-keys-with-selection-plan.md`
   summary: Split from 13.7 — group frames on the Layout canvas: each group drawn as an outline that follows its children's stagger (not a rectangle), with its ⠿ tab and a 2px selection frame when selected; model posts the outline, since canvases compute no geometry (AD-10, AD-22), so a spine pass first defines it in LayoutOutput (hull or union, margin, rotation), and DESIGN.md's Group frame is redrawn with a side-by-side preview for Sergii's pick.
   evidence: Sergii 2026-11-10, 13.7 plan Open Question 1: the board fit may use the browser's SVG getBBox, but a group frame should follow staggered columns, not be a plain rectangle; that outline is geometry, which no posted output carries (schema/src/layout-output.ts). Picked 'split frames out': 13.7 draws keycaps and anchor links, and groups stay selectable in the tree. Tree search for 13.7 and this goal's terms: 13.7 itself (epic-see-corneys-keys/tickets/tickets.toml:131, "draws placed keys as keycaps with group frames and anchor links"); 15.4 (epic-drag-keys/tickets/tickets.toml:40, "Left-drag on a key, or on a group frame's tab, previews through 15.1's service", after ["13.7", 2, "16.4"]) drags by the group frame's tab, which this goal adds. epic-layout-editor mentions group frames but is dropped.
+  closed: 2026-11-16, stale, at 13.13: built as 13.26 and 13.32.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-draws-resolved-keys-with-selection-plan.md`
   summary: `app/src/layout-set.spec.ts` computes an expected value the way production does (`const KEY_RUN = `key@${argumentHash({})}``).
   evidence: 13.7 conformance review; AGENTS 'no expected value computed the way production computes it, except by calling a function the requirement names'.
+  closed: 2026-11-16, accepted, by 13.13 (Decision (Sergii, 2026-11-16, after the build)): the requirements are relations (the right half is the left reflected; a reload gives the same placements) whose only literal source would be a run, and `argumentHash` is named by BP-5 with its own tests.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-draws-resolved-keys-with-selection-plan.md`
   summary: A stand-in slot's ▲/● `unresolvable-reference` badge on the Layout canvas (EXPERIENCE.md Canvas keys row; DESIGN.md Unfitted slot) has no owning story.
   evidence: Sergii 2026-11-10 at 13.7's planning: 13.7 draws the dashed outline only; no tickets.toml names canvas violation glyphs. Sofia to place it with the canvas violation display.
+  owner: 14.6 (Sofia folds it into that ticket; see 13.13's card for Sofia).
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-draws-resolved-keys-with-selection-plan.md`
   summary: `app/src/layout-set.spec.ts` builds side-qualified ids by hand (`.layoutRow(`left/${node}`)`) and loops `expectOk` over the script (`for (const { command, input } of corneyIslandLayout) expectOk(store.runById(command, input))`).
   evidence: 13.7 conformance final pass; 13.7 adds `sideQualifiedId` to `model`'s root, which `app` can't reach (`.dependency-cruiser.mts:112` `app: { model: 'worker', … }`); AGENTS 'No `if` or loop around `expect`'.
+  closed: 2026-11-16, by 13.13: literal side-qualified ids; `it.each` over the script's steps.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-draws-resolved-keys-with-selection-plan.md`
   summary: `app/src/launch/launch.spec.ts` asserts `expect(arranged.storedIds).not.toContain(opened(arranged).id)` with no stored designs, so it cannot fail; 'never trying the older' asserts nothing about trying.
   evidence: 13.7 conformance final pass; AGENTS 'Give every test an `expect` that fails when the behaviour breaks.'
+  closed: 2026-11-16, by 13.13: the assertions fail when the older design is opened or tried.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-draws-resolved-keys-with-selection-plan.md`
   summary: `tooling/check-dist/devtools-problems.ts:3` deep-imports `../../packages/editor/src/devtools/plugin-id.ts` past the package's `exports`; 13.7's `reference-designs-problems.ts` does the same because the root package can't resolve workspace packages under Node.
   evidence: 13.7 conformance final pass; spine AD-25 'Each closes its public surface through package `exports`.'
+  closed: 2026-11-16, accepted, by 13.13 (Decision (Sergii, 2026-11-16)): tooling sits outside the package graph, so an `exports` subpath would exist only for it.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-draws-resolved-keys-with-selection-plan.md`
   summary: `packages/editor/src/status-strip/use-running-stage.ts` holds a constant, a helper and a composable in one file.
   evidence: 13.7 conformance final pass; AGENTS 'Give each file one kind of thing'.
+  closed: 2026-11-16, by 13.13: `SHOWN_AFTER_MS` and `toNextChange` are in `running-stage-timing.ts`.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-viewport-zooms-pans-and-fits-plan.md`
   summary: The automated check that canvas handles keep the `canvas-hit-radius` (8 px) hit radius at 50%, 100% and 400% moves from 13.23's verify to the first story that draws a handle (rotation handle or grab tab, epic-drag-keys); Sofia drops the clause from 13.23 and adds it there.
   evidence: Sergii 2026-11-10 at 13.23's planning; DESIGN.md `canvas-hit-radius: 8px  # canvas handles at any zoom (vertex, grab tab, rotation handle)`; after 13.7 and 13.23 the canvas draws keys (which scale by design) and anchor links ("not draggable", EXPERIENCE.md), so no handle exists to check (AGENTS 'Arrange only a state real commands could reach').
+  owner: 15.4 (Sofia folds it into that ticket; see 13.13's card for Sofia).
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-layout-canvas-viewport-zooms-pans-and-fits-plan.md`
   summary: `packages/ui/src/theme/use-theme-choice.ts` holds a type guard (`const isThemeChoice = (value: string): value is ThemeChoice => THEME_CHOICES.includes(value)`) beside its composable.
   evidence: 13.23 conformance pass 1; AGENTS 'Give each file one kind of thing'. 13.23 follows its `useStorage` serializer pattern with the schema in its own file.
+  closed: 2026-11-16, by 13.13: `THEME_CHOICES` and `isThemeChoice` are in `theme-choice.ts`.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-delete-and-ctrl-d-act-on-the-selection-plan.md`
   summary: `packages/commands/src/layout/layout-commands.spec.ts:34` shares one module-level `const offset = anOffset({ position: aVec2({ x: aDelta('2mm') }) })` across the forwarding table's cases.
   evidence: 13.24 conformance pass 1 (both readers); AGENTS 'Keep no mutable state at module level in a spec; create spies and recordings inside the test.' 13.24's row 18 builds its values inside each case instead.
+  closed: 2026-11-16, by 13.13: `offset` is built in each case.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-delete-and-ctrl-d-act-on-the-selection-plan.md`
   summary: `packages/editor/src/devtools/devtools-plugin.spec.ts` has no row for a refused invocation, so the err branch of `#addInvocation` and `#outcome` (`devtools-plugin.ts:109-131`: subtitle the rejection's `kind`, else `'error'`, and `data.result` the error) can break with no test failing.
   evidence: 13.24 post-look review pass (quick lens); AGENTS 'Give every test an `expect` that fails when the behaviour breaks'. Pre-existing; 13.24 only changed the event's title and data keys.
+  closed: 2026-11-16, by 13.13: rows for a refused (`unavailable`) and a failing (no `kind`) invocation.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-g-and-s-add-groups-and-slots-through-the-add-flow-plan.md`
   summary: Where G and S's add flow (and P, which follows the same parent rule) puts a new node when several nodes are selected; 13.25 sends it to the root, as with nothing selected, and the multi-selection story (15.4) revisits it: the root, the first-selected node's group, or the group all selected nodes share (else the root).
   evidence: Sergii 2026-11-11 at 13.25's planning; no reachable state selects several nodes before 15.4 (13.24, Sergii 2026-11-11: only canvas and Tree clicks select), and the spine and EXPERIENCE.md ("the selected group (or the selected slot's group, else the root)") name only one selected node.
+  owner: 15.4 (Sofia folds it into that ticket; see 13.13's card for Sofia).
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-g-and-s-add-groups-and-slots-through-the-add-flow-plan.md`
   summary: `packages/editor/src/selection/delete-selection.spec.ts:132` waits with a real timer (`await new Promise((settle) => setTimeout(settle, 0))`), and its `arrange` has a hidden default (`selected = [anId('a')]`).
   evidence: 13.25 conformance pass 1 (both readers); AGENTS 'Set time with Vitest's fake timers' and 'Arrange only what the test uses, passed as arguments to an `arrange` helper'. 13.25's rows wait with `expect.poll` and pass their arrangement instead.
+  closed: 2026-11-16, by 13.13: each test passes `selected`; the wait is `nextFrames()`.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-a-modal-owns-the-keyboard-plan.md`
   summary: `packages/ui/workbench/CanvasToggleFrame.vue` takes the glossary's **frame** for a workbench wrapper that gives a canvas toggle its SVG; rename it (13.27 named its own wrapper `DialogHost`).
   evidence: 13.27 conformance review (precedent check); spine glossary "**frame** | A position + rotation in the plane"; AGENTS 'Name a thing for what it does, checked against the spine's glossary'.
+  closed: 2026-11-16, by 13.13: renamed `CanvasToggleHost`.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-availability-says-why-plan.md`
   summary: `packages/schema/src/id.spec.ts:11-13` asserts refusals as `expect(v.safeParse(idSchema, id).success).toBe(false)`, narrowing to the success flag instead of asserting the issues.
   evidence: 13.29 conformance pass 1 (precedent check); AGENTS 'assert whole values (`toEqual`, `toMatchObject`) instead of narrowing in the test'. 13.29's new rows 5–5b assert the messages with `toEqual`.
+  closed: 2026-11-16, by 13.13: each refusal asserts its whole issue list.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-flows-hold-the-open-flow-plan.md`
   summary: `const expectedScrim = 'rgba(35, 38, 52, 0.45)'` is declared in both `packages/editor/src/shortcuts/modal-keeps-keys.spec.ts` and `packages/ui/src/dialog/Dialog.spec.ts`; one shared value (AGENTS: "Write a shared assertion once").
   evidence: 13.30's final conformance pass, precedent finding P2.
+  closed: 2026-11-16, by 13.13: one `expectedScrim` in `@keeb-cad/ui/testing`, spec-only by a dependency-cruiser rule.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-flows-hold-the-open-flow-plan.md`
   summary: 13.25 proves that a flow's `finished` runs once with the parsed input (not the raw draft), on the add flow, whose `finished` selects the new node.
@@ -513,6 +554,7 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-explicit-anchors-move-dependants-cycles-rejected-plan.md`
   summary: After a layout edit that changes which key ends a chain (an append after it, or deleting it), the editor offers to re-anchor what hung off the old last key, as one undoable SetAnchor; for epic-drag-keys beside 15.3's re-anchor in place and 15.6's anchor picker.
   evidence: Sergii 2026-11-13, party round on anchoring: anchors stay by id, so a thumb cluster anchored to a column's last key stays on it when a key is appended, and falls back to its default anchor when that key is deleted; the fix belongs in the editor, not as a model 'last child' anchor kind.
+  owner: 15.3 (Sofia folds it into that ticket; see 13.13's card for Sofia).
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-explicit-anchors-move-dependants-cycles-rejected-plan.md`
   summary: `app/src/corney-column.spec.ts:76-78` asserts rows with `expect.objectContaining(at(0))`, narrowing instead of asserting each row whole.
@@ -522,10 +564,12 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-explicit-anchors-move-dependants-cycles-rejected-plan.md`
   summary: `app/src/corney-column.spec.ts`'s round-trip test asserts `expect(await placementsOf(committed(store))).toEqual(before)`, an expected value the same placement code computed.
   evidence: 13.3's final conformance pass, precedent finding: AGENTS.md "no expected value computed the way production computes it, except by calling a function the requirement names and that has unit tests of its own"; 13.3 follows that spec's wiring but doesn't edit it.
+  closed: 2026-11-16, accepted, by 13.13 (Decision (Sergii, 2026-11-16, after the build)): the requirements are relations (the right half is the left reflected; a reload gives the same placements) whose only literal source would be a run, and `argumentHash` is named by BP-5 with its own tests.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-explicit-anchors-move-dependants-cycles-rejected-plan.md`
   summary: `tooling/lint/no-shared-spec-state.spec.ts` ("allows a recording inside a test in a describe") and `tooling/hooks/lint-decision.spec.ts` ("returns exit code 2 and the ESLint output for a violation") timed out at 15000 ms in one full run; source not confirmed, for a person to decide.
   evidence: 2026-11-13, during 13.3's build: `pnpm typecheck && pnpm lint && pnpm depcruise && pnpm test` failed only these two (timeout at the first ESLint await, no assertion failed), seed 1794559268850, load average ~8 on 16 cores; the two files alone passed (34 tests) and `pnpm test --sequence.seed=1794559268850` passed whole. Not order (seed replay green); candidates not ruled out: machine load, and the ESLint cache `pnpm lint` had just written. No test, timeout or config changed.
+  closed: 2026-11-16, at 13.13: the `tooling/lint/` spec was removed (f4df4b7); `lint-decision.spec.ts` passed in both of 13.13's full `pnpm check` runs and on the `tooling` project replayed with seeds 1794559268850 and 1794818345649 (411 tests each). Not reproduced; source not confirmed; reopen with the failing run's seed if it recurs.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-corney-wired-s-left-half-from-commands-plan.md`
   summary: Show a part's last good output for a later failing run.
@@ -540,20 +584,25 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-corney-wired-s-left-half-from-commands-plan.md`
   summary: Rename `reference-designs`' key-centres harness to glossary terms ("pose" → frame plus keycap size, and the rest of its vocabulary).
   evidence: 13.4 split the harness into `src/key-centres/` and renamed only `Design` to `Variant`, since glossary "design" is the keyboard document; "pose" stays because a pose carries the keycap size and the harness was reused, not redesigned. Decision (plan).
+  closed: 2026-11-16, by 13.13: `KeyFrame`, `CandidateKeyFrame`, `compareKeyFrames`, `keyFramesFrom`, `loadKeyFrames`; the spine says key frames.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-corney-wired-s-left-half-from-commands-plan.md`
   summary: Triage `packages/editor/src/add-flow/add-flow.spec.ts` "adds a slot inside the chain group it just added", which failed once in Firefox (18.4 s) during 13.4's first full run.
   evidence: it passed alone (65/65) and on every later full run (seeds 1794573588557, 1794573851280, 1794574914310); 13.4 changes no editor code. Run flaky-triage with the failing run's seed if it recurs.
+  closed: 2026-11-16, at 13.13: no seed was logged, and it passed in both of 13.13's full `pnpm check` runs (seeds 1794818345649, 1794818670409). Not reproduced; source not confirmed; reopen with the failing run's seed if it recurs (the Firefox load timeouts are tracked on the slide-out card).
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-corney-wired-s-left-half-from-commands-plan.md`
   summary: Settle in a UX pass how anchor links read on the Layout canvas; on Corney's left half Sergii found them "very unclear" (2026-11-13, at 13.4's look).
   evidence: `packages/editor/src/workspace/layout/AnchorLink.vue` draws every placed node's link, dashed Teal from `anchorAt` to its frame, at all times (EXPERIENCE.md Layout row; DESIGN.md `anchor-link`); with the whole left half, stagger, thumb-fan and half-offset links overlap the keys.
+  closed: 2026-11-16, stale, at 13.13: settled by 13.35 (2dd41f6).
 
 - source_plan: none
   summary: Per-side overrides (split from 13.6): the `overrides` section in its AD-8 position with every Data Schema variant (side-part, side-component), keyed by (type, target, component?) and replaced on a repeat; a set-override command for part 'empty' targeting `left/<id>` or `right/<id>` (fit = empty, keeps its space, wins over a stand-in); a swap on a reversible board refused with `override-not-allowed` (ModelRejectionKind gains it) and, loaded, reported as that violation (error, ids: the target) and ignored when placing; an override to a missing target reports `unresolvable-reference`; DeleteNode of a slot deletes its overrides in the same command; the documented test-only step file removing the far thumb key on the right; and the epic's headless scenario (Corney's script plus that step file, the Layout set posted, the right half the left's reflection, each override applied, no violation beyond the expected).
   evidence: Sergii chose Split at 13.6's build (2026-11-13): the ticket held two independently shippable goals past the 3000-token plan cap. 13.6 keeps the right side derived (reflection across the centre frame, side-qualified right ids, mirrored frames, rot in (−180, 180], attach points swapped) and `unsupported-form` for split-mirrored and unibody files. Tickets not done that name the split-off goal: 13.6 itself (`epic-see-corneys-keys/tickets/tickets.toml:123-124`, description and verify hold the override half); 13.8 (`tickets.toml:244`, "a slot removed on one side keeps its place, drawn as unfitted"; `:245`, "a right slot removed by 13.6's test-only override step file draws as unfitted while its left stays fitted"; `after = [6, 7, 24, 25, 32]` at `:247`); 13.26 (`tickets.toml:145`, "fitted, stand-in and emptied slots alike", an emptied slot only overrides produce); the epic's R3 (`epic-see-corneys-keys.md:28`) is delivered by both halves.
+  closed: 2026-11-16, stale, at 13.13: built as 13.33.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-right-side-derived-plan.md`
   summary: Rename the tests in `packages/model/src/placement/place-layout.spec.ts` whose names carry numbers (`:99` "steps three slots edge to edge: 0, 19, 38", `:130`, `:149`, `:173`), moving the numbers into `it.each` parameters or `expected*` constants.
   evidence: 13.6's plan conformance pass, precedent finding against AGENTS.md "Name the boundary's role (\"on the clearance limit\"); numbers go in parameters or `expected*` constants."
+  closed: 2026-11-16, by 13.13: the numbers moved into parameters or `expected*` constants.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-model-posts-group-borders-plan.md`
   summary: Give a group border's margin 1 mm when `meta.gap` fails to evaluate (AD-16 Group borders), with its unit row, in the story that evaluates expressions.
@@ -562,14 +611,17 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-model-posts-group-borders-plan.md`
   summary: Move the `compose` tests out of `packages/geometry/src/frame-of.spec.ts` (`:31` `describe('compose', () => {`) into a `compose.spec.ts`.
   evidence: 13.26's plan conformance pass, precedent finding against AGENTS.md "Test a rule where it is defined".
+  closed: 2026-11-16, by 13.13: `compose.spec.ts` holds the `compose` tests.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-model-posts-group-borders-plan.md`
   summary: Rename `packages/protocol/src/layout-output/layout-output-codec.spec.ts:68` "keeps a frame value's every digit and a group's part of -1", moving the number into a parameter or `expected*` constant.
   evidence: 13.26's plan conformance pass, precedent finding against AGENTS.md "Name the boundary's role (\"on the clearance limit\"); numbers go in parameters or `expected*` constants."
+  closed: 2026-11-16, by 13.13: the number moved into an `expected*` constant or parameter.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-canvas-draws-group-borders-on-hover-and-selection-plan.md`
   summary: Make `packages/ui/src/tree/Tree.spec.ts`'s module-level `const ROWS: TreeRow[] = [` read-only (`readonly TreeRow[]`) or build it inside each test.
   evidence: 13.32's plan conformance pass, precedent finding against AGENTS.md "Keep no mutable state at module level in a spec; create spies and recordings inside the test."
+  closed: 2026-11-16, by 13.13: rows are built in each test.
 
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-canvas-draws-group-borders-on-hover-and-selection-plan.md`
   summary: Test that selecting the root group draws no border, tab or ⊕ on the Layout canvas, in the first story that makes the root selectable.
@@ -578,51 +630,74 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-canvas-draws-group-borders-on-hover-and-selection-plan.md`
   summary: The ESLint-driven specs in `tooling/lint/` (`entry-files-re-export`, `no-inline-config`, `no-shared-spec-state`, `no-services-in-components`) time out at 15 s in some full `pnpm test` runs, then pass alone (`entry-files-re-export.spec.ts`: 10 tests in 22.6 s).
   evidence: maybe-false, medium if true, unverified. Seen on 2026-11-14 during 13.32 with seeds 1794643608223, 1794646024498 and 1794646518368, load average 10–12; the same files passed in the full run with seed 1794645433830. Flaky triage would settle it by replaying those seeds on `main` with and without `--no-file-parallelism`. Not caused by 13.32, which changes nothing they lint.
+  closed: 2026-11-16, stale, at 13.13: the `tooling/lint/` specs were removed (f4df4b7).
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
   summary: `packages/schema/src/testing/design.spec.ts` "keeps the %s it is given" passes the default for `libraryVersions` (`['libraryVersions', () => ({ libraryVersions: [aLibraryVersion()] })]`), so it can't fail if the builder ignores the field.
   evidence: AGENTS.md "Give every test an `expect` that fails when the behaviour breaks"; found by 13.33's conformance review.
+  closed: 2026-11-16, by 13.13: the row passes a `libraryVersions` other than the default.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
   summary: `unknown-target` texts are written inline in `model/src/layout-editing/check-set-anchor.ts` and `check-delete-node.ts` instead of a `violations/` message function.
   evidence: spine Violations row "Each kind's message is built by one `model` function from its kind and ids"; 13.33 adds `unknownOverrideTargetMessage` for its own text.
+  closed: 2026-11-16, by 13.13: `unknownNodeMessage` and `unknownAnchorTargetMessage` in `model/src/violations/`.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
   summary: `model/src/parts/create-derivations.ts` holds violation builders (`unresolved`, `inputInvalid`, `failure`) and helpers (`rectangleOf`, `partsOutputOf`, `firstPerOwner`) beside the derivation.
   evidence: AGENTS.md "Give each file one kind of thing"; found by 13.33's conformance review.
+  closed: 2026-11-16, by 13.13: each helper and builder in its own file in `model/src/parts/`.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
   summary: a required design section (`library-versions`) is proven missing only through `app/src/launch/launch.spec.ts`'s `'has no library-versions'`, with no `schema`-level row.
   evidence: AGENTS.md "Test a rule where it is defined"; 13.33 adds the schema row for `overrides` only.
+  closed: 2026-11-16, by 13.13: `schema`'s `design.spec.ts` refuses a design without `overrides` and one without `libraryVersions` at that path.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
   summary: 14.5's Fitted toggle re-ticks a side, which needs a way to clear a `side-part` override; 13.33 builds only SetOverride, and a swap is refused on a reversible board.
   evidence: EXPERIENCE.md:128 "unticking unfits that side only"; Sergii 2026-11-14 left clearing out of 13.33.
+  owner: 14.5 (Sofia folds it into that ticket; see 13.13's card for Sofia).
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
   summary: a loaded file can repeat an override key; overrides are read one by one and nothing checks the repeat on load.
   evidence: AD-23 "at most one each, replaced on a repeat" covers commands only; Sergii 2026-11-14 left a load check out of 13.33.
+  owner: 16.2 (Sofia folds it into that ticket; see 13.13's card for Sofia).
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
   summary: ticket 13.33's description and verify still say part 'empty'; the spine now removes a part with `null` (4f45eb8). Sofia reconciles the ticket.
   evidence: spine AD-6 and Data Schema `Override`, Sergii 2026-11-14.
+  closed: 2026-11-16, stale, at 13.13: 13.33's ticket already says `null` (tickets.toml lines 157-158).
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-per-side-overrides-remove-a-part-plan.md`
   summary: `app/src/{layout-set,corney-left-half,corney-column,blueprint-inputs}.spec.ts` each declare their own `runCorneyScript`/`committed`/`arrange` copies; a shared app test helper file is fenced out, since dependency-cruiser treats a non-spec file under `app/src` as production code.
   evidence: AGENTS.md "Write a shared assertion once"; Sergii 2026-11-14 kept 13.33's row 1 in `right-half.spec.ts` instead of changing the fence.
+  closed: 2026-11-16, by 13.13: the helpers live in `app/src/testing/`, which dependency-cruiser fences as a test folder (Decision (Sergii, 2026-11-16)).
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-both-halves-drawn-plan.md`
   summary: the slice's e2e journey splits from 13.8 into a new story after it: browser storage (IndexedDB) seeded with the autosaved bundle of a design built by Corney's script in a Node test, the app reopens it, both halves drawn, a key added and deleted through 13.25's G and S and 13.24's Delete, a reload unchanged, in Chromium and Firefox, with the screenshot baseline Sergii approves; it adds the Firefox Playwright project, the first screenshot-baseline setup and the storage seeding.
   evidence: Sergii chose Split at 13.8's build (2026-11-14), after the spine amendment 81c64d9 (selection and hover hold PlacementId) grew 13.8's canvas half to a full plan; together they run past the 3000-token cap, and the e2e half is the riskier first (no Firefox project, no screenshot config, nothing seeds IndexedDB, no Node Corney build; app/playwright.config.ts:34-41). 13.8 keeps the halves apart, the mirror axis, the dimming and the unfitted right slot. Tree search, not done: 13.8 itself (`epic-see-corneys-keys/tickets/tickets.toml:256`, "Adds the slice's e2e journey: browser storage seeded …"; `:257`, "the e2e journey passes in Chromium and Firefox, with its screenshot baseline approved by Sergii"); 13.13 Refactor sweep (`tickets.toml:285`, after includes 8, so it must also wait on the new story); 14.5 (`epic-change-a-parameter/tickets/tickets.toml:66`, after ["13.7", "13.8"], needs only 13.8's canvas half). Epic lines owned by the new story: R6 "Shown by one e2e journey in Chromium and Firefox" (`epic-see-corneys-keys.md:31`), Done when "one e2e journey runs in a real browser" (`:44`), Decision 2026-10-30 planning on seeding (`:86`). Also owed to Sofia from the spine amendment: 13.8's notes still cite 13.32's both-sides border rule and the open mirror question, now settled (spine Editor state row, 81c64d9).
+  closed: 2026-11-16, stale, at 13.13: built as 13.34.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-both-halves-drawn-plan.md`
   summary: `app/src/right-half.spec.ts`'s `reflected` computes its expected right rows as production does (negating the left frame), and its local `sideOf` shadows `model`'s name with another meaning (one side's rows, prefix dropped).
   evidence: AGENTS.md "no expected value computed the way production computes it" and "Name a thing for what it does"; 13.8's `app/src/both-halves.spec.ts` copies only the real-worker spawn and the script run, not these.
+  closed: 2026-11-16, accepted, by 13.13 (Decision (Sergii, 2026-11-16, after the build)): the requirements are relations (the right half is the left reflected; a reload gives the same placements) whose only literal source would be a run, and `argumentHash` is named by BP-5 with its own tests.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-both-halves-drawn-plan.md`
   summary: `editor`'s `group-border/use-hovered-group.ts` and `workspace/layout/use-placed-nodes.ts` have no spec of their own; they are proven only through the canvas specs.
   evidence: spine Editor state "a composable … tested on their own"; 13.8 gives its new composables (`use-tree-selection`, `use-mirror-axis`) their own specs.
+  closed: 2026-11-16, by 13.13: every `editor` composable has its own spec.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-canvas-shows-ids-and-anchor-links-on-hover-and-selection-plan.md`
   summary: `editor`'s `workspace/layout/switch-grace.spec.ts` still finds a key's top face by position (`querySelectorAll('rect')`), since the top face has no role or name.
   evidence: AGENTS.md "Find elements by role, then label, then text"; 13.35 moved the anchor link to `getByRole` and left the top face.
+  closed: 2026-11-16, accepted, by 13.13 (Decision (Sergii, 2026-11-16)): the query searches inside a key found by role, and the top face has no accessible meaning.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-canvas-shows-ids-and-anchor-links-on-hover-and-selection-plan.md`
   summary: `HoveredNode`'s own grace and commit-prune tests still live in `editor`'s `group-border/group-borders.spec.ts` (the hover grace rows and the `a commit` block), not beside the service in `hover/`.
   evidence: AGENTS.md "Test a rule where it is defined"; 13.35 moved the service to `hover/` and kept its tests where 13.32 and 13.8 wrote them.
+  closed: 2026-11-16, by 13.13: `hover/hovered-node.spec.ts` holds the rule's tests, against the service; `group-borders.spec.ts` keeps the same-named canvas tests as wiring tests (each fails when its component line breaks, 13.13 round 4), since the frozen block allows no test removed.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-the-canvas-shows-ids-and-anchor-links-on-hover-and-selection-plan.md`
   summary: an unfitted slot or stand-in draws no fill, so only its 1px edge catches the pointer: it can't be pointed at (label, link, its group's border) or clicked to select from its inside. 13.35's row 6 test sends the key a `pointerenter` instead of moving the real pointer there. A question for Sergii, not a fix: whether an unfitted key's inside should catch the pointer.
   evidence: `CanvasSlot.vue` sets `fill-none` on an unfitted key and the default `pointer-events: visiblePainted` skips an unfilled inside; Playwright's hover on that key times out with "svg intercepts pointer events" (13.35 build, 2026-11-15).
+  owner: Sergii, a question for `bmad-ux`.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/tickets.toml` (13.34)
   summary: the repository's first screenshot baseline (spine Verification layer 6, baselines approved by a person), cut from 13.34; Sofia slots it into a story once DESIGN.md's canvas tokens and the canvas look settle. It owes the baseline configuration, per-browser baselines for Chromium and Firefox, and a way to render them the same locally and in CI (fonts and OS differ).
   evidence: Sergii 2026-11-16: the canvas look is still changing (13.35 changed it at rest; 13.8's opacity and axis colour await the look), so a baseline now would need re-approval on most UI stories; the canvas is SVG, so 13.34's journey asserts by role and label.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-corney-s-keys-survive-a-reload-end-to-end-plan.md`
   summary: e2e tests for the commands and actions the slice journey doesn't drive: G (AddGroup), Ctrl+D (DuplicateSelection/DuplicateNode), SetAnchor, SetOverride, DeletePart and RestartModelWorker; NewDesign and OpenStoredDesign run only through launch. Sofia slices them into stories.
   evidence: spine Verification layer 6 ("at least one test per command and action (it also catches a missing registration, AD-2)") and epic R6 ("G, S, Ctrl+D and Delete … Shown by one e2e journey (34)"); Sergii 2026-11-16 kept 13.34's journey to S and Delete, as its ticket says.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-refactor-sweep-plan.md`
+  summary: Sofia folds 13.13's re-owned cards into their tickets: hit-radius check into 15.4; stand-in badge into 14.6; clearing a `side-part` override into 14.5; a repeated override key on load into 16.2; multi-selection Ctrl+D and the add flow's parent for several selected nodes into 15.4; the re-anchor offer into 15.3; and slices the anchor-input refusal (BP-8), lane `problems` as `blueprint` violations, and E11 into the stories that own them.
+  evidence: 13.13 ledger (Keep open, owner named); the sweep writes no ticket file. Each card above names its owner.
+  owner: Sofia.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-see-corneys-keys/tickets/story-refactor-sweep-plan.md`
+  summary: Stryker's surviving mutant at `packages/design-file/src/codec/schema-fields.ts:78` (`option !== undefined && v.is(option, value)` → `true && …`) is an implementation boundary: only a union holding a variant that no option takes reaches it, where the mutant throws in `v.is(undefined, …)`; add its boundary row then.
+  evidence: 13.13's Stryker run on `schema-fields.ts` and `read-kdl.ts` (score 98.33); no Data Schema union holds such a variant today. Decision (Sergii, 2026-11-16, after the build).
+  owner: the first Data Schema union with a variant no option takes.

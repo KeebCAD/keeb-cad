@@ -1,7 +1,7 @@
 import { aDesign, aMeta, aPlacementId, aUnibodyForm } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
-import { designWith } from '../testing/layout-canvas'
+import { designWith } from '../testing/designs'
 import { addedSide } from './added-side'
 
 describe('addedSide', () => {

@@ -34,10 +34,14 @@ async function arrange() {
     pins: { value: [] },
     violations: { value: [] },
   })
+  return { main: port2, worker: port1, mirror: container.resolve(DesignMirror) }
+}
+
+function recordPosts(main: MessagePort): unknown[] {
   const posts: unknown[] = []
-  port2.addEventListener('message', (event) => posts.push(event.data))
-  port2.start()
-  return { main: port2, worker: port1, posts, mirror: container.resolve(DesignMirror) }
+  main.addEventListener('message', (event) => posts.push(event.data))
+  main.start()
+  return posts
 }
 
 function designMessage(seq: number, name = 'Corne'): ToModelWorker {
@@ -90,7 +94,8 @@ function postsAt(seq: number) {
 
 describe('Pipeline', () => {
   it('applies patches to the whole design it was sent, deeply frozen', async () => {
-    const { main, posts, mirror } = await arrange()
+    const { main, mirror } = await arrange()
+    const posts = recordPosts(main)
 
     main.postMessage(designMessage(1))
     main.postMessage(patchesMessage(2))
@@ -102,7 +107,8 @@ describe('Pipeline', () => {
   })
 
   it('posts empty issues and the derived files at each design seq, echoing its revision', async () => {
-    const { main, posts } = await arrange()
+    const { main } = await arrange()
+    const posts = recordPosts(main)
 
     main.postMessage(designMessage(1))
     main.postMessage(patchesMessage(2))
@@ -115,7 +121,8 @@ describe('Pipeline', () => {
   })
 
   it('replaces the mirror with a later whole design', async () => {
-    const { main, posts, mirror } = await arrange()
+    const { main, mirror } = await arrange()
+    const posts = recordPosts(main)
 
     main.postMessage(designMessage(1))
     main.postMessage(designMessage(3, 'Other'))
@@ -126,7 +133,8 @@ describe('Pipeline', () => {
   })
 
   it('neither applies nor answers what its gate drops', async () => {
-    const { main, posts, mirror } = await arrange()
+    const { main, mirror } = await arrange()
+    const posts = recordPosts(main)
     const dropped: DesignPatch[] = [
       { op: 'replace', path: ['meta', 'form', 'board'], value: 'mirrored' },
     ]
@@ -144,7 +152,8 @@ describe('Pipeline', () => {
   })
 
   it('neither applies nor answers patches before the first whole design', async () => {
-    const { main, worker, posts, mirror } = await arrange()
+    const { main, worker, mirror } = await arrange()
+    const posts = recordPosts(main)
     // Added after Pipeline's own listener, so it fires once Pipeline has handled the message.
     const delivered = new Promise((resolve) => {
       worker.addEventListener('message', resolve, { once: true })
@@ -161,7 +170,8 @@ describe('Pipeline', () => {
   })
 
   it('posts nothing for focus', async () => {
-    const { main, posts } = await arrange()
+    const { main } = await arrange()
+    const posts = recordPosts(main)
 
     main.postMessage(designMessage(1))
     main.postMessage({ kind: 'focus', epoch: EPOCH, seq: 1, workspace: aWorkspace() })

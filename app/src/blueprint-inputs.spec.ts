@@ -1,52 +1,20 @@
-import { blueprintWorkerModule, LaneRunner } from '@keeb-cad/blueprint/worker'
 import { NewDesign } from '@keeb-cad/commands'
-import { type Committed, DesignStore } from '@keeb-cad/design'
-import { DesignMirror, DesignMirrorWriter, designWorkerModule } from '@keeb-cad/design/worker'
 import { Container } from '@keeb-cad/di'
-import { libraryData } from '@keeb-cad/library/worker'
-import { createDerivations, type Derivations } from '@keeb-cad/model/worker'
+import type { Derivations } from '@keeb-cad/model/worker'
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
 import { aDesign, aLayout, aLayoutRow, anId, aSlot } from '@keeb-cad/schema/testing'
 import { readBundle, writeBundle } from '@keeb-cad/storage'
-import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
 import { describe, expect, it } from 'vitest'
 
-import { mainModules } from './main-modules'
+import { arrangePlacements } from './testing/arrange-placements'
+import { arrangeStore } from './testing/arrange-store'
+import { committed } from './testing/committed'
 
 const DIGITS = 9
 
-async function arrangeStore(): Promise<DesignStore> {
-  const container = new Container()
-  for (const module of mainModules) container.addModule(module)
-  container.override(storageBackend).useValue(new MemoryBackend())
-  await container.autoLoad()
-  return container.resolve(DesignStore)
-}
-
-// The model worker's derivations, wired by hand on a mirror fed the store's design.
-async function arrangeDerivations() {
-  const container = new Container().addModule(designWorkerModule).addModule(blueprintWorkerModule)
-  await container.autoLoad()
-  const runner = container.resolve(LaneRunner)
-  runner.useLibrary(libraryData)
-  const derivations = createDerivations(container.resolve(DesignMirror), libraryData, runner)
-  const writer = container.resolve(DesignMirrorWriter)
-  return async ({ design, revision }: Committed): Promise<Derivations> => {
-    writer.replace(design, revision)
-    await runner.pause(derivations.pins.value)
-    return derivations
-  }
-}
-
-function committed(store: DesignStore): Committed {
-  const current = store.current
-  if (current.isNone()) throw new Error('Expected a committed design.')
-  return current.value
-}
-
 function rowOf(derivations: Derivations, id: string) {
   const { ids, rows } = derivations.placements.value
-  return rows[ids.indexOf(`left/${id}`)]
+  return rows[ids.indexOf(id)]
 }
 
 describe('blueprint inputs through mainModules', () => {
@@ -64,7 +32,7 @@ describe('blueprint inputs through mainModules', () => {
   ])(
     'refuses layout.addSlot given %s, leaving the design as it was',
     async (_role, inputs, expectedMessage) => {
-      const store = await arrangeStore()
+      const store = await arrangeStore(new Container())
       expectOk(await store.run(NewDesign, {}))
       const before = committed(store)
 
@@ -79,8 +47,8 @@ describe('blueprint inputs through mainModules', () => {
   )
 
   it('commits an edit elsewhere on a loaded design whose slot already breaks an input, and stands that slot in', async () => {
-    const store = await arrangeStore()
-    const derivationsOf = await arrangeDerivations()
+    const store = await arrangeStore(new Container())
+    const derivationsOf = await arrangePlacements(new Container())
     const faulty = aSlot({ id: anId('s'), inputs: { size: '2u' } })
     expectOk(
       store.replaceDesign({
@@ -96,7 +64,7 @@ describe('blueprint inputs through mainModules', () => {
     expect({
       seq: committed(store).seq,
       violations: derivations.violations.value,
-      row: rowOf(derivations, 's'),
+      row: rowOf(derivations, 'left/s'),
     }).toEqual({
       seq: before + 1,
       violations: [
@@ -116,8 +84,8 @@ describe('blueprint inputs through mainModules', () => {
   })
 
   it('places a slot turned 90 deg about a pivot the same after a bundle round trip', async () => {
-    const store = await arrangeStore()
-    const derivationsOf = await arrangeDerivations()
+    const store = await arrangeStore(new Container())
+    const derivationsOf = await arrangePlacements(new Container())
     expectOk(await store.run(NewDesign, {}))
     expectOk(
       store.runById('layout.addSlot', {
@@ -131,12 +99,12 @@ describe('blueprint inputs through mainModules', () => {
       rot: expect.closeTo(90, DIGITS),
       mirrored: false,
     }
-    const before = rowOf(await derivationsOf(committed(store)), 's')?.frame
+    const before = rowOf(await derivationsOf(committed(store)), 'left/s')?.frame
 
     const read = readBundle(writeBundle(committed(store)))
     expectOk(read)
     expectOk(store.replaceDesign(read.value))
-    const after = rowOf(await derivationsOf(committed(store)), 's')?.frame
+    const after = rowOf(await derivationsOf(committed(store)), 'left/s')?.frame
 
     expect({ before, after }).toEqual({ before: expectedFrame, after: expectedFrame })
   })

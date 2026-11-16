@@ -1,3 +1,4 @@
+import { aQuantityInput, aQuantityInputValue, anOptionInput } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { checkNestedInputs } from './check-nested-inputs'
@@ -7,8 +8,8 @@ import { errOf, okOf, outcomeOf } from '../testing/outcome'
 const blueprint: NestedBlueprintDeclaration = {
   id: 'lib:blueprint/screw',
   inputs: {
-    width: { kind: 'quantity', default: { type: 'quantity', value: '19mm' } },
-    finish: { kind: 'option', options: ['matte', 'gloss'], default: 'matte' },
+    width: aQuantityInput({ default: aQuantityInputValue('19mm') }),
+    finish: anOptionInput({ options: ['matte', 'gloss'], default: 'matte' }),
   },
 }
 const nestedFailed = (input: string) =>
@@ -42,14 +43,6 @@ describe('checkNestedInputs', () => {
       expect(outcomeOf(checkNestedInputs(refs, {}))).toEqual(nestedFailed('ref'))
     },
   )
-
-  it('names an omitted input whose default does not parse', () => {
-    const broken: NestedBlueprintDeclaration = {
-      id: blueprint.id,
-      inputs: { width: { kind: 'quantity', default: { type: 'quantity', value: 'wide' } } },
-    }
-    expect(outcomeOf(checkNestedInputs(broken, {}))).toEqual(nestedFailed('width'))
-  })
 
   it('refuses inputs that are not an object', () => {
     expect(outcomeOf(checkNestedInputs(blueprint, 5))).toEqual(nestedFailed('(inputs)'))

@@ -48,7 +48,9 @@ function aLayoutDesign() {
   })
 }
 
-const offset = anOffset({ position: aVec2({ x: aDelta('2mm') }) })
+function movedOffset() {
+  return anOffset({ position: aVec2({ x: aDelta('2mm') }) })
+}
 
 describe('the layout commands forward to their operation', () => {
   it.each([
@@ -62,13 +64,18 @@ describe('the layout commands forward to their operation', () => {
           id: anId('top'),
           part: aPartRef('key'),
           inputs: { size: '1u' },
-          offset,
+          offset: movedOffset(),
         }
         return [new AddSlot().apply(draft, input), draft]
       },
       () => {
         const draft = aLayoutDesign()
-        const node = { id: anId('top'), part: aPartRef('key'), inputs: { size: '1u' }, offset }
+        const node = {
+          id: anId('top'),
+          part: aPartRef('key'),
+          inputs: { size: '1u' },
+          offset: movedOffset(),
+        }
         return [addNode(draft, node, { parent: anId('column'), index: 0 }), draft]
       },
     ],
@@ -83,7 +90,7 @@ describe('the layout commands forward to their operation', () => {
           index: 1,
           id: anId('inner'),
           defaultPart: aPartRef('key'),
-          offset,
+          offset: movedOffset(),
         }
         return [new AddGroup().apply(draft, input), draft]
       },
@@ -94,7 +101,7 @@ describe('the layout commands forward to their operation', () => {
           axis: 'y' as const,
           id: anId('inner'),
           defaultPart: aPartRef('key'),
-          offset,
+          offset: movedOffset(),
           children: [],
         }
         return [addNode(draft, node, { parent: anId('column'), index: 1 }), draft]

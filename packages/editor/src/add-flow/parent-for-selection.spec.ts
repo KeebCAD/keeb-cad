@@ -1,7 +1,7 @@
 import { aFreeGroup, anId, aPlacementId, aSlot } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
-import { designOf } from '../testing/layout-canvas'
+import { designOf } from '../testing/designs'
 import { parentForSelection } from './parent-for-selection'
 
 function design() {

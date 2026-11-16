@@ -1,5 +1,5 @@
 import { parseExpression } from '@keeb-cad/expr'
-import { Option, Result } from '@keeb-cad/result'
+import { InvariantError, Option, Result } from '@keeb-cad/result'
 import { match } from 'ts-pattern'
 import * as v from 'valibot'
 
@@ -20,9 +20,11 @@ const inputSchema = (declared: NestedInputDeclaration) =>
 const defaultValue = (declared: NestedInputDeclaration): Option<unknown> =>
   match(declared)
     .with({ kind: 'quantity' }, ({ default: value }) =>
-      parseExpression((value as { value: string }).value).match<Option<unknown>>({
+      parseExpression(value.value).match<Option<unknown>>({
         ok: (parsed) => Option.some(parsed.value),
-        err: () => Option.none(),
+        err: () => {
+          throw new InvariantError(`"${value.value}" is a default the schema admitted unparsed.`)
+        },
       }),
     )
     .with({ kind: 'part' }, { kind: 'anchor' }, { kind: 'asset' }, () => Option.none<unknown>())

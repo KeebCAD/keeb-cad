@@ -1,5 +1,5 @@
 import { FLATTEN_TOL } from '@keeb-cad/geometry'
-import { compareId, type Group, type LayoutOutput, type PartsOutput } from '@keeb-cad/schema'
+import { compareCodeUnits, type Group, type LayoutOutput, type PartsOutput } from '@keeb-cad/schema'
 import {
   aChainGroup,
   aFreeGroup,
@@ -31,7 +31,7 @@ function arrange(
   rows: Record<string, Row>,
   parts: PartsOutput = aPartsOutput({ ids: ['key@h'], rows: [KEY] }),
 ) {
-  const ids = Object.keys(rows).toSorted(compareId)
+  const ids = Object.keys(rows).toSorted(compareCodeUnits)
   const placed = aLayoutOutput({ ids, rows: ids.map((id) => rows[id] as Row) })
   return { layout, placed, parts }
 }

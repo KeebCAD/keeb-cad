@@ -98,7 +98,7 @@ const slot = (id: string, fields: Parameters<typeof aSlot>[0] = {}) =>
 const inRoot = (...children: Node[]) => aLayout({ id: anId('root'), children })
 
 describe('placeLayout', () => {
-  describe('a y chain of 1u slots, gap 1 mm', () => {
+  describe('a y chain of the arranged keys, the gap apart', () => {
     it('with no slots has the group row only', () => {
       const output = arrange(inRoot(aChainGroup({ id: anId('c'), axis: 'y' })))
 
@@ -113,7 +113,7 @@ describe('placeLayout', () => {
       expect(frameAt(output, 'a')).toEqual(at(0, 0))
     })
 
-    it('steps three slots edge to edge: 0, 19, 38', () => {
+    it('steps three slots edge to edge, a key and a gap apart', () => {
       const chain = aChainGroup({
         id: anId('c'),
         axis: 'y',
@@ -144,7 +144,7 @@ describe('placeLayout', () => {
     expect(frameAt(output, 'g')).toEqual(at(19, 0))
   })
 
-  it('steps a y chain into and past a group by its extent: group 19, its slots 19 and 38, last slot 57', () => {
+  it('steps a y chain into a group at the step its place takes, and past it by its extent', () => {
     const group = aFreeGroup({
       id: anId('g'),
       children: [
@@ -163,7 +163,7 @@ describe('placeLayout', () => {
     ])
   })
 
-  it('steps past an empty group as a point at its origin: group 10, last slot 20', () => {
+  it('steps past an empty group as a point at its origin', () => {
     const chain = aChainGroup({
       id: anId('c'),
       axis: 'y',
@@ -268,7 +268,7 @@ describe('placeLayout', () => {
     })
   })
 
-  it('lists a three-slot chain by compareId, slots on their run’s row and fit, groups on −1', () => {
+  it('lists a three-slot chain by compareCodeUnits, slots on their run’s row and fit, groups on −1', () => {
     const chain = aChainGroup({
       id: anId('c'),
       axis: 'y',

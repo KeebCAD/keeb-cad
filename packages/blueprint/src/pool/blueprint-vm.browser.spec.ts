@@ -1,20 +1,13 @@
+import { aQuantityInput, aQuantityInputValue } from '@keeb-cad/schema/testing'
 import { describe, expect, it, onTestFinished } from 'vitest'
 
 import type { BlueprintContract, PinnedBlueprint, PinnedScript } from './types'
 import { BlueprintVm } from './blueprint-vm'
 import { EngineLoader } from '../sandbox/engine-loader'
-import {
-  aPin,
-  aScript,
-  laneFailed,
-  MIB,
-  noArgs,
-  withInputs,
-  noCalls,
-  okValue,
-  returning,
-  STAGE,
-} from '../testing/a-pinned-blueprint'
+import { aPin } from '../testing/a-pin'
+import { aScript, returning, STAGE } from '../testing/lane-script'
+import { MIB } from '../testing/mib'
+import { laneFailed, noArgs, noCalls, okValue, withInputs } from '../testing/stage-calls'
 import { errOf, okOf, outcomeOf } from '../testing/outcome'
 
 async function vmFor(pin: PinnedBlueprint): Promise<BlueprintVm> {
@@ -369,7 +362,7 @@ describe('the sandbox, on the real engine', () => {
       await expect(
         run(returning(`use('${nestedId}', { width: -0 }).outputs.value`), usesNested, [
           nested(returning('Object.is(args.inputs.width, 0)'), {
-            inputs: { width: { kind: 'quantity', default: { value: '1mm' } } },
+            inputs: { width: aQuantityInput({ default: aQuantityInputValue('1mm') }) },
           }),
         ]),
       ).resolves.toEqual(okValue(true))
@@ -378,7 +371,9 @@ describe('the sandbox, on the real engine', () => {
     it('fails the run on a bad nested input, naming blueprint and input', async () => {
       await expect(
         run(`try { use('${nestedId}', { width: 'wide' }) } catch {} ${ok}`, usesNested, [
-          nested(ok, { inputs: { width: { kind: 'quantity', default: { value: '1mm' } } } }),
+          nested(ok, {
+            inputs: { width: aQuantityInput({ default: aQuantityInputValue('1mm') }) },
+          }),
         ]),
       ).resolves.toEqual(laneFailed({ cause: 'nested-input', blueprint: nestedId, input: 'width' }))
     })

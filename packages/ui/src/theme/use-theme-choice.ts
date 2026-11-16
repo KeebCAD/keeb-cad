@@ -1,12 +1,9 @@
 import { useColorMode, useStorage } from '@vueuse/core'
 import type { Ref } from 'vue'
 
+import { isThemeChoice } from './theme-choice'
 import { THEME_STORAGE_KEY } from './theme-storage-key'
 import type { ThemeChoice } from './types'
-
-const THEME_CHOICES: readonly string[] = ['dark', 'light', 'auto'] satisfies ThemeChoice[]
-
-const isThemeChoice = (value: string): value is ThemeChoice => THEME_CHOICES.includes(value)
 
 export function useThemeChoice(): Ref<ThemeChoice> {
   // A stored value that is no choice reads as `auto`, so a stale key still follows the OS.

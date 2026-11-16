@@ -30,7 +30,6 @@ export class ModelWorkerLifecycle {
     return this.#status.value
   }
 
-  // The whole list of the last post the gate accepted, with that post's seq.
   get issues(): Option<PostedIssues> {
     return Option.fromNullable(this.#issues.value)
   }
@@ -160,7 +159,6 @@ export class ModelWorkerLifecycle {
     })
   }
 
-  // Returns the call that stops watching the worker and terminates it.
   #watch(worker: SpawnedWorker): () => void {
     const stopListening = this.#dispatcher.listen<FromModelWorker>(worker, {
       issues: ({ seq, violations }) => {

@@ -12,7 +12,10 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { page } from 'vitest/browser'
 
 import { emulateColorScheme } from '../testing/color-scheme'
-import { arrangeLayoutCanvas, designOf, key, keyAt, layoutOf } from '../testing/layout-canvas'
+import { key } from '../testing/canvas-queries'
+import { designOf } from '../testing/designs'
+import { arrangeLayoutCanvas } from '../testing/layout-canvas'
+import { keyAt, layoutOf } from '../testing/layout-rows'
 import { mountShell } from '../testing/mount-shell'
 import { Selection } from '../selection/selection'
 

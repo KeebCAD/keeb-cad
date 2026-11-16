@@ -1,5 +1,6 @@
 import { getLocation, type Node } from '@bgotink/kdl'
 import { attempt, Result } from '@keeb-cad/result'
+import { match } from 'ts-pattern'
 import type * as v from 'valibot'
 
 import { camelCase } from './camel-case'
@@ -30,6 +31,7 @@ function* readFields(schema: ObjectLikeSchema | undefined, content: NodeContent)
   const propertyLines = new Map(
     [...content.propertyLines].map(([name, line]) => [camelCase(name), { name, line }]),
   )
+  // Stryker disable next-line ConditionalExpression: propertyLines has only string keys, so get(undefined) is undefined as the guard gives
   const flattenedProperty = flattened === undefined ? undefined : propertyLines.get(flattened)
   if (flattenedProperty !== undefined) {
     yield* Result.err(
@@ -64,21 +66,16 @@ function* readFields(schema: ObjectLikeSchema | undefined, content: NodeContent)
 
 function* readField(schema: v.GenericSchema, node: Node): ReadStep<unknown> {
   const content = contentOf(node)
-  switch (fieldForm(schema)) {
-    case 'value': {
-      return yield* readLoose(node)
-    }
-    case 'object': {
-      return yield* readFields(resolveObject(schema, shellOf(content)), content)
-    }
-    case 'list': {
+  return yield* match(fieldForm(schema))
+    .returnType<ReadStep<unknown>>()
+    .with('value', () => readLoose(node))
+    .with('object', () => readFields(resolveObject(schema, shellOf(content)), content))
+    .with('list', () => {
       const bare = content.arguments.length === 0 && content.properties.size === 0
-      return bare ? yield* readItems(listItem(schema), content.children) : yield* readLoose(node)
-    }
-    case 'record': {
-      return yield* readRecord(recordValue(schema), node, content)
-    }
-  }
+      return bare ? readItems(listItem(schema), content.children) : readLoose(node)
+    })
+    .with('record', () => readRecord(recordValue(schema), node, content))
+    .exhaustive()
 }
 
 function* readRecord(entry: v.GenericSchema, node: Node, content: NodeContent): ReadStep<Fields> {
@@ -137,6 +134,7 @@ function contentOf(node: Node): NodeContent {
     propertyLines: new Map(
       [...node.getPropertyEntryMap()].map(([name, entry]) => [
         name,
+        // Stryker disable next-line OptionalChaining: every node and entry comes from parseKdl, which stores locations
         getLocation(entry)?.start.line,
       ]),
     ),
@@ -157,5 +155,6 @@ function repeatedNode(earlier: Node, repeat: Node): string {
 }
 
 function lineOf(node: Node): number | undefined {
+  // Stryker disable next-line OptionalChaining: every node and entry comes from parseKdl, which stores locations
   return getLocation(node)?.start.line
 }

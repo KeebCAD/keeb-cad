@@ -7,25 +7,28 @@ import { treeStates } from '../../workbench/states/tree-states'
 import type { TreeRow } from './types'
 import UiTree from './UiTree.vue'
 
-const ROWS: TreeRow[] = [
-  {
-    id: 'outer',
-    label: 'outer',
-    kind: 'group',
-    children: [
-      { id: 'outer-bottom', label: 'outer-bottom', kind: 'slot', children: [] },
-      { id: 'outer-home', label: 'outer-home', kind: 'slot', children: [] },
-    ],
-  },
-]
+// A group `outer` holding the slots `outer-bottom` and `outer-home`.
+function outerGroup(): TreeRow[] {
+  return [
+    {
+      id: 'outer',
+      label: 'outer',
+      kind: 'group',
+      children: [
+        { id: 'outer-bottom', label: 'outer-bottom', kind: 'slot', children: [] },
+        { id: 'outer-home', label: 'outer-home', kind: 'slot', children: [] },
+      ],
+    },
+  ]
+}
 
-async function arrange(initial: readonly string[] = []) {
+async function arrange(rows: readonly TreeRow[], initial: readonly string[] = []) {
   const selected = shallowRef(initial)
   const screen = await render({
     render: () =>
       h(UiTree, {
         label: 'Tree',
-        rows: ROWS,
+        rows,
         selected: selected.value,
         'onUpdate:selected': (ids: readonly string[]) => {
           selected.value = ids
@@ -44,7 +47,7 @@ describe('Tree', () => {
   })
 
   it('selects a clicked row by its id and marks it aria-selected', async () => {
-    const { selected, row } = await arrange()
+    const { selected, row } = await arrange(outerGroup())
 
     await row('outer-home').click()
 
@@ -53,7 +56,7 @@ describe('Tree', () => {
   })
 
   it('keeps a selected row selected when it is clicked again', async () => {
-    const { selected, row } = await arrange(['outer-home'])
+    const { selected, row } = await arrange(outerGroup(), ['outer-home'])
 
     await row('outer-home').click()
 
@@ -61,7 +64,7 @@ describe('Tree', () => {
   })
 
   it('marks the row the model selects aria-selected and the others not', async () => {
-    const { row } = await arrange(['outer-bottom'])
+    const { row } = await arrange(outerGroup(), ['outer-bottom'])
 
     await expect.element(row('outer-bottom')).toHaveAttribute('aria-selected', 'true')
     await expect.element(row('outer-home')).toHaveAttribute('aria-selected', 'false')
@@ -87,7 +90,7 @@ describe('Tree', () => {
   })
 
   it('moves focus to the next row on the down arrow', async () => {
-    const { row } = await arrange()
+    const { row } = await arrange(outerGroup())
     row('outer-bottom').element().focus()
 
     await userEvent.keyboard('{ArrowDown}')
@@ -96,7 +99,7 @@ describe('Tree', () => {
   })
 
   it('moves focus to the previous row on the up arrow', async () => {
-    const { row } = await arrange()
+    const { row } = await arrange(outerGroup())
     row('outer-home').element().focus()
 
     await userEvent.keyboard('{ArrowUp}')

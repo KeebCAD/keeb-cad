@@ -48,6 +48,21 @@ describe('filesContaining', () => {
     expect(filesContaining(dir, needle)).toEqual([file])
   })
 
+  it('lists the matching files in code-unit order of their paths, nested ones included', () => {
+    const dir = tempFolder()
+    // A recursive listing gives the top-level files before the nested one; locale order would put
+    // `a.js` before `B/`.
+    const [nested, a, c] = [
+      path.join(dir, 'B', 'x.js'),
+      path.join(dir, 'a.js'),
+      path.join(dir, 'c.js'),
+    ]
+    mkdirSync(path.dirname(nested))
+    for (const file of [a, c, nested]) writeFileSync(file, needle)
+
+    expect(filesContaining(dir, needle)).toEqual([nested, a, c])
+  })
+
   it('fails naming a folder that is missing', () => {
     const dir = path.join(tempFolder(), 'dist')
 

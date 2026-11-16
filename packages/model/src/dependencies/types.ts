@@ -18,9 +18,10 @@ export interface GraphEntry {
 export type DependencyGraph = ReadonlyMap<Id, GraphEntry>
 
 export interface AnchorCheck {
-  // Each in cycle order from its lowest member by compareId; sorted by that member.
+  // Each in cycle order from its lowest member by compareCodeUnits; sorted by that member.
   cycles: Id[][]
-  // Nodes whose explicit anchor names a missing id or a node of the wrong kind, by compareId.
+  // Nodes whose explicit anchor names a missing id or a node of the wrong kind, by
+  // compareCodeUnits.
   unresolvable: Id[]
   // In or below a cycle or an unresolvable anchor.
   unplaced: ReadonlySet<Id>

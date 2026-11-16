@@ -1,16 +1,11 @@
-import type { LaneFailure } from '@keeb-cad/blueprint'
 import { argumentHash, type LaneRunner } from '@keeb-cad/blueprint/worker'
 import { computed } from '@keeb-cad/reactive'
 import {
-  compareId,
   type BlueprintInputs,
   type Design,
   type Frozen,
-  type Id,
-  type ItemId,
   type LayoutOutput,
   type LibraryData,
-  type PartsOutput,
   type ReadonlyRef,
   type ResolvedParts,
   type Violation,
@@ -21,7 +16,6 @@ import { groupBorders } from '../borders/group-borders'
 import { checkAnchors } from '../dependencies/check-anchors'
 import { designFaults } from '../inputs/design-faults'
 import { resolveInputs } from '../inputs/resolve-inputs'
-import type { BlueprintInputInvalid } from '../inputs/types'
 import { resolvePartRef } from '../part-levels/resolve-part-ref'
 import { slotPartRuns } from '../part-levels/slot-part-runs'
 import type { FoundPart, SlotPartRun } from '../part-levels/types'
@@ -32,8 +26,13 @@ import { removedSideIds } from '../overrides/removed-side-ids'
 import { layoutViolations } from '../violations/layout-violations'
 import { overrideViolations } from '../violations/override-violations'
 import { unsupportedFormViolation } from '../violations/unsupported-form-violation'
-import { partViolationMessage } from './part-violation-message'
-import { partsLaneCalls, rectangleOutputOf } from './parts-lane-calls'
+import { firstPerOwner } from './first-per-owner'
+import { inputInvalidViolation } from './input-invalid-violation'
+import { laneFailureViolation } from './lane-failure-violation'
+import { partsLaneCalls } from './parts-lane-calls'
+import { partsOutputOf } from './parts-output-of'
+import { rectangleOf } from './rectangle-of'
+import { unresolvedViolation } from './unresolved-violation'
 import { pinsOf } from './pins-of'
 import type { Derivations, PartRun, Rectangle } from './types'
 
@@ -71,7 +70,7 @@ export function createDerivations(
     const rectangles = new Map<string, Rectangle>()
     // Main's checkInputs reads the same list, so both threads name the same faults.
     const violations: Violation[] = firstPerOwner(designFaults(lookups, slotRuns.value)).map(
-      inputInvalid,
+      inputInvalidViolation,
     )
 
     // The declared defaults under the part's inputs under the slot's.
@@ -118,7 +117,7 @@ export function createDerivations(
         if (resolution.kind === 'unresolved') {
           if (!reported) {
             reported = true
-            violations.push(unresolved(slot.slot, resolution.severity))
+            violations.push(unresolvedViolation(slot.slot, resolution.severity))
           }
           continue
         }
@@ -148,7 +147,7 @@ export function createDerivations(
     for (const run of runs.values()) {
       const { result } = run
       if (result.isErr() && result.error.kind !== 'unavailable') {
-        violations.push(failure(run, result.error))
+        violations.push(laneFailureViolation(run, result.error))
       }
     }
     return { output: partsOutputOf(rectangles), slots, violations }
@@ -181,58 +180,4 @@ export function createDerivations(
   )
 
   return { parts, pins, placements, violations }
-}
-
-function rectangleOf(result: PartRun['result'], found: FoundPart): Rectangle | undefined {
-  if (result.isErr()) return undefined
-  const name = rectangleOutputOf(found.declaration)
-  return name === undefined ? undefined : (result.value.outputs[name] as Rectangle)
-}
-
-function partsOutputOf(rectangles: ReadonlyMap<string, Rectangle>): PartsOutput {
-  const ids = [...rectangles.keys()].toSorted(compareId)
-  return { ids, rows: ids.map((id) => rectangles.get(id) as Rectangle) }
-}
-
-function unresolved(slot: Id, severity: 'warning' | 'error'): Violation {
-  const ids = [slot]
-  return {
-    kind: 'unresolvable-reference',
-    severity,
-    ids,
-    message: partViolationMessage({ kind: 'unresolvable-reference' }, ids),
-    fixes: [],
-  }
-}
-
-// Each owner's fault on its input lowest by compareId; the list is in that order per owner.
-function firstPerOwner(faults: readonly BlueprintInputInvalid[]): BlueprintInputInvalid[] {
-  const seen = new Set<string>()
-  return faults.filter(({ owner }) => {
-    const key = `${owner.scope} ${owner.id}`
-    if (seen.has(key)) return false
-    seen.add(key)
-    return true
-  })
-}
-
-function inputInvalid(invalid: BlueprintInputInvalid): Violation {
-  return {
-    kind: 'blueprint-input-invalid',
-    severity: 'error',
-    ids: [invalid.owner.id],
-    message: partViolationMessage({ kind: 'blueprint-input-invalid', invalid }, [invalid.owner.id]),
-    fixes: [],
-  }
-}
-
-function failure(run: PartRun, error: Exclude<LaneFailure, { kind: 'unavailable' }>): Violation {
-  const ids: ItemId[] = [run.part, ...run.slots.toSorted(compareId)]
-  return {
-    kind: error.kind,
-    severity: 'error',
-    ids,
-    message: partViolationMessage(error, ids),
-    fixes: [],
-  }
 }

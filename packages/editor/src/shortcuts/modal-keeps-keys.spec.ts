@@ -1,4 +1,5 @@
 import { UiDialog } from '@keeb-cad/ui'
+import { expectedScrim } from '@keeb-cad/ui/testing'
 import { describe, expect, it } from 'vitest'
 import { page, userEvent } from 'vitest/browser'
 import { render } from 'vitest-browser-vue'
@@ -10,7 +11,6 @@ import { press, pressKey } from '../testing/press'
 const AT_LAYOUT = '/design/corne/layout'
 const TITLE = 'Add group'
 const BUTTON = 'Add'
-const expectedScrim = 'rgba(35, 38, 52, 0.45)'
 
 const dialog = () => page.getByRole('dialog', { name: TITLE })
 const dialogButton = () => dialog().getByRole('button', { name: BUTTON })

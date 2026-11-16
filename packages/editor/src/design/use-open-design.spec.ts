@@ -5,17 +5,25 @@ import { expectOk } from '@keeb-cad/result/testing'
 import type { Design } from '@keeb-cad/schema'
 import { aDesign, aMeta, anId } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
-import { createApp } from 'vue'
+import { type App, createApp } from 'vue'
 
 import { useOpenDesign } from './use-open-design'
 
-async function arrange() {
+type Commit = (design: Design) => void
+
+async function arrange(): Promise<{ app: App }>
+async function arrange(design: Design): Promise<{ app: App; commit: Commit }>
+async function arrange(design?: Design): Promise<{ app: App; commit?: Commit }> {
   const container = new Container().addModule(designModule)
   await container.autoLoad()
   const store = container.resolve(DesignStore)
   const app = createApp({})
   provideInjectorOnApp(app, container.resolve(InjectorToken))
-  const commit = (design: Design) => expectOk(store.replaceDesign({ design, unreadable: [] }))
+  if (design === undefined) return { app }
+  const commit: Commit = (next) => {
+    expectOk(store.replaceDesign({ design: next, unreadable: [] }))
+  }
+  commit(design)
   return { app, commit }
 }
 
@@ -29,20 +37,18 @@ describe('useOpenDesign', () => {
   })
 
   it('holds the committed design', async () => {
-    const { app, commit } = await arrange()
     const design = aDesign()
-    const openDesign = app.runWithContext(() => useOpenDesign())
+    const { app } = await arrange(design)
 
-    commit(design)
+    const openDesign = app.runWithContext(() => useOpenDesign())
 
     expect(openDesign.value).toEqual(design)
   })
 
   it('moves from the first design to the later one on a second commit', async () => {
-    const { app, commit } = await arrange()
     const first = aDesign({ meta: aMeta({ id: anId('lily-58'), name: 'Lily58' }) })
     const second = aDesign({ meta: aMeta({ id: anId('corne'), name: 'Corne' }) })
-    commit(first)
+    const { app, commit } = await arrange(first)
     const openDesign = app.runWithContext(() => useOpenDesign())
     const before = openDesign.value
 

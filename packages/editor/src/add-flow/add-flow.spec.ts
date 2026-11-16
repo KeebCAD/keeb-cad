@@ -8,7 +8,7 @@ import { page, userEvent } from 'vitest/browser'
 import { nextTick } from 'vue'
 
 import { Selection } from '../selection/selection'
-import { designOf } from '../testing/layout-canvas'
+import { designOf } from '../testing/designs'
 import { mountShell } from '../testing/mount-shell'
 import { press, pressKey } from '../testing/press'
 

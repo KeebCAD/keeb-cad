@@ -111,7 +111,7 @@ describe('resolveInputs', () => {
     })
   })
 
-  it('names the faulty input lowest by compareId', () => {
+  it('names the faulty input lowest by compareCodeUnits', () => {
     expectResult(
       resolveInputs(declaration, slot, { size: '2u', colour: 'red' }),
       Result.err({ owner: slot, input: 'colour', reason: 'unknown' }),

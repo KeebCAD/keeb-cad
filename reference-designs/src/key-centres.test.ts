@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { compareKeyPoses, formatKeyComparison, type KeyPose } from './key-centres'
-import { loadKeyPoses } from './load-key-poses'
+import { compareKeyFrames, formatKeyComparison, type KeyFrame } from './key-centres'
+import { loadKeyFrames } from './load-key-frames'
 
 const SHIFTED = 'matrix_middle_home'
 const WIDE = 'thumbfan_far_home'
 
-const withKey = (keys: readonly KeyPose[], name: string, change: (k: KeyPose) => KeyPose) =>
+const withKey = (keys: readonly KeyFrame[], name: string, change: (k: KeyFrame) => KeyFrame) =>
   keys.map((k) => (k.name === name ? change(k) : { ...k }))
 
-describe.each(['wired', 'wireless'] as const)('Corney Island %s key poses', (design) => {
-  const reference = loadKeyPoses(design)
+describe.each(['wired', 'wireless'] as const)('Corney Island %s key frames', (design) => {
+  const reference = loadKeyFrames(design)
 
   it('holds the 21 keys, helpers excluded, with keycap sizes from the config', () => {
     expect(reference).toHaveLength(21)
@@ -22,13 +22,13 @@ describe.each(['wired', 'wireless'] as const)('Corney Island %s key poses', (des
   })
 
   it('passes the fixture against itself', () => {
-    const result = compareKeyPoses(reference, reference)
+    const result = compareKeyFrames(reference, reference)
     expect(result.pass, formatKeyComparison(result)).toBe(true)
     expect(result.keys).toHaveLength(21)
   })
 
   it('fails a key shifted 0.06 mm, naming it and its deviation', () => {
-    const result = compareKeyPoses(
+    const result = compareKeyFrames(
       reference,
       withKey(reference, SHIFTED, (k) => ({ ...k, x: k.x + 0.06 })),
     )
@@ -40,7 +40,7 @@ describe.each(['wired', 'wireless'] as const)('Corney Island %s key poses', (des
   })
 
   it('passes a key shifted exactly 0.05 mm', () => {
-    const result = compareKeyPoses(
+    const result = compareKeyFrames(
       reference,
       withKey(reference, SHIFTED, (k) => ({ ...k, x: k.x + 0.03, y: k.y - 0.04 })),
     )
@@ -49,7 +49,7 @@ describe.each(['wired', 'wireless'] as const)('Corney Island %s key poses', (des
 
   it('fails a key rotated beyond tolerance, naming it', () => {
     // 0.5° on an 18 × 18 keycap moves a corner ~0.11 mm.
-    const result = compareKeyPoses(
+    const result = compareKeyFrames(
       reference,
       withKey(reference, SHIFTED, (k) => ({ ...k, r: k.r + 0.5 })),
     )
@@ -60,7 +60,7 @@ describe.each(['wired', 'wireless'] as const)('Corney Island %s key poses', (des
   it('scales the rotation tolerance with each key’s own keycap', () => {
     // 0.2°: 0.044 mm on a 1u keycap, 0.057 mm on the 1.5u one.
     const turn = (name: string) =>
-      compareKeyPoses(
+      compareKeyFrames(
         reference,
         withKey(reference, name, (k) => ({ ...k, r: k.r + 0.2 })),
       )
@@ -71,7 +71,7 @@ describe.each(['wired', 'wireless'] as const)('Corney Island %s key poses', (des
   })
 
   it('compares rotation modulo 360', () => {
-    const result = compareKeyPoses(
+    const result = compareKeyFrames(
       reference,
       withKey(reference, WIDE, (k) => ({ ...k, r: k.r - 360 })),
     )
@@ -83,7 +83,7 @@ describe.each(['wired', 'wireless'] as const)('Corney Island %s key poses', (des
       ...reference.filter((k) => k.name !== SHIFTED),
       { name: 'matrix_extra_home', x: 0, y: 0, r: 0 },
     ]
-    const result = compareKeyPoses(reference, candidate)
+    const result = compareKeyFrames(reference, candidate)
     expect(result.pass).toBe(false)
     expect(result.missing).toEqual([SHIFTED])
     expect(result.extra).toEqual(['matrix_extra_home'])

@@ -1,46 +1,37 @@
-import { blueprintWorkerModule, LaneRunner } from '@keeb-cad/blueprint/worker'
 import { AddSlot, DeleteNode, NewDesign, SetAnchor } from '@keeb-cad/commands'
 import { DesignStore } from '@keeb-cad/design'
-import { DesignMirror, DesignMirrorWriter, designWorkerModule } from '@keeb-cad/design/worker'
 import { Container } from '@keeb-cad/di'
-import { libraryData } from '@keeb-cad/library/worker'
-import { createDerivations, dependencyCycleMessage, type Derivations } from '@keeb-cad/model/worker'
+import { dependencyCycleMessage, type Derivations } from '@keeb-cad/model/worker'
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
 import type { Design } from '@keeb-cad/schema'
 import {
   aDesign,
+  aFingerprintsFile,
   aFreeGroup,
   aLayout,
   aLayoutRow,
   anAttachPoint,
   anId,
   aRevision,
+  aRoutingFile,
   aSlot,
   aSlotAnchor,
 } from '@keeb-cad/schema/testing'
-import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
 import { describe, expect, it } from 'vitest'
 
-import { mainModules } from './main-modules'
+import { arrangePlacements } from './testing/arrange-placements'
+import { arrangeStore } from './testing/arrange-store'
 
-async function arrangeStore(): Promise<DesignStore> {
-  const container = new Container()
-  for (const module of mainModules) container.addModule(module)
-  container.override(storageBackend).useValue(new MemoryBackend())
-  await container.autoLoad()
-  return container.resolve(DesignStore)
-}
-
-// The model worker's derivations, wired by hand on a mirror holding the design.
+// The model worker's derivations on a loaded design, which no command builds.
 async function arrangeDerivations(design: Design): Promise<Derivations> {
-  const container = new Container().addModule(designWorkerModule).addModule(blueprintWorkerModule)
-  await container.autoLoad()
-  const runner = container.resolve(LaneRunner)
-  runner.useLibrary(libraryData)
-  const derivations = createDerivations(container.resolve(DesignMirror), libraryData, runner)
-  container.resolve(DesignMirrorWriter).replace(design, aRevision())
-  await runner.pause(derivations.pins.value)
-  return derivations
+  const place = await arrangePlacements(new Container())
+  return place({
+    design,
+    routing: aRoutingFile(),
+    fingerprints: aFingerprintsFile(),
+    seq: 0,
+    revision: aRevision(),
+  })
 }
 
 function designOf(store: DesignStore) {
@@ -64,7 +55,7 @@ const looped = () => aDesign({ layout: aLayout({ children: [slot('a', 'b'), slot
 
 describe('anchors through mainModules', () => {
   it('commits SetAnchor on a slot added after NewDesign', async () => {
-    const store = await arrangeStore()
+    const store = await arrangeStore(new Container())
     expectOk(await store.run(NewDesign, {}))
     expectOk(store.run(AddSlot, { id: 'a' }))
     expectOk(store.run(AddSlot, { id: 'b' }))
@@ -76,7 +67,7 @@ describe('anchors through mainModules', () => {
   })
 
   it('refuses SetAnchor closing a loop with dependency-cycle, and availability says the same', async () => {
-    const store = await arrangeStore()
+    const store = await arrangeStore(new Container())
     expectOk(
       store.replaceDesign({
         design: aDesign({ layout: aLayout({ children: [slot('a'), slot('b', 'a')] }) }),
@@ -99,7 +90,7 @@ describe('anchors through mainModules', () => {
   })
 
   it('refuses DeleteNode whose fallback closes a loop with dependency-cycle, the design unchanged', async () => {
-    const store = await arrangeStore()
+    const store = await arrangeStore(new Container())
     const design = aDesign({
       layout: aLayout({
         children: [
@@ -125,7 +116,7 @@ describe('anchors through mainModules', () => {
   })
 
   it('commits an edit elsewhere in a design loaded with a loop', async () => {
-    const store = await arrangeStore()
+    const store = await arrangeStore(new Container())
     expectOk(store.replaceDesign({ design: looped(), unreadable: [] }))
 
     expectOk(store.run(AddSlot, { id: 'c' }))

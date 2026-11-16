@@ -160,7 +160,7 @@ describe('checkStructure', () => {
       expect(result.error).toEqual(unknownTarget('missing'))
     })
 
-    it('of two new cycles, refuses the one whose changed member is lowest by compareId', () => {
+    it('of two new cycles, refuses the one whose changed member is lowest by compareCodeUnits', () => {
       const previous = inRoot(slot('p'), slot('q'), slot('r', 'p'), slot('s', 'q'))
       const next = inRoot(slot('p', 'r'), slot('q', 's'), slot('r', 'p'), slot('s', 'q'))
 

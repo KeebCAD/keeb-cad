@@ -4,16 +4,11 @@ import { aFreeGroup, aLayoutRow, anId, aPlacementId, aSlot } from '@keeb-cad/sch
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { emulateColorScheme } from '../testing/color-scheme'
-import {
-  arrangeLayoutCanvas,
-  designOf,
-  designWith,
-  key,
-  keyAt,
-  layoutOf,
-  nextFrames,
-  sizeCanvasAndWait,
-} from '../testing/layout-canvas'
+import { key } from '../testing/canvas-queries'
+import { designOf, designWith } from '../testing/designs'
+import { arrangeLayoutCanvas, sizeCanvasAndWait } from '../testing/layout-canvas'
+import { keyAt, layoutOf } from '../testing/layout-rows'
+import { nextFrames } from '../testing/next-frames'
 import { press } from '../testing/press'
 import { FitViewport } from './fit-viewport'
 import type { ViewportValue } from './types'

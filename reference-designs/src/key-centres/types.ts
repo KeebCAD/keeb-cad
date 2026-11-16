@@ -1,7 +1,7 @@
 export type Variant = 'wired' | 'wireless'
 
 /** A key's centre and rotation in Ergogen's frame (mm, y up), with its keycap size (used for the rotation tolerance). */
-export type KeyPose = {
+export type KeyFrame = {
   name: string
   x: number
   y: number
@@ -13,8 +13,8 @@ export type KeyPose = {
   height: number
 }
 
-/** A candidate pose. Sizes are optional: the rotation tolerance uses the reference's. */
-export type CandidatePose = Pick<KeyPose, 'name' | 'x' | 'y' | 'r'> & Partial<KeyPose>
+/** A candidate key frame. Sizes are optional: the rotation tolerance uses the reference's. */
+export type CandidateKeyFrame = Pick<KeyFrame, 'name' | 'x' | 'y' | 'r'> & Partial<KeyFrame>
 
 export type Tolerances = {
   /** Max Euclidean centre distance, mm, inclusive. */

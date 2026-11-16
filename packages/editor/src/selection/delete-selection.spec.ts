@@ -8,8 +8,9 @@ import { page } from 'vitest/browser'
 
 import type { InvokeEvent } from '../invoke/types'
 import { emulateColorScheme } from '../testing/color-scheme'
-import { designWith } from '../testing/layout-canvas'
+import { designWith } from '../testing/designs'
 import { mountShell } from '../testing/mount-shell'
+import { nextFrames } from '../testing/next-frames'
 import { press, pressKey } from '../testing/press'
 import { DeleteSelection } from './delete-selection'
 import { Selection } from './selection'
@@ -17,14 +18,13 @@ import { Selection } from './selection'
 const DELETE = { key: 'Delete', code: 'Delete' }
 const BACKSPACE = { key: 'Backspace', code: 'Backspace' }
 const ROOT = aPlacementId('left/root')
+const A = aPlacementId('left/a')
 
 const canvas = () => page.getByRole('main', { name: 'Canvas' })
 const topBar = () => page.getByRole('banner', { name: 'Top bar' })
 const treeRow = (id: string) => page.getByRole('treeitem', { name: id })
 
-async function arrange(
-  { workspace = 'layout', selected = [aPlacementId('left/a')] } = {} as Arrangement,
-) {
+async function arrange({ workspace = 'layout', selected }: Arrangement) {
   const design = designWith('a', 'b')
   const shell = await mountShell({ path: `/design/corne/${workspace}`, design })
   const store = shell.injector.resolve(DesignStore)
@@ -37,7 +37,7 @@ async function arrange(
   }
 }
 
-type Arrangement = { workspace?: string; selected?: readonly PlacementId[] }
+type Arrangement = { workspace?: string; selected: readonly PlacementId[] }
 
 // Opening the Tree focuses its selected row.
 async function focusTreeRow(id: string) {
@@ -54,7 +54,7 @@ describe('Delete on the selection', () => {
   ])(
     '%s with focus on the Layout canvas deletes the selected key and claims the key',
     async (_name, key) => {
-      const shell = await arrange()
+      const shell = await arrange({ selected: [A] })
       canvas().element().focus()
 
       const keydown = pressKey(key)
@@ -70,7 +70,7 @@ describe('Delete on the selection', () => {
   it.each([['layout'], ['outline']])(
     'deletes the selected key with focus on its Tree row on %s',
     async (workspace) => {
-      const shell = await arrange({ workspace })
+      const shell = await arrange({ workspace, selected: [A] })
       await focusTreeRow('a')
 
       pressKey(DELETE)
@@ -83,7 +83,7 @@ describe('Delete on the selection', () => {
   )
 
   it('leaves the design and the key to the top bar with focus there', async () => {
-    const shell = await arrange()
+    const shell = await arrange({ selected: [A] })
     const before = shell.design()
     topBar().element().focus()
 
@@ -126,7 +126,7 @@ describe('Delete on the selection', () => {
   })
 
   it('is unavailable with focus on the canvas off Layout, changing nothing', async () => {
-    const shell = await arrange({ workspace: 'outline' })
+    const shell = await arrange({ workspace: 'outline', selected: [A] })
     const before = shell.design()
     canvas().element().focus()
 
@@ -140,7 +140,7 @@ describe('Delete on the selection', () => {
   })
 
   it("reports one press as its command's event, then its own, each when it settles", async () => {
-    const shell = await arrange()
+    const shell = await arrange({ selected: [A] })
     const events: string[] = []
     shell.invoke.events.on('invoke', (event: InvokeEvent) => events.push(event.id))
     canvas().element().focus()
@@ -148,7 +148,7 @@ describe('Delete on the selection', () => {
     pressKey(DELETE)
 
     await expect.poll(() => events).toEqual(['layout.deleteNode', 'selection.deleteSelection'])
-    await new Promise((settle) => setTimeout(settle, 0))
+    await nextFrames()
     expect(events).toEqual(['layout.deleteNode', 'selection.deleteSelection'])
   })
 })

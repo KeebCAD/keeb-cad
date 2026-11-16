@@ -1,4 +1,5 @@
 import type { Result } from '@keeb-cad/result'
+import type { DeclaredInput } from '@keeb-cad/schema'
 
 import type { HandleTable } from './handle-table'
 
@@ -52,11 +53,10 @@ export interface StageCalls {
   convertHandle: ConvertHandle
 }
 
-export type NestedInputDeclaration = { default: unknown } & (
-  | { kind: 'quantity' }
-  | { kind: 'option'; options: readonly string[] }
-  | { kind: 'boolean' | 'text' | 'part' | 'anchor' | 'asset' }
-)
+// schema declares no part, anchor or asset input yet, so those kinds stay hand-declared here.
+export type ReferenceInputDeclaration = { kind: 'part' | 'anchor' | 'asset'; default: unknown }
+
+export type NestedInputDeclaration = DeclaredInput | ReferenceInputDeclaration
 
 export interface NestedBlueprintDeclaration {
   id: string

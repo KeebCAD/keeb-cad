@@ -81,7 +81,7 @@ describe('checkInputs', () => {
     expect(result.error).toEqual(inputRejection('s', 'colour', 'unknown'))
   })
 
-  it('of two new faults, refuses the one whose owner is lowest by compareId', () => {
+  it('of two new faults, refuses the one whose owner is lowest by compareCodeUnits', () => {
     const next = withSlots(
       { id: 'q', inputs: { size: '2u' } },
       { id: 'p', inputs: { colour: 'red' } },

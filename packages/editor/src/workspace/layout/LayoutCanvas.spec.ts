@@ -14,15 +14,11 @@ import { page } from 'vitest/browser'
 import { nextTick } from 'vue'
 
 import { emulateColorScheme } from '../../testing/color-scheme'
-import {
-  arrangeLayoutCanvas as arrange,
-  canvas,
-  designWith,
-  key,
-  layoutOf,
-  nextFrames,
-  sizeCanvasAndWait,
-} from '../../testing/layout-canvas'
+import { canvas, key } from '../../testing/canvas-queries'
+import { designWith } from '../../testing/designs'
+import { arrangeLayoutCanvas as arrange, sizeCanvasAndWait } from '../../testing/layout-canvas'
+import { layoutOf } from '../../testing/layout-rows'
+import { nextFrames } from '../../testing/next-frames'
 import { mountShell } from '../../testing/mount-shell'
 import type { ViewportValue } from '../../viewport/types'
 import type { Viewport } from '../../viewport/viewport'

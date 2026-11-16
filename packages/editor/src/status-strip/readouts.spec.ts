@@ -3,16 +3,10 @@ import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { page, userEvent } from 'vitest/browser'
 
 import { emulateColorScheme } from '../testing/color-scheme'
-import {
-  arrangeLayoutCanvas,
-  canvasSvg,
-  clientAt,
-  designWith,
-  key,
-  keyAt,
-  layoutOf,
-  sizeCanvasAndWait,
-} from '../testing/layout-canvas'
+import { canvasSvg, clientAt, key } from '../testing/canvas-queries'
+import { designWith } from '../testing/designs'
+import { arrangeLayoutCanvas, sizeCanvasAndWait } from '../testing/layout-canvas'
+import { keyAt, layoutOf } from '../testing/layout-rows'
 import { mountShell } from '../testing/mount-shell'
 import { press } from '../testing/press'
 import type { Point } from '../viewport/types'

@@ -14,17 +14,11 @@ import { page, userEvent } from 'vitest/browser'
 import { nextTick } from 'vue'
 
 import { emulateColorScheme } from '../testing/color-scheme'
-import {
-  arrangeLayoutCanvas,
-  canvas,
-  designOf,
-  groupRow,
-  key,
-  keyAt,
-  layoutOf,
-  nextFrames,
-  rectangle,
-} from '../testing/layout-canvas'
+import { canvas, key } from '../testing/canvas-queries'
+import { designOf } from '../testing/designs'
+import { arrangeLayoutCanvas } from '../testing/layout-canvas'
+import { groupRow, keyAt, layoutOf, rectangle } from '../testing/layout-rows'
+import { nextFrames } from '../testing/next-frames'
 import { press } from '../testing/press'
 import type { LayoutRowOf } from '../testing/types'
 import type { Point } from '../viewport/types'
@@ -37,10 +31,10 @@ const STALE = 'rgb(115, 121, 148)'
 const CANVAS = 'rgb(65, 69, 89)'
 const KEY_LEGEND = 'rgb(35, 38, 52)'
 const TEXT = 'rgb(198, 208, 245)'
-const GRACE_MS = 300
 // Screen positions come from float transforms, so they agree to the nearest pixel, ±0.5 px.
 const SCREEN_PX_DIGITS = 0
 
+const GRACE_MS = 300
 const NOTHING = { borders: [], tabs: [], origins: [] } as const
 
 type Side = 'left' | 'right'
@@ -272,7 +266,6 @@ describe('the group borders', () => {
         origins: [],
       })
     })
-
     it("strokes the innermost group's border for a pointer inside its line, off the keys", async () => {
       const { design, layout } = nested()
       await arrange(design, layout)
@@ -443,21 +436,6 @@ describe('the group borders', () => {
       expect(drawn()).toEqual(NOTHING)
     })
 
-    it("keeps a key's group shown when the slide-out closes under no Tree hover", async () => {
-      await arrange()
-      await openTree()
-      // The open slide-out covers key a, so the pointer is on c's other key.
-      await userEvent.hover(key('left/b'))
-      await expect.poll(drawn).toEqual(HOVERED_C)
-      const advance = freezeTime()
-
-      press('T')
-      await advance(GRACE_MS + 1)
-
-      expect(treeRow('c').query()).toBeNull()
-      expect(drawn()).toEqual(HOVERED_C)
-    })
-
     it('clears a group its row set at once when the slide-out closes within the grace', async () => {
       await arrange()
       await openTree()
@@ -472,6 +450,21 @@ describe('the group borders', () => {
 
       expect(treeRow('c').query()).toBeNull()
       expect(drawn()).toEqual(NOTHING)
+    })
+
+    it("keeps a key's group shown when the slide-out closes under no Tree hover", async () => {
+      await arrange()
+      await openTree()
+      // The open slide-out covers key a, so the pointer is on c's other key.
+      await userEvent.hover(key('left/b'))
+      await expect.poll(drawn).toEqual(HOVERED_C)
+      const advance = freezeTime()
+
+      press('T')
+      await advance(GRACE_MS + 1)
+
+      expect(treeRow('c').query()).toBeNull()
+      expect(drawn()).toEqual(HOVERED_C)
     })
   })
 
@@ -540,52 +533,6 @@ describe('the group borders', () => {
         borders: [selectedBorder('c'), hoveredBorder('d')],
         tabs: [selectedTab('c'), hoveredTab('d')],
         origins: [],
-      })
-    })
-  })
-
-  describe('a commit', () => {
-    it('drops the selection and the hovered border at once when it deletes their group', async () => {
-      const shell = await arrange(...bothHalves())
-      await userEvent.hover(key('right/a'))
-      await expect.poll(drawn).toEqual({
-        borders: [hoveredBorder('c', 'right')],
-        tabs: [hoveredTab('c', 'right')],
-        origins: [],
-      })
-      shell.selection.select([aPlacementId('right/a')])
-      freezeTime()
-
-      expectOk(shell.store.run(DeleteNode, { ids: [anId('c')] }))
-      await nextTick()
-
-      expect({ selected: shell.selection.ids, drawn: drawn() }).toEqual({
-        selected: [],
-        drawn: NOTHING,
-      })
-    })
-
-    it('keeps the selection and the hovered border when it deletes another node', async () => {
-      const shell = await arrange(...bothHalves([slot('z')]))
-      await userEvent.hover(key('right/a'))
-      await expect.poll(drawn).toEqual({
-        borders: [hoveredBorder('c', 'right')],
-        tabs: [hoveredTab('c', 'right')],
-        origins: [],
-      })
-      shell.selection.select([aPlacementId('right/a')])
-      freezeTime()
-
-      expectOk(shell.store.run(DeleteNode, { ids: [anId('z')] }))
-      await nextTick()
-
-      expect({ selected: shell.selection.ids, drawn: drawn() }).toEqual({
-        selected: [aPlacementId('right/a')],
-        drawn: {
-          borders: [hoveredBorder('c', 'right')],
-          tabs: [hoveredTab('c', 'right')],
-          origins: [],
-        },
       })
     })
   })
@@ -669,6 +616,52 @@ describe('the group borders', () => {
       await expect
         .poll(drawn)
         .toEqual({ borders: [selectedBorder('p')], tabs: [selectedTab('p')], origins: [] })
+    })
+  })
+
+  describe('a commit', () => {
+    it('drops the selection and the hovered border at once when it deletes their group', async () => {
+      const shell = await arrange(...bothHalves())
+      await userEvent.hover(key('right/a'))
+      await expect.poll(drawn).toEqual({
+        borders: [hoveredBorder('c', 'right')],
+        tabs: [hoveredTab('c', 'right')],
+        origins: [],
+      })
+      shell.selection.select([aPlacementId('right/a')])
+      freezeTime()
+
+      expectOk(shell.store.run(DeleteNode, { ids: [anId('c')] }))
+      await nextTick()
+
+      expect({ selected: shell.selection.ids, drawn: drawn() }).toEqual({
+        selected: [],
+        drawn: NOTHING,
+      })
+    })
+
+    it('keeps the selection and the hovered border when it deletes another node', async () => {
+      const shell = await arrange(...bothHalves([slot('z')]))
+      await userEvent.hover(key('right/a'))
+      await expect.poll(drawn).toEqual({
+        borders: [hoveredBorder('c', 'right')],
+        tabs: [hoveredTab('c', 'right')],
+        origins: [],
+      })
+      shell.selection.select([aPlacementId('right/a')])
+      freezeTime()
+
+      expectOk(shell.store.run(DeleteNode, { ids: [anId('z')] }))
+      await nextTick()
+
+      expect({ selected: shell.selection.ids, drawn: drawn() }).toEqual({
+        selected: [aPlacementId('right/a')],
+        drawn: {
+          borders: [hoveredBorder('c', 'right')],
+          tabs: [hoveredTab('c', 'right')],
+          origins: [],
+        },
+      })
     })
   })
 })

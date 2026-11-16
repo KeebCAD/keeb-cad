@@ -4,13 +4,9 @@ import { page, userEvent } from 'vitest/browser'
 
 import type { Point } from '../viewport/types'
 import { modelToScreen } from '../viewport/viewport-transform'
-import {
-  arrangeLayoutCanvas,
-  canvas,
-  canvasSvg,
-  nextFrames,
-  sizeCanvasAndWait,
-} from './layout-canvas'
+import { canvas, canvasSvg } from './canvas-queries'
+import { arrangeLayoutCanvas, sizeCanvasAndWait } from './layout-canvas'
+import { nextFrames } from './next-frames'
 
 // The canvas size and viewport the arrangement sets, so a model point's screen point is known.
 export const idsAndLinksSize = { width: 648, height: 448 }

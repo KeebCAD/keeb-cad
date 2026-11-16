@@ -8,7 +8,7 @@ import type { LaneFailure, LaneOutput } from '../lane/types'
 import { blueprintWorkerModule } from '../pool/blueprint-worker-module'
 import { VmPool } from '../pool/vm-pool'
 import { aLibraryData } from '../testing/a-library-data'
-import { noArgs, noCalls } from '../testing/a-pinned-blueprint'
+import { noArgs, noCalls } from '../testing/stage-calls'
 import { errOf, outcomeOf } from '../testing/outcome'
 import { LaneRunner } from './lane-runner'
 

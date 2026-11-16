@@ -10,14 +10,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { blueprintWorkerModule } from '../pool/blueprint-worker-module'
 import { aLibraryData } from '../testing/a-library-data'
-import {
-  laneFailed,
-  laneScript,
-  noArgs,
-  noCalls,
-  okValue,
-  returning,
-} from '../testing/a-pinned-blueprint'
+import { laneScript, returning } from '../testing/lane-script'
+import { laneFailed, noArgs, noCalls, okValue } from '../testing/stage-calls'
 import { errOf, outcomeOf } from '../testing/outcome'
 import { LaneCache } from './lane-cache'
 import { LaneRunner } from './lane-runner'

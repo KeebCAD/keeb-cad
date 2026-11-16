@@ -166,7 +166,9 @@ export const VUE_REACTIVITY = npm('@vue/reactivity')
 
 const ANY_WORKSPACE_TARGET = '^(packages/[^/]+/|app/|@keeb-cad/[^/]+(/|$))'
 const TEST_FILE = String.raw`\.(spec|test)\.ts$`
-const TESTING_FOLDER = '^packages/[^/]+/src/testing/'
+const TESTING_FOLDER = '^(packages/[^/]+/src|app/src)/testing/'
+// app's shared spec helpers, which wire a worker's graph by hand as its specs do.
+const APP_TESTING = '^app/src/testing/'
 
 const MAIN_ENTRY = String.raw`^app/src/main\.ts$`
 const MODEL_WORKER_ENTRY = String.raw`^app/src/(model\.worker|start-model-worker)\.ts$`
@@ -270,22 +272,22 @@ const config: IConfiguration = {
       'only-model-worker-entry-imports-model-worker',
       'model',
       'worker',
-      [MODEL_WORKER_ENTRY, APP_SPEC],
-      "Only the model worker's entry, its start file and app's specs import model/worker: one reactive graph.",
+      [MODEL_WORKER_ENTRY, APP_SPEC, APP_TESTING],
+      "Only the model worker's entry, its start file and app's specs and their helpers import model/worker: one reactive graph.",
     ),
     onlyOwnersImportEntry(
       'only-model-worker-entry-and-pipeline-import-design-worker',
       'design',
       'worker',
-      [MODEL_WORKER_ENTRY, sourcePath('pipeline'), APP_SPEC],
-      "Only the model worker's entry, its start file, pipeline and app's specs import design/worker.",
+      [MODEL_WORKER_ENTRY, sourcePath('pipeline'), APP_SPEC, APP_TESTING],
+      "Only the model worker's entry, its start file, pipeline and app's specs and their helpers import design/worker.",
     ),
     onlyOwnersImportEntry(
       'only-worker-entries-import-library-worker',
       'library',
       'worker',
-      [MODEL_WORKER_ENTRY, CASE_WORKER_ENTRY, APP_SPEC],
-      "Only the model and case worker entries, the model worker's start file and app's specs import library/worker.",
+      [MODEL_WORKER_ENTRY, CASE_WORKER_ENTRY, APP_SPEC, APP_TESTING],
+      "Only the model and case worker entries, the model worker's start file and app's specs and their helpers import library/worker.",
     ),
     onlyOwnersImportEntry(
       'only-editor-imports-di-vue',
@@ -448,11 +450,11 @@ const config: IConfiguration = {
     {
       name: 'reference-designs-only-in-tests',
       comment:
-        'reference-designs is imported only by tests and the one dev seed file, which only the dev server loads.',
+        "reference-designs is imported only by tests, app's spec helpers and the one dev seed file, which only the dev server loads.",
       severity: 'error',
       from: {
         path: '^(packages|app)/',
-        pathNot: [TEST_FILE, String.raw`^app/src/dev-seed/corney-seed\.ts$`],
+        pathNot: [TEST_FILE, APP_TESTING, String.raw`^app/src/dev-seed/corney-seed\.ts$`],
       },
       to: { path: REFERENCE_DESIGNS },
     },

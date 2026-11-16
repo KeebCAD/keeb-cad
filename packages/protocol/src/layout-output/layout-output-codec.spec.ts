@@ -63,7 +63,7 @@ describe('the layout output codec', () => {
     ['one row', aLayoutOutput({ ids: ['left/a'], rows: [SLOT] })],
     ['a row turned about a pivot', aLayoutOutput({ ids: ['left/a'], rows: [PIVOTED] })],
     [
-      'three rows of both kinds, every fit and mirrored both ways',
+      'rows of both kinds, every fit and mirrored both ways',
       aLayoutOutput({ ids: ['left/a', 'left/b', 'left/c'], rows: [SLOT, GROUP, STAND_IN] }),
     ],
   ])('reads back %s as packed', (_role, output) => {
@@ -81,7 +81,7 @@ describe('the layout output codec', () => {
     expect(roundTrip(output)).toEqual(output)
   })
 
-  it("keeps a frame value's every digit and a group's part of -1", () => {
+  it("keeps a frame value's every digit and a group's part, which names no run", () => {
     const expectedX = 22.728
     const expectedPart = -1
     const output = aLayoutOutput({

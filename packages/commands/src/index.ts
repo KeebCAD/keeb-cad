@@ -31,4 +31,5 @@ export { overridesCommandsModule } from './overrides/overrides-commands-module'
 export type { SetOverrideInput } from './overrides/types'
 
 export { emptyInputSchema } from './empty-input-schema'
-export type { DeletePartInput, EmptyInput } from './types'
+export type { DeletePartInput } from './parts/types'
+export type { EmptyInput } from './types'

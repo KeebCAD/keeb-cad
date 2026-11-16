@@ -1,14 +1,14 @@
 import { parse } from 'yaml'
 
-import type { ErgogenPoint, KeyPose } from './types'
+import type { ErgogenPoint, KeyFrame } from './types'
 
 const KEY_TAG = 'key'
 const WIDE_TAG = 'key_1_5u'
 // From the config's `_keycap_outlines`: `key` is keycw × keych, `key_1_5u` is keycw*1.5 × keych.
 const WIDE_FACTOR = 1.5
 
-/** The key poses in Ergogen's points and units YAML: points tagged `key`, helpers excluded. */
-export function keyPosesFrom(pointsYaml: string, unitsYaml: string): KeyPose[] {
+/** The key frames in Ergogen's points and units YAML: points tagged `key`, helpers excluded. */
+export function keyFramesFrom(pointsYaml: string, unitsYaml: string): KeyFrame[] {
   const units = parse(unitsYaml) as Record<string, unknown>
   const keycw = unit(units, 'keycw')
   const keych = unit(units, 'keych')

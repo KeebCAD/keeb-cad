@@ -5,7 +5,7 @@ import { inputFaults } from './input-faults'
 import type { BlueprintInputInvalid, InputOwner } from './types'
 
 // The owner's inputs laid over `under`: the declared defaults, or for a slot the inputs its part
-// resolved to. A fault names the owner's input lowest by compareId.
+// resolved to. A fault names the owner's input lowest by compareCodeUnits.
 export function resolveInputs(
   declaration: BlueprintDeclaration,
   owner: InputOwner,

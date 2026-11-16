@@ -10,17 +10,12 @@ import {
   aPartRef,
   aSlot,
 } from '@keeb-cad/schema/testing'
-import { MemoryBackend, storageBackend } from '@keeb-cad/storage/testing'
 import { describe, expect, it } from 'vitest'
 
-import { mainModules } from './main-modules'
+import { arrangeStore } from './testing/arrange-store'
 
 async function arrange(): Promise<DesignStore> {
-  const container = new Container()
-  for (const module of mainModules) container.addModule(module)
-  container.override(storageBackend).useValue(new MemoryBackend())
-  await container.autoLoad()
-  const store = container.resolve(DesignStore)
+  const store = await arrangeStore(new Container())
   expectOk(await store.run(NewDesign, {}))
   return store
 }

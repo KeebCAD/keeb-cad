@@ -1,14 +1,18 @@
+import { emptyInputSchema, type EmptyInput } from '@keeb-cad/commands'
 import {
+  type Action,
+  type ActionHandle,
   type Command,
   type CommandHandle,
   type Committed,
   DesignStore,
   designModule,
+  registerAction,
   registerCommand,
   type Writable,
 } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
-import { Result } from '@keeb-cad/result'
+import { AsyncResult, Result } from '@keeb-cad/result'
 import { expectOk } from '@keeb-cad/result/testing'
 import type { Design, Rejection } from '@keeb-cad/schema'
 import { aDesign } from '@keeb-cad/schema/testing'
@@ -53,6 +57,22 @@ class RenameDesign implements Command<v.InferOutput<typeof renameInputSchema>> {
 
   apply(draft: Writable<Design>, input: v.InferOutput<typeof renameInputSchema>): void {
     draft.meta.name = input.name
+  }
+}
+
+// Fails with an error that is no rejection, so it carries no `kind`.
+class FailWithoutKind implements Action<EmptyInput, Error> {
+  static readonly kind = 'action'
+  static readonly id = 'test.failWithoutKind'
+  static readonly label = 'Fail without kind'
+  static readonly input = emptyInputSchema
+
+  available(): boolean {
+    return true
+  }
+
+  apply(): AsyncResult<void, Error> {
+    return AsyncResult.err(new Error('The disk is gone.'))
   }
 }
 
@@ -168,11 +188,13 @@ async function arrange({
   entries = [],
   design,
   commands = [],
+  actions = [],
   renameFlow = false,
 }: {
   entries?: readonly Inspectable[]
   design?: Design
   commands?: readonly CommandHandle[]
+  actions?: readonly ActionHandle[]
   renameFlow?: boolean
 } = {}) {
   const container = new Container().addModule(designModule)
@@ -180,6 +202,7 @@ async function arrange({
   container.register(Flows).useClass(Flows)
   container.register(DevtoolsPlugin).useClass(DevtoolsPlugin)
   for (const command of commands) registerCommand(container, command)
+  for (const action of actions) registerAction(container, action)
   if (renameFlow) {
     registerCommand(container, TestRenameDesign)
     registerFlow(container, TestRenameFlow)
@@ -351,6 +374,52 @@ describe('DevtoolsPlugin', () => {
           },
         ],
       })
+    })
+
+    it('adds an invocations event subtitled with the rejection kind for a refused invocation', async () => {
+      const { plugin, invoke } = await arrange({ commands: [RenameDesign] })
+      const fake = fakeHost()
+      plugin.setup(fake.host)
+
+      await invoke.invoke(RenameDesign, { name: 'Lily58' })
+
+      expect(fake.timeline).toEqual([
+        {
+          layerId: invocationsLayer,
+          event: expect.objectContaining({
+            title: RenameDesign.id,
+            subtitle: 'unavailable',
+            data: {
+              label: RenameDesign.label,
+              input: { name: 'Lily58' },
+              result: { kind: 'unavailable', command: RenameDesign.id },
+            },
+          }),
+        },
+      ])
+    })
+
+    it('adds an invocations event subtitled error for a failure with no kind', async () => {
+      const { plugin, invoke } = await arrange({ actions: [FailWithoutKind] })
+      const fake = fakeHost()
+      plugin.setup(fake.host)
+
+      await invoke.invoke(FailWithoutKind, {})
+
+      expect(fake.timeline).toEqual([
+        {
+          layerId: invocationsLayer,
+          event: expect.objectContaining({
+            title: FailWithoutKind.id,
+            subtitle: 'error',
+            data: {
+              label: FailWithoutKind.label,
+              input: {},
+              result: new Error('The disk is gone.'),
+            },
+          }),
+        },
+      ])
     })
   })
 

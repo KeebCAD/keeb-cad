@@ -1,21 +1,21 @@
 import { DEFAULT_TOLERANCES } from './tolerances'
-import type { CandidatePose, KeyComparison, KeyDeviation, KeyPose, Tolerances } from './types'
+import type { CandidateKeyFrame, KeyComparison, KeyDeviation, KeyFrame, Tolerances } from './types'
 
 // Absorbs float noise so a deviation of exactly the tolerance passes (inclusive).
 const EPSILON = 1e-9
 
-/** Compares a candidate set against reference poses, key by key. */
-export function compareKeyPoses(
-  reference: readonly KeyPose[],
-  candidate: readonly CandidatePose[],
+/** Compares a candidate set against reference key frames, key by key. */
+export function compareKeyFrames(
+  reference: readonly KeyFrame[],
+  candidate: readonly CandidateKeyFrame[],
   tolerances: Partial<Tolerances> = {},
 ): KeyComparison {
   const tol = { ...DEFAULT_TOLERANCES, ...tolerances }
-  const byName = new Map<string, CandidatePose>()
+  const byName = new Map<string, CandidateKeyFrame>()
   const duplicate = new Set<string>()
-  for (const pose of candidate) {
-    if (byName.has(pose.name)) duplicate.add(pose.name)
-    else byName.set(pose.name, pose)
+  for (const frame of candidate) {
+    if (byName.has(frame.name)) duplicate.add(frame.name)
+    else byName.set(frame.name, frame)
   }
   const referenceNames = new Set(reference.map((k) => k.name))
 
