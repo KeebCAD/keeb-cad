@@ -3,7 +3,7 @@ title: 'A modal owns the keyboard'
 type: 'feature'
 ticket: 27
 created: '2026-11-11'
-status: 'built'
+status: 'done'
 baseline_revision: 'edb678acb1b0345e1ac3e24f3f8009a7775c2421'
 route: 'full'
 route_source: 'auto'

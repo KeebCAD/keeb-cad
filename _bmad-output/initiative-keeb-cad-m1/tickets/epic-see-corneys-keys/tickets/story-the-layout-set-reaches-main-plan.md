@@ -3,7 +3,7 @@ title: 'The Layout set reaches main'
 type: 'feature'
 ticket: 22
 created: '2026-11-10'
-status: 'built'
+status: 'done'
 baseline_revision: '192129d399a11ad1c425363443bfc86e8390bb31'
 route: 'full'
 route_source: 'auto'

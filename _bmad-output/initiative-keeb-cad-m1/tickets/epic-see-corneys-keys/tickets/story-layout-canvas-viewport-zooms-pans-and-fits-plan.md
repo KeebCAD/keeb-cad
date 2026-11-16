@@ -3,7 +3,7 @@ title: 'Layout canvas viewport zooms, pans and fits'
 type: 'feature'
 ticket: 23
 created: '2026-11-10'
-status: 'built'
+status: 'done'
 baseline_revision: 'd2c6cdf9160fa0e9a62f40ffac06b1151b7b8a5e'
 route: 'full'
 route_source: 'auto'

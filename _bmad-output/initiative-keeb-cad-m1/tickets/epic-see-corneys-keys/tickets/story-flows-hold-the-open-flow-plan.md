@@ -3,7 +3,7 @@ title: 'Flows hold the open flow'
 type: 'feature'
 ticket: 30
 created: '2026-11-12'
-status: 'built'
+status: 'done'
 baseline_revision: '284e9efee712897b3b5c8108594e1ed2da139735'
 route: 'full'
 route_source: 'auto'

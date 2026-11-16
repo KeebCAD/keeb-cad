@@ -3,7 +3,7 @@ title: 'One Corney column resolves from a chain'
 type: 'feature'
 ticket: 2
 created: '2026-11-10'
-status: 'built'
+status: 'done'
 baseline_revision: 'a8d2637053bd1f247e2213664342089432d3a57d'
 route: 'full'
 route_source: 'auto'

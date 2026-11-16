@@ -3,7 +3,7 @@ title: 'Availability says why'
 type: 'feature'
 ticket: 29
 created: '2026-11-11'
-status: 'built'
+status: 'done'
 baseline_revision: '1960f0a56468f25868f573916f543fc3c231b982'
 route: 'full'
 route_source: 'auto'

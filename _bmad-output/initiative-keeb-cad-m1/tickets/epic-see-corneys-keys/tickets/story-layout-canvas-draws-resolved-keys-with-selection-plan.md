@@ -3,7 +3,7 @@ title: 'Layout canvas draws resolved keys with selection'
 type: 'feature'
 ticket: 7
 created: '2026-11-10'
-status: 'built'
+status: 'done'
 baseline_revision: '5e96667a97cbd0be229e121890ddad92f08c235c'
 route: 'full'
 route_source: 'auto'

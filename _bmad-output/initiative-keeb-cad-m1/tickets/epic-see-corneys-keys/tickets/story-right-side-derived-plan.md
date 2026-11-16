@@ -3,7 +3,7 @@ title: 'Right side derived'
 type: 'feature'
 ticket: 6
 created: '2026-11-13'
-status: 'built'
+status: 'done'
 baseline_revision: '3008fd47f2db2f9c4257328498208550ec4976fc'
 route: 'full'
 route_source: 'auto'
