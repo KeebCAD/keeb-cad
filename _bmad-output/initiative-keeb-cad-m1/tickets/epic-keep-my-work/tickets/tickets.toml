@@ -37,6 +37,7 @@ covers = ["R8"]
 after = ["23.3"]
 hitl = true
 risk = "medium"
+unknown = "Before planning, the spine says what loading a file that repeats an override key (type, target, component) does: AD-23's 'at most one each, replaced on a repeat' covers commands only (Sergii left a load check out of 13.33, 2026-11-14)."
 
 [[entry]]
 id = 3
