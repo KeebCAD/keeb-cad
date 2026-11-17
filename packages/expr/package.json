@@ -6,10 +6,17 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "generate:parser": "peggy --format es --dts -o src/expression-parser.js src/expression-parser.peggy"
+  },
   "dependencies": {
-    "@keeb-cad/result": "workspace:*"
+    "@keeb-cad/result": "workspace:*",
+    "ts-pattern": "catalog:"
   },
   "devDependencies": {
+    "@tsconfig/node26": "catalog:",
+    "@types/node": "catalog:",
+    "peggy": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

@@ -209,6 +209,9 @@ catalogs:
     nanoid:
       specifier: ^6.0.2
       version: 6.0.2
+    peggy:
+      specifier: 5.1.1
+      version: 5.1.1
     quickjs-wasi:
       specifier: 3.6.3
       version: 3.6.3
@@ -692,7 +695,19 @@ importers:
       '@keeb-cad/result':
         specifier: workspace:*
         version: link:../result
+      ts-pattern:
+        specifier: 'catalog:'
+        version: 5.9.2
     devDependencies:
+      '@tsconfig/node26':
+        specifier: 'catalog:'
+        version: 26.0.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      peggy:
+        specifier: 'catalog:'
+        version: 5.1.1
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -1786,6 +1801,10 @@ packages:
 
   '@oxc-project/types@0.155.0':
     resolution: {integrity: sha512-SeE8JPwW1xs1tHeNycjUtUBdhorRa8o4jlvjwk49R7/Z291i+4DQa7JJIgOm/TaYQZx+QrPQbVJ/9c8dMIZN8Q==}
+
+  '@peggyjs/from-mem@4.0.0':
+    resolution: {integrity: sha512-JrTyhN5Vo2K3Ktz+bTTpt7ueL6PRG/11xhW7BdSK2TaJIbxSJpRk10TLn+4eBPQUCtrkQeYAg0MlVrc9QZMFEg==}
+    engines: {node: '>=22'}
 
   '@pkgr/core@0.3.6':
     resolution: {integrity: sha512-SEeaJLb3qBNF/OaXnaR1NmmBbFYk1zC0ZH/52fATcRPLFg/p791YrcyFFy44Bo9sLaGuSuLp5Q6axbb/O+v/RA==}
@@ -3586,6 +3605,11 @@ packages:
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
 
+  peggy@5.1.1:
+    resolution: {integrity: sha512-HhhbwH1MoCq9YNqeC2n1ap6YzLSL1YUgUxGoeiXcmGOlAYTqxwmifPJ7gFZtkR/S2+KXZ6BkJ5FfycTtq9oCRQ==}
+    engines: {node: '>=22'}
+    hasBin: true
+
   perfect-debounce@2.1.0:
     resolution: {integrity: sha512-LjgdTytVFXeUgtHZr9WYViYSM/g8MkcTPYDlPa3cDqMirHjKiSZPYd6DoL7pK8AJQr+uWkQvCjHNdiMqsrJs+g==}
 
@@ -3808,6 +3832,10 @@ packages:
 
   sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
+
+  source-map-generator@2.0.7:
+    resolution: {integrity: sha512-DJBSmVt7U50+Z+MihfPJKhrbAAC0VHriNQlufDfgaikQfAmPck05rjJ9BO2LXTabA6644umhFm2+XZ8aRZxTkQ==}
+    engines: {node: '>=20'}
 
   source-map-js@1.2.2:
     resolution: {integrity: sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==}
@@ -5055,6 +5083,10 @@ snapshots:
   '@one-ini/wasm@0.2.1': {}
 
   '@oxc-project/types@0.155.0': {}
+
+  '@peggyjs/from-mem@4.0.0':
+    dependencies:
+      semver: 7.8.5
 
   '@pkgr/core@0.3.6': {}
 
@@ -6875,6 +6907,12 @@ snapshots:
 
   pathe@2.0.3: {}
 
+  peggy@5.1.1:
+    dependencies:
+      '@peggyjs/from-mem': 4.0.0
+      commander: 14.0.3
+      source-map-generator: 2.0.7
+
   perfect-debounce@2.1.0: {}
 
   picocolors@1.1.1: {}
@@ -7095,6 +7133,8 @@ snapshots:
       totalist: 3.0.1
 
   sisteransi@1.0.5: {}
+
+  source-map-generator@2.0.7: {}
 
   source-map-js@1.2.2: {}
 
