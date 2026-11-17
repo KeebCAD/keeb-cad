@@ -873,7 +873,7 @@ type Meta = {
 
 type LibraryVersion = { id: LibraryId; version: Version }   // one per library item used; the record's id is the LibraryId (AD-23 holds)
 
-type ParameterName = Brand<string, 'ParameterName'>   // a letter, then letters, digits or _; never -; never mm or deg (reserved unit words, Sergii 2026-11-16); unique; 14.8. An expression naming `mm` or `deg` parses as a name and reports unresolvable-reference, since no parameter can carry it
+type ParameterName = Brand<string, 'ParameterName'>   // a letter, then letters, digits or _ (a letter is any Unicode letter, \p{L}; a digit is 0-9; Sergii 2026-11-17, the same set expr's grammar parses as a name); never -; never mm or deg (reserved unit words, Sergii 2026-11-16); unique; 14.8. An expression naming `mm` or `deg` parses as a name and reports unresolvable-reference, since no parameter can carry it
 type Parameter = { name: ParameterName; value: Expression }   // the parameters section is Parameter[]; the unit is derived from the value; 14.8
 
 // ── blueprint inputs (decision 53 closed: checked at runtime at the boundary) ──
