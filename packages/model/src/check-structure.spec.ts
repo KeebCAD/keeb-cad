@@ -25,6 +25,7 @@ import { describe, expect, it } from 'vitest'
 
 import { checkStructure } from './check-structure'
 import { addNode } from './layout-editing/add-node'
+import { renameParameter } from './parameters/rename-parameter'
 import { setParameter } from './parameters/set-parameter'
 import { dependencyCycleMessage } from './violations/dependency-cycle-message'
 import { divisionByZeroMessage } from './violations/division-by-zero-message'
@@ -348,6 +349,25 @@ describe('checkStructure', () => {
       const ids = [aParameterName('a'), aParameterName('b')]
 
       const result = checkStructure(previous, edited(previous, withParameter('a', 'b + 1mm')))
+
+      expectErr(result)
+      expect(result.error).toEqual({
+        kind: 'dependency-cycle',
+        ids,
+        message: dependencyCycleMessage(ids, 'parameters'),
+      })
+    })
+
+    it('refuses a rename onto a name its own value reads, which closes a loop of one', () => {
+      const previous = arrange({ parameters: [parameter('ks', 'key + 1mm')] })
+      const ids = [aParameterName('key')]
+
+      const result = checkStructure(
+        previous,
+        edited(previous, (draft) => {
+          renameParameter(draft, aParameterName('ks'), aParameterName('key'))
+        }),
+      )
 
       expectErr(result)
       expect(result.error).toEqual({

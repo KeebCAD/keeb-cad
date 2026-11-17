@@ -30,9 +30,15 @@ export { SetOverride } from './overrides/set-override'
 export { overridesCommandsModule } from './overrides/overrides-commands-module'
 export type { SetOverrideInput } from './overrides/types'
 
+export { DeleteParameter } from './parameters/delete-parameter'
+export { RenameParameter } from './parameters/rename-parameter'
 export { SetParameter } from './parameters/set-parameter'
 export { parametersCommandsModule } from './parameters/parameters-commands-module'
-export type { SetParameterInput } from './parameters/types'
+export type {
+  DeleteParameterInput,
+  RenameParameterInput,
+  SetParameterInput,
+} from './parameters/types'
 
 export { emptyInputSchema } from './empty-input-schema'
 export type { DeletePartInput } from './parts/types'
