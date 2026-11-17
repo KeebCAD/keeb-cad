@@ -11,7 +11,7 @@ export function layoutViolations({ cycles, unresolvable }: AnchorCheck): Violati
       kind: 'dependency-cycle',
       severity: 'error',
       ids,
-      message: dependencyCycleMessage(ids),
+      message: dependencyCycleMessage(ids, 'nodes'),
       fixes: [],
     })),
     ...unresolvable.map((id): Violation => {

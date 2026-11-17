@@ -47,7 +47,10 @@ const slot = (id: string, anchoredTo?: string) =>
 const cycleRejection = (...ids: string[]) => ({
   kind: 'dependency-cycle',
   ids,
-  message: dependencyCycleMessage(ids.map((id) => anId(id))),
+  message: dependencyCycleMessage(
+    ids.map((id) => anId(id)),
+    'nodes',
+  ),
 })
 
 // a and b anchored to each other, as only a loaded file can hold them.
@@ -142,7 +145,7 @@ describe('a loaded loop in the model worker', () => {
           kind: 'dependency-cycle',
           severity: 'error',
           ids: cycle,
-          message: dependencyCycleMessage(cycle),
+          message: dependencyCycleMessage(cycle, 'nodes'),
           fixes: [],
         },
       ],

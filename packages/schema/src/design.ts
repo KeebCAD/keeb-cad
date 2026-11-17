@@ -5,10 +5,12 @@ import { groupSchema } from './layout'
 import { libraryVersionSchema } from './library-version'
 import { metaSchema } from './meta'
 import { overrideSchema } from './override'
+import { parameterSchema } from './parameter'
 
 // Sections in the design file's order.
 export const designSchema = v.strictObject({
   meta: metaSchema,
+  parameters: v.array(parameterSchema),
   libraryVersions: v.array(libraryVersionSchema),
   parts: v.array(designPartSchema),
   layout: groupSchema,

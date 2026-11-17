@@ -14,15 +14,19 @@ import {
 import { borderMargin } from '../borders/border-margin'
 import { groupBorders } from '../borders/group-borders'
 import { checkAnchors } from '../dependencies/check-anchors'
+import { dependencyGraph, resolvedDependencies } from '../dependencies/dependency-graph'
+import { unplacedOf } from '../dependencies/unplaced-of'
+import { evaluateExpressions } from '../evaluation/evaluate-expressions'
+import { gapKey } from '../evaluation/value-key'
 import { designFaults } from '../inputs/design-faults'
 import { resolveInputs } from '../inputs/resolve-inputs'
 import { resolvePartRef } from '../part-levels/resolve-part-ref'
 import { slotPartRuns } from '../part-levels/slot-part-runs'
 import type { FoundPart, SlotPartRun } from '../part-levels/types'
 import { isSupportedForm } from '../form/is-supported-form'
-import { literalValue } from '../placement/literal-value'
 import { placeLayout } from '../placement/place-layout'
 import { removedSideIds } from '../overrides/removed-side-ids'
+import { expressionViolations } from '../violations/expression-violations'
 import { layoutViolations } from '../violations/layout-violations'
 import { overrideViolations } from '../violations/override-violations'
 import { unsupportedFormViolation } from '../violations/unsupported-form-violation'
@@ -46,6 +50,7 @@ export function createDerivations(
   runner: LaneRunner,
 ): Derivations {
   const defaultPart = computed(() => design.value.meta.defaultPart)
+  const parameters = computed(() => design.value.parameters)
   const libraryVersions = computed(() => design.value.libraryVersions)
   const designParts = computed(() => design.value.parts)
   const layout = computed(() => design.value.layout)
@@ -154,26 +159,51 @@ export function createDerivations(
   })
 
   const anchors = computed(() => checkAnchors(layout.value))
-  const removed = computed(() => removedSideIds(overrides.value, layout.value))
-
-  const placements = computed((): LayoutOutput =>
-    isSupportedForm(form.value)
-      ? groupBorders(
-          layout.value,
-          placeLayout(layout.value, gap.value, parts.value, anchors.value.unplaced, removed.value),
-          parts.value.output,
-          borderMargin({ x: literalValue(gap.value.x), y: literalValue(gap.value.y) }),
-        )
-      : { ids: [], rows: [] },
+  const expressions = computed(() =>
+    evaluateExpressions({
+      designId: designId.value,
+      parameters: parameters.value,
+      gap: gap.value,
+      layout: layout.value,
+    }),
   )
-
-  // The parts' violations keep their place, then the layout's, then the overrides' in their list's
-  // order; an unsupported form reports only itself, since nothing is resolved or placed.
+  // Only a chain step reads the gap, so a failed axis leaves its steps unplaced, not the layout.
+  const unplaced = computed(() => {
+    const graph = dependencyGraph(layout.value)
+    const { failedGap, unplacedNodes } = expressions.value
+    const failedSteps = [...graph]
+      .filter(([, { dependency }]) => dependency?.kind === 'previous' && failedGap[dependency.axis])
+      .map(([id]) => id)
+    return unplacedOf(resolvedDependencies(graph), [
+      ...anchors.value.unplaced,
+      ...unplacedNodes,
+      ...failedSteps,
+    ])
+  })
+  const removed = computed(() => removedSideIds(overrides.value, layout.value))
+  const placements = computed((): LayoutOutput => {
+    if (!isSupportedForm(form.value)) return { ids: [], rows: [] }
+    const { values } = expressions.value
+    // A failed axis reads as 0, so the margin falls to its floor and borders still draw.
+    const margin = borderMargin({
+      x: values.get(gapKey('x')) ?? 0,
+      y: values.get(gapKey('y')) ?? 0,
+    })
+    return groupBorders(
+      layout.value,
+      placeLayout(layout.value, values, parts.value, unplaced.value, removed.value),
+      parts.value.output,
+      margin,
+    )
+  })
+  // The parts' violations keep their place, then the layout's, then the expressions', then the
+  // overrides' in their list's order; an unsupported form reports only itself, since nothing is resolved or placed.
   const violations = computed((): Violation[] =>
     isSupportedForm(form.value)
       ? [
           ...parts.value.violations,
           ...layoutViolations(anchors.value),
+          ...expressionViolations(expressions.value),
           ...overrideViolations(overrides.value, layout.value, form.value),
         ]
       : [unsupportedFormViolation(designId.value)],

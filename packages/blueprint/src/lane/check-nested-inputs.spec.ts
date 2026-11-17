@@ -44,6 +44,21 @@ describe('checkNestedInputs', () => {
     },
   )
 
+  it.each([
+    ['an expression', '2 * 3mm', okOf({ width: 6, finish: 'matte' })],
+    ['a name it cannot resolve', 'w', nestedFailed('width')],
+  ])('evaluates an omitted quantity default that is %s', (_role, text, expected) => {
+    const withDefault: NestedBlueprintDeclaration = {
+      id: blueprint.id,
+      inputs: {
+        ...blueprint.inputs,
+        width: aQuantityInput({ default: aQuantityInputValue(text) }),
+      },
+    }
+
+    expect(outcomeOf(checkNestedInputs(withDefault, {}))).toEqual(expected)
+  })
+
   it('refuses inputs that are not an object', () => {
     expect(outcomeOf(checkNestedInputs(blueprint, 5))).toEqual(nestedFailed('(inputs)'))
   })

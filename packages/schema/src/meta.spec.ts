@@ -13,7 +13,8 @@ describe('metaSchema', () => {
   it.each([
     ['accepts', 'a length in mm', '1mm', []],
     ['refuses at the field', 'an angle in deg', '1deg', [['meta', 'gap', 'x']]],
-    ['refuses at the field', 'text the parser refuses', 'one', [['meta', 'gap', 'x']]],
+    ['accepts', 'a parameter name', 'one', []],
+    ['refuses at the field', 'text the parser refuses', 'one +', [['meta', 'gap', 'x']]],
     ['refuses at the field', 'a number', 1, [['meta', 'gap', 'x']]],
   ])('%s a gap x of %s', (_outcome, _role, x, expected) => {
     const value = { ...aDesign(), meta: { ...aMeta(), gap: { ...aMeta().gap, x } } }

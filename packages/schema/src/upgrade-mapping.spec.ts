@@ -12,7 +12,7 @@ describe('upgradeMappingSchema', () => {
       true,
     ],
     ['no previous version', {}, false],
-    ['a conversion that does not parse', { from: 1, convert: { d: 'nope' } }, false],
+    ['a conversion that does not parse', { from: 1, convert: { d: '1mm +' } }, false],
   ])('on %s', (_role, input, expected) => {
     expect(v.safeParse(upgradeMappingSchema, input).success).toBe(expected)
   })

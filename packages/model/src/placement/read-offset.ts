@@ -1,18 +1,31 @@
-import type { Frozen, Offset, Vec2 } from '@keeb-cad/schema'
+import { InvariantError } from '@keeb-cad/result'
+import type { Frozen, Offset } from '@keeb-cad/schema'
 
-import { literalValue } from './literal-value'
+import { valueKey } from '../evaluation/value-key'
+import type { GraphEntry } from '../dependencies/types'
 import type { ReadOffset } from './types'
 
-export function readOffset(offset: Frozen<Offset> | undefined): ReadOffset {
-  return {
-    position: point(offset?.position),
-    rotation: offset?.rotation === undefined ? 0 : literalValue(offset.rotation),
-    pivot: point(offset?.pivot),
+// A node's offset in numbers; an absent field reads as 0.
+export function readOffset(
+  { node, path }: Pick<GraphEntry, 'node' | 'path'>,
+  values: ReadonlyMap<string, number>,
+): ReadOffset {
+  const offset: Frozen<Offset> | undefined = node.offset
+  const read = (present: unknown, ...field: string[]) => {
+    if (present === undefined) return 0
+    const value = values.get(valueKey([...path, 'offset', ...field]))
+    // A node whose field failed is unplaced, so placement never reads it.
+    if (value === undefined) {
+      throw new InvariantError(`The ${field.join(' ')} of "${node.id}" has no value to place by.`)
+    }
+    return value
   }
-}
-
-function point(vector: Frozen<Vec2> | undefined) {
-  return vector === undefined
-    ? { x: 0, y: 0 }
-    : { x: literalValue(vector.x), y: literalValue(vector.y) }
+  return {
+    position: {
+      x: read(offset?.position?.x, 'position', 'x'),
+      y: read(offset?.position?.y, 'position', 'y'),
+    },
+    rotation: read(offset?.rotation, 'rotation'),
+    pivot: { x: read(offset?.pivot?.x, 'pivot', 'x'), y: read(offset?.pivot?.y, 'pivot', 'y') },
+  }
 }

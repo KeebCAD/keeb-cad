@@ -1,31 +1,36 @@
-import { InvariantError, Result } from '@keeb-cad/result'
+import { Option, Result } from '@keeb-cad/result'
 import {
   compareCodeUnits,
   type Design,
   type Frozen,
-  type Id,
   type ItemId,
   type Rejection,
 } from '@keeb-cad/schema'
 
-import { checkAnchors } from './dependencies/check-anchors'
-import { dependencyGraph } from './dependencies/dependency-graph'
-import type { DependencyGraph } from './dependencies/types'
+import { anchorCycle } from './dependencies/anchor-cycle'
+import { dependencyGraph, resolvedDependencies } from './dependencies/dependency-graph'
+import { parameterDependencies } from './dependencies/parameter-dependencies'
+import type { Dependencies } from './dependencies/types'
+import { evaluateExpressions } from './evaluation/evaluate-expressions'
+import type { FieldViolation } from './evaluation/types'
 import { nodeIdOf } from './ids/side-qualified-id'
 import { isGroup } from './layout-editing/node-tree'
 import type { Reference } from './references/types'
 import { walkReferences } from './references/walk-references'
 import { reject } from './reject/reject'
 import { dependencyCycleMessage } from './violations/dependency-cycle-message'
+import { expressionFaultMessage } from './violations/expression-fault-message'
 
-// Refuses only what the edit broke: a dangling reference or a cycle a loaded file already held
-// blocks no edit. A dangling reference is named before a cycle, so one edit always gives one
-// rejection.
+// Refuses only what the edit broke: a dangling reference, a cycle or a failing expression a loaded
+// file already held blocks no edit. A dangling reference is named before a cycle, and a cycle
+// before an expression, so one edit always gives one rejection.
 export function checkStructure(
   previous: Frozen<Design>,
   next: Frozen<Design>,
 ): Result<void, Rejection> {
-  return checkReferences(previous, next).flatMap(() => checkCycles(previous, next))
+  return checkReferences(previous, next)
+    .flatMap(() => checkCycles(previous, next))
+    .flatMap(() => checkExpressions(previous, next))
 }
 
 function checkReferences(previous: Frozen<Design>, next: Frozen<Design>): Result<void, Rejection> {
@@ -48,38 +53,65 @@ function checkReferences(previous: Frozen<Design>, next: Frozen<Design>): Result
   )
 }
 
-// Of several new cycles, the one whose changed member is lowest by compareCodeUnits, listed from
-// it.
+// Node loops before parameter loops; only a loop through an edge the edit added is refused, found
+// from the changed items in compareCodeUnits order and listed from the changed item.
 function checkCycles(previous: Frozen<Design>, next: Frozen<Design>): Result<void, Rejection> {
-  const before = new Set(checkAnchors(previous.layout).cycles.map(cycleKey))
-  const fresh = checkAnchors(next.layout).cycles.filter((cycle) => !before.has(cycleKey(cycle)))
-  if (fresh.length === 0) return Result.ok()
-  const was = dependencyGraph(previous.layout)
-  const is = dependencyGraph(next.layout)
-  const [first] = fresh
-    .map((cycle) => fromChanged(cycle, was, is))
-    .toSorted(([a], [b]) => compareCodeUnits(a as Id, b as Id))
-  const ids = first as Id[]
-  return Result.err(reject('dependency-cycle', ids, dependencyCycleMessage(ids)))
+  const layers = [
+    {
+      members: 'nodes',
+      was: resolvedDependencies(dependencyGraph(previous.layout)),
+      is: resolvedDependencies(dependencyGraph(next.layout)),
+    },
+    {
+      members: 'parameters',
+      was: parameterDependencies(previous.parameters),
+      is: parameterDependencies(next.parameters),
+    },
+  ] as const
+  for (const { members, was, is } of layers) {
+    const loop = addedLoop(was, is)
+    if (loop.isSome()) {
+      const ids = loop.value as ItemId[]
+      return Result.err(reject('dependency-cycle', ids, dependencyCycleMessage(ids, members)))
+    }
+  }
+  return Result.ok()
 }
 
-function fromChanged(cycle: readonly Id[], was: DependencyGraph, is: DependencyGraph): Id[] {
-  const [changed] = cycle
-    .filter((id) => dependencyKey(was, id) !== dependencyKey(is, id))
-    .toSorted(compareCodeUnits)
-  // A cycle whose every member kept its dependency was already there, so it is not new.
-  if (changed === undefined) throw new InvariantError('A new cycle has no changed member.')
-  const at = cycle.indexOf(changed)
-  return [...cycle.slice(at), ...cycle.slice(0, at)]
+function addedLoop(was: Dependencies<string>, is: Dependencies<string>): Option<string[]> {
+  for (const item of [...is.keys()].toSorted(compareCodeUnits)) {
+    const had = new Set(was.get(item))
+    for (const target of is.get(item) ?? []) {
+      if (had.has(target)) continue
+      const loop = anchorCycle(is, item, target)
+      if (loop.isSome()) return loop
+    }
+  }
+  return Option.none()
 }
 
-function dependencyKey(graph: DependencyGraph, id: Id): string | undefined {
-  const dependency = graph.get(id)?.dependency
-  return dependency === undefined ? undefined : `${dependency.kind} ${dependency.target}`
+// The first field the edit made fail, in design order, named alone.
+function checkExpressions(previous: Frozen<Design>, next: Frozen<Design>): Result<void, Rejection> {
+  const before = new Set(evaluationOf(previous).fieldViolations.map(fieldViolationKey))
+  const added = evaluationOf(next).fieldViolations.find(
+    (violation) => !before.has(fieldViolationKey(violation)),
+  )
+  if (added === undefined) return Result.ok()
+  const ids = [added.item]
+  return Result.err(reject(added.kind, ids, expressionFaultMessage(added, ids)))
 }
 
-function cycleKey(cycle: readonly Id[]): string {
-  return cycle.toSorted(compareCodeUnits).join(' ')
+function evaluationOf(design: Frozen<Design>) {
+  return evaluateExpressions({
+    designId: design.meta.id,
+    parameters: design.parameters,
+    gap: design.meta.gap,
+    layout: design.layout,
+  })
+}
+
+function fieldViolationKey({ kind, item, path, name = '' }: FieldViolation): string {
+  return [kind, item, path.join('/'), name].join(' ')
 }
 
 function referenceKey({ kind, target }: Reference): string {
@@ -98,8 +130,10 @@ function danglingTargets(design: Frozen<Design>): Reference[] {
     ['group', (target) => groups.has(target)],
     ['side-placement', (target) => slots.has(nodeIdOf(target))],
   ])
+  // A name no parameter carries is an expression's unresolvable-reference, not a dangling target.
   return [...walkReferences(design)].filter(
-    ({ kind, target }) => !target.startsWith('lib:') && resolves.get(kind)?.(target) !== true,
+    ({ kind, target }) =>
+      kind !== 'parameter' && !target.startsWith('lib:') && resolves.get(kind)?.(target) !== true,
   )
 }
 

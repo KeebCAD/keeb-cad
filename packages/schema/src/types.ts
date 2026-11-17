@@ -37,6 +37,8 @@ import type { libraryVersionSchema } from './library-version'
 import type { metaSchema } from './meta'
 import type { offsetSchema } from './offset'
 import type { overrideSchema } from './override'
+import type { parameterSchema } from './parameter'
+import type { parameterNameSchema } from './parameter-name'
 import type { partIdSchema } from './part-id'
 import type { partRefSchema } from './part-ref'
 import type { partsOutputSchema } from './parts-output'
@@ -106,6 +108,8 @@ export type Anchor = v.InferOutput<typeof anchorSchema>
 export type SideId = v.InferOutput<typeof sideIdSchema>
 export type PlacementId = v.InferOutput<typeof placementIdSchema>
 export type Override = v.InferOutput<typeof overrideSchema>
+export type ParameterName = v.InferOutput<typeof parameterNameSchema>
+export type Parameter = v.InferOutput<typeof parameterSchema>
 
 export interface ScriptLoadFailed {
   kind: 'script-load-failed'
@@ -171,7 +175,7 @@ export interface MigratedBundle {
   migratedFrom?: FormatVersion
 }
 
-export type ItemId = Id | LibraryId | SideId
+export type ItemId = Id | LibraryId | SideId | ParameterName
 
 // Hand-declared: the crossing's channel has no validation yet.
 export interface DesignPatch {
@@ -200,6 +204,10 @@ export type ModelRejectionKind =
   | 'chain-child-anchored'
   | 'blueprint-input-invalid'
   | 'override-not-allowed'
+  | 'unit-mismatch'
+  | 'unresolvable-reference'
+  | 'negative-length'
+  | 'division-by-zero'
 
 // The design store's own kinds carry no message: the editor writes their text from the kind.
 export type Rejection =
@@ -217,6 +225,9 @@ export type ViolationKind =
   | 'blueprint-input-invalid'
   | 'unsupported-form'
   | 'override-not-allowed'
+  | 'unit-mismatch'
+  | 'negative-length'
+  | 'division-by-zero'
 
 export type Fix = v.InferOutput<typeof fixSchema>
 

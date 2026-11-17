@@ -4,6 +4,7 @@ import {
   loadModule,
   modelWorkerActionsModule,
   overridesCommandsModule,
+  parametersCommandsModule,
   partsCommandsModule,
 } from '@keeb-cad/commands'
 import { designModule } from '@keeb-cad/design'
@@ -21,6 +22,7 @@ export const mainModules: readonly Module[] = [
   partsCommandsModule,
   layoutCommandsModule,
   overridesCommandsModule,
+  parametersCommandsModule,
   modelWorkerActionsModule,
   editorModule,
   workersModule,

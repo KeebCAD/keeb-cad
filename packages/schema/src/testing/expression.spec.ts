@@ -12,6 +12,6 @@ describe('anExpression', () => {
   })
 
   it('throws on a value its schema refuses', () => {
-    expect(() => anExpression('nope')).toThrow(v.ValiError)
+    expect(() => anExpression('1mm +')).toThrow(v.ValiError)
   })
 })

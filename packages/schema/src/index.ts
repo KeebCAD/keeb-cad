@@ -55,6 +55,8 @@ export { borderSchema } from './border'
 export { layoutOutputSchema } from './layout-output'
 export { sideIdSchema } from './side-id'
 export { placementIdSchema } from './placement-id'
+export { parameterNameSchema } from './parameter-name'
+export { parameterSchema } from './parameter'
 export { overrideSchema, sideComponentOverrideSchema, sidePartOverrideSchema } from './override'
 
 export type {
@@ -107,6 +109,8 @@ export type {
   Offset,
   OptionInput,
   Override,
+  Parameter,
+  ParameterName,
   PartId,
   PartRef,
   PartsOutput,

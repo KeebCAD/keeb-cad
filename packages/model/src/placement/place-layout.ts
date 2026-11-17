@@ -3,7 +3,6 @@ import { Option } from '@keeb-cad/result'
 import {
   compareCodeUnits,
   type Frozen,
-  type Gap,
   type Group,
   type Id,
   type LayoutOutput,
@@ -12,14 +11,15 @@ import {
 } from '@keeb-cad/schema'
 
 import { dependencyGraph } from '../dependencies/dependency-graph'
+import type { GraphEntry } from '../dependencies/types'
 import { dependencyOrder } from '../dependencies/dependency-order'
+import { gapKey } from '../evaluation/value-key'
 import { sideQualifiedId } from '../ids/side-qualified-id'
 import type { PlacementSide } from '../ids/types'
 import { isGroup, subtreeIds } from '../layout-editing/node-tree'
 import { groupFrames } from './group-frames'
 import { IDENTITY } from './identity'
 import { rowOf } from './layout-row'
-import { literalValue } from './literal-value'
 import { placeSlot } from './place-slot'
 import { readOffset } from './read-offset'
 import { slotPart } from './slot-part'
@@ -37,7 +37,7 @@ const SIDES: readonly (readonly [PlacementSide, Matrix])[] = [
 // slot keeps its frame and part row, so it still takes its space; only its fit says it is empty.
 export function placeLayout(
   layout: Frozen<Group>,
-  gap: Frozen<Gap>,
+  values: ReadonlyMap<string, number>,
   parts: ResolvedParts,
   unplaced: ReadonlySet<Id>,
   removed: ReadonlySet<string>,
@@ -45,12 +45,17 @@ export function placeLayout(
   const graph = dependencyGraph(layout)
   const placing: Placing = {
     graph,
-    gap: { x: literalValue(gap.x), y: literalValue(gap.y) },
+    values,
+    // A failed gap axis leaves every chain step along it unplaced, so its NaN is never read.
+    gap: { x: values.get(gapKey('x')) ?? NaN, y: values.get(gapKey('y')) ?? NaN },
     parts,
     order: dependencyOrder(graph, unplaced),
   }
   const inRoot = framesByGroup(placing, layout).get(layout.id) as RelativeFrames
-  const root = placeSlot(IDENTITY, readOffset(layout.offset))
+  // An unplaced root leaves every node unplaced, so its frame is never read.
+  const root = unplaced.has(layout.id)
+    ? IDENTITY
+    : placeSlot(IDENTITY, readOffset(graph.get(layout.id) as GraphEntry, values))
   const rows = new Map<string, LayoutRow>()
   for (const [id, { node }] of graph) {
     // The root's offset is already in its own frame.

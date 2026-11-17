@@ -1,6 +1,18 @@
 import { expectOk } from '@keeb-cad/result/testing'
 import { designSchema, fingerprintsFileSchema, routingFileSchema } from '@keeb-cad/schema'
-import { aBlueprintDesignPart, aDesign, aQuantityInputValue } from '@keeb-cad/schema/testing'
+import {
+  aBlueprintDesignPart,
+  aDelta,
+  aDesign,
+  aLayout,
+  anExpression,
+  anOffset,
+  aParameter,
+  aParameterName,
+  aQuantityInputValue,
+  aSlot,
+  aVec2,
+} from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
@@ -17,6 +29,10 @@ const canonical = {
     String.raw`meta id=corne name="Corne \"wireless\"" default-part=key {`,
     '\tform type=split board=reversible',
     '\tgap x="1mm" y="1mm"',
+    '}',
+    'parameters {',
+    '\tparameter name=wall value="3mm"',
+    '\tparameter name=pitch value="wall * 2 + 13mm"',
     '}',
     'library-versions {',
     '\tlibrary-version id="lib:blueprint/choc-key" version=1',
@@ -90,6 +106,7 @@ describe('a bundle read and written back', () => {
       '\t}',
       '}',
       'overrides',
+      'parameters',
     )
 
     const written = writeBack({ ...canonical, design: layoutFirst })
@@ -101,6 +118,7 @@ describe('a bundle read and written back', () => {
         '\tform type=split board=reversible',
         '\tgap x="1mm" y="1mm"',
         '}',
+        'parameters',
         'library-versions {',
         '\tlibrary-version id="lib:blueprint/choc-key" version=1',
         '}',
@@ -129,5 +147,18 @@ describe('a bundle read and written back', () => {
     const reread = v.parse(designSchema, migrated.value.design)
     expect(reread).toEqual(design)
     expect(writeDesignFile(reread)).toBe(written)
+  })
+
+  it('reads back a parameter and an offset that names it, equal to what it wrote', () => {
+    const design = aDesign({
+      parameters: [aParameter({ name: aParameterName('wall'), value: anExpression('3mm') })],
+      layout: aLayout({
+        children: [aSlot({ offset: anOffset({ position: aVec2({ x: aDelta('wall + 1mm') }) }) })],
+      }),
+    })
+    const migrated = migrateBundle({ design: writeDesignFile(design) })
+    expectOk(migrated)
+
+    expect(v.parse(designSchema, migrated.value.design)).toEqual(design)
   })
 })

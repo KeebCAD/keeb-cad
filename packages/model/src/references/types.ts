@@ -1,3 +1,4 @@
+import type { Unit } from '@keeb-cad/schema'
 import type * as v from 'valibot'
 
 export interface Reference {
@@ -8,9 +9,18 @@ export interface Reference {
 
 export type Path = Reference['path']
 
-export interface ReferenceMetadata {
+export interface SchemaMetadata {
   refKind?: string
   expression?: boolean
+  unit?: Unit
+  quantity?: 'length' | 'delta' | 'angle'
+}
+
+// A value the schema walk stops at, with the metadata its schema declares.
+export interface SchemaValue {
+  path: Path
+  metadata: SchemaMetadata
+  value: unknown
 }
 
 // The fields of Valibot's schema kinds the walk reads, told apart by `type`.

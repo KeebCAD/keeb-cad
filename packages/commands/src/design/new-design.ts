@@ -28,6 +28,7 @@ export class NewDesign implements Action<EmptyInput, DesignInvalid> {
         defaultPart: 'key',
         gap: { x: '1mm', y: '1mm' },
       },
+      parameters: [],
       libraryVersions: [{ id: 'lib:blueprint/choc-key', version: 1 }],
       parts: [{ type: 'blueprint', id: 'key', blueprint: 'lib:blueprint/choc-key', inputs: {} }],
       layout: { id: mintId(), arrangement: 'free', children: [] },

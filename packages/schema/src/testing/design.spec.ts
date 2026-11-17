@@ -8,6 +8,7 @@ import { aLayout, aSlot } from './layout'
 import { aLibraryVersion } from './library-version'
 import { anId } from './id'
 import { aMeta } from './meta'
+import { aParameter } from './parameter'
 import { aSidePartOverride } from './override'
 import { aVersion } from './version'
 
@@ -18,6 +19,7 @@ describe('aDesign', () => {
 
   it.each([
     ['meta', () => ({ meta: aMeta({ name: 'Other' }) })],
+    ['parameters', () => ({ parameters: [aParameter()] })],
     ['libraryVersions', () => ({ libraryVersions: [aLibraryVersion({ version: aVersion(2) })] })],
     ['parts', () => ({ parts: [aBlueprintDesignPart({ id: anId('other') })] })],
     ['layout', () => ({ layout: aLayout({ children: [aSlot()] }) })],

@@ -6,7 +6,9 @@ import { expressionSchema } from './expression'
 describe('expressionSchema', () => {
   it.each([
     ['a literal with a unit', '19mm', true],
-    ['text the parser refuses', 'nope', false],
+    ['a name', 'wall', true],
+    ['an expression naming parameters', 'wall * 2 + gap', true],
+    ['text the parser refuses', '1mm +', false],
   ])('on %s', (_role, input, expected) => {
     expect(v.safeParse(expressionSchema, input).success).toBe(expected)
   })
