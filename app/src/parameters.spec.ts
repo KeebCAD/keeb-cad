@@ -1,8 +1,23 @@
-import { SetParameter } from '@keeb-cad/commands'
+import { RenameParameter, SetParameter } from '@keeb-cad/commands'
+import type { DesignStore } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
-import { expectOk } from '@keeb-cad/result/testing'
-import type { LayoutOutput } from '@keeb-cad/schema'
-import { anExpression, aLength, aParameter, aParameterName } from '@keeb-cad/schema/testing'
+import { expectErr, expectOk } from '@keeb-cad/result/testing'
+import type { Design, LayoutOutput, Parameter } from '@keeb-cad/schema'
+import {
+  aDelta,
+  aDesign,
+  aGap,
+  aLayout,
+  aLength,
+  aMeta,
+  anExpression,
+  anId,
+  anOffset,
+  aParameter,
+  aParameterName,
+  aSlot,
+  aVec2,
+} from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { arrangePlacements } from './testing/arrange-placements'
@@ -62,5 +77,81 @@ describe('a parameter driving placement', () => {
     expect(committed(store).design.parameters).toEqual([
       aParameter({ name: aParameterName('wall'), value: anExpression('3mm') }),
     ])
+  })
+})
+
+const parameter = (name: string, value: string) =>
+  aParameter({ name: aParameterName(name), value: anExpression(value) })
+
+async function arrangeDesign(design: Design): Promise<DesignStore> {
+  const store = await arrangeStore(new Container())
+  expectOk(store.replaceDesign({ design, unreadable: [] }))
+  return store
+}
+
+function readingAll(name: string) {
+  return aDesign({
+    meta: aMeta({ gap: aGap({ x: aLength(name) }) }),
+    parameters: [parameter(name, '19mm'), parameter('b', `${name} + 1mm`)],
+    layout: aLayout({
+      children: [
+        aSlot({ id: anId('k'), offset: anOffset({ position: aVec2({ x: aDelta(name) }) }) }),
+      ],
+    }),
+  })
+}
+
+describe('renaming and deleting a parameter', () => {
+  it('rewrites every use of the name in one command, and one undo restores the arranged design', async () => {
+    const arranged = readingAll('ks')
+    const store = await arrangeDesign(arranged)
+
+    expectOk(store.run(RenameParameter, { from: 'ks', to: 'key' }))
+    const renamed = committed(store).design
+    expectOk(store.undo())
+
+    expect({ renamed, undone: committed(store).design }).toEqual({
+      renamed: readingAll('key'),
+      undone: arranged,
+    })
+  })
+
+  it('commits nothing for a rename to its own name, leaving nothing to undo', async () => {
+    const store = await arrangeDesign(readingAll('ks'))
+    const before = committed(store)
+
+    const result = store.run(RenameParameter, { from: 'ks', to: 'ks' })
+
+    expectOk(result)
+    expect(committed(store)).toBe(before)
+    expectErr(store.undo())
+  })
+
+  it('commits deleteParameter as one undo step that restores the parameter at its place', async () => {
+    const parameters: Parameter[] = [
+      parameter('a', '1mm'),
+      parameter('ks', '19mm'),
+      parameter('b', '2mm'),
+    ]
+    const store = await arrangeDesign(aDesign({ parameters }))
+
+    expectOk(store.runById('parameters.deleteParameter', { name: 'ks' }))
+    const deleted = committed(store).design.parameters
+    expectOk(store.undo())
+
+    expect({ deleted, undone: committed(store).design.parameters }).toEqual({
+      deleted: [parameter('a', '1mm'), parameter('b', '2mm')],
+      undone: parameters,
+    })
+  })
+
+  it.each([
+    ['parameters.renameParameter', { from: 'wall', to: 'w' }, [parameter('w', '1mm')]],
+    ['parameters.deleteParameter', { name: 'wall' }, []],
+  ])('commits %s run by its id', async (command, input, expectedParameters) => {
+    const store = await arrangeDesign(aDesign({ parameters: [parameter('wall', '1mm')] }))
+
+    expectOk(store.runById(command, input))
+    expect(committed(store).design.parameters).toEqual(expectedParameters)
   })
 })

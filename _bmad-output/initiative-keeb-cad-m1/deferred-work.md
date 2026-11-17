@@ -723,3 +723,11 @@
   summary: precedent to fix: `app/src/corney-column.spec.ts`'s `KEY_1U_RUN` computes an expected value with `argumentHash` ("no expected value computed the way production computes it"), and its round-trip test's first `expect` asserts the placed ids, not the round trip ("Make a test's name and its expects claim the same thing"). 14.8's Corney row went to a new `app/src/parameters.spec.ts` instead of copying either.
   evidence: AGENTS.md Tests section; 14.8's conformance passes (precedent named in its Code Map as not to copy).
   owner: the next story that touches `app/src/corney-column.spec.ts`.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-change-a-parameter/tickets/story-rename-and-delete-parameters-plan.md`
+  summary: precedent to fix: `packages/commands/src/parameters/parameters-commands.spec.ts`'s `refuses a name that is %s` rows (`empty`, `a unit word`) re-test `parameterNameSchema`'s rule in `commands` ("Test a rule where it is defined"); one row per input field is enough there. 14.9's rows keep one invalid name per field.
+  evidence: AGENTS.md Tests section; 14.9's conformance pass 1 (precedent deferred).
+  owner: the next story that touches `packages/commands/src/parameters/parameters-commands.spec.ts`.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-change-a-parameter/tickets/story-rename-and-delete-parameters-plan.md`
+  summary: precedent to fix: `app/src/parameters.spec.ts`'s `commits parameters.setParameter run by its id` runs the whole Corney script it does not use ("Arrange only what the test uses"); 14.9's registration rows arrange `aDesign` through `replaceDesign` instead.
+  evidence: AGENTS.md Tests section; 14.9's conformance pass 1 (precedent deferred).
+  owner: the next story that touches `app/src/parameters.spec.ts`.

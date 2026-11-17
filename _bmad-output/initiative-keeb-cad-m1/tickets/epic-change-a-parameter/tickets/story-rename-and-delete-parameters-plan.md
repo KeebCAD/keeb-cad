@@ -3,14 +3,14 @@ title: 'Rename and delete parameters'
 type: 'feature'
 ticket: '9'
 created: '2026-11-17'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '0c62882480acdb2e127c9ab5859b1a3306501658'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: [quick, test-reviewer]
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md'
@@ -32,7 +32,8 @@ context:
 - Decision (Sergii 2026-11-17): a part whose blueprint inputs use the parameter is a user, named by its part id between parameters and nodes, not left out, so a delete never leaves an expression naming a missing parameter; a part using one is reachable only by a hand-edited file today (`packages/model/src/inputs/input-faults.ts:26-27`). Spine 6717083.
 - Decision (Sergii 2026-11-17): a rename onto a name some expression uses with no parameter of that name (a loaded file) is accepted, not refused, so those uses then read the renamed parameter; a loop the rename creates (`ks` = `key + 1mm`, `ks` → `key`) is refused by the store's `checkStructure` as `dependency-cycle`, nothing committed.
 - Decision (Sergii 2026-11-17): `renameParameter` whose rewrite would make an expression longer than `expr`'s parser accepts is refused as `expression-too-long` (new), ids each such item in design order, not left to the store's schema check, which throws `InvariantError` (`design-store.ts:276-283`) where "Design problems never throw". Spine 70b5277.
-- Decision (Sergii 2026-11-17): a parameter's own value is not a use, so deleting `a` with `a` = `a + 1mm` and no other user is accepted (the loop goes with it), not refused, and `parameter-in-use` ids never name the deleted parameter. Spine 70b5277.
+- Decision (Sergii 2026-11-17): a parameter's own value is not a use, so deleting `a` with `a` = `a + 1mm` and no other user is accepted (the loop goes with it), not refused, and `parameter-in-use` ids never name the deleted parameter for its own value. Spine 70b5277.
+- Decision (Sergii 2026-11-17, at review): in a loaded file with `[wall = 1mm, wall = wall * 2]`, the later `wall` reads the first, so deleting `wall` is refused as `parameter-in-use` ids [`wall`] (the later duplicate, named by its shared name), not passed to the store's `dependency-cycle` refusal; only the first parameter with the name is its own.
 - Decision (Sergii 2026-11-17): rows may arrange a loaded file holding a state no command makes (an unresolved name, a parameter loop, a part input using a parameter, two parameters with one name), as for 14.8, because a hand-edited file is a real way in; AGENTS.md is unchanged.
 - A rename to the parameter's own name writes nothing, so the store commits nothing and records no undo step (`design-store.ts:190`).
 - Only name nodes whose name equals the old name are rewritten; a name that merely contains it (`ksx`) and number nodes stay.
@@ -65,21 +66,66 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `packages/schema/src/types.ts` -- `ModelRejectionKind` gains `'parameter-in-use'` and `'expression-too-long'`.
-- [ ] `packages/model/src/expressions/splice-expression.ts` (function), `types.ts` (`SpliceEdit = { span: Span; text: string }`) -- `spliceExpression(expression, edits: readonly SpliceEdit[]): string` replaces each span's text, edits in any order; throws `InvariantError` when two spans overlap, a span ends before it starts or runs past the text; touching spans and a zero-length span (an insertion) are accepted. Exported by no entry: 15.2's write-back is a `model` domain operation and imports it in-package.
-- [ ] `packages/model/src/parameters/rename-in-expression.ts` (function) -- `renameInExpression(expression, from, to)`: the name nodes equal to `from`, spliced to `to`; throws `InvariantError` on an input text that does not parse, as `expressionNames` does.
-- [ ] `packages/model/src/ids/node-at-path.ts` (function each) -- `nodePaths(layout): ReadonlyMap<string, Id>` (each node's path from the design root by `valueKey`, built once per caller) and `nodeAtPath(nodePaths, path): Option<{ id: Id; at: number }>`, the innermost node owning the path, `none` for a path outside `layout`; moved out of `evaluate-expressions.ts:67-79`, which keeps its `InvariantError` on `none`.
-- [ ] `packages/model/src/parameters/parameter-users.ts` (function) -- `parameterUsers(design, name): ItemId[]`, from `walkReferences`' `parameter` references to `name`, each owner once in design order, the parameter's own value left out: `meta` as `meta.id`, a parameter by its name, a part by its id, a node by `nodeAtPath`.
-- [ ] `packages/model/src/parameters/check-rename-parameter.ts`, `check-delete-parameter.ts`, `rename-parameter.ts`, `delete-parameter.ts` (function each) -- checks in order: `unknown-target` (also for `ks` → `ks` when no `ks` exists), then `id-taken` (rename, skipped when `to` equals `from`), then `expression-too-long` (rename: an expression whose `renameInExpression` result fails `parseExpressionTree`), then `parameter-in-use` (delete). `renameParameter` renames the first parameter with `from` and, for each expression value `walkSchema(designSchema, draft)` yields whose rewrite differs, writes it at its path; `from === to` writes nothing. `deleteParameter` removes the first parameter with that name.
-- [ ] `packages/model/src/violations/unknown-parameter-message.ts`, `parameter-taken-message.ts`, `parameter-in-use-message.ts`, `expression-too-long-message.ts` (function each) -- `The design has no parameter named "x".`, `The design already has a parameter named "x".`, `The parameter "x" is used by "a", "b".`, `Renaming "x" to "y" makes the expression of "a", "b" too long.`; `main.ts` exports the checks, operations and messages.
-- [ ] `packages/commands/src/parameters/rename-parameter.ts` (`RenameParameter`, service), `rename-parameter-input-schema.ts` (`v.strictObject({ from: parameterNameSchema, to: parameterNameSchema })`), `delete-parameter.ts` (`DeleteParameter`, service), `delete-parameter-input-schema.ts` (`v.strictObject({ name: parameterNameSchema })`), `types.ts`, `parameters-commands-module.ts`, `index.ts` -- ids `parameters.renameParameter` / `parameters.deleteParameter`, labels `Rename parameter` / `Delete parameter`; `available` forwards to the check.
-- [ ] `app/src/parameters.spec.ts` -- the registration rows, each arranging `aDesign({ parameters: [wall 1mm] })` through `replaceDesign` (not the Corney script) and asserting `design.parameters`.
-- [ ] Specs per the Boundary Table.
-- [ ] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` -- two precedent entries: `packages/commands/src/parameters/parameters-commands.spec.ts`'s `refuses a name that is %s` rows (`empty`, `a unit word`) re-test `parameterNameSchema`'s rule in `commands` ("Test a rule where it is defined"); `app/src/parameters.spec.ts`'s `commits parameters.setParameter run by its id` runs the whole Corney script it does not use ("Arrange only what the test uses").
+- [x] `packages/schema/src/types.ts` -- `ModelRejectionKind` gains `'parameter-in-use'` and `'expression-too-long'`.
+- [x] `packages/model/src/expressions/splice-expression.ts` (function), `types.ts` (`SpliceEdit = { span: Span; text: string }`) -- `spliceExpression(expression, edits: readonly SpliceEdit[]): string` replaces each span's text, edits in any order; throws `InvariantError` when two spans overlap, a span ends before it starts or runs past the text; touching spans and a zero-length span (an insertion) are accepted. Exported by no entry: 15.2's write-back is a `model` domain operation and imports it in-package.
+- [x] `packages/model/src/parameters/rename-in-expression.ts` (function) -- `renameInExpression(expression, from, to)`: the name nodes equal to `from`, spliced to `to`; throws `InvariantError` on an input text that does not parse, as `expressionNames` does.
+- [x] `packages/model/src/ids/node-at-path.ts` (function each) -- `nodePaths(layout): ReadonlyMap<string, Id>` (each node's path from the design root by `valueKey`, built once per caller) and `nodeAtPath(nodePaths, path): Option<NodeAtPath>` (`NodeAtPath = { id: Id; at: number }` in `ids/types.ts`), the innermost node owning the path, `none` for a path outside `layout`; moved out of `evaluate-expressions.ts:67-79`, which keeps its `InvariantError` on `none`.
+- [x] `packages/model/src/parameters/parameter-users.ts` (function) -- `parameterUsers(design, name): ItemId[]`, from `walkReferences`' `parameter` references to `name`, each owner once in design order, the parameter's own value left out: `meta` as `meta.id`, a parameter by its name, a part by its id, a node by `nodeAtPath`.
+- [x] `packages/model/src/parameters/check-rename-parameter.ts`, `check-delete-parameter.ts`, `rename-parameter.ts`, `delete-parameter.ts` (function each) -- checks in order: `unknown-target` (also for `ks` → `ks` when no `ks` exists), then `id-taken` (rename, skipped when `to` equals `from`), then `expression-too-long` (rename: an expression whose `renameInExpression` result fails `parseExpressionTree`), then `parameter-in-use` (delete). `renameParameter` renames the first parameter with `from` and, for each expression value `walkSchema(designSchema, draft)` yields whose rewrite differs, writes it at its path; `from === to` writes nothing. `deleteParameter` removes the first parameter with that name.
+- [x] `packages/model/src/violations/unknown-parameter-message.ts`, `parameter-taken-message.ts`, `parameter-in-use-message.ts`, `expression-too-long-message.ts` (function each) -- `The design has no parameter named "x".`, `The design already has a parameter named "x".`, `The parameter "x" is used by "a", "b".`, `Renaming "x" to "y" makes the expression of "a", "b" too long.`; `main.ts` exports the checks, operations and messages.
+- [x] `packages/commands/src/parameters/rename-parameter.ts` (`RenameParameter`, service), `rename-parameter-input-schema.ts` (`v.strictObject({ from: parameterNameSchema, to: parameterNameSchema })`), `delete-parameter.ts` (`DeleteParameter`, service), `delete-parameter-input-schema.ts` (`v.strictObject({ name: parameterNameSchema })`), `types.ts`, `parameters-commands-module.ts`, `index.ts` -- ids `parameters.renameParameter` / `parameters.deleteParameter`, labels `Rename parameter` / `Delete parameter`; `available` forwards to the check.
+- [x] `app/src/parameters.spec.ts` -- the registration rows, each arranging `aDesign({ parameters: [wall 1mm] })` through `replaceDesign` (not the Corney script) and asserting `design.parameters`.
+- [x] Specs per the Boundary Table.
+- [x] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` -- two precedent entries: `packages/commands/src/parameters/parameters-commands.spec.ts`'s `refuses a name that is %s` rows (`empty`, `a unit word`) re-test `parameterNameSchema`'s rule in `commands` ("Test a rule where it is defined"); `app/src/parameters.spec.ts`'s `commits parameters.setParameter run by its id` runs the whole Corney script it does not use ("Arrange only what the test uses").
 
 **Acceptance Criteria:**
 - Given a design whose `meta.gap.x`, a parameter's value and a node's offset each use `ks`, when `renameParameter { from: 'ks', to: 'key' }` runs and then one undo, then after the rename each of those expressions reads `key` with its other text unchanged, and after the undo the design equals the arranged one.
 - Given `pnpm test`, then every existing spec passes unchanged.
+
+## Implementation Notes
+
+- `Decision (build):` the check and the operation share `parameters/renamed-expressions.ts` (`renamedExpressions`, function) and `parameters/expression-owners.ts` (`expressionOwners`, function), not a copy each, because "Give each file one kind of thing" and AD-24's walk is "one function … in one file"; `RenamedExpression` sits in `parameters/types.ts`.
+- `Decision (build, after review):` a parameter's own value is left out of its users by path, the first `parameters` entry with that name only, not every entry with the name (a later duplicate reads the first, Sergii's 14.8 rule) and not by comparing user ids with the name, because a node may carry the same id string as a parameter (`ItemId` is `Id | LibraryId | SideId | ParameterName`; 14.8's `expressionViolations` key fix).
+- `Decision (build):` users are unique by section and id, not by id alone, for the same reason.
+- `Decision (build):` `expression-too-long` names a parameter by its old name, not the new one, because a refused command changes nothing, so the item still carries `from` in the design the rejection describes.
+- `Decision (build):` `renameParameter` returns early when `from === to`, not relying on Immer to skip unchanged writes, so "writes nothing" holds by the code.
+- `Decision (build):` the length rows pad `k` with spaces, not long number literals, because the grammar allows trailing whitespace and refuses a number literal a double cannot hold (14.2).
+- Toggled bugs, each watched red and restored: dropping `RenameParameter` from `parametersCommandsModule` fails its three app rows in Chromium and Firefox; dropping `DeleteParameter` fails its two.
+- Real-host run: no spec in the diff fakes a third-party host or boundary; the app rows use the real store and `MemoryBackend`.
+- Structural changes: none (no tsconfig, package.json, workspace, Vitest, ESLint, Stryker or dependency-cruiser change; no `declare global` or `declare module`).
+- `Decision (build):` `spliceExpression` keeps edits with an equal start in input order (`toSorted` is stable), not a tie rule, because no caller produces tied spans.
+- Verification (step 3, mine): `pnpm typecheck`, `pnpm check:fast` clean; `pnpm test` 814 files, 6,124 tests passed, no type errors.
+
+## Plan Change Log
+
+## Review Triage Log
+
+### Pass 1 (quick, test-reviewer; 0 findings dropped): high 0, medium 0, low 9, false 0, maybe-false 0
+
+| Verdict | Route | Finding | Evidence |
+|---|---|---|---|
+| low | patch | `ownValue` drops every parameter with the name, so a later duplicate's use of it is not counted (quick) | `parameter-users.ts`: `section === 'parameters' && design.parameters[index]?.name === name`; loaded `[wall 1mm, wall = wall * 2]` gives `[]`, then the store refuses with `dependency-cycle`, not `parameter-in-use`. Fix: own value is the first parameter's index only; row added. |
+| low | patch | No check-level row accepts a rename onto an unresolved name (quick) | Only `rename-parameter.spec.ts` covers the operation; a refusal added to `checkRenameParameter` would pass every spec. Row added. |
+| low | patch | `accepts a rewrite %s, giving the expected length` runs the operation and asserts a length (quick, test-reviewer) | `renameParameter(...)` and `toHaveLength` inside the check spec; "assert whole values". Check keeps `expectOk`; text rows move to `rename-parameter.spec.ts` with `toBe`. |
+| low | patch | `nodeAtPath` declares `{ id: Id; at: number }` inline (quick) | `node-at-path.ts:17`; "Put every type a folder declares … in that folder's `types.ts`". |
+| low | patch | Comments restate the code (quick) | `node-at-path.ts`, `renamed-expressions.ts`, `parameters/types.ts`, `app/src/parameters.spec.ts`, `check-rename-parameter.spec.ts`; "Write a comment only for a why". |
+| low | patch | `replaces each span with %s` renders a name its `expect` does not claim (test-reviewer) | "replaces each span with no edit". Renamed. |
+| low | rejected | `spliceExpression` orders edits with an equal start by input order, undocumented (test-reviewer) | No caller produces tied spans: a rename's spans are distinct name nodes, and `toSorted` is stable, so input order holds; a tie rule adds a branch for a case no one meets. |
+| low | rejected | `refuses %s an invalid name with input-invalid` runs the real store in `commands` (test-reviewer) | 14.8's pass 1 rejected the same finding: every `commands` spec registers the real store, so a command's input wiring is tested where the command lives. |
+| low | patch | (counted with the comments row) `usingK` comment in the spec (quick) | Same rule; deleted. |
+
+### Pass 2 (quick, test-reviewer, on the patches; 0 findings dropped): high 0, medium 0, low 6, false 0, maybe-false 0
+
+| Verdict | Route | Finding | Evidence |
+|---|---|---|---|
+| low | asked | `parameter-in-use` ids [`wall`] for a later duplicate read against the frozen "ids never name the deleted parameter" (quick, test-reviewer) | `check-delete-parameter.spec.ts` `names a later parameter with the same name that reads the first`; Sergii kept the refusal and reworded the line (frozen block); row added to the table. |
+| low | patch (notes) | The own-value build decision no longer matched `parameter-users.ts` (quick) | `findIndex` … `index === own`; the note now says the first entry only, with both rejected alternatives. |
+| low | patch (notes) | The plan's task line still spelled `Option<{ id: Id; at: number }>` (quick) | Now names `NodeAtPath` in `ids/types.ts`. |
+| low | logged | `ids/types.ts:5` comment explains the field `at` rather than a why (quick) | A rename to `pathLength` would remove it; logged, not patched, per the loop rule. |
+| low | logged | `rewrites an expression to %s` builds its expected text with `repeat` and its name does not say it asserts the text (test-reviewer) | The padding is arranged data, not production logic; logged. |
+| low | logged | (counted above) both lenses on the duplicate row | — |
+
+The review loop ends here: a pass with nothing above low, and the one finding against a frozen line settled by Sergii.
 
 ## Design Notes
 
@@ -176,6 +222,7 @@ Final pass (one reader; 0 findings dropped; these fixes no reviewer has read):
 | Rules | delete a missing name | no `ks`; delete `ks` | `unknown-target`, ids [`ks`] | unit, model |
 | Rules | delete a used parameter | `gap.x` = `ks`, `b` = `ks`, slot `k` offset x = `ks`, slot `j` offset y = `ks * 2` | `parameter-in-use`, ids [design id, `b`, `k`, `j`] | unit, model |
 | Rules | delete used by a part | loaded part `p` with an input `ks`, slot `k` offset x = `ks` | `parameter-in-use`, ids [`p`, `k`] | unit, model |
+| Rules | later duplicate is a user | loaded `[wall 1mm, wall = wall * 2]`; delete `wall` | `parameter-in-use`, ids [`wall`] | unit, model |
 | Rules | delete used by one node | slot `k` offset x = `ks`, offset y = `ks` | `parameter-in-use`, ids [`k`] (once) | unit, model |
 | Rules | delete a self-referencing parameter | loaded `a` = `a + 1mm`, no other user | `[]` | unit, model |
 | Rules | self-use left out of the users | loaded `a` = `a + 1mm`, `b` = `a`; delete `a` | `parameter-in-use`, ids [`b`] | unit, model |

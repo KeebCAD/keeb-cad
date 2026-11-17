@@ -13,8 +13,8 @@ import { match } from 'ts-pattern'
 import type * as v from 'valibot'
 
 import { cyclesOf } from '../dependencies/cycles-of'
-import { dependencyGraph } from '../dependencies/dependency-graph'
 import { parameterDependencies } from '../dependencies/parameter-dependencies'
+import { nodeAtPath, nodePaths } from '../ids/node-at-path'
 import type { SchemaValue } from '../references/types'
 import { walkSchema } from '../references/walk-schema'
 import { evaluateField } from './evaluate-field'
@@ -64,18 +64,16 @@ export function evaluateExpressions({
       failedGap[path[2] as 'x' | 'y'] = true
     },
   )
-  const nodeAt = new Map(
-    [...dependencyGraph(layout)].map(([id, { path }]) => [valueKey(path), id] as const),
-  )
+  const paths = nodePaths(layout)
   const nodeViolations = evaluateFields(
     walkSchema(groupSchema, layout, ['layout']),
-    (path) => {
-      for (let at = path.length - 1; at > 0; at -= 1) {
-        const id = nodeAt.get(valueKey(path.slice(0, at)))
-        if (id !== undefined) return { item: id, at }
-      }
-      throw new InvariantError(`The field at ${valueKey(path)} is in no node.`)
-    },
+    (path) =>
+      nodeAtPath(paths, path).match({
+        some: ({ id, at }) => ({ item: id, at }),
+        none: () => {
+          throw new InvariantError(`The field at ${valueKey(path)} is in no node.`)
+        },
+      }),
     (item) => unplacedNodes.add(item as Id),
   )
   return {

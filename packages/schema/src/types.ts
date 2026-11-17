@@ -208,6 +208,8 @@ export type ModelRejectionKind =
   | 'unresolvable-reference'
   | 'negative-length'
   | 'division-by-zero'
+  | 'parameter-in-use'
+  | 'expression-too-long'
 
 // The design store's own kinds carry no message: the editor writes their text from the kind.
 export type Rejection =

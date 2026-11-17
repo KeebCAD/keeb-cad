@@ -5,7 +5,9 @@ import { aDesign, anExpression, aParameter, aParameterName } from '@keeb-cad/sch
 import { describe, expect, it } from 'vitest'
 
 import { settled } from '../testing/settled'
+import { DeleteParameter } from './delete-parameter'
 import { parametersCommandsModule } from './parameters-commands-module'
+import { RenameParameter } from './rename-parameter'
 import { SetParameter } from './set-parameter'
 
 const wall = (value: string) =>
@@ -67,4 +69,48 @@ describe('SetParameter through the store', () => {
     expect(result.error).toMatchObject({ kind: 'division-by-zero', ids: ['wall'] })
     expect(store.current.getOrUndefined()).toBe(before)
   })
+})
+
+describe('RenameParameter and DeleteParameter', () => {
+  it.each([
+    [RenameParameter, 'parameters.renameParameter', 'Rename parameter'],
+    [DeleteParameter, 'parameters.deleteParameter', 'Delete parameter'],
+  ])('has its command id and label', (command, expectedId, expectedLabel) => {
+    expect({ id: command.id, label: command.label }).toEqual({
+      id: expectedId,
+      label: expectedLabel,
+    })
+  })
+})
+
+describe('RenameParameter and DeleteParameter through the store', () => {
+  async function arrange() {
+    const container = new Container().addModule(designModule).addModule(parametersCommandsModule)
+    await container.autoLoad()
+    const store = container.resolve(DesignStore)
+    expectOk(
+      store.replaceDesign({ design: aDesign({ parameters: [wall('1mm')] }), unreadable: [] }),
+    )
+    return store
+  }
+
+  it.each([
+    ['a rename to', RenameParameter, { from: 'wall', to: 'k-s' }, 'to'],
+    ['a rename from', RenameParameter, { from: 'k-s', to: 'key' }, 'from'],
+    ['a delete of', DeleteParameter, { name: 'k-s' }, 'name'],
+  ])(
+    'refuses %s an invalid name with input-invalid, at that field',
+    async (_role, command, input, expectedField) => {
+      const store = await arrange()
+
+      const result = store.run(command, input)
+
+      expectErr(result)
+      expect(result.error).toMatchObject({
+        kind: 'input-invalid',
+        command: command.id,
+        issues: [{ path: [expectedField] }],
+      })
+    },
+  )
 })
