@@ -719,6 +719,7 @@
   summary: 14.5's verify "deg on a length is refused with unit-mismatch" meets the schema's literal check first: a literal `5deg` in a length field is `input-invalid` (`quantity(unit)`'s wrong-unit literal check), and only a non-literal (`a` with `a` = `5deg`) reaches evaluation's `unit-mismatch`. Sofia rewords 14.5's verify or names the literal case's kind.
   evidence: `packages/schema/src/quantity.ts` keeps its wrong-unit literal check (spine AD-17: "A quantity field's schema refuses a literal of the wrong unit"); 14.8's boundary rows "literal with the wrong unit" (`input-invalid`) and "angle in a length field" (`unit-mismatch`).
   owner: Sofia.
+  closed: 2026-11-17, Sofia with Sergii: 14.5's verify now names both refusals (a literal deg on a length `input-invalid`, a parameter holding deg `unit-mismatch`).
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-change-a-parameter/tickets/story-parameters-drive-placement-plan.md`
   summary: precedent to fix: `app/src/corney-column.spec.ts`'s `KEY_1U_RUN` computes an expected value with `argumentHash` ("no expected value computed the way production computes it"), and its round-trip test's first `expect` asserts the placed ids, not the round trip ("Make a test's name and its expects claim the same thing"). 14.8's Corney row went to a new `app/src/parameters.spec.ts` instead of copying either.
   evidence: AGENTS.md Tests section; 14.8's conformance passes (precedent named in its Code Map as not to copy).
