@@ -7,7 +7,7 @@ paradigm: 'one design on the main thread, one reactive graph in a model worker (
 scope: 'keeb-cad milestone 1: layout model, outline shapes, parameters, electrical model, keymap, blueprints (build styles, additions, parts), routing state, design file format, reactive graph and commands, generation pipeline, package boundaries and wiring, editor UI layer, verification, stack'
 status: final
 created: '2026-10-24'
-updated: 2026-11-16
+updated: 2026-11-17
 binds: [FR-1, FR-2, FR-3, FR-4, FR-6, FR-7, FR-8, FR-9, FR-10, FR-11, FR-12, FR-13, FR-14, FR-15, FR-16, FR-17, FR-18]
 sources:
   - _bmad-output/prd-keeb-cad-m1/prd-keeb-cad-m1.md
@@ -942,6 +942,19 @@ type Role = string                                // open string (AD-18): 'recta
 type Target = 'plate' | 'pcb' | 'case'
 type Unit = 'mm' | 'deg'                          // AD-17's units; owned by expr, re-exported by schema
 type ParseError = { kind: 'expression-parse-failed'; input: string }   // owned by expr, re-exported by schema; the editor writes its text from the kind
+// expr's full parser and evaluator (14.2): owned by expr; schema re-exports none of them until 14.8 needs them (Sergii 2026-11-17).
+// parseExpression keeps ParseError, since it also refuses well-formed non-literals (wall + gap) where no offset means anything.
+type Span = { start: number; end: number }        // UTF-16 offsets into the source, end exclusive; renameParameter (14.9) and 15.2's write-back splice at them
+type ExpressionTree = Span & (                    // a span on every node; no node for parentheses, since only name and number spans are spliced
+  | { type: 'number'; value: number; unit?: Unit }  // unit absent = unitless
+  | { type: 'name'; name: string }                  // mm and deg parse as names (unresolvable-reference)
+  | { type: 'negate'; operand: ExpressionTree }
+  | { type: 'binary'; op: '+' | '-' | '*' | '/'; left: ExpressionTree; right: ExpressionTree })
+type ExpressionSyntaxError = { kind: 'expression-syntax-error'; input: string; offset: number }   // the full parser's failure; empty or whitespace-only input fails at 0; not SyntaxError, the JS global
+type Value = { value: number; unit?: Unit }       // evaluate(expression, scope)'s result; may be unitless (AD-17)
+type EvaluateError =
+  | { kind: 'unit-mismatch' | 'division-by-zero'; span: Span }   // span of the failing operation
+  | { kind: 'unresolvable-reference'; name: string; span: Span } // a name the scope lacks
 type OutputKind = 'shape' | 'solid' | 'footprint' | 'part-placement' | 'config' | 'envelope'   // closed list; grows with the stories
 // envelope: a 2D region plus a height range (bottom, top in mm above the plate); live, read by fit and overlap (AD-5, AD-16)
 type QueryName = string                           // one of the queries defined in `blueprint`; closed list, grows with the stories
