@@ -11,11 +11,17 @@ export interface GraphEntry {
   // Absent on the root alone.
   parent?: Id
   index: number
+  // From the design root: ['layout'] for the root, then 'children' and an index per level.
+  path: (string | number)[]
   // Absent on a root with no explicit anchor.
   dependency?: Dependency
 }
 
 export type DependencyGraph = ReadonlyMap<Id, GraphEntry>
+
+// Each item with the items it reads: a node's list holds the one node it is placed from, when that
+// resolves; a parameter's the names its value uses.
+export type Dependencies<T extends string> = ReadonlyMap<T, readonly T[]>
 
 export interface AnchorCheck {
   // Each in cycle order from its lowest member by compareCodeUnits; sorted by that member.

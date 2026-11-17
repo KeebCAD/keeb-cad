@@ -5,12 +5,17 @@ import {
   aDesign,
   aDelta,
   aFreeGroup,
+  aGap,
   aGroupAnchor,
+  aLength,
   aLayout,
   aMeta,
   anAngle,
   anId,
+  anExpression,
   anOffset,
+  aParameter,
+  aParameterName,
   aPartRef,
   aQuantityInputValue,
   anAttachPoint,
@@ -28,12 +33,13 @@ import { walkNodeReferences, walkReferences } from './walk-references'
 describe('walkReferences', () => {
   it('lists every declared reference in a design built from every section, by path', () => {
     const design = aDesign({
-      meta: aMeta({ defaultPart: aPartRef('key') }),
+      meta: aMeta({ defaultPart: aPartRef('key'), gap: aGap({ x: aLength('wall') }) }),
+      parameters: [aParameter({ name: aParameterName('pitch'), value: anExpression('wall * 2') })],
       parts: [
         aBlueprintDesignPart({
           id: anId('key'),
           blueprint: aBlueprintId('lib:blueprint/choc-key'),
-          inputs: { size: '1u', travel: aQuantityInputValue('3mm'), hotswap: true },
+          inputs: { size: '1u', travel: aQuantityInputValue('pitch'), hotswap: true },
         }),
       ],
       layout: aLayout({
@@ -43,7 +49,7 @@ describe('walkReferences', () => {
           aChainGroup({
             id: anId('column'),
             defaultPart: aPartRef('lib:part/choc'),
-            offset: anOffset({ position: aVec2({ x: aDelta('1mm') }) }),
+            offset: anOffset({ position: aVec2({ x: aDelta('pitch + 1mm') }) }),
             children: [
               aSlot({ id: anId('home'), part: aPartRef('key'), inputs: { size: '1.5u' } }),
               aSlot({ id: anId('top') }),
@@ -61,10 +67,18 @@ describe('walkReferences', () => {
 
     expect([...walkReferences(design)]).toEqual([
       { path: ['meta', 'defaultPart'], kind: 'design-part', target: 'key' },
+      { path: ['meta', 'gap', 'x'], kind: 'parameter', target: 'wall' },
+      { path: ['parameters', 0, 'value'], kind: 'parameter', target: 'wall' },
       {
         path: ['parts', 0, 'blueprint'],
         kind: 'library-blueprint',
         target: 'lib:blueprint/choc-key',
+      },
+      { path: ['parts', 0, 'inputs', 'travel', 'value'], kind: 'parameter', target: 'pitch' },
+      {
+        path: ['layout', 'children', 0, 'offset', 'position', 'x'],
+        kind: 'parameter',
+        target: 'pitch',
       },
       {
         path: ['layout', 'children', 0, 'defaultPart'],
@@ -97,6 +111,24 @@ describe('walkReferences', () => {
 
     expect([...walkReferences(design)]).toEqual([
       { path: ['meta', 'defaultPart'], kind: 'library-part', target: 'lib:part/x' },
+    ])
+  })
+
+  it('finds one parameter reference per name in an expression, repeats included, at its path', () => {
+    const design = aDesign({
+      meta: aMeta({ defaultPart: aPartRef('lib:part/x') }),
+      parts: [],
+      layout: aLayout({
+        offset: anOffset({ position: aVec2({ x: aDelta('wall + wall * (n - 1mm)') }) }),
+      }),
+    })
+    const path = ['layout', 'offset', 'position', 'x']
+
+    expect([...walkReferences(design)]).toEqual([
+      { path: ['meta', 'defaultPart'], kind: 'library-part', target: 'lib:part/x' },
+      { path, kind: 'parameter', target: 'wall' },
+      { path, kind: 'parameter', target: 'wall' },
+      { path, kind: 'parameter', target: 'n' },
     ])
   })
 

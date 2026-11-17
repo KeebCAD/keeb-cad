@@ -1,5 +1,5 @@
-import { parseExpression } from '@keeb-cad/expr'
-import { InvariantError, Option, Result } from '@keeb-cad/result'
+import { evaluate } from '@keeb-cad/expr'
+import { Option, Result } from '@keeb-cad/result'
 import { match } from 'ts-pattern'
 import * as v from 'valibot'
 
@@ -16,15 +16,14 @@ const inputSchema = (declared: NestedInputDeclaration) =>
     .with({ kind: 'part' }, { kind: 'anchor' }, { kind: 'asset' }, () => handleSchema)
     .exhaustive()
 
-// A part, anchor or asset default is tagged data; a lane receives those only as handles.
+// A part, anchor or asset default is tagged data; a lane receives those only as handles. A
+// quantity default that fails to evaluate has no value to give.
 const defaultValue = (declared: NestedInputDeclaration): Option<unknown> =>
   match(declared)
     .with({ kind: 'quantity' }, ({ default: value }) =>
-      parseExpression(value.value).match<Option<unknown>>({
-        ok: (parsed) => Option.some(parsed.value),
-        err: () => {
-          throw new InvariantError(`"${value.value}" is a default the schema admitted unparsed.`)
-        },
+      evaluate(value.value, new Map()).match<Option<unknown>>({
+        ok: (evaluated) => Option.some(evaluated.value),
+        err: () => Option.none(),
       }),
     )
     .with({ kind: 'part' }, { kind: 'anchor' }, { kind: 'asset' }, () => Option.none<unknown>())

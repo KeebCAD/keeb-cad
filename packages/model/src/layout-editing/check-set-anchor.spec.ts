@@ -93,7 +93,7 @@ describe('checkSetAnchor', () => {
     expect(result.error).toEqual({
       kind: 'dependency-cycle',
       ids: ['n', 'm'],
-      message: dependencyCycleMessage([anId('n'), anId('m')]),
+      message: dependencyCycleMessage([anId('n'), anId('m')], 'nodes'),
     })
   })
 })

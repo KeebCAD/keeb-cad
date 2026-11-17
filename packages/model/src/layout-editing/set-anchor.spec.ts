@@ -102,7 +102,7 @@ describe('setAnchor', () => {
       {
         kind: 'dependency-cycle',
         ids: [anId('n'), anId('m')],
-        message: dependencyCycleMessage([anId('n'), anId('m')]),
+        message: dependencyCycleMessage([anId('n'), anId('m')], 'nodes'),
       },
     ],
   ])("returns its check's rejection for %s, changing nothing", (_role, id, anchor, expected) => {

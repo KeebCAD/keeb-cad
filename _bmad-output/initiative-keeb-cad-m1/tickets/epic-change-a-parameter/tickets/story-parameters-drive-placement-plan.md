@@ -3,14 +3,14 @@ title: 'Parameters drive placement'
 type: 'feature'
 ticket: '8'
 created: '2026-11-17'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: '32e03bfcd84ea71ef2c13bf73fe9a48e8dc24553'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: [quick, test-reviewer]
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md'
@@ -69,22 +69,22 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `packages/schema/src/parameter-name.ts`, `parameter.ts`, `expression.ts`, `design.ts`, `types.ts`, `index.ts` -- `parameterNameSchema` (`v.regex(/^\p{L}[\p{L}0-9_]*$/u, 'A parameter name is a letter, then letters, digits or _.')`, `v.check` not `mm`/`deg` `'mm and deg are units, not parameter names.'`, `v.brand('ParameterName')`); `parameterSchema` (`strictObject { name, value: expressionSchema }`, `v.metadata({ node: 'parameter' })`); full-expression check; `parameters` after `meta`; inferred types; `ItemId`, `ModelRejectionKind`, `ViolationKind` widened; `index.ts` exports both schemas.
-- [ ] `packages/schema/src/testing/parameter-name.ts`, `parameter.ts`, `design.ts`, `index.ts` and their specs -- `aParameterName(text = 'wall')` (function), `aParameter({ name, value })` (function), both parsing through their schemas; `aDesign`'s `parameters = []`; the spec rows the Test builders row asks for. `design.spec.ts` gains `parameters` in its missing-section row.
-- [ ] `packages/commands/src/design/new-design.ts`, `new-design.spec.ts`; `app/src/launch/launch.spec.ts` -- `parameters: []`; the section rows gain `parameters`.
-- [ ] `packages/design-file/src/**/*.spec.ts` -- fixtures gain a `parameters` node; one round-trip row with a parameter and an expression offset.
-- [ ] `packages/blueprint/src/lane/check-nested-inputs.ts` -- the nested quantity default is read with `evaluate(value, new Map())`; an `Err` is that input's `nested-input` failure, not an `InvariantError`.
-- [ ] `packages/model/src/references/walk-schema.ts` (function), `walk-references.ts`, `types.ts` -- the traversal moves to `walkSchema`, which yields each value whose schema carries `refKind`, `expression` or `unit` metadata with that metadata and path; `walkReferences` yields `{ kind: 'parameter', target: name }` per name node of each expression; `check-structure.ts`'s `danglingTargets` skips `parameter`.
-- [ ] `packages/model/src/dependencies/` -- `cyclesOf`, `anchorCycle`, `unplacedOf` (function) take an item's dependencies as a list; `parameter-dependencies.ts` (`parameterDependencies`, function) gives each parameter the names its value reads (from `walkReferences`), its edges in the one dependency graph; callers and specs above follow.
-- [ ] `packages/model/src/evaluation/evaluate-expressions.ts` (function), `field-violations.ts` (function, one field's evaluation against the scope), `types.ts` -- `evaluateExpressions({ parameters, gap, layout })` returns plain data: `values` (`ReadonlyMap<string, number>` keyed by `walkSchema`'s path joined with `/`, e.g. `meta/gap/x`), `fieldViolations` (`{ kind, item, path, name? }` in design order: `meta`, parameters in list order, nodes in tree order), parameter `cycles`, `failedGap` (`{ x, y }` booleans) and `unplacedNodes`. Parameters evaluate in dependency order; a parameter in a loop, reading a failed or unknown parameter, or a later duplicate, is left out of the scope; a parameter or field reading a failed parameter fails with no violation of its own. An `expression-syntax-error` from `evaluate` throws `InvariantError`, since the schema admitted only expressions that parse (14.2's rule: any other throw is a defect).
-- [ ] `packages/model/src/violations/` -- `unitMismatchMessage(ids)`, `divisionByZeroMessage(ids)`, `negativeLengthMessage(ids)` (function each); `unresolvableReferenceMessage` gains `'parameter'` with the missing name; `dependencyCycleMessage(ids, members: 'nodes' | 'parameters')`; `expression-violations.ts` (function): one violation per kind and item, except one `unresolvable-reference` per missing name with every user's id in design order; `dependency-cycle` per parameter loop. Exported from `main.ts` and `worker.ts`, as `dependencyCycleMessage` is.
-- [ ] `packages/model/src/check-structure.ts` -- `checkExpressions` (function) after `checkCycles`: field violations of `next` whose key (`kind`, item, path, name) `previous` lacks; the first in design order as `reject(kind, [item], message)`. `checkCycles` adds parameter loops, rotated from the changed parameter.
-- [ ] `packages/model/src/placement/`, `parts/create-derivations.ts` (function) -- an `expressions` computed over the `parameters`, `gap` and `layout` selector computeds; `readOffset`, `placeLayout` and `borderMargin`'s caller read `values`; `unplacedNodes` and the failed-axis chain children join `unplacedOf`'s seeds; expression violations follow `layoutViolations`.
-- [ ] `packages/model/src/parameters/set-parameter.ts` (function), `main.ts` -- replaces the value of the parameter with that name, else appends.
-- [ ] `packages/commands/src/parameters/set-parameter.ts` (`SetParameter`, service), `set-parameter-input-schema.ts` (`setParameterInputSchema = parameterSchema`), `types.ts` (`SetParameterInput`), `parameters-commands-module.ts` (function); `index.ts`; `app/src/main-modules.ts` -- `parameters.setParameter`, label `Set parameter`; `available` always returns `Result.ok()`.
-- [ ] `app/src/parameters.spec.ts` -- the Corney and registration rows, in a new file, not `corney-column.spec.ts`.
-- [ ] Specs per the Boundary Table; `walk-references.spec.ts`'s every-section design gains `meta.gap`, `parameters` and an expression with a name, and its literal row stays (a literal yields no `parameter` reference) and a row with names joins it.
-- [ ] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` -- close the entries at lines 711 and 714 with Sergii's decisions; one entry for Sofia: 14.5's verify "deg on a length is refused with unit-mismatch" meets the schema's literal check first (`input-invalid`); one precedent entry: `app/src/corney-column.spec.ts`'s `KEY_1U_RUN` computes an expected value with `argumentHash` ("no expected value computed the way production computes it"), and its round-trip test's first `expect` asserts the placed ids, not the round trip ("Make a test's name and its expects claim the same thing").
+- [x] `packages/schema/src/parameter-name.ts`, `parameter.ts`, `expression.ts`, `design.ts`, `types.ts`, `index.ts` -- `parameterNameSchema` (`v.regex(/^\p{L}[\p{L}0-9_]*$/u, 'A parameter name is a letter, then letters, digits or _.')`, `v.check` not `mm`/`deg` `'mm and deg are units, not parameter names.'`, `v.brand('ParameterName')`); `parameterSchema` (`strictObject { name, value: expressionSchema }`, `v.metadata({ node: 'parameter' })`); full-expression check; `parameters` after `meta`; inferred types; `ItemId`, `ModelRejectionKind`, `ViolationKind` widened; `index.ts` exports both schemas.
+- [x] `packages/schema/src/testing/parameter-name.ts`, `parameter.ts`, `design.ts`, `index.ts` and their specs -- `aParameterName(text = 'wall')` (function), `aParameter({ name, value })` (function), both parsing through their schemas; `aDesign`'s `parameters = []`; the spec rows the Test builders row asks for. `design.spec.ts` gains `parameters` in its missing-section row.
+- [x] `packages/commands/src/design/new-design.ts`, `new-design.spec.ts`; `app/src/launch/launch.spec.ts` -- `parameters: []`; the section rows gain `parameters`.
+- [x] `packages/design-file/src/**/*.spec.ts` -- fixtures gain a `parameters` node; one round-trip row with a parameter and an expression offset.
+- [x] `packages/blueprint/src/lane/check-nested-inputs.ts` -- the nested quantity default is read with `evaluate(value, new Map())`; an `Err` is that input's `nested-input` failure, not an `InvariantError`.
+- [x] `packages/model/src/references/walk-schema.ts` (function), `walk-references.ts`, `types.ts` -- the traversal moves to `walkSchema`, which yields each value whose schema carries `refKind`, `expression` or `unit` metadata with that metadata and path; `walkReferences` yields `{ kind: 'parameter', target: name }` per name node of each expression; `check-structure.ts`'s `danglingTargets` skips `parameter`.
+- [x] `packages/model/src/dependencies/` -- `cyclesOf`, `anchorCycle`, `unplacedOf` (function) take an item's dependencies as a list; `parameter-dependencies.ts` (`parameterDependencies`, function) gives each parameter the names its value reads (from `walkReferences`), its edges in the one dependency graph; callers and specs above follow.
+- [x] `packages/model/src/evaluation/evaluate-expressions.ts` (function), `field-violations.ts` (function, one field's evaluation against the scope), `types.ts` -- `evaluateExpressions({ parameters, gap, layout })` returns plain data: `values` (`ReadonlyMap<string, number>` keyed by `walkSchema`'s path joined with `/`, e.g. `meta/gap/x`), `fieldViolations` (`{ kind, item, path, name? }` in design order: `meta`, parameters in list order, nodes in tree order), parameter `cycles`, `failedGap` (`{ x, y }` booleans) and `unplacedNodes`. Parameters evaluate in dependency order; a parameter in a loop, reading a failed or unknown parameter, or a later duplicate, is left out of the scope; a parameter or field reading a failed parameter fails with no violation of its own. An `expression-syntax-error` from `evaluate` throws `InvariantError`, since the schema admitted only expressions that parse (14.2's rule: any other throw is a defect).
+- [x] `packages/model/src/violations/` -- `unitMismatchMessage(ids)`, `divisionByZeroMessage(ids)`, `negativeLengthMessage(ids)` (function each); `unresolvableReferenceMessage` gains `'parameter'` with the missing name; `dependencyCycleMessage(ids, members: 'nodes' | 'parameters')`; `expression-violations.ts` (function): one violation per kind and item, except one `unresolvable-reference` per missing name with every user's id in design order; `dependency-cycle` per parameter loop. Exported from `main.ts` and `worker.ts`, as `dependencyCycleMessage` is.
+- [x] `packages/model/src/check-structure.ts` -- `checkExpressions` (function) after `checkCycles`: field violations of `next` whose key (`kind`, item, path, name) `previous` lacks; the first in design order as `reject(kind, [item], message)`. `checkCycles` adds parameter loops, rotated from the changed parameter.
+- [x] `packages/model/src/placement/`, `parts/create-derivations.ts` (function) -- an `expressions` computed over the `parameters`, `gap` and `layout` selector computeds; `readOffset`, `placeLayout` and `borderMargin`'s caller read `values`; `unplacedNodes` and the failed-axis chain children join `unplacedOf`'s seeds; expression violations follow `layoutViolations`.
+- [x] `packages/model/src/parameters/set-parameter.ts` (function), `main.ts` -- replaces the value of the parameter with that name, else appends.
+- [x] `packages/commands/src/parameters/set-parameter.ts` (`SetParameter`, service), `set-parameter-input-schema.ts` (`setParameterInputSchema = parameterSchema`), `types.ts` (`SetParameterInput`), `parameters-commands-module.ts` (function); `index.ts`; `app/src/main-modules.ts` -- `parameters.setParameter`, label `Set parameter`; `available` always returns `Result.ok()`.
+- [x] `app/src/parameters.spec.ts` -- the Corney and registration rows, in a new file, not `corney-column.spec.ts`.
+- [x] Specs per the Boundary Table; `walk-references.spec.ts`'s every-section design gains `meta.gap`, `parameters` and an expression with a name, and its literal row stays (a literal yields no `parameter` reference) and a row with names joins it.
+- [x] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` -- close the entries at lines 711 and 714 with Sergii's decisions; one entry for Sofia: 14.5's verify "deg on a length is refused with unit-mismatch" meets the schema's literal check first (`input-invalid`); one precedent entry: `app/src/corney-column.spec.ts`'s `KEY_1U_RUN` computes an expected value with `argumentHash` ("no expected value computed the way production computes it"), and its round-trip test's first `expect` asserts the placed ids, not the round trip ("Make a test's name and its expects claim the same thing").
 
 **Acceptance Criteria:**
 - Given Corney loaded with `meta.gap.x` = `wall` and `wall` = `1mm`, when `setParameter { name: 'wall', value: '2mm' }` runs, then each key after the first in an `x` chain moves 1 mm further per step than in the arranged design, and one undo restores the arranged frames.
@@ -168,9 +168,62 @@ Final pass (one reader; 0 findings dropped):
 
 ## Implementation Notes
 
+- `Decision (build):` `evaluateExpressions` takes `designId` beside `parameters`, `gap` and `layout`, not the three sections alone, because `meta`'s item is named by `meta.id` (the plan's decision) and no section it took carries it; `create-derivations` already had a `designId` selector computed.
+- `Decision (build):` a `FieldViolation`'s `path` runs from its item (`['gap', 'x']`, `['value']`, `['offset', 'position', 'x']`), not from the design root, because a root path shifts when an edit inserts a node before the failing one, and the frozen rule refuses only "a fault … the edit added".
+- `Decision (build):` the one-field evaluation lives in `evaluation/evaluate-field.ts` as `evaluateField`, not `field-violations.ts`, because the file holds one function and it returns a value or a fault, not violations.
+- `Decision (build):` `unresolvableReferenceMessage` takes `{ parameter: name }` as its reference, not a third positional argument, so the existing callers are unchanged and the parameter case cannot omit the name.
+- `Decision (build):` with one user the message reads `No parameter is named "nope"; "a" uses it.`, not `use it`, because the plan gave only the two-user text and the singular needs the verb's singular.
+- `Decision (build):` a parameter or field that reads a failed parameter and also an unknown name fails with no violation of its own, not also reporting the unknown name, because the plan says one "reading a failed parameter fails with no violation of its own".
+- `Decision (build):` `cyclesOf` over dependency lists reports one loop per back edge of a depth-first walk, deduplicated and rotated from its lowest member, not every elementary cycle (exponential), because with one dependency per node it is the old result, and every loop keeps at least one reported member, so the rest fail as its dependants.
+- `Decision (build, after review):` `checkCycles` refuses only a loop through an edge the edit added (for each changed item in `compareCodeUnits` order, each dependency `next` gives it that `previous` lacked, `anchorCycle` over `next`), not a comparison of `cyclesOf`'s loop sets, because with several dependencies per item the loops `cyclesOf` reports depend on visit order (`e=1mm, a=b, b=c + d, c=a, d=c`: `setParameter e d` threw, `setParameter b d + c` was refused).
+- `Decision (build, after review):` `expressionViolations` groups a non-reference kind by kind, the path's first segment and item, not kind and item alone, so a parameter, a node and `meta` sharing one id string stay apart.
+- `Decision (build):` `checkCycles` checks node loops before parameter loops, and `checkStructure` names a dangling reference, then a loop, then an expression, not a combined sort, because one command closes a loop in only one layer and one edit must give one rejection.
+- `Decision (build):` `GraphEntry` gains `path` (`['layout']`, then `'children'` and an index per level), not a separate node-path lookup, because placement reads a node's values by that path and `dependencyGraph` already walks the tree with parent and index.
+- `Decision (build):` a failed gap axis is `NaN` in `Placing.gap` and an unplaced root's frame is the identity, not a throw, because every chain step along that axis and every node under that root is unplaced, so neither is read; `readOffset` throws `InvariantError` for any other missing value.
+- `Decision (build):` `expressionViolations` lists parameter loops before the field groups, not after, as `layoutViolations` lists cycles before dangling anchors.
+- Spec inputs that used `nope` as text the parser refuses (`expression.spec.ts`, `testing/expression.spec.ts`, `declared-input.spec.ts`, `input-value.spec.ts`, `upgrade-mapping.spec.ts`, `meta.spec.ts`) now use `1mm +`, since `nope` parses as a name; `meta.spec.ts`'s `one` row now accepts it as a name. `migrate-bundle.spec.ts`'s repeated-section line moved from 16 to 17 with its fixture's new `parameters` line.
+- Toggled bugs, each watched red and restored: dropping `parametersCommandsModule` from `app/src/main-modules.ts` fails both rows of `app/src/parameters.spec.ts`; passing `parameters: []` to `evaluateExpressions` in `create-derivations.ts` fails the Corney row; `parameters: v.optional(v.array(parameterSchema), [])` fails launch's "has no parameters" row.
+
+- Real-host run: no spec in the diff fakes a third-party host or boundary; the app specs use the repo's own `MemoryBackend`, and the blueprint row runs real `expr`.
+- Structural changes: none (no tsconfig, package.json, workspace, Vitest, ESLint, Stryker or dependency-cruiser change; no `declare global` or `declare module`).
+- Verification (step 3, mine): `pnpm typecheck`, `pnpm check:fast` clean; `pnpm test` 790 files, 6,020 tests passed, no type errors.
+
+- Decision (Sergii 2026-11-17): `cyclesOf` keeps one loop per back edge of a depth-first walk, deduplicated, not every member of a tangle grouped by strongly connected components, so a parameter tangle may name fewer loops than it has; every loop keeps one reported member.
+
+- `Decision (build):` a parameter that reads itself (`a = a`) is a loop of one, `"a" → "a"`, not an unknown name, because the name resolves to a parameter in the list and AD-17 makes "a parameter loop … the same cycle rejection".
+- `Decision (build):` a dependency on a name no parameter carries stays in the parameter's dependency list and leads nowhere (`cyclesOf` and `anchorCycle` skip an item the map lacks), not an edge that closes or blocks anything, because that name is reported as `unresolvable-reference` by evaluation (the plan's decision on `danglingTargets`).
+- `Decision (build):` `parameterDependencies` lists each name once, not once per use, because a loop is a path over parameters and a repeated edge changes no path.
+
+- Decision (Sergii 2026-11-17): `evaluateField` fails with a named `{ kind: 'reads-failed-parameter' }` beside `ExpressionFault`, not `Err(None)` of an `Option`, so the type says why an item failed with no violation of its own; the variant is kept out of `ExpressionFaultKind`, so it never reaches a `Violation`.
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+### Pass 1 (quick, test-reviewer; 0 findings dropped): high 1, medium 0, low 6, false 0, maybe-false 0
+
+| Verdict | Route | Finding | Evidence |
+|---|---|---|---|
+| high | patch | `checkCycles` compares the sets of loops `cyclesOf` reports, which for several dependencies per item depend on visit order: an edit closing no loop throws `InvariantError('A new cycle has no changed member.')` or is refused (quick) | Scratch copy of `cyclesOf`: parameters `e=1mm, a=b, b=c + d, c=a, d=c` give `[[a,b,c]]`; after `setParameter e d`, `[[a,b,c],[a,b,d,c]]` (fresh loop, no changed member: throw); after `setParameter b d + c`, `[[a,b,d,c]]` (refused, no loop added). Only a loaded file reaches the tangle, but a throw breaks "Design problems never throw". Fix: refuse only a loop through an edge the edit added, found by `anchorCycle` from each changed item over its new dependencies. |
+| low | patch | `expressionViolations` groups by `kind item`, so a parameter and a node (or `meta`) sharing one id merge into one violation (quick) | `expression-violations.ts:15`; `ItemId` strings are shared across node ids, parameter names and the design id. Fix: the key also holds the path's first segment (`gap`, `value`, `offset`). |
+| low | rejected | `evaluate-field.ts` and `evaluate-expressions.ts` have no spec of their own (quick) | Their rows run at the frozen Boundary Table's level, `unit, model`, through `checkStructure` and `createDerivations` in the same package; moving them edits the frozen level column. |
+| low | patch | `anchorCycle`'s several-dependencies path is never exercised (quick) | Its callers pass node graphs; the high finding's fix makes parameters call it, and one row with two dependencies proves the backtrack. |
+| low | patch | `place-layout.spec.ts`'s `arrange` builds `values` with production `evaluateExpressions`, a hidden step (test-reviewer) | AGENTS.md: "a stage gets the outputs it reads as inputs"; fix: a literal `values` map. |
+| low | patch | `applies by leaving the draft setParameter leaves` compares with the operation's own output and never claims `2mm` (test-reviewer) | `expect(viaCommand).toEqual(viaOperation)`; fix: assert `parameters` equals `[wall 2mm]`. |
+| low | patch | Self-loop as a loop of one, an unknown name leading nowhere, and repeated names read once are undocumented decisions (test-reviewer) | Recorded in Implementation Notes as build decisions (no code change). |
+| low | rejected | `refuses a value that divides by zero …` runs `DesignStore` with `checkStructure` in `commands` (test-reviewer) | Every `commands` spec registers the real store (`overrides-commands.spec.ts`), so a command's refusal is tested where the command lives; the unit row is in `check-structure.spec.ts`. |
+
+### Pass 2 (quick, test-reviewer, on the patches; 0 findings dropped): high 0, medium 0, low 5, false 0, maybe-false 0
+
+| Verdict | Route | Finding | Evidence |
+|---|---|---|---|
+| low | patch (notes) | The `reads-failed-parameter` decision was recorded twice, once as a build decision (quick) | Sergii's call; the build-labelled copy removed from Implementation Notes, his entry kept. |
+| low | patch (notes) | The "no graph edge" decision did not match `parameterDependencies`, which keeps unknown names (quick) | `parameter-dependencies.ts` sets `[...new Set(expressionNames(value))]` unfiltered; the note now says the edge stays and leads nowhere. |
+| low | logged | `expression-violations.ts`'s header comment still says "per kind and item" after the key gained the section (quick) | Behaviour within one item is unchanged (every node field sits under `offset`); logged, not patched, per the loop rule. |
+| low | logged | No row shows `meta` and a node sharing one id stay apart (quick) | The parameter-against-node row covers the same key change; logged. |
+| low | logged | No row refuses a new loop in a file that already holds one (quick) | `setParameter d b` there would close `[d, b]`; the added-edge search is the same code path as the clean-file refusal row; logged. |
+
+The review loop ends here: a pass with nothing above low that breaks no frozen line. Test-reviewer pass 2: no findings (layout literals and their `values` literals are two hand-kept copies; noted, not a finding).
 
 ## Boundary Table
 

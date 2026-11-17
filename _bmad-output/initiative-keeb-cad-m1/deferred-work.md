@@ -710,6 +710,16 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-change-a-parameter/tickets/story-expressions-parse-and-evaluate-with-units-plan.md`
   summary: 14.8 decides whether `ParameterName` refuses a name that mixes scripts (Latin `gap` against `gаp` with a Cyrillic `а`), before names are stored in design files.
   evidence: Sergii chose `\p{L}` letters for names (2026-11-17, spine 03021b6); `node -e "console.log('gap'==='gаp')"` prints false, so a look-alike name fails as unresolvable-reference while looking right. A decomposed accent (`e` + U+0301) is not `\p{L}` and already fails as a syntax error; normalising the input was rejected because NFC can change its length and move the spans 14.9 and 15.2 splice at.
+  closed: 2026-11-17, Sergii at 14.8's planning: a name that mixes scripts is not refused and `ParameterName` is unchanged, because a look-alike used in an expression is refused as `unresolvable-reference` naming it.
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-change-a-parameter/tickets/story-expressions-parse-and-evaluate-with-units-plan.md`
   summary: 14.8 decides whether evaluation that overflows to a non-finite `Value` is refused; `evaluate` does not check it today.
   evidence: 14.2's grammar refuses a number literal a double cannot hold, but arithmetic can still overflow: `evaluate('99…9mm * 10', …)` (308 nines) returns `Ok({ value: Infinity, unit: 'mm' })`. The Data Schema's `EvaluateError` has only `unit-mismatch`, `division-by-zero` and `unresolvable-reference`, and a new kind is defined in the spine first.
+  closed: 2026-11-17, Sergii at 14.8's planning: evaluation that overflows to `Infinity` is not refused and `EvaluateError` gains no kind, because reaching it takes a typed number near 1.8e308.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-change-a-parameter/tickets/story-parameters-drive-placement-plan.md`
+  summary: 14.5's verify "deg on a length is refused with unit-mismatch" meets the schema's literal check first: a literal `5deg` in a length field is `input-invalid` (`quantity(unit)`'s wrong-unit literal check), and only a non-literal (`a` with `a` = `5deg`) reaches evaluation's `unit-mismatch`. Sofia rewords 14.5's verify or names the literal case's kind.
+  evidence: `packages/schema/src/quantity.ts` keeps its wrong-unit literal check (spine AD-17: "A quantity field's schema refuses a literal of the wrong unit"); 14.8's boundary rows "literal with the wrong unit" (`input-invalid`) and "angle in a length field" (`unit-mismatch`).
+  owner: Sofia.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-change-a-parameter/tickets/story-parameters-drive-placement-plan.md`
+  summary: precedent to fix: `app/src/corney-column.spec.ts`'s `KEY_1U_RUN` computes an expected value with `argumentHash` ("no expected value computed the way production computes it"), and its round-trip test's first `expect` asserts the placed ids, not the round trip ("Make a test's name and its expects claim the same thing"). 14.8's Corney row went to a new `app/src/parameters.spec.ts` instead of copying either.
+  evidence: AGENTS.md Tests section; 14.8's conformance passes (precedent named in its Code Map as not to copy).
+  owner: the next story that touches `app/src/corney-column.spec.ts`.

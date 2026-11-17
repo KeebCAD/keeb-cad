@@ -2,7 +2,7 @@ import { Option } from '@keeb-cad/result'
 import type { Frozen, Group, Id, Node } from '@keeb-cad/schema'
 
 import { isGroup } from '../layout-editing/node-tree'
-import type { Dependency, DependencyGraph, GraphEntry } from './types'
+import type { Dependencies, Dependency, DependencyGraph, GraphEntry } from './types'
 
 // Every node with the one node it depends on: a free child its explicit anchor's target, else its
 // parent; a chain child its previous sibling, else its parent. The root depends only on an
@@ -10,26 +10,39 @@ import type { Dependency, DependencyGraph, GraphEntry } from './types'
 export function dependencyGraph(layout: Frozen<Group>): DependencyGraph {
   const root: GraphEntry =
     layout.anchor === undefined
-      ? { node: layout, index: 0 }
+      ? { node: layout, index: 0, path: ['layout'] }
       : {
           node: layout,
           index: 0,
+          path: ['layout'],
           dependency: { kind: 'explicit', target: layout.anchor.ref, anchor: layout.anchor },
         }
   const graph = new Map<Id, GraphEntry>([[layout.id, root]])
-  const visit = (group: Frozen<Group>) => {
+  const visit = (group: Frozen<Group>, path: GraphEntry['path']) => {
     for (const [index, child] of group.children.entries()) {
+      const childPath = [...path, 'children', index]
       graph.set(child.id, {
         node: child,
         parent: group.id,
         index,
+        path: childPath,
         dependency: dependencyOf(group, child as Frozen<Node>, index),
       })
-      if (isGroup(child)) visit(child)
+      if (isGroup(child)) visit(child, childPath)
     }
   }
-  visit(layout)
+  visit(layout, ['layout'])
   return graph
+}
+
+// Each node with the node its dependency leads to, when it resolves.
+export function resolvedDependencies(graph: DependencyGraph): Dependencies<Id> {
+  return new Map(
+    [...graph.keys()].map((id) => [
+      id,
+      resolvedDependency(graph, id).match<Id[]>({ some: (target) => [target], none: () => [] }),
+    ]),
+  )
 }
 
 // The node a node's dependency leads to, when it resolves: an explicit anchor naming a missing id

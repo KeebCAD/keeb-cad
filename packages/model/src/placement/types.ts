@@ -25,6 +25,8 @@ export type LayoutRow = LayoutOutput['rows'][number]
 // What placement reads, the same for every node of one layout.
 export interface Placing {
   graph: DependencyGraph
+  // Each evaluated quantity field, by valueKey.
+  values: ReadonlyMap<string, number>
   gap: { x: number; y: number }
   parts: ResolvedParts
   // The placed nodes, each after its dependency.

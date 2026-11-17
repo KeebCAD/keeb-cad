@@ -2,7 +2,7 @@ import { Result } from '@keeb-cad/result'
 import type { Anchor, Design, Frozen, Id, Rejection } from '@keeb-cad/schema'
 
 import { anchorCycle } from '../dependencies/anchor-cycle'
-import { dependencyGraph } from '../dependencies/dependency-graph'
+import { dependencyGraph, resolvedDependencies } from '../dependencies/dependency-graph'
 import { reject } from '../reject/reject'
 import { dependencyCycleMessage } from '../violations/dependency-cycle-message'
 import { unknownAnchorTargetMessage } from '../violations/unknown-anchor-target-message'
@@ -42,8 +42,9 @@ export function checkSetAnchor(
   }
   const dependency = anchor?.ref ?? entry.parent
   if (dependency === undefined) return Result.ok()
-  return anchorCycle(graph, id, dependency).match<Result<void, Rejection>>({
-    some: (ids) => Result.err(reject('dependency-cycle', ids, dependencyCycleMessage(ids))),
+  return anchorCycle(resolvedDependencies(graph), id, dependency).match<Result<void, Rejection>>({
+    some: (ids) =>
+      Result.err(reject('dependency-cycle', ids, dependencyCycleMessage(ids, 'nodes'))),
     none: () => Result.ok(),
   })
 }

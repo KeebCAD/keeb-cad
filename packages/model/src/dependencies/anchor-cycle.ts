@@ -1,20 +1,24 @@
 import { Option } from '@keeb-cad/result'
-import type { Id } from '@keeb-cad/schema'
 
-import { resolvedDependency } from './dependency-graph'
-import type { DependencyGraph } from './types'
+import type { Dependencies } from './types'
 
-// The cycle that making `node` depend on `target` would close, in order from `node`.
-export function anchorCycle(graph: DependencyGraph, node: Id, target: Id): Option<Id[]> {
-  const cycle: Id[] = [node]
-  let current = Option.some<Id>(target)
-  while (current.isSome()) {
-    const id = current.value
-    if (id === node) return Option.some(cycle)
-    // A loop that doesn't pass through `node` is not closed by this edge.
-    if (cycle.includes(id) || !graph.has(id)) return Option.none()
-    cycle.push(id)
-    current = resolvedDependency(graph, id)
+// The loop that making `item` depend on `target` would close, in order from `item`.
+export function anchorCycle<T extends string>(
+  dependencies: Dependencies<T>,
+  item: T,
+  target: T,
+): Option<T[]> {
+  const cycle: T[] = [item]
+  const seen = new Set<T>()
+  const reaches = (current: T): boolean => {
+    if (current === item) return true
+    // A loop that doesn't pass through `item` is not closed by this edge.
+    if (seen.has(current) || !dependencies.has(current)) return false
+    seen.add(current)
+    cycle.push(current)
+    if ((dependencies.get(current) ?? []).some((next) => reaches(next))) return true
+    cycle.pop()
+    return false
   }
-  return Option.none()
+  return reaches(target) ? Option.some(cycle) : Option.none()
 }

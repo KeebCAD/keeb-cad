@@ -27,7 +27,7 @@ describe('declaredInputSchema', () => {
     ['a unit on a boolean', { ...aPlainInput('boolean'), unit: 'mm' }],
     ['options on a quantity', { ...aQuantityInput(), options: ['a'] }],
     ['an empty options list', { ...anOptionInput(), options: [], default: '' }],
-    ['an unparsable range minimum', { ...aQuantityInput(), range: { min: 'nope' } }],
+    ['an unparsable range minimum', { ...aQuantityInput(), range: { min: '1mm +' } }],
     ['a part', { kind: 'part', label: 'Part', default: 'x' }],
     ['an anchor', { kind: 'anchor', label: 'Anchor', default: 'x' }],
     ['an asset', { kind: 'asset', label: 'Asset', default: 'x' }],

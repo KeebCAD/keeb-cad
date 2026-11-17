@@ -5,7 +5,7 @@ import { designSchema } from './design'
 import { aDesign } from './testing'
 
 describe('designSchema', () => {
-  it.each(['overrides', 'libraryVersions'] as const)(
+  it.each(['parameters', 'overrides', 'libraryVersions'] as const)(
     'refuses a design with no %s section, at that section',
     (section) => {
       const design = Object.fromEntries(

@@ -13,6 +13,14 @@ describe('the quantity schemas', () => {
     ['angleSchema', 'refuses', 'a length in mm', angleSchema, '15mm', false],
     ['deltaSchema', 'accepts', 'a negative length in mm', deltaSchema, '-15mm', true],
     ['deltaSchema', 'refuses', 'an angle in deg', deltaSchema, '15deg', false],
+    [
+      'deltaSchema',
+      'accepts',
+      'a parameter name, checked when evaluated',
+      deltaSchema,
+      'wall',
+      true,
+    ],
   ])('%s %s %s', (_schema, _outcome, _role, schema, input, expected) => {
     expect(v.safeParse(schema, input).success).toBe(expected)
   })

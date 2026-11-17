@@ -48,6 +48,10 @@ const brokenDesignTexts = {
     ...texts,
     design: texts.design.replace(/library-versions \{[\s\S]*?\n\}\n/, ''),
   }),
+  'has no parameters': (texts: BundleTexts) => ({
+    ...texts,
+    design: texts.design.replace(/^parameters\n/m, ''),
+  }),
   'has no overrides': (texts: BundleTexts) => ({
     ...texts,
     design: texts.design.replace(/^overrides\n/m, ''),
@@ -244,6 +248,7 @@ describe('Launch', () => {
       ["isn't KDL"],
       ['has a newer format-version'],
       ['has no library-versions'],
+      ['has no parameters'],
       ['has no overrides'],
     ] as const)(
       'opens a new design when the only stored one %s, leaving it unchanged',

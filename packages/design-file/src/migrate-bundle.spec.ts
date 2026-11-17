@@ -11,6 +11,7 @@ const sections = [
   '    form type="split" board="reversible"',
   '    gap x="1mm" y="1mm"',
   '}',
+  'parameters',
   'library-versions {',
   '    library-version id="lib:blueprint/choc-key" version=1',
   '}',
@@ -139,7 +140,7 @@ describe('migrateBundle', () => {
       expect(result.error).toEqual({
         kind: 'file-unreadable',
         file: 'design',
-        message: 'The node "meta" appears more than once, on lines 2 and 16.',
+        message: 'The node "meta" appears more than once, on lines 2 and 17.',
       })
     })
   })

@@ -3,9 +3,7 @@ import {
   aChainGroup,
   aDelta,
   aFreeGroup,
-  aGap,
   aLayout,
-  aLength,
   anAngle,
   anId,
   anOffset,
@@ -28,7 +26,8 @@ const DIGITS = 9
 const TABLE_DIGITS = 4
 const RUN = 'key@h'
 const KEY = { w: 18, h: 18 }
-const GAP = aGap({ x: aLength('1mm'), y: aLength('1mm') })
+// The 1 mm gap's evaluated numbers.
+const GAP_VALUES = { 'meta/gap/x': 1, 'meta/gap/y': 1 }
 
 function slotIds(node: Node): string[] {
   return 'children' in node ? node.children.flatMap(slotIds) : [node.id]
@@ -37,7 +36,13 @@ function slotIds(node: Node): string[] {
 // Every slot on one run, 18 by 18 mm unless the test gives a rectangle or parts of its own.
 function arrange(
   layout: Group,
-  { parts, rectangle = KEY, unplaced = new Set(), removed = new Set() }: Arrangement = {},
+  {
+    parts,
+    rectangle = KEY,
+    unplaced = new Set(),
+    removed = new Set(),
+    values = {},
+  }: Arrangement = {},
 ) {
   const resolved =
     parts ??
@@ -45,7 +50,8 @@ function arrange(
       output: aPartsOutput({ ids: [RUN], rows: [rectangle] }),
       slots: Object.fromEntries(slotIds(layout).map((id) => [id, { run: RUN, fit: 'fitted' }])),
     })
-  return placeLayout(layout, GAP, resolved, unplaced, removed)
+  const evaluated = new Map(Object.entries({ ...GAP_VALUES, ...values }))
+  return placeLayout(layout, evaluated, resolved, unplaced, removed)
 }
 
 interface Arrangement {
@@ -53,6 +59,15 @@ interface Arrangement {
   rectangle?: { w: number; h: number }
   unplaced?: ReadonlySet<Id>
   removed?: ReadonlySet<string>
+  // Each offset field's evaluated number, keyed as placement reads it.
+  values?: Record<string, number>
+}
+
+// The numbers a node's offset fields evaluate to, the node given by its path from the design root.
+function offsetValues(node: string, fields: Record<string, number>): Record<string, number> {
+  return Object.fromEntries(
+    Object.entries(fields).map(([field, value]) => [`${node}/offset/${field}`, value]),
+  )
 }
 
 function rowAt(output: LayoutOutput, id: string, side: PlacementSide = 'left') {
@@ -97,6 +112,12 @@ const slot = (id: string, fields: Parameters<typeof aSlot>[0] = {}) =>
 
 const inRoot = (...children: Node[]) => aLayout({ id: anId('root'), children })
 
+// g-low and g-high, 19 mm apart in y, in a free group second in a chain under the root.
+const lowAndHigh = {
+  ...offsetValues('layout/children/0/children/1/children/0', { 'position/x': 0, 'position/y': 0 }),
+  ...offsetValues('layout/children/0/children/1/children/1', { 'position/x': 0, 'position/y': 19 }),
+}
+
 describe('placeLayout', () => {
   describe('a y chain of the arranged keys, the gap apart', () => {
     it('with no slots has the group row only', () => {
@@ -139,6 +160,7 @@ describe('placeLayout', () => {
     })
     const output = arrange(
       inRoot(aChainGroup({ id: anId('c'), axis: 'x', children: [slot('a'), group] })),
+      { values: lowAndHigh },
     )
 
     expect(frameAt(output, 'g')).toEqual(at(19, 0))
@@ -153,7 +175,7 @@ describe('placeLayout', () => {
       ],
     })
     const chain = aChainGroup({ id: anId('c'), axis: 'y', children: [slot('a'), group, slot('z')] })
-    const output = arrange(inRoot(chain))
+    const output = arrange(inRoot(chain), { values: lowAndHigh })
 
     expect(['g', 'g-low', 'g-high', 'z'].map((id) => frameAt(output, id))).toEqual([
       at(0, 19),
@@ -179,7 +201,9 @@ describe('placeLayout', () => {
       id: anId('g'),
       offset: anOffset({ position: aVec2({ x: aDelta('5mm') }) }),
     })
-    const output = arrange(inRoot({ ...group, children: [slot('a')] }))
+    const output = arrange(inRoot({ ...group, children: [slot('a')] }), {
+      values: offsetValues('layout/children/0', { 'position/x': 5, 'position/y': 0 }),
+    })
 
     expect(rowAt(output, 'a')).toMatchObject({
       frame: at(5, 0),
@@ -194,13 +218,17 @@ describe('placeLayout', () => {
     })
     const output = arrange(
       inRoot(aChainGroup({ id: anId('c'), axis: 'y', children: [slot('a'), group] })),
+      { values: offsetValues('layout/children/0/children/1/children/0', { rotation: 45 }) },
     )
 
     expect(frameAt(output, 'g')).toEqual(at(0, 9 + 1 + 9 * Math.SQRT2))
   })
 
   it('reads a slot turned 190 deg as −170', () => {
-    const output = arrange(inRoot(slot('a', { offset: anOffset({ rotation: anAngle('190deg') }) })))
+    const output = arrange(
+      inRoot(slot('a', { offset: anOffset({ rotation: anAngle('190deg') }) })),
+      { values: offsetValues('layout/children/0', { rotation: 190 }) },
+    )
 
     expect(frameAt(output, 'a')).toEqual(at(0, 0, -170))
   })
@@ -213,7 +241,9 @@ describe('placeLayout', () => {
         children: [slot('a'), slot('b', { offset: turned('15deg') }), slot('d')],
       })
 
-      const output = arrange(inRoot(chain))
+      const output = arrange(inRoot(chain), {
+        values: offsetValues('layout/children/0/children/1', { rotation: 15 }),
+      })
 
       expect(frameAt(output, 'd')).toEqual(about(-4.9176, 37.3526, 15))
     })
@@ -230,7 +260,12 @@ describe('placeLayout', () => {
         ],
       })
 
-      const output = arrange(inRoot(chain))
+      const output = arrange(inRoot(chain), {
+        values: {
+          ...offsetValues('layout/children/0/children/1', { rotation: 15 }),
+          ...offsetValues('layout/children/0/children/2', { rotation: -15 }),
+        },
+      })
 
       expect(['d', 'e'].map((id) => frameAt(output, id))).toEqual([
         about(-4.9176, 37.3526, 0),
@@ -259,7 +294,17 @@ describe('placeLayout', () => {
         },
       })
 
-      const output = arrange(inRoot(chain), { parts })
+      const output = arrange(inRoot(chain), {
+        parts,
+        values: {
+          ...offsetValues('layout/children/0/children/1', { rotation: -15 }),
+          ...offsetValues('layout/children/0/children/2', {
+            'position/x': -1.037,
+            'position/y': 2.122,
+            rotation: 75,
+          }),
+        },
+      })
 
       expect(['a', 'd'].map((id) => frameAt(output, id))).toEqual([
         about(0, 0, 0),
@@ -355,7 +400,10 @@ describe('placeLayout', () => {
       const anchored = slot('n', {
         anchor: aSlotAnchor({ ref: anId('k'), attach: anAttachPoint('edge-top') }),
       })
-      const output = arrange(inRoot(turned, anchored), { rectangle: RECTANGLE })
+      const output = arrange(inRoot(turned, anchored), {
+        rectangle: RECTANGLE,
+        values: offsetValues('layout/children/0', { rotation: 90 }),
+      })
 
       expect({ anchorAt: anchorAtOf(output, 'n'), frame: frameAt(output, 'n') }).toEqual({
         anchorAt: point(-8.5, 0),
@@ -375,7 +423,12 @@ describe('placeLayout', () => {
         offset: anOffset({ position: aVec2({ x: aDelta('2mm') }) }),
         ...(anchor === undefined ? {} : { anchor }),
       })
-      const output = arrange(inRoot(group, moved))
+      const output = arrange(inRoot(group, moved), {
+        values: {
+          ...offsetValues('layout/children/0', { 'position/x': 10, 'position/y': 20 }),
+          ...offsetValues('layout/children/1', { 'position/x': 2, 'position/y': 0 }),
+        },
+      })
 
       expect(frameAt(output, 'n')).toEqual(at(expectedX, expectedY))
     })
@@ -387,8 +440,10 @@ describe('placeLayout', () => {
           slot('b', { anchor: aSlotAnchor({ ref: anId('a') }) }),
           slot('c', { anchor: aSlotAnchor({ ref: anId('b') }) }),
         )
-      const before = arrange(layoutWith('10mm'))
-      const after = arrange(layoutWith('30mm'))
+      const aAt = (x: number) =>
+        offsetValues('layout/children/0', { 'position/x': x, 'position/y': 0 })
+      const before = arrange(layoutWith('10mm'), { values: aAt(10) })
+      const after = arrange(layoutWith('30mm'), { values: aAt(30) })
 
       const xOf = (output: LayoutOutput, id: string) => frameAt(output, id)?.x ?? NaN
       expect(['b', 'c'].map((id) => xOf(after, id) - xOf(before, id))).toEqual([
@@ -412,9 +467,10 @@ describe('placeLayout', () => {
         slot('x', { offset: anOffset({ position: aVec2({ x: aDelta('50mm') }) }) }),
       )
     const onX = { anchor: aSlotAnchor({ ref: anId('x') }) }
+    const xValues = offsetValues('layout/children/1', { 'position/x': 50, 'position/y': 0 })
 
     it('steps the group by the slots placed from inside it, the anchored one on its target', () => {
-      const output = arrange(fan(onX))
+      const output = arrange(fan(onX), { values: xValues })
 
       expect(['g', 'u', 't'].map((id) => frameAt(output, id))).toEqual([
         at(0, 19),
@@ -424,7 +480,7 @@ describe('placeLayout', () => {
     })
 
     it('makes a group whose every slot is anchored outside it a point at its origin', () => {
-      const output = arrange(fan(onX, onX))
+      const output = arrange(fan(onX, onX), { values: xValues })
 
       expect(frameAt(output, 'g')).toEqual(at(0, 10))
     })
@@ -432,6 +488,15 @@ describe('placeLayout', () => {
     it('counts a slot anchored to a sibling inside the group', () => {
       const output = arrange(
         fan({ anchor: aSlotAnchor({ ref: anId('u') }), offset: offsetY('-19mm') }),
+        {
+          values: {
+            ...xValues,
+            ...offsetValues('layout/children/0/children/1/children/0', {
+              'position/x': 0,
+              'position/y': -19,
+            }),
+          },
+        },
       )
 
       expect(['g', 'u', 't'].map((id) => frameAt(output, id))).toEqual([
@@ -459,7 +524,13 @@ describe('placeLayout', () => {
 
   describe('the right side, reflected across center’s y-axis', () => {
     it('reflects a turned slot across center’s y-axis', () => {
-      const output = arrange(inRoot(slot('a', { offset: moved('-20mm', '5mm', '15deg') })))
+      const output = arrange(inRoot(slot('a', { offset: moved('-20mm', '5mm', '15deg') })), {
+        values: offsetValues('layout/children/0', {
+          'position/x': -20,
+          'position/y': 5,
+          rotation: 15,
+        }),
+      })
 
       expect([frameAt(output, 'a'), frameAt(output, 'a', 'right')]).toEqual([
         at(-20, 5, 15),
@@ -468,14 +539,19 @@ describe('placeLayout', () => {
     })
 
     it.each([
-      ['just below the half turn', '179deg', -179],
-      ['on the half turn', '180deg', 180],
-      ['just above the negative half turn', '-179deg', 179],
-    ])('wraps a reflected rotation %s into the half-open turn', (_role, rotation, expectedRot) => {
-      const output = arrange(inRoot(slot('a', { offset: turned(rotation) })))
+      ['just below the half turn', '179deg', 179, -179],
+      ['on the half turn', '180deg', 180, 180],
+      ['just above the negative half turn', '-179deg', -179, 179],
+    ])(
+      'wraps a reflected rotation %s into the half-open turn',
+      (_role, rotation, degrees, expectedRot) => {
+        const output = arrange(inRoot(slot('a', { offset: turned(rotation) })), {
+          values: offsetValues('layout/children/0', { rotation: degrees }),
+        })
 
-      expect(frameAt(output, 'a', 'right')).toEqual(at(0, 0, expectedRot, true))
-    })
+        expect(frameAt(output, 'a', 'right')).toEqual(at(0, 0, expectedRot, true))
+      },
+    )
 
     it('reflects across the y-axis of a moved and turned center, not the world’s', () => {
       const layout = aLayout({
@@ -484,7 +560,12 @@ describe('placeLayout', () => {
         children: [slot('a', { offset: moved('3mm', '5mm') })],
       })
 
-      const output = arrange(layout)
+      const output = arrange(layout, {
+        values: {
+          ...offsetValues('layout', { 'position/x': 10, 'position/y': 0, rotation: 90 }),
+          ...offsetValues('layout/children/0', { 'position/x': 3, 'position/y': 5 }),
+        },
+      })
 
       expect([
         frameAt(output, 'a'),
@@ -500,6 +581,7 @@ describe('placeLayout', () => {
       const anchor = aSlotAnchor({ ref: anId('a'), attach: anAttachPoint(attach) })
       const output = arrange(
         inRoot(slot('a', { offset: moved('-30mm', '0mm') }), slot('b', { anchor })),
+        { values: offsetValues('layout/children/0', { 'position/x': -30, 'position/y': 0 }) },
       )
 
       expect(rowAt(output, 'b', 'right')).toMatchObject({
@@ -588,7 +670,16 @@ describe('placeLayout', () => {
         children: [slot('s', { offset: moved('0mm', '10mm') })],
       })
 
-      const output = arrange(inRoot(group))
+      const output = arrange(inRoot(group), {
+        values: {
+          ...offsetValues('layout/children/0', {
+            'position/x': -20,
+            'position/y': 0,
+            rotation: 90,
+          }),
+          ...offsetValues('layout/children/0/children/0', { 'position/x': 0, 'position/y': 10 }),
+        },
+      })
 
       expect([
         frameAt(output, 's'),

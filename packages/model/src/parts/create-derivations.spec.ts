@@ -9,6 +9,7 @@ import type {
   Form,
   LayoutOutput,
   LibraryData,
+  Node,
   Override,
   ReadonlyRef,
 } from '@keeb-cad/schema'
@@ -26,7 +27,13 @@ import {
   aLength,
   aLibraryVersion,
   aMeta,
+  aDelta,
+  anExpression,
+  anOffset,
   anOptionInput,
+  aParameter,
+  aParameterName,
+  aVec2,
   aPartRef,
   anId,
   aSideComponentOverride,
@@ -42,6 +49,8 @@ import { describe, expect, it } from 'vitest'
 
 import { blueprintInputInvalidMessage } from '../violations/blueprint-input-invalid-message'
 import { dependencyCycleMessage } from '../violations/dependency-cycle-message'
+import { divisionByZeroMessage } from '../violations/division-by-zero-message'
+import { unitMismatchMessage } from '../violations/unit-mismatch-message'
 import { overrideNotAllowedMessage } from '../violations/override-not-allowed-message'
 import { unresolvableReferenceMessage } from '../violations/unresolvable-reference-message'
 import { unsupportedFormMessage } from '../violations/unsupported-form-message'
@@ -749,7 +758,7 @@ describe('createDerivations', () => {
           kind: 'dependency-cycle',
           severity: 'error',
           ids: cycle,
-          message: dependencyCycleMessage(cycle),
+          message: dependencyCycleMessage(cycle, 'nodes'),
           fixes: [],
         },
         {
@@ -841,7 +850,7 @@ describe('createDerivations', () => {
           kind: 'dependency-cycle',
           severity: 'error',
           ids: cycle,
-          message: dependencyCycleMessage(cycle),
+          message: dependencyCycleMessage(cycle, 'nodes'),
           fixes: [],
         },
         {
@@ -1008,6 +1017,178 @@ describe('createDerivations', () => {
       ])
 
       expect({ placements, violations }).toEqual({ placements: without, violations: [] })
+    })
+  })
+
+  describe('expressions', () => {
+    const parameter = (name: string, value: string) =>
+      aParameter({ name: aParameterName(name), value: anExpression(value) })
+    const atX = (x: string) => anOffset({ position: aVec2({ x: aDelta(x) }) })
+    const slot = (id: string, fields: Parameters<typeof aSlot>[0] = {}) =>
+      aSlot({ id: anId(id), ...fields })
+    const chain = (id: string, axis: 'x' | 'y') =>
+      aChainGroup({ id: anId(id), axis, children: [slot(`${id}-0`), slot(`${id}-1`)] })
+    const inRoot = (...children: Node[]) => aLayout({ id: anId('root'), children })
+    const designId = anId('corne')
+    const withGap = (x: string, y = '1mm') =>
+      aMeta({ id: designId, gap: aGap({ x: aLength(x), y: aLength(y) }) })
+    const rowOf = (output: LayoutOutput, id: string) =>
+      output.rows[output.ids.indexOf(`left/${id}`)]
+    const placedOf = (output: LayoutOutput, ids: string[]) =>
+      Object.fromEntries(ids.map((id) => [id, rowOf(output, id)?.placed]))
+    const error = (kind: string, ids: string[], message: string) => ({
+      kind,
+      severity: 'error',
+      ids,
+      message,
+      fixes: [],
+    })
+
+    it.each([
+      ['an expression naming a parameter', [parameter('wall', '3mm')], 'wall + 1mm', 4],
+      ['a negative delta', [], '-5mm', -5],
+      ['a name in a non-Latin script', [parameter('ключ', '3mm')], 'ключ', 3],
+      [
+        'a name two parameters carry, reading the first',
+        [parameter('wall', '1mm'), parameter('wall', '5mm')],
+        'wall',
+        1,
+      ],
+    ])(
+      'places a slot whose offset x is %s that far along x from its anchor',
+      async (_role, parameters, x, expectedX) => {
+        const { placements, violations } = await arrange(
+          aDesign({ parameters, layout: inRoot(slot('n', { offset: atX(x) })) }),
+        )
+
+        const row = rowOf(placements.value, 'n')
+        expect({
+          along: (row?.frame.x ?? NaN) - (row?.anchorAt.x ?? NaN),
+          violations: violations.value,
+        }).toEqual({
+          along: expect.closeTo(expectedX, 9),
+          violations: [],
+        })
+      },
+    )
+
+    it('reports a loaded unitless offset as unit-mismatch, leaving the slot and its dependant unplaced', async () => {
+      const layout = inRoot(
+        slot('k', { offset: atX('2') }),
+        slot('c', { anchor: aSlotAnchor({ ref: anId('k') }) }),
+        slot('free'),
+      )
+      const { placements, violations } = await arrange(aDesign({ layout }))
+
+      expect({
+        violations: violations.value,
+        placed: placedOf(placements.value, ['k', 'c', 'free']),
+      }).toEqual({
+        violations: [error('unit-mismatch', ['k'], unitMismatchMessage([anId('k')]))],
+        placed: { k: false, c: false, free: true },
+      })
+    })
+
+    it('reports a loaded unknown name once, naming meta and the slot, leaving them and the gap step unplaced', async () => {
+      const layout = inRoot(chain('c', 'x'), slot('k', { offset: atX('nope') }))
+      const { placements, violations } = await arrange(aDesign({ meta: withGap('nope'), layout }))
+
+      const ids = [designId, anId('k')]
+      expect({
+        violations: violations.value,
+        placed: placedOf(placements.value, ['k', 'c-0', 'c-1']),
+      }).toEqual({
+        violations: [
+          error(
+            'unresolvable-reference',
+            ids,
+            unresolvableReferenceMessage({ parameter: 'nope' }, ids),
+          ),
+        ],
+        placed: { k: false, 'c-0': true, 'c-1': false },
+      })
+    })
+
+    it('reports a loaded parameter that divides by zero on the parameter, leaving its user unplaced', async () => {
+      const { placements, violations } = await arrange(
+        aDesign({
+          parameters: [parameter('wall', '1mm / 0')],
+          layout: inRoot(slot('k', { offset: atX('wall') })),
+        }),
+      )
+
+      const ids = [aParameterName('wall')]
+      expect({ violations: violations.value, placed: placedOf(placements.value, ['k']) }).toEqual({
+        violations: [error('division-by-zero', ids, divisionByZeroMessage(ids))],
+        placed: { k: false },
+      })
+    })
+
+    it('reports only the failed parameter a gap reads, leaving the gap step unplaced', async () => {
+      const { placements, violations } = await arrange(
+        aDesign({
+          meta: withGap('wall'),
+          parameters: [parameter('wall', 'nope')],
+          layout: inRoot(chain('c', 'x')),
+        }),
+      )
+
+      const ids = [aParameterName('wall')]
+      expect({
+        violations: violations.value,
+        placed: placedOf(placements.value, ['c-0', 'c-1']),
+      }).toEqual({
+        violations: [
+          error(
+            'unresolvable-reference',
+            ids,
+            unresolvableReferenceMessage({ parameter: 'nope' }, ids),
+          ),
+        ],
+        placed: { 'c-0': true, 'c-1': false },
+      })
+    })
+
+    it('reports a loaded parameter loop by its members, leaving their user unplaced', async () => {
+      const { placements, violations } = await arrange(
+        aDesign({
+          parameters: [parameter('b', 'a'), parameter('a', 'b')],
+          layout: inRoot(slot('k', { offset: atX('a') })),
+        }),
+      )
+
+      const ids = [aParameterName('a'), aParameterName('b')]
+      expect({ violations: violations.value, placed: placedOf(placements.value, ['k']) }).toEqual({
+        violations: [error('dependency-cycle', ids, dependencyCycleMessage(ids, 'parameters'))],
+        placed: { k: false },
+      })
+    })
+
+    it('leaves the steps along a failed gap axis unplaced and the other axis placed', async () => {
+      const { placements } = await arrange(
+        aDesign({ meta: withGap('nope', '1mm'), layout: inRoot(chain('x', 'x'), chain('y', 'y')) }),
+      )
+
+      expect(placedOf(placements.value, ['x-0', 'x-1', 'y-0', 'y-1'])).toEqual({
+        'x-0': true,
+        'x-1': false,
+        'y-0': true,
+        'y-1': true,
+      })
+    })
+
+    it('draws borders at the 1 mm margin floor while a gap axis fails', async () => {
+      const layout = inRoot(aFreeGroup({ id: anId('g'), children: [slot('k')] }))
+      const { placements } = await arrange(aDesign({ meta: withGap('nope', '5mm'), layout }))
+
+      const outer = (rowOf(placements.value, 'g')?.border ?? []).flatMap(({ outer }) => outer)
+      expect({
+        minX: Math.min(...outer.map(({ x }) => x)),
+        maxX: Math.max(...outer.map(({ x }) => x)),
+      }).toEqual({
+        minX: expect.closeTo(-10, BORDER_DIGITS),
+        maxX: expect.closeTo(10, BORDER_DIGITS),
+      })
     })
   })
 })

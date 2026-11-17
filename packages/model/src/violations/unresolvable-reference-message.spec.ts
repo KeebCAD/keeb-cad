@@ -1,4 +1,4 @@
-import { anId, aSideId } from '@keeb-cad/schema/testing'
+import { aParameterName, anId, aSideId } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { unresolvableReferenceMessage } from './unresolvable-reference-message'
@@ -16,5 +16,16 @@ describe('unresolvableReferenceMessage', () => {
     expect(unresolvableReferenceMessage('override', [aSideId('right/zz')])).toBe(
       'The override on "right/zz" names a slot that doesn\'t resolve.',
     )
+  })
+
+  it.each([
+    [
+      'two users',
+      [anId('a'), aParameterName('b')],
+      'No parameter is named "nope"; "a", "b" use it.',
+    ],
+    ['one user', [anId('a')], 'No parameter is named "nope"; "a" uses it.'],
+  ])('words a missing parameter, naming it and %s', (_role, ids, expected) => {
+    expect(unresolvableReferenceMessage({ parameter: 'nope' }, ids)).toBe(expected)
   })
 })

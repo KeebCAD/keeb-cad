@@ -34,7 +34,7 @@ export function groupFrames(
     const base = dependency.target === group ? IDENTITY : frames.get(dependency.target)?.frame
     if (base === undefined) continue
     const anchor = compose(base, moveFrom(placing, id, dependency, inner))
-    frames.set(id, { anchor, frame: placeSlot(anchor, readOffset(entry.node.offset)) })
+    frames.set(id, { anchor, frame: placeSlot(anchor, readOffset(entry, placing.values)) })
   }
   return frames
 }

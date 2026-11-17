@@ -6,10 +6,11 @@ import { aMeta } from './meta'
 
 export function aDesign({
   meta = aMeta(),
+  parameters = [],
   libraryVersions = [aLibraryVersion()],
   parts = [aBlueprintDesignPart()],
   layout = aLayout(),
   overrides = [],
 }: Partial<Design> = {}): Design {
-  return { meta, libraryVersions, parts, layout, overrides }
+  return { meta, parameters, libraryVersions, parts, layout, overrides }
 }

@@ -8,7 +8,7 @@ describe('inputValueSchema', () => {
     ['a boolean', true, true],
     ['a string', 'x', true],
     ['a tagged quantity', { type: 'quantity', value: '19mm' }, true],
-    ['a tagged quantity that does not parse', { type: 'quantity', value: 'nope' }, false],
+    ['a tagged quantity that does not parse', { type: 'quantity', value: '1mm +' }, false],
     ['a number', 19, false],
   ])('on %s', (_role, input, expected) => {
     expect(v.safeParse(inputValueSchema, input).success).toBe(expected)
