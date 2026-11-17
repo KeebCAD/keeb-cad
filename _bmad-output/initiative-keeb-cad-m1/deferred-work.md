@@ -710,3 +710,6 @@
 - source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-change-a-parameter/tickets/story-expressions-parse-and-evaluate-with-units-plan.md`
   summary: 14.8 decides whether `ParameterName` refuses a name that mixes scripts (Latin `gap` against `gаp` with a Cyrillic `а`), before names are stored in design files.
   evidence: Sergii chose `\p{L}` letters for names (2026-11-17, spine 03021b6); `node -e "console.log('gap'==='gаp')"` prints false, so a look-alike name fails as unresolvable-reference while looking right. A decomposed accent (`e` + U+0301) is not `\p{L}` and already fails as a syntax error; normalising the input was rejected because NFC can change its length and move the spans 14.9 and 15.2 splice at.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-change-a-parameter/tickets/story-expressions-parse-and-evaluate-with-units-plan.md`
+  summary: 14.8 decides whether evaluation that overflows to a non-finite `Value` is refused; `evaluate` does not check it today.
+  evidence: 14.2's grammar refuses a number literal a double cannot hold, but arithmetic can still overflow: `evaluate('99…9mm * 10', …)` (308 nines) returns `Ok({ value: Infinity, unit: 'mm' })`. The Data Schema's `EvaluateError` has only `unit-mismatch`, `division-by-zero` and `unresolvable-reference`, and a new kind is defined in the spine first.

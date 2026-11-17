@@ -17,6 +17,7 @@ describe('parseExpression', () => {
       `${MAX_VALUE_DIGITS}mm`,
       { value: Number.MAX_VALUE, unit: 'mm' },
     ],
+    ['the longest run of nines as its rounded value', `${NINES}mm`, { value: 1e308, unit: 'mm' }],
   ])('reads %s', (_role, input, expected) => {
     expect(parseExpression(input).match({ ok: (v) => v, err: () => null })).toEqual(expected)
   })
@@ -41,6 +42,11 @@ describe('parseExpression', () => {
     ['a trailing space', '19mm '],
     ['the empty string', ''],
     ['a run of nines one digit past the largest double', `${OVERFLOWING}mm`],
+    ['a sum of two parameters', 'wall + gap'],
+    ['a literal in parentheses', '(19mm)'],
+    ['a space after the minus', '- 19mm'],
+    ['two minuses', '--19mm'],
+    ['a deep nesting past the length cap', `${'('.repeat(3000)}1mm${')'.repeat(3000)}`],
   ])('refuses %s', (_role, input) => {
     expect(parseExpression(input).match({ ok: () => null, err: (e) => e })).toEqual({
       kind: 'expression-parse-failed',
