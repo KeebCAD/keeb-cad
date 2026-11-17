@@ -842,6 +842,7 @@ type DesignFile = { formatVersion: FormatVersion } & Design   // formatVersion: 
 
 type Design = {                                   // the authored sections; what the store holds and the revision hashes (AD-2)
   meta: Meta
+  parameters: Parameter[]                        // required, like every list section; a design stored before it fails as design-invalid (Sergii 2026-11-17); 14.8
   libraryVersions: LibraryVersion[]
   parts: DesignPart[]                             // typed now: the first layout story needs it (decision 51)
   build: BuildEntry[]                             // blueprints applied once (AD-18)
