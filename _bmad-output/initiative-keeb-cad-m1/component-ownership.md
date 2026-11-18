@@ -11,20 +11,20 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | Tab badge, status strip output-state entries | route and fab (7) | 7.2 |
 | Left rail + slide-out (Tree tab) | a new design opens (23), filled by see Corney's keys (13) | 23.8, filled by 13.7; T toggles and Esc no longer closes it, 13.28 (2026-11-11) |
 | Dialog wrapper (`ui`, modal; 2026-11-11), Flow host (`editor`, 2026-11-11), Text field (`ui`), and the add flow built on them | see Corney's keys (13) | 13.27 (dialog wrapper; shortcuts stand down while a modal is open), 13.30 (Flows and the flow host; the dialog wrapper's dismiss), 13.25 (Text field; add flow, the first flow and the first modal) |
-| Left rail + slide-out (Parameters tab) | change a parameter (14) | to plan |
-| Left rail + slide-out (Parts tab) | change a parameter (14) | to plan |
+| Left rail + slide-out (Parameters tab) | change a parameter (14) | 14.13 (2026-11-18) |
+| Left rail + slide-out (Parts tab) | change a parameter (14) | 14.14 (2026-11-18; waits on the spine's parts commands) |
 | Canvas, viewport, selection; Canvas keys, Right half, Mirror axis, Group border, Anchor link, Unfitted slot | see Corney's keys (13) | 13.7 (canvas, selection, viewport service, Anchor link), 13.23 (viewport controls), 13.24 (Delete, Ctrl+D), 13.25 (G, S), 13.8 (2026-11-10 split), Group border: 13.26 (model posts it) and 13.32 (the canvas draws it; split 2026-11-12, renamed from Group frame), 13.35 (slot id label, anchor links on hover and selection) |
 | Banner, Toast | keep my work (16) | 16.1, 16.3 |
 | Start screen, File menu, Design info | keep my work (16) | to plan |
-| Inspector, Design settings, Fitted toggle (moved from 13.8 on 2026-10-30), This slot section (2026-11-01) | change a parameter (14) | 14.5 |
-| Expression field, Autocomplete dropdown | change a parameter (14) | to plan |
+| Inspector, Design settings, Fitted toggle (moved from 13.8 on 2026-10-30), This slot section (2026-11-01) | change a parameter (14) | 14.5 (inspector, node fields), 14.10 (Design settings' gap), 14.11 (rest of Design settings, group default part), 14.12 (Fitted toggle, right half), 14.15 (This slot section); split 2026-11-18 |
+| Expression field, Autocomplete dropdown | change a parameter (14) | 14.10 (2026-11-18) |
 | Violations panel, Violation marker, Overlap area | change a parameter (14) | 14.4, 14.6 |
 | Rotation handle, Pick marks, Nudge-step control | drag keys (15) | 15.5, 15.6 (Anchor link moved to 13.7, 2026-11-10; 15.6's anchor picker extends it) |
 | Anchor picker | drag keys (15) | 15.6 |
 | Command palette, Context menu, Cheat sheet | drag keys (15) | to plan; modals built on 13.27's dialog wrapper (2026-11-11) |
 | Outline context line, Outline marks (shapes, vertices, construction points) | outline follows the keys (17), extended by draw custom shapes (18) | to plan |
 | Operation list, Vertex table | draw custom shapes (18) | to plan |
-| Part field (2026-11-05: built by 14.5, opens the picker from 19.2) | change a parameter (14), extended by plates to DXF (19) | 14.5 (picker opening 19.2) |
+| Part field (2026-11-05: built by 14.15 since the 2026-11-18 split, opens the picker from 19.2) | change a parameter (14), extended by plates to DXF (19) | 14.15 (picker opening 19.2) |
 | Part picker | plates to DXF (19) | 19.2 |
 | Plate fields, Export menu | plates to DXF (19) | 19.3, to plan |
 | Isolated part mode, Track tool, Part DRC marker | milestone 2 (hand-built parts, decided 2026-11-01) | — |

@@ -437,7 +437,7 @@ The register of every inline `[ASSUMPTION]` in this spine, plus gaps and naming 
 
 - `[GAP]` Authored keep-out creation and keep-out color on the PCB canvas.
 - `[GAP]` Reaching a parent group from the canvas: pointing at a key shows its innermost group, so a parent is the innermost group only in the band one margin wide outside its children's borders (at least 1 mm). Until 15.4 settles it, the Tree is the route to a parent group. Owned by 15.4 (Keys and groups drag by the chain rule), judged against real dragging (Sergii 2026-11-12).
-- `[GAP]` Delete on a right-half slot is unavailable today (the right half is select-only for what changes the authored node); open: whether it unfits that side's slot instead, as unticking the Fitted toggle does. A right-half group would stay unavailable either way (an override targets a slot). Decide with 14.5 (Fitted toggle); only the command Delete runs would change.
+- `[GAP]` Delete on a right-half slot is unavailable today (the right half is select-only for what changes the authored node); open: whether it unfits that side's slot instead, as unticking the Fitted toggle does. A right-half group would stay unavailable either way (an override targets a slot). Decide with 14.12 (Fitted toggle); only the command Delete runs would change.
 
 **Naming:**
 
