@@ -1,6 +1,6 @@
 # Stories of epic-change-a-parameter. Table order is build order.
 
-next_id = 16
+next_id = 17
 
 [[entry]]
 id = 1
@@ -129,10 +129,21 @@ unknown = "Unticking a multi-selection is one undo step, but SetOverride adds or
 id = 13
 type = "story"
 title = "Parameters tab"
-description = "The slide-out's Parameters tab: rows name = expression = value, the value in 10's expression field; + adds a parameter (setParameter, 8); double-click or F2 renames, references following (renameParameter, 9); Delete removes, refused while the parameter is used (parameter-in-use, 9), the refusal shown with its users. The field's Create parameter <name>… opens the new parameter's value field and leaves the original field's typed value unapplied; Ctrl+click on a name in any expression field opens it here (EXPERIENCE.md, Left rail + slide-out and Autocomplete dropdown rows). Added at the epic's refinement (Sergii 2026-11-18): the tab was unowned (component-ownership, to plan) and the epic's Done when changes a parameter."
-verify = "Adding wall = 3mm with + lists it with its value; changing wall moves the keys whose gap uses it, one undo step; renaming it with F2 rewrites its uses; deleting a used parameter is refused naming its users, and an unused one is removed; typing an unknown name in gap x and picking Create parameter <name>… opens its value field with gap x left unapplied; Ctrl+click on a name opens it in the tab."
+description = "The slide-out's Tree and Parameters tabs, a rail button each; T opens the last-used tab, kept for the session. Parameters rows read name = expression = value, the value in 10's expression field running setParameter (8). + opens an Add parameter dialog finishing with parameters.addParameter, refused for a name a parameter has (id-taken) and for a value that fails to evaluate (one reading an already failed parameter passes, as the store's structural check lets it); double-click or F2 opens a Rename parameter dialog, references following (renameParameter, 9); Delete removes the focused parameter, refused while it is used (parameter-in-use, 9), the refusal shown under its row naming its users. A later parameter repeating a taken name (a hand-edited file) is a read-only row; an empty tab reads No parameters. (EXPERIENCE.md, Left rail + slide-out row). Added at the epic's refinement (Sergii 2026-11-18): the tab was unowned (component-ownership, to plan) and the epic's Done when changes a parameter. Decision (Sergii 2026-11-18, 13's plan): Create parameter <name>… and Ctrl+click moved to 16, not kept in 13, because 13's plan ran past its size cap with them; + finishes with addParameter, not setParameter, which changes an existing parameter's value; add and rename are dialog flows."
+verify = "Adding wall = 3mm with + lists it with its value, and adding a taken name is refused; changing wall moves the keys whose gap uses it, one undo step; renaming it with F2 rewrites its uses; deleting a used parameter is refused naming its users, and an unused one is removed."
 covers = ["R5"]
 after = [10, 9]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 16
+type = "story"
+title = "Create and open parameters from a field"
+description = "In 10's expression field, the autocomplete dropdown offers Create parameter <name>…, last and muted, when the name before the cursor is one parameterNameSchema accepts (never mm or deg) and no parameter has it, the list opening for that row alone too; accepting it opens 13's Add parameter dialog started with that name (its starting UiAction gains the name as input) and focus in its value field. The field's typed value is not applied: its blur restores the design's text (10). Ctrl+click (Cmd on macOS) on a name a parameter has, in any expression field, opens it in the Parameters tab. The empty Parameters tab gains its second sentence, Type a new name in any field to create one. (EXPERIENCE.md, Expression field, Autocomplete dropdown and empty: panels rows). Split from 13 by Sergii 2026-11-18 at its plan's token gate."
+verify = "Typing an unknown name in gap x and picking Create parameter <name>… opens its value field with gap x left unapplied; Ctrl+click on a name in gap x opens it in the Parameters tab; the empty tab reads No parameters. Type a new name in any field to create one."
+covers = ["R5"]
+after = [13]
 hitl = false
 risk = "medium"
 
