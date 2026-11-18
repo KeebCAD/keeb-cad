@@ -105,25 +105,23 @@ risk = "medium"
 id = 11
 type = "story"
 title = "Design settings and a group's default part"
-description = "With nothing selected, Design settings show the form read-only (split, reversible board) and the default part (key, created by the NewDesign action, 13.18) beside 10's gap fields; a selected group shows an optional default-part override showing inherits <value>, typed to override and cleared to inherit (EXPERIENCE.md, Design settings row). This story builds layout.setDefaultPart { target: 'meta' | groupId, part | null } (null clears a group's; meta's is required; spine AD-2). Uses 13.18's part resolution, group override included. Split from the old 14.5 (Sergii 2026-11-18)."
-verify = "With nothing selected the inspector shows the form read-only and the default part key; setting a group's default part re-resolves its slots with no part of their own and is one undo step; setDefaultPart null on meta is refused and on a group clears it to inherit, the field showing inherits <value>."
+description = "With nothing selected, Design settings show the form read-only (split, reversible board) and the default part (key, created by the NewDesign action, 13.18) beside 10's gap fields; a selected group shows an optional default-part override showing inherits <value>, typed to override and cleared to inherit (EXPERIENCE.md, Design settings row). This story builds layout.setDefaultPart { part } for the design's default part, its input taking no null, and layout.setGroupDefaultPart { ids, part | null } for groups, null clearing a group's to inherit; both pin a library part as setPart does and clear, in the same command, the inputs the new part doesn't mark per-slot on every slot inheriting the changed default (spine AD-2, Sergii 2026-11-18). Uses 13.18's part resolution, group override included. Split from the old 14.5 (Sergii 2026-11-18)."
+verify = "With nothing selected the inspector shows the form read-only and the default part key; setting a group's default part re-resolves its slots with no part of their own and is one undo step; clearing the design's default part is refused (input-invalid) and setGroupDefaultPart null on a group clears it to inherit, the field showing inherits <value>; a library part not yet pinned is pinned at its newest released version."
 covers = ["R4", "R8"]
-after = [10]
+after = [10, 7]
 hitl = false
 risk = "low"
-unknown = "The spine says nothing on (a) how setDefaultPart's target tells the design's meta from a group whose id is meta (any kebab-case word passes idSchema, the reason the spine gives for refusing a reserved 'empty'), (b) which kind refuses null for meta (default-part-required covers only deleting the part meta.defaultPart names), and (c) whether a library part given to setDefaultPart is pinned in library-versions as setPart pins it. Settled in the spine before this story is planned (ticket reader, 2026-11-18)."
 
 [[entry]]
 id = 12
 type = "story"
 title = "Right half: derived geometry and the Fitted toggle"
-description = "A right-half node shows its anchor, offset and chain read-only with derived from left/<id> (a click selects the source) and the lock geometry overrides need a mirrored board; any slot on either half shows the Fitted toggle Fitted: left / right, where unticking a side sets that side's side-part override removing its part (the slot keeps its space) and ticking it back clears that override with overrides.clearOverride { keys }, which this story builds; a multi-selection is one undo step either way (EXPERIENCE.md, Fitted toggle row; spine AD-2, Override commands, Sergii 2026-11-17; moved from 13.8 on 2026-10-30). Split from the old 14.5 (Sergii 2026-11-18)."
+description = "A right-half node shows its anchor, offset and chain read-only with derived from left/<id> (a click selects the source) and the lock geometry overrides need a mirrored board; any slot on either half shows the Fitted toggle Fitted: left / right, where unticking a side sets that side's side-part override removing its part (the slot keeps its space) and ticking it back clears that override with overrides.clearOverride { keys }, which this story builds; this story also changes overrides.setOverride to take a list of side-part overrides, { overrides }, added or replaced in one command and refused whole when any entry is, its callers moving with it (reference-designs' corney-island-test-overrides script) (spine AD-2, Sergii 2026-11-18); a multi-selection is one undo step either way (EXPERIENCE.md, Fitted toggle row; spine AD-2, Override commands, Sergii 2026-11-17; moved from 13.8 on 2026-10-30). Split from the old 14.5 (Sergii 2026-11-18)."
 verify = "A right-half node's geometry fields are read-only, showing derived from left/<id>; unticking Fitted: right removes the right part and ticking it again restores it, each one undo step, also for a multi-selection; clearOverride naming a key no override has is refused with unknown-target, naming every missing target, and clears nothing."
 covers = ["R4", "R8"]
 after = [5, "13.8"]
 hitl = false
 risk = "medium"
-unknown = "Unticking a multi-selection is one undo step, but SetOverride adds or replaces one override (spine AD-2, Override commands; its input is one sidePartOverride), so the spine settles how: a list input, or several SetOverride runs sharing 14.1's coalesce key. Settled before this story is planned (ticket reader, 2026-11-18)."
 
 [[entry]]
 id = 13
@@ -151,25 +149,24 @@ risk = "medium"
 id = 14
 type = "story"
 title = "Parts tab"
-description = "The slide-out's Parts tab: rows name · N slots, one per design part; selecting one shows its inspector, the blueprint and version, then its part-wide inputs, a quantity input in 10's expression field; + picks a library part blueprint and creates a design part with its default inputs; Ctrl+D duplicates one; deleting the part meta.defaultPart names is refused with default-part-required (parts.deletePart, 13.18) (EXPERIENCE.md, Left rail + slide-out row). Added at the epic's refinement (Sergii 2026-11-18): the tab was unowned (component-ownership, to plan) and 15's key › link selects a part in it."
+description = "The slide-out's Parts tab: rows name · N slots, one per design part; selecting one shows its inspector, the blueprint and version, then its part-wide inputs, a quantity input in 10's expression field; + picks a library part blueprint and creates a design part with its default inputs; Ctrl+D duplicates one; deleting the part meta.defaultPart names is refused with default-part-required (parts.deletePart, 13.18) (EXPERIENCE.md, Left rail + slide-out row). This story builds parts.addPart { blueprint, id? } (inputs: {}, the declared defaults applying when the part resolves; an omitted id minted, a taken one id-taken), parts.duplicatePart { id } (DuplicateNode's -N suffix) and parts.setPartInputs { id, inputs } (merged; null restores a default) (spine AD-2, Sergii 2026-11-18). Added at the epic's refinement (Sergii 2026-11-18): the tab was unowned (component-ownership, to plan) and 15's key › link selects a part in it."
 verify = "The tab lists key · N slots for Corney; selecting key shows its blueprint, version and inputs, and changing an input re-derives its slots in one undo step; + with a library part blueprint adds a design part with its default inputs; Ctrl+D adds a copy; deleting key is refused with default-part-required."
 covers = ["R3", "R6"]
-after = [10]
+after = [10, 7]
 hitl = false
 risk = "medium"
-unknown = "The spine defines no command to create a design part from a library part blueprint, to duplicate one, or to set a design part's part-wide inputs; only parts.deletePart exists (spine AD-2). The spine defines them before this story is planned (Sergii 2026-11-18)."
 
 [[entry]]
 id = 15
 type = "story"
 title = "Slot inspector"
-description = "A selected slot shows its Part field (the picker it opens is 19.2's), a key › link that selects its part in 14's Parts tab, and a This slot section with only the inputs its part blueprint marks per-slot (e.g. size), a quantity input in 10's expression field (an option, boolean or text input, such as size, is not a length or angle: spine, 'labels, never a length'), each showing inherits <part value> until typed, clearing it inheriting again; a part with no per-slot inputs has no such section (EXPERIENCE.md, Inspector and Part field rows, 2026-11-01). This story builds the Part field and layout.setSlotInputs { ids, inputs } (refused with blueprint-input-invalid against the pinned declaration; spine AD-2). Uses 13.18's part resolution. Split from the old 14.5 (Sergii 2026-11-18)."
-verify = "A slot shows its resolved part in the Part field; key › selects key in the Parts tab; typing a size into This slot overrides it for that slot only, one undo step, and clearing it shows inherits <part value> again; setSlotInputs with an input the part doesn't mark per-slot is refused with blueprint-input-invalid; a slot whose part has no per-slot inputs shows no This slot section."
+description = "A selected slot shows its Part field (the picker it opens is 19.2's), a key › link that selects its part in 14's Parts tab, and a This slot section with only the inputs its part blueprint marks per-slot (e.g. size), a quantity input in 10's expression field (an option, boolean or text input, such as size, is not a length or angle: spine, 'labels, never a length'), each showing inherits <part value> until typed, clearing it inheriting again; a part with no per-slot inputs has no such section (EXPERIENCE.md, Inspector and Part field rows, 2026-11-01). This story builds the Part field and layout.setSlotInputs { ids, inputs } (merged into each listed slot's inputs, null clearing one to inherit again; the whole command refused with blueprint-input-invalid when a listed slot's part doesn't mark a named input per-slot; spine AD-2, Sergii 2026-11-18). Uses 13.18's part resolution. Split from the old 14.5 (Sergii 2026-11-18)."
+verify = "A slot shows its resolved part in the Part field; key › selects key in the Parts tab; setting a size in This slot overrides it for that slot only, one undo step, and clearing it shows inherits <part value> again; setSlotInputs with an input the part doesn't mark per-slot is refused with blueprint-input-invalid; a slot whose part has no per-slot inputs shows no This slot section."
 covers = ["R4", "R6", "R8"]
 after = [5, 14]
 hitl = false
 risk = "medium"
-unknown = "The spine says nothing on (a) what layout.setSlotInputs { ids, inputs } does with inputs, replace the slot's record or merge into it, and how one input is cleared to inherit again (BlueprintInputs holds no null), and (b) which control an option, boolean or text input gets (EXPERIENCE.md's expression field is for every length/angle only). Settled in the spine or EXPERIENCE.md before this story is planned (ticket reader, 2026-11-18)."
+unknown = "Which control an option, boolean or text blueprint input gets in the This slot section (EXPERIENCE.md gives the expression field only to lengths and angles): Sally writes the EXPERIENCE.md and DESIGN.md row, with a preview, before this story is planned (Sergii 2026-11-18)."
 
 [[entry]]
 id = 6
