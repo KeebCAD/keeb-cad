@@ -56,8 +56,7 @@ describe('a parameter driving placement', () => {
   })
 
   it('commits parameters.setParameter run by its id', async () => {
-    const store = await arrangeStore(new Container())
-    await runCorneyScript(store)
+    const store = await arrangeDesign(aDesign())
 
     expectOk(store.runById('parameters.setParameter', { name: 'wall', value: '3mm' }))
     expect(committed(store).design.parameters).toEqual([
@@ -134,6 +133,11 @@ describe('renaming and deleting a parameter', () => {
   it.each([
     ['parameters.renameParameter', { from: 'wall', to: 'w' }, [parameter('w', '1mm')]],
     ['parameters.deleteParameter', { name: 'wall' }, []],
+    [
+      'parameters.addParameter',
+      { name: 'ks', value: '2mm' },
+      [parameter('wall', '1mm'), parameter('ks', '2mm')],
+    ],
   ])('commits %s run by its id', async (command, input, expectedParameters) => {
     const store = await arrangeDesign(aDesign({ parameters: [parameter('wall', '1mm')] }))
 

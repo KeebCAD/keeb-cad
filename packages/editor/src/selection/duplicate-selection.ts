@@ -13,6 +13,7 @@ import type { Id, PlacementId, Rejection } from '@keeb-cad/schema'
 import { Invoke } from '../invoke/invoke'
 import { Landmarks } from '../landmarks/landmarks'
 import { DesignLocation } from '../router/design-location'
+import { SlideOut } from '../slide-out/slide-out'
 import type { UiAction } from '../ui-actions/types'
 import { actsOnSelection } from './acts-on-selection'
 import { Selection } from './selection'
@@ -48,13 +49,18 @@ export class DuplicateSelection implements UiAction<EmptyInput> {
   readonly #landmarks = inject(Landmarks)
   readonly #location = inject(DesignLocation)
   readonly #selection = inject(Selection)
+  readonly #slideOut = inject(SlideOut)
   readonly #store = inject(DesignStore)
 
   // Only one node at a time until multi-node duplicate.
   #original(): Option<PlacementId> {
     const ids = this.#selection.ids
     const [id, ...others] = ids
-    const acts = actsOnSelection(this.#landmarks.focusedPlace(), this.#location.workspace)
+    const acts = actsOnSelection(
+      this.#landmarks.focusedPlace(),
+      this.#location.workspace,
+      this.#slideOut.tab,
+    )
     return acts && id !== undefined && others.length === 0 && !selectsRightHalf(ids)
       ? Option.some(id)
       : Option.none()

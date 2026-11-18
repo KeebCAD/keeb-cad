@@ -13,13 +13,21 @@ import { Invoke } from './invoke/invoke'
 import { FocusNextLandmark } from './landmarks/focus-next-landmark'
 import { FocusPreviousLandmark } from './landmarks/focus-previous-landmark'
 import { Landmarks } from './landmarks/landmarks'
+import { AddParameterFlow } from './parameters/add-parameter-flow'
+import { DeleteParameterRefusal } from './parameters/delete-parameter-refusal'
+import { FocusedParameter } from './parameters/focused-parameter'
+import { RenameParameterFlow } from './parameters/rename-parameter-flow'
+import { StartAddParameter } from './parameters/start-add-parameter'
+import { StartRenameParameter } from './parameters/start-rename-parameter'
 import { DesignLocation } from './router/design-location'
 import { DeleteSelection } from './selection/delete-selection'
 import { DuplicateSelection } from './selection/duplicate-selection'
 import { Selection } from './selection/selection'
 import { ShortcutRegistry } from './shortcuts/shortcut-registry'
 import { SlideOut } from './slide-out/slide-out'
+import { ShowSlideOutTab } from './slide-out/show-slide-out-tab'
 import { ToggleSlideOut } from './slide-out/toggle-slide-out'
+import { ToggleSlideOutTab } from './slide-out/toggle-slide-out-tab'
 import { registerUiAction } from './ui-actions/register-ui-action'
 import { CanvasCursor } from './viewport/canvas-cursor'
 import { CanvasItems } from './viewport/canvas-items'
@@ -47,6 +55,8 @@ export const editorModule: Module = {
     container.register(SwitchGrace).useClass(SwitchGrace)
     container.register(HoveredNode).useClass(HoveredNode)
     container.register(FieldSession).useClass(FieldSession)
+    container.register(FocusedParameter).useClass(FocusedParameter)
+    container.register(DeleteParameterRefusal).useClass(DeleteParameterRefusal)
     registerUiAction(container, ShowLayout)
     registerUiAction(container, ShowOutline)
     registerUiAction(container, ShowPcb)
@@ -55,6 +65,8 @@ export const editorModule: Module = {
     registerUiAction(container, FocusNextLandmark)
     registerUiAction(container, FocusPreviousLandmark)
     registerUiAction(container, ToggleSlideOut)
+    registerUiAction(container, ToggleSlideOutTab)
+    registerUiAction(container, ShowSlideOutTab)
     registerUiAction(container, FitViewport)
     registerUiAction(container, DeleteSelection)
     registerUiAction(container, DuplicateSelection)
@@ -63,5 +75,9 @@ export const editorModule: Module = {
     registerUiAction(container, StartAddChainGroup)
     registerUiAction(container, StartAddFreeGroup)
     registerUiAction(container, StartAddSlot)
+    registerFlow(container, AddParameterFlow)
+    registerFlow(container, RenameParameterFlow)
+    registerUiAction(container, StartAddParameter)
+    registerUiAction(container, StartRenameParameter)
   },
 }

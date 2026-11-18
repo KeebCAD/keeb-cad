@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AsyncResult } from '@keeb-cad/result'
-import { evaluateFieldExpression, parameterValues } from '@keeb-cad/model/main'
+import { parameterValues } from '@keeb-cad/model/main'
 import type { Rejection } from '@keeb-cad/schema'
 import { UiAutocompleteField } from '@keeb-cad/ui'
 import { useDebounceFn } from '@vueuse/core'
@@ -9,12 +9,12 @@ import { computed, onBeforeUnmount, shallowRef, watch } from 'vue'
 import { useOpenDesign } from '../design/use-open-design'
 import { useFocusLandmark } from '../landmarks/use-focus-landmark'
 import { rejectionText } from '../rejection/rejection-text'
+import { evaluatedSuffix } from './evaluated-suffix'
 import { nameBeforeCursor } from './name-before-cursor'
 import { parameterOptions } from './parameter-options'
 import type { ExpressionFieldProps } from './types'
 import { typingPauseMs } from './typing-pause'
 import { useFieldSession } from './use-field-session'
-import { valueText } from './value-text'
 
 const props = defineProps<ExpressionFieldProps>()
 
@@ -45,12 +45,7 @@ const open = computed({
     if (!value) closed.value = true
   },
 })
-const suffix = computed(() => {
-  const evaluated = evaluateFieldExpression(parameters.value, text.value, props.schema)
-  return evaluated.isOk() && !evaluated.value.literal && Number.isFinite(evaluated.value.value)
-    ? valueText(evaluated.value.value, evaluated.value.unit)
-    : undefined
-})
+const suffix = computed(() => evaluatedSuffix(parameters.value, text.value, props.schema))
 
 const applyAfterPause = useDebounceFn(() => {
   runPending(session.key())
@@ -153,6 +148,7 @@ function restore(): void {
     v-model:cursor="cursor"
     :model-value="text"
     :label="label"
+    :label-hidden="labelHidden"
     :placeholder="placeholder"
     :error="error"
     :suffix="suffix"

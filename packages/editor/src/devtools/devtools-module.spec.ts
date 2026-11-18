@@ -189,6 +189,23 @@ describe('devtoolsModule', () => {
     expect(slideOut.isOpen).toBe(expected)
   })
 
+  it.each<[string, unknown, { isOpen: boolean; tab: string }]>([
+    ['opens the slide-out on the tab set', 'parameters', { isOpen: true, tab: 'parameters' }],
+    [
+      'keeps the slide-out closed on Tree on a tab the schema refuses',
+      'parts',
+      { isOpen: false, tab: 'tree' },
+    ],
+  ])('%s', async (_role, value, expected) => {
+    const container = await arrange()
+    const slideOut = container.resolve(SlideOut)
+    const inspector = connected(container)
+
+    inspector.edit(slideOutNode, 'tab', value)
+
+    expect({ isOpen: slideOut.isOpen, tab: slideOut.tab }).toEqual(expected)
+  })
+
   it.each<[string, unknown, string[]]>([
     ['selects an id the design holds', ['left/a'], ['left/a']],
     ['keeps only the ids the design holds', ['left/a', 'left/gone'], ['left/a']],

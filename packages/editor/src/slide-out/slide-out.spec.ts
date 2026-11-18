@@ -11,6 +11,7 @@ import { press } from '../testing/press'
 
 const slideOut = () => page.getByRole('complementary', { name: 'Tree' })
 const treeButton = () => page.getByRole('button', { name: 'Tree' })
+const treePanel = () => slideOut().getByRole('tabpanel', { name: 'Tree' })
 
 function arrange(design?: Design) {
   return mountShell({ path: '/design/corne/layout', design })
@@ -26,12 +27,12 @@ function blur(): void {
 describe.each(['dark', 'light'] as const)('under the %s theme', (scheme) => {
   beforeEach(() => emulateColorScheme(scheme))
   describe('the Tree slide-out', () => {
-    it('opens on T holding no text, and closes on T again', async () => {
+    it('opens on T with no rows in its Tree panel, and closes on T again', async () => {
       await arrange()
 
       press('T')
-      await expect.element(slideOut()).toBeVisible()
-      await expect.element(slideOut()).toHaveTextContent('')
+      await expect.element(treePanel()).toBeVisible()
+      await expect.element(treePanel().getByRole('treeitem')).not.toBeInTheDocument()
       press('T')
       await expect.element(slideOut()).not.toBeInTheDocument()
     })

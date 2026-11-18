@@ -16,6 +16,8 @@ export interface ParameterValue {
 
 export type ExpressionFieldProps = {
   label: string
+  // The label names the input for screen readers only.
+  labelHidden?: boolean
   // The authored expression the design holds.
   expression: string
   // The field's value schema, whose metadata says what it evaluates to.
