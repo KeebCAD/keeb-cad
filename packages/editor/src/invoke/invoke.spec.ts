@@ -232,6 +232,36 @@ describe('Invoke', () => {
       expect(recorder.recorded).toEqual([])
     })
 
+    it('coalesces two commands run with one key into one undo entry', async () => {
+      const { invoke, store } = await arrange({
+        commands: [RenameDesign],
+        design: aDesign({ meta: aMeta({ name: 'Corne' }) }),
+      })
+      const options = { coalesce: 'field-session' }
+
+      expectOk(await invoke.invoke(RenameDesign, { name: 'Lily58' }, options))
+      expectOk(await invoke.invoke(RenameDesign, { name: 'Sofle' }, options))
+      expectOk(store.undo())
+
+      expect({ undone: nameOf(store), nextUndo: store.undo().isErr() }).toEqual({
+        undone: Option.some('Corne'),
+        nextUndo: true,
+      })
+    })
+
+    it('records two commands run with no options as two undo entries', async () => {
+      const { invoke, store } = await arrange({
+        commands: [RenameDesign],
+        design: aDesign({ meta: aMeta({ name: 'Corne' }) }),
+      })
+
+      expectOk(await invoke.invoke(RenameDesign, { name: 'Lily58' }))
+      expectOk(await invoke.invoke(RenameDesign, { name: 'Sofle' }))
+      expectOk(store.undo())
+
+      expect(nameOf(store)).toEqual(Option.some('Lily58'))
+    })
+
     it.each([
       ['no input argument', (invoke: Invoke) => invoke.invoke(RenameDesign)],
       ['undefined input', (invoke: Invoke) => invoke.invoke(RenameDesign, undefined)],

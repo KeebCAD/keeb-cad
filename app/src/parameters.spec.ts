@@ -2,7 +2,7 @@ import { RenameParameter, SetParameter } from '@keeb-cad/commands'
 import type { DesignStore } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
-import type { Design, LayoutOutput, Parameter } from '@keeb-cad/schema'
+import type { Design, Parameter } from '@keeb-cad/schema'
 import {
   aDelta,
   aDesign,
@@ -23,19 +23,11 @@ import { describe, expect, it } from 'vitest'
 import { arrangePlacements } from './testing/arrange-placements'
 import { arrangeStore } from './testing/arrange-store'
 import { committed } from './testing/committed'
+import { expectXShifts } from './testing/expect-x-shifts'
 import { runCorneyScript } from './testing/run-corney-script'
 
-// The home key of each column in Corney's x chain, in chain order.
-const HOME_KEYS = ['outer', 'pinky', 'ring', 'middle', 'index', 'inner'].map(
-  (column) => `left/matrix-${column}-home`,
-)
 // A 1 mm wider gap moves each column 1 mm further per step from the first.
 const EXPECTED_SHIFTS = [0, 1, 2, 3, 4, 5]
-const DIGITS = 9
-
-function xOf(placements: LayoutOutput, id: string): number {
-  return placements.rows[placements.ids.indexOf(id)]?.frame.x ?? NaN
-}
 
 describe('a parameter driving placement', () => {
   it("moves each step of Corney's x chain 1 mm further when the gap's parameter grows by 1 mm, and one undo restores it", async () => {
@@ -60,13 +52,7 @@ describe('a parameter driving placement', () => {
     expectOk(store.undo())
     const undone = (await derivationsOf(committed(store))).placements.value
 
-    expect({
-      shifts: HOME_KEYS.map((id) => xOf(changed, id) - xOf(arranged, id)),
-      undone,
-    }).toEqual({
-      shifts: EXPECTED_SHIFTS.map((shift) => expect.closeTo(shift, DIGITS)),
-      undone: arranged,
-    })
+    expectXShifts({ arranged, changed, undone, expectedShifts: EXPECTED_SHIFTS })
   })
 
   it('commits parameters.setParameter run by its id', async () => {

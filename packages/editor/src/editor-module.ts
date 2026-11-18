@@ -5,6 +5,7 @@ import { AddSlotFlow } from './add-flow/add-slot-flow'
 import { StartAddChainGroup } from './add-flow/start-add-chain-group'
 import { StartAddFreeGroup } from './add-flow/start-add-free-group'
 import { StartAddSlot } from './add-flow/start-add-slot'
+import { FieldSession } from './expression-field/field-session'
 import { Flows } from './flows/flows'
 import { registerFlow } from './flows/register-flow'
 import { HoveredNode } from './hover/hovered-node'
@@ -45,6 +46,7 @@ export const editorModule: Module = {
     container.register(CanvasCursor).useClass(CanvasCursor)
     container.register(SwitchGrace).useClass(SwitchGrace)
     container.register(HoveredNode).useClass(HoveredNode)
+    container.register(FieldSession).useClass(FieldSession)
     registerUiAction(container, ShowLayout)
     registerUiAction(container, ShowOutline)
     registerUiAction(container, ShowPcb)
