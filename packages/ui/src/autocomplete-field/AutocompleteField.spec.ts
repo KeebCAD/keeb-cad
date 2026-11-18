@@ -66,6 +66,13 @@ async function typeAndOpen(typed: string) {
   await expect.element(option('wall = 2 mm')).toHaveAttribute('data-highlighted')
 }
 
+// Throws for a renamed state, so the test using it can't vanish.
+function stateNamed(name: string) {
+  const state = autocompleteFieldStates.find((candidate) => candidate.name === name)
+  if (state === undefined) throw new Error(`The workbench has no state named "${name}".`)
+  return state
+}
+
 describe('AutocompleteField', () => {
   it.each(autocompleteFieldStates)(
     'renders the $name state as a combobox named by its label',
@@ -90,6 +97,15 @@ describe('AutocompleteField', () => {
 
     await expect.element(field()).not.toHaveAttribute('aria-invalid')
     await expect.element(field()).toHaveAccessibleDescription('')
+  })
+
+  it('shows its placeholder in the empty with a placeholder state', async () => {
+    const state = stateNamed('empty with a placeholder')
+    const screen = await render(UiAutocompleteField, { props: state.props })
+
+    await expect
+      .element(screen.getByRole('combobox', { name: LABEL }))
+      .toHaveAttribute('placeholder', state.props.placeholder)
   })
 
   it('shows its suffix after the text', async () => {

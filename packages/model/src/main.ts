@@ -12,6 +12,10 @@ export { checkDuplicateNode } from './layout-editing/check-duplicate-node'
 export { checkSetAnchor } from './layout-editing/check-set-anchor'
 export { checkSetGap } from './layout-editing/check-set-gap'
 export { setGap } from './layout-editing/set-gap'
+export { checkSetOffset } from './layout-editing/check-set-offset'
+export { setOffset } from './layout-editing/set-offset'
+export { checkSetArrangement } from './layout-editing/check-set-arrangement'
+export { setArrangement } from './layout-editing/set-arrangement'
 export { evaluateFieldExpression } from './evaluation/evaluate-field-expression'
 export { parameterValues } from './evaluation/parameter-values'
 export type { EvaluatedValue, ExpressionError } from './evaluation/types'
@@ -38,6 +42,8 @@ export { unitMismatchMessage } from './violations/unit-mismatch-message'
 export { deleteNode } from './layout-editing/delete-node'
 export { duplicateNode } from './layout-editing/duplicate-node'
 export {
+  findNode,
+  isGroup,
   lastChildId,
   nearestGroupId,
   nextSiblingId,
@@ -48,5 +54,11 @@ export { checkDeletePart } from './part-deletion/check-delete-part'
 export { deletePart } from './part-deletion/delete-part'
 export { walkReferences } from './references/walk-references'
 export { reject } from './reject/reject'
-export type { GapEdit, InsertAt, NewNode } from './layout-editing/types'
+export type {
+  ArrangementEdit,
+  GapEdit,
+  InsertAt,
+  NewNode,
+  OffsetEdit,
+} from './layout-editing/types'
 export type { Reference } from './references/types'

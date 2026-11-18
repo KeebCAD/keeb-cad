@@ -9,6 +9,10 @@ const OPTIONS = [
 export const autocompleteFieldStates: readonly WidgetState<
   AutocompleteFieldProps & { modelValue: string; open?: boolean }
 >[] = [
+  {
+    name: 'empty with a placeholder',
+    props: { label: 'gap x', placeholder: 'mixed', options: [], modelValue: '' },
+  },
   { name: 'a plain literal', props: { label: 'gap x', options: [], modelValue: '1mm' } },
   {
     name: 'an expression with its value',

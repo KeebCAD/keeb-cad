@@ -17,7 +17,9 @@ export { AddSlot } from './layout/add-slot'
 export { DeleteNode } from './layout/delete-node'
 export { DuplicateNode } from './layout/duplicate-node'
 export { SetAnchor } from './layout/set-anchor'
+export { SetArrangement } from './layout/set-arrangement'
 export { SetGap } from './layout/set-gap'
+export { SetOffset } from './layout/set-offset'
 export { layoutCommandsModule } from './layout/layout-commands-module'
 export type {
   AddGroupInput,
@@ -25,7 +27,9 @@ export type {
   DeleteNodeInput,
   DuplicateNodeInput,
   SetAnchorInput,
+  SetArrangementInput,
   SetGapInput,
+  SetOffsetInput,
 } from './layout/types'
 
 export { SetOverride } from './overrides/set-override'

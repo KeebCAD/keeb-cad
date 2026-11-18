@@ -1,8 +1,9 @@
 import { Option } from '@keeb-cad/result'
+import type { FreeGroup } from '@keeb-cad/schema'
 import { aFreeGroup, aLayout, anId, aSlot } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
-import { lastChildId, nearestGroupId, nextSiblingId, subtreeIdsOf } from './node-tree'
+import { copyNodes, lastChildId, nearestGroupId, nextSiblingId, subtreeIdsOf } from './node-tree'
 
 function layout() {
   return aLayout({
@@ -75,5 +76,23 @@ describe('the add flow tree queries', () => {
     const root = aLayout({ id: anId('root'), children: [aFreeGroup({ id: anId('e') })] })
 
     expect(lastChildId(root, anId('e'))).toEqual(Option.none())
+  })
+})
+
+describe('copyNodes', () => {
+  it('copies every node: equal to the original, and no node the same object', () => {
+    const original = aLayout({
+      children: [aFreeGroup({ id: anId('g'), children: [aSlot({ id: anId('g-child') })] })],
+    })
+    const groupOf = (layout: FreeGroup) => layout.children.at(0) as FreeGroup | undefined
+
+    const copy = copyNodes(original) as FreeGroup
+
+    expect({
+      copy,
+      sameRoot: copy === original,
+      sameGroup: groupOf(copy) === groupOf(original),
+      sameSlot: groupOf(copy)?.children.at(0) === groupOf(original)?.children.at(0),
+    }).toEqual({ copy: original, sameRoot: false, sameGroup: false, sameSlot: false })
   })
 })
