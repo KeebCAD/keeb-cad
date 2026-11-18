@@ -18,6 +18,7 @@ Each shared editor component in `epic-platform-baseline/ux-editor/DESIGN.md` ›
 | Start screen, File menu, Design info | keep my work (16) | to plan |
 | Inspector, Design settings, Fitted toggle (moved from 13.8 on 2026-10-30), This slot section (2026-11-01) | change a parameter (14) | 14.5 (inspector, node fields), 14.10 (Design settings' gap), 14.11 (rest of Design settings, group default part), 14.12 (Fitted toggle, right half), 14.15 (This slot section); split 2026-11-18 |
 | Expression field, Autocomplete dropdown | change a parameter (14) | 14.10 (2026-11-18) |
+| Select field (option and boolean blueprint inputs; 2026-11-18) | change a parameter (14) | 14.15, reused by 14.14 |
 | Violations panel, Violation marker, Overlap area | change a parameter (14) | 14.4, 14.6 |
 | Rotation handle, Pick marks, Nudge-step control | drag keys (15) | 15.5, 15.6 (Anchor link moved to 13.7, 2026-11-10; 15.6's anchor picker extends it) |
 | Anchor picker | drag keys (15) | 15.6 |

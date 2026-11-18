@@ -2,7 +2,7 @@
 name: keeb-cad editor
 description: Browser-only visual keyboard CAD for one expert builder. Catppuccin Frappé dark by default, Latte light; calm density; canvas first, chrome quiet.
 status: final
-updated: 2026-11-15
+updated: 2026-11-18
 colors:
   # Unsuffixed = dark (Catppuccin Frappé, primary). `-light` = Catppuccin Latte.
   # Comment = Catppuccin color name. Latte uses the same name unless a decided fix says otherwise.
@@ -460,6 +460,7 @@ File menu, Export menu, Design info, Autocomplete dropdown and Context menu use 
 - **Export menu** — unavailable rows disabled with the reason inline.
 - **Design info** — popover from the design name; mono rows for id, revision, provenance, file location.
 - **Autocomplete dropdown** — under the field; mono rows `name = value`; `Create parameter <name>…` last, in `{colors.text-muted}`.
+- **Select field** — closed, it looks like a text field (`{colors.chrome}`, `{colors.border-interactive}` edge, `{rounded.sm}`, `{typography.mono}`) with a `▾` at the right in `{colors.text-muted}`; an unset value (`inherits 1u`, `default 1u`) is in `{colors.text-muted}`. Open, the list uses `context-menu` styling: active row `{colors.hover}` with a Mauve bar, the chosen value marked `✓`, the `inherits` / `default` entry first and muted. A Reka Select wrapped in `ui` (Sergii 2026-11-18, 14.15).
 - **Command palette** — `{colors.panel}` overlay, `{components.command-palette.width}`, `{rounded.lg}`, centered in the app just under the top bar; query field, then section-labeled groups (`Commands`, `Nodes`); rows show the command and a `kbd` shortcut; active row `{colors.hover}` with a Mauve bar. → `mockups/key-panels.html` (b).
 - **Context menu** — at the pointer or the focused item. → `mockups/key-panels.html` (c).
 - **Cheat sheet** — command and `kbd` shortcut per row, grouped by workspace.
