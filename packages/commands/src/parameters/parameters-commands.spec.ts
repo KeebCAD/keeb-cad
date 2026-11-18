@@ -1,10 +1,12 @@
 import { DesignStore, designModule } from '@keeb-cad/design'
 import { Container } from '@keeb-cad/di'
 import { expectErr, expectOk } from '@keeb-cad/result/testing'
+import type { Design } from '@keeb-cad/schema'
 import { aDesign, anExpression, aParameter, aParameterName } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { settled } from '../testing/settled'
+import { AddParameter } from './add-parameter'
 import { DeleteParameter } from './delete-parameter'
 import { parametersCommandsModule } from './parameters-commands-module'
 import { RenameParameter } from './rename-parameter'
@@ -113,4 +115,42 @@ describe('RenameParameter and DeleteParameter through the store', () => {
       })
     },
   )
+})
+
+describe('AddParameter', () => {
+  it('has the command id parameters.addParameter and the label Add parameter', () => {
+    expect({ id: AddParameter.id, label: AddParameter.label }).toEqual({
+      id: 'parameters.addParameter',
+      label: 'Add parameter',
+    })
+  })
+})
+
+describe('AddParameter through the store', () => {
+  async function arrange(design: Design) {
+    const container = new Container().addModule(designModule).addModule(parametersCommandsModule)
+    await container.autoLoad()
+    const store = container.resolve(DesignStore)
+    expectOk(store.replaceDesign({ design, unreadable: [] }))
+    return store
+  }
+
+  it('refuses a name a parameter has with id-taken, from both its availability and its run, committing nothing', async () => {
+    const store = await arrange(aDesign({ parameters: [wall('3mm')] }))
+    const before = store.current.getOrUndefined()
+    const expected = {
+      kind: 'id-taken',
+      ids: ['wall'],
+      message: 'The design already has a parameter named "wall".',
+    }
+
+    const available = store.available(AddParameter, { name: 'wall', value: '1mm' })
+    const result = store.run(AddParameter, { name: 'wall', value: '1mm' })
+
+    expect({
+      available: settled(available),
+      run: settled(result),
+      unchanged: store.current.getOrUndefined() === before,
+    }).toEqual({ available: expected, run: expected, unchanged: true })
+  })
 })

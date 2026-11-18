@@ -2,17 +2,19 @@ import type { Option } from '@keeb-cad/result'
 import type { Workspace } from '@keeb-cad/schema'
 
 import type { LandmarkPlace } from '../landmarks/types'
+import type { SlideOutTab } from '../slide-out/types'
 
 // The canvas draws the layout only on Layout; the Tree shows the same selection on every workspace.
 export function actsOnSelection(
   focused: Option<LandmarkPlace>,
   workspace: Option<Workspace>,
+  slideOutTab: SlideOutTab,
 ): boolean {
   return focused
     .map((place) =>
       place === 'canvas'
         ? workspace.map((open) => open === 'layout').getOr(false)
-        : place === 'slide-out',
+        : place === 'slide-out' && slideOutTab === 'tree',
     )
     .getOr(false)
 }

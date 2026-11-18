@@ -2,6 +2,7 @@ import { inject } from '@keeb-cad/di'
 import * as v from 'valibot'
 
 import { SlideOut } from '../slide-out/slide-out'
+import { slideOutTabSchema } from '../slide-out/slide-out-tab-schema'
 import { editableField } from './inspectable-field'
 import { devtoolsPluginId } from './plugin-id'
 import type { Inspectable } from './types'
@@ -16,6 +17,14 @@ export class SlideOutInspectable implements Inspectable {
       set: (open) => {
         if (open) this.#slideOut.open()
         else this.#slideOut.close()
+      },
+    }),
+    // Setting the tab opens the slide-out on it, as its rail button does.
+    tab: editableField({
+      schema: slideOutTabSchema,
+      get: () => this.#slideOut.tab,
+      set: (tab) => {
+        this.#slideOut.open(tab)
       },
     }),
   }

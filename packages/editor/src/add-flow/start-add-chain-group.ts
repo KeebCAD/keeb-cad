@@ -10,6 +10,7 @@ import { Landmarks } from '../landmarks/landmarks'
 import { DesignLocation } from '../router/design-location'
 import { actsOnSelection } from '../selection/acts-on-selection'
 import { Selection } from '../selection/selection'
+import { SlideOut } from '../slide-out/slide-out'
 import type { UiAction } from '../ui-actions/types'
 import { AddGroupFlow } from './add-group-flow'
 import { parentForSelection } from './parent-for-selection'
@@ -39,10 +40,13 @@ export class StartAddChainGroup implements UiAction<EmptyInput> {
   readonly #landmarks = inject(Landmarks)
   readonly #location = inject(DesignLocation)
   readonly #selection = inject(Selection)
+  readonly #slideOut = inject(SlideOut)
   readonly #store = inject(DesignStore)
 
   #draft(): Option<FlowDraft<typeof AddGroupFlow>> {
-    if (!actsOnSelection(this.#landmarks.focusedPlace(), this.#location.workspace)) {
+    if (
+      !actsOnSelection(this.#landmarks.focusedPlace(), this.#location.workspace, this.#slideOut.tab)
+    ) {
       return Option.none()
     }
     return this.#store.current.map(({ design }) => ({

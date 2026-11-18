@@ -33,7 +33,21 @@ export const autocompleteFieldStates: readonly WidgetState<
     },
   },
   {
+    name: 'with its label hidden',
+    props: { label: 'gap x', labelHidden: true, options: [], modelValue: '3mm' },
+  },
+  {
     name: 'with its list open',
     props: { label: 'gap x', options: OPTIONS, open: true, modelValue: 'w' },
+  },
+  {
+    name: 'with its list open over an error',
+    props: {
+      label: 'gap x',
+      error: 'No parameter is named "w".',
+      options: OPTIONS,
+      open: true,
+      modelValue: 'w',
+    },
   },
 ]

@@ -9,6 +9,8 @@ import { Flows } from '../flows/flows'
 import { HoveredNode } from '../hover/hovered-node'
 import { Invoke } from '../invoke/invoke'
 import { Landmarks } from '../landmarks/landmarks'
+import { DeleteParameterRefusal } from '../parameters/delete-parameter-refusal'
+import { FocusedParameter } from '../parameters/focused-parameter'
 import { DesignLocation } from '../router/design-location'
 import { Selection } from '../selection/selection'
 import { ShortcutRegistry } from '../shortcuts/shortcut-registry'
@@ -45,6 +47,8 @@ const classified: readonly (readonly [new () => unknown, Classification])[] = [
     FieldSession,
     { notShown: "a random key, seen through the undo entries the focused field's commands share" },
   ],
+  [FocusedParameter, { notShown: 'the focused row, read off the DOM like Landmarks' }],
+  [DeleteParameterRefusal, { notShown: 'shown under its row' }],
 ]
 
 // The base constructor registers its builtins before this class's fields exist, so `recorded`

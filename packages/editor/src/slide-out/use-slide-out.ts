@@ -10,6 +10,7 @@ export function useSlideOut(): UseSlideOutResult {
   const landmarks = useService(Landmarks)
   return {
     isOpen: computed(() => slideOut.isOpen),
+    tab: computed(() => slideOut.tab),
     returnFocus: (root) => {
       // Focus the user already moved out of the slide-out stays where they put it.
       const focused = document.activeElement

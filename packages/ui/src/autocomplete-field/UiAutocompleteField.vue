@@ -101,42 +101,47 @@ function onSelect(value: string, event: Event): void {
     class="relative flex flex-col gap-1"
     @keydown.capture="onKeydown"
   >
-    <label :for="inputId" class="text-ui text-text-muted">{{ label }}</label>
-    <div
-      class="flex h-field-height items-center gap-1 rounded-sm border border-border-interactive bg-panel px-2 font-mono text-mono focus-within:border-focus has-aria-invalid:border-b-2 has-aria-invalid:border-b-error"
-    >
-      <AutocompleteInput
-        :id="inputId"
-        ref="input"
-        :aria-invalid="error === undefined ? undefined : 'true'"
-        :aria-describedby="error === undefined ? undefined : errorId"
-        :placeholder="placeholder"
-        class="min-w-0 flex-1 bg-transparent text-text placeholder:text-text-muted focus:outline-none"
-        @input="readCursor"
-        @keyup="readCursor"
-        @click="readCursor"
-        @focus="readCursor"
-        @select="readCursor"
-      />
-      <span v-if="suffix !== undefined" class="shrink-0 text-text-muted">{{ suffix }}</span>
+    <label :for="inputId" :class="labelHidden ? 'sr-only' : 'text-ui text-text-muted'">{{
+      label
+    }}</label>
+    <!-- An overlay over the error, so the list never reads as one more field. -->
+    <div class="relative">
+      <div
+        class="flex h-field-height items-center gap-1 rounded-sm border border-border-interactive bg-panel px-2 font-mono text-mono focus-within:border-focus has-aria-invalid:border-b-2 has-aria-invalid:border-b-error"
+      >
+        <AutocompleteInput
+          :id="inputId"
+          ref="input"
+          :aria-invalid="error === undefined ? undefined : 'true'"
+          :aria-describedby="error === undefined ? undefined : errorId"
+          :placeholder="placeholder"
+          class="min-w-0 flex-1 bg-transparent text-text placeholder:text-text-muted focus:outline-none"
+          @input="readCursor"
+          @keyup="readCursor"
+          @click="readCursor"
+          @focus="readCursor"
+          @select="readCursor"
+        />
+        <span v-if="suffix !== undefined" class="shrink-0 text-text-muted">{{ suffix }}</span>
+      </div>
+      <AutocompleteContent
+        class="absolute top-full right-0 left-0 z-10 mt-1 rounded-lg border border-border bg-panel py-1 shadow-overlay"
+      >
+        <AutocompleteViewport>
+          <AutocompleteItem
+            v-for="option in options"
+            :key="option.value"
+            :value="option.value"
+            :data-value="option.value"
+            class="cursor-default border-l-2 border-transparent px-2 font-mono text-mono text-text data-highlighted:border-selection data-highlighted:bg-hover"
+            @pointerdown.prevent
+            @select="onSelect(option.value, $event)"
+          >
+            {{ option.label }}
+          </AutocompleteItem>
+        </AutocompleteViewport>
+      </AutocompleteContent>
     </div>
-    <AutocompleteContent
-      class="absolute top-full right-0 left-0 z-10 mt-1 rounded-sm border border-border-interactive bg-panel py-1"
-    >
-      <AutocompleteViewport>
-        <AutocompleteItem
-          v-for="option in options"
-          :key="option.value"
-          :value="option.value"
-          :data-value="option.value"
-          class="cursor-default px-2 font-mono text-mono text-text data-highlighted:bg-hover"
-          @pointerdown.prevent
-          @select="onSelect(option.value, $event)"
-        >
-          {{ option.label }}
-        </AutocompleteItem>
-      </AutocompleteViewport>
-    </AutocompleteContent>
     <p v-if="error !== undefined" :id="errorId" class="text-ui text-error">
       <span aria-hidden="true">▲</span> {{ error }}
     </p>

@@ -108,6 +108,32 @@ describe('AutocompleteField', () => {
       .toHaveAttribute('placeholder', state.props.placeholder)
   })
 
+  it('keeps its label as the name of the input in the with its label hidden state, the label one pixel square', async () => {
+    const state = stateNamed('with its label hidden')
+    const screen = await render(UiAutocompleteField, { props: state.props })
+
+    await expect.element(screen.getByRole('combobox', { name: LABEL })).toBeVisible()
+    const { width, height } = screen.getByText(LABEL).element().getBoundingClientRect()
+    expect({ width, height }).toEqual({ width: 1, height: 1 })
+  })
+
+  it('hangs its open list from the input box, over the error, in the with its list open over an error state', async () => {
+    const state = stateNamed('with its list open over an error')
+    const screen = await render(UiAutocompleteField, { props: state.props })
+    await expect.element(screen.getByRole('listbox')).toBeVisible()
+
+    // The box the input sits in, whose border is the field's bottom edge.
+    const box = screen.getByRole('combobox', { name: LABEL }).element().parentElement
+    const boxBottom = box?.getBoundingClientRect().bottom ?? NaN
+    const list = screen.getByRole('listbox').element().getBoundingClientRect()
+    const error = screen.getByRole('paragraph').element().getBoundingClientRect()
+
+    expect({
+      belowBox: list.top >= boxBottom,
+      coversError: list.top < error.bottom && list.bottom > error.top,
+    }).toEqual({ belowBox: true, coversError: true })
+  })
+
   it('shows its suffix after the text', async () => {
     const screen = await render(UiAutocompleteField, {
       props: { label: LABEL, options: [], suffix: '= 5.37 mm', modelValue: 'stagger + 0.37mm' },

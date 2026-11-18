@@ -3,14 +3,14 @@ title: 'Parameters tab'
 type: 'feature'
 ticket: '13'
 created: '2026-11-18'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: 'de4fcdbd8851f8ed4bfbea59d38d2b289a89c900'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: [quick, test-reviewer]
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md'
@@ -79,25 +79,95 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `packages/model/src/parameters/check-add-parameter.ts`, `add-parameter.ts` (function each), `main.ts` -- `checkAddParameter(design, parameter)`: `id-taken` with `parameterTakenMessage` when a parameter has the name, else the value evaluated with `evaluateFieldExpression(design.parameters, value, parameterSchema.entries.value)`, a fault refused as `checkSetGap` refuses one (`expressionFaultMessage`, ids [name]; reading a failed parameter passes, as in `check-set-gap.ts`); `addParameter(draft, parameter)` appends it.
-- [ ] `packages/commands/src/parameters/add-parameter.ts` (`AddParameter`, service), `add-parameter-input-schema.ts` (`addParameterInputSchema = parameterSchema`), `types.ts` (`AddParameterInput`), `parameters-commands-module.ts`, `index.ts` -- `parameters.addParameter`, label `Add parameter`; `available` forwards to the check.
-- [ ] `packages/editor/src/slide-out/slide-out-tab-schema.ts` (`slideOutTabSchema = v.picklist(['tree', 'parameters'])`), `types.ts` (`SlideOutTab = v.InferOutput<typeof slideOutTabSchema>`), `slide-out.ts` -- `SlideOut` (service) gains `tab` and `open(tab?)`, defaulting to the last-used tab, keeping its invoker when already open, so a tab switch does not take over where close returns focus; `devtools/slide-out-inspectable.ts` gains an editable `tab`.
-- [ ] `packages/editor/src/slide-out/toggle-slide-out-tab.ts` (`ToggleSlideOutTab`, service, id `slideOut.toggleSlideOutTab`, label `Toggle slide-out tab`), `toggle-slide-out-tab-input-schema.ts` (`v.strictObject({ tab: slideOutTabSchema })`), `show-slide-out-tab.ts` (`ShowSlideOutTab`, service, id `slideOut.showSlideOutTab`, label `Show slide-out tab`, opens or switches to the tab, never closes), `show-slide-out-tab-input-schema.ts`, `types.ts`, `use-slide-out-tab.ts` (function; a writable computed whose setter invokes `ShowSlideOutTab`, as `use-workspace.ts`); `LeftRail.vue` (one button per tab, running `ToggleSlideOutTab`); `ui/src/icon/icons.ts` (`parameters: SquareFunction`).
-- [ ] `packages/editor/src/slide-out/SlideOutPanel.vue` (renamed from `TreeSlideOut.vue`), `TreeTab.vue`, `shell/EditorShell.vue` -- the `aside`, named by its open tab, holds `UiTabs` bound through `useSlideOutTab`, the header and the panel; on open, focus as today on Tree, and on Parameters the first name, else the root. `slide-out.spec.ts`'s `holding no text` test asserts the Tree panel holds no rows instead.
-- [ ] `packages/editor/src/selection/acts-on-selection.ts` and its five callers -- takes the open tab; `slide-out` counts only on `tree`.
-- [ ] `packages/editor/src/parameters/focused-parameter.ts` (`FocusedParameter`, service), `use-focused-parameter.ts` (function), `types.ts` (the folder's types: composable results, view props) -- the name whose row name holds focus, set on focusin, cleared on focusout; `devtools/services-classified.spec.ts` classifies it `notShown: 'the focused row, read off the DOM like Landmarks'`.
-- [ ] `packages/editor/src/parameters/ParametersTab.vue`, `ParameterRow.vue` -- a `role="list"`; each name a focusable element (`tabindex="0"`, `aria-keyshortcuts` built from `StartRenameParameter.hotkeys` and `DeleteSelection.hotkeys`, never written out) whose double-click invokes `StartRenameParameter`; the value field (as text on a duplicate's row, which sets no `FocusedParameter`); the empty text; the Delete refusal under its row, from `delete-parameter-refusal.ts` (`DeleteParameterRefusal`, service: listens to `Invoke`'s `invoke` event for `parameters.deleteParameter`, holds the latest refusal by name, cleared when its row loses focus; classified `notShown: 'shown under its row'`) and `use-delete-parameter-refusal.ts` (function, thin composable).
-- [ ] `packages/ui/src/autocomplete-field/UiAutocompleteField.vue`, `types.ts`, `AutocompleteField.spec.ts`, `workbench/states/autocomplete-field-states.ts`; `editor/src/expression-field/ExpressionField.vue`, `types.ts` -- `labelHidden?`: the label stays the input's name, for screen readers only.
-- [ ] `packages/editor/src/parameters/add-parameter-flow.ts` (`AddParameterFlow`, service), `AddParameterView.vue`, `start-add-parameter.ts` (`StartAddParameter`, service, id `parameters.startAddParameter`, label `Add parameter`, empty input) -- finishes with `AddParameter`; `name` and `value` `UiTextField`s; the draft starts `{ name: '', value: '' }`, so finish is disabled with `input-invalid`'s reason until both parse (AD-26 forms).
-- [ ] `packages/editor/src/parameters/rename-parameter-flow.ts` (`RenameParameterFlow`, service), `RenameParameterView.vue`, `start-rename-parameter.ts` (`StartRenameParameter`, service, id `parameters.startRenameParameter`, label `Rename parameter`, hotkey `F2`), `start-rename-parameter-input-schema.ts` (`v.strictObject({ name: v.optional(parameterNameSchema) })`), `types.ts` -- the double-click passes `{ name }`; F2 passes none and the name comes from `FocusedParameter`; `available()` (no input, `ui-actions/types.ts`) is true while `FocusedParameter` holds a name, which it does at a double-click, since the press before it focuses the name; finishes with `RenameParameter`.
-- [ ] `packages/editor/src/selection/delete-selection.ts` -- on the Parameters tab with a focused parameter, available, running `DeleteParameter { name }`; its keys stay Delete and Backspace.
-- [ ] `packages/editor/src/editor-module.ts`, `app/src/parameters.spec.ts` -- registrations; `parameters.addParameter { name: 'ks', value: '2mm' }` joins the `it.each` registration rows (their design holds `wall`); `commits parameters.setParameter run by its id` (`:58`) arranges its own `aDesign` instead of running the Corney script (its `deferred-work.md` entry names this file's next story).
+- [x] `packages/model/src/parameters/check-add-parameter.ts`, `add-parameter.ts` (function each), `main.ts` -- `checkAddParameter(design, parameter)`: `id-taken` with `parameterTakenMessage` when a parameter has the name, else the value evaluated with `evaluateFieldExpression(design.parameters, value, parameterSchema.entries.value)`, a fault refused as `checkSetGap` refuses one (`expressionFaultMessage`, ids [name]; reading a failed parameter passes, as in `check-set-gap.ts`); `addParameter(draft, parameter)` appends it.
+- [x] `packages/commands/src/parameters/add-parameter.ts` (`AddParameter`, service), `add-parameter-input-schema.ts` (`addParameterInputSchema = parameterSchema`), `types.ts` (`AddParameterInput`), `parameters-commands-module.ts`, `index.ts` -- `parameters.addParameter`, label `Add parameter`; `available` forwards to the check.
+- [x] `packages/editor/src/slide-out/slide-out-tab-schema.ts` (`slideOutTabSchema = v.picklist(['tree', 'parameters'])`), `types.ts` (`SlideOutTab = v.InferOutput<typeof slideOutTabSchema>`), `slide-out.ts` -- `SlideOut` (service) gains `tab` and `open(tab?)`, defaulting to the last-used tab, keeping its invoker when already open, so a tab switch does not take over where close returns focus; `devtools/slide-out-inspectable.ts` gains an editable `tab`.
+- [x] `packages/editor/src/slide-out/toggle-slide-out-tab.ts` (`ToggleSlideOutTab`, service, id `slideOut.toggleSlideOutTab`, label `Toggle slide-out tab`), `toggle-slide-out-tab-input-schema.ts` (`v.strictObject({ tab: slideOutTabSchema })`), `show-slide-out-tab.ts` (`ShowSlideOutTab`, service, id `slideOut.showSlideOutTab`, label `Show slide-out tab`, opens or switches to the tab, never closes), `show-slide-out-tab-input-schema.ts`, `types.ts`, `use-slide-out-tab.ts` (function; a writable computed whose setter invokes `ShowSlideOutTab`, as `use-workspace.ts`); `LeftRail.vue` (one button per tab, running `ToggleSlideOutTab`); `ui/src/icon/icons.ts` (`parameters: SquareFunction`).
+- [x] `packages/editor/src/slide-out/SlideOutPanel.vue` (renamed from `TreeSlideOut.vue`), `TreeTab.vue`, `shell/EditorShell.vue` -- the `aside`, named by its open tab, holds `UiTabs` bound through `useSlideOutTab`, the header and the panel; on open, focus as today on Tree, and on Parameters the first name, else the root. `slide-out.spec.ts`'s `holding no text` test asserts the Tree panel holds no rows instead.
+- [x] `packages/editor/src/selection/acts-on-selection.ts` and its five callers -- takes the open tab; `slide-out` counts only on `tree`.
+- [x] `packages/editor/src/parameters/focused-parameter.ts` (`FocusedParameter`, service), `use-focused-parameter.ts` (function), `types.ts` (the folder's types: composable results, view props) -- the name whose row name holds focus, set on focusin, cleared on focusout; `devtools/services-classified.spec.ts` classifies it `notShown: 'the focused row, read off the DOM like Landmarks'`.
+- [x] `packages/editor/src/parameters/ParametersTab.vue`, `ParameterRow.vue` -- a `role="list"`; each name a focusable element (`tabindex="0"`, `aria-keyshortcuts` built from `StartRenameParameter.hotkeys` and `DeleteSelection.hotkeys`, never written out) whose double-click invokes `StartRenameParameter`; the value field (as text on a duplicate's row, which sets no `FocusedParameter`); the empty text; the Delete refusal under its row, from `delete-parameter-refusal.ts` (`DeleteParameterRefusal`, service: listens to `Invoke`'s `invoke` event for `parameters.deleteParameter`, holds the latest refusal by name, cleared when its row loses focus; classified `notShown: 'shown under its row'`) and `use-delete-parameter-refusal.ts` (function, thin composable).
+- [x] `packages/ui/src/autocomplete-field/UiAutocompleteField.vue`, `types.ts`, `AutocompleteField.spec.ts`, `workbench/states/autocomplete-field-states.ts`; `editor/src/expression-field/ExpressionField.vue`, `types.ts` -- `labelHidden?`: the label stays the input's name, for screen readers only.
+- [x] `packages/editor/src/parameters/add-parameter-flow.ts` (`AddParameterFlow`, service), `AddParameterView.vue`, `start-add-parameter.ts` (`StartAddParameter`, service, id `parameters.startAddParameter`, label `Add parameter`, empty input) -- finishes with `AddParameter`; `name` and `value` `UiTextField`s; the draft starts `{ name: '', value: '' }`, so finish is disabled with `input-invalid`'s reason until both parse (AD-26 forms).
+- [x] `packages/editor/src/parameters/rename-parameter-flow.ts` (`RenameParameterFlow`, service), `RenameParameterView.vue`, `start-rename-parameter.ts` (`StartRenameParameter`, service, id `parameters.startRenameParameter`, label `Rename parameter`, hotkey `F2`), `start-rename-parameter-input-schema.ts` (`v.strictObject({ name: v.optional(parameterNameSchema) })`), `types.ts` -- the double-click passes `{ name }`; F2 passes none and the name comes from `FocusedParameter`; `available()` (no input, `ui-actions/types.ts`) is true while `FocusedParameter` holds a name, which it does at a double-click, since the press before it focuses the name; finishes with `RenameParameter`.
+- [x] `packages/editor/src/selection/delete-selection.ts` -- on the Parameters tab with a focused parameter, available, running `DeleteParameter { name }`; its keys stay Delete and Backspace.
+- [x] `packages/editor/src/editor-module.ts`, `app/src/parameters.spec.ts` -- registrations; `parameters.addParameter { name: 'ks', value: '2mm' }` joins the `it.each` registration rows (their design holds `wall`); `commits parameters.setParameter run by its id` (`:58`) arranges its own `aDesign` instead of running the Corney script (its `deferred-work.md` entry names this file's next story).
 - [x] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` (docs commit to main) -- for the spine: `parameters.addParameter` in AD-2's command list and the Data Schema rejection note; AD-26's Delete exception.
-- [ ] Specs per the Boundary Table.
+- [x] Specs per the Boundary Table.
 
 **Acceptance Criteria:**
 - Given a design with `wall = 3mm` and gap x `wall`, when `wall`'s row value is set to `4mm` and then one undo, then `parameters` holds `4mm` after the edit and `3mm` after the undo.
 - Given every existing spec, when `pnpm test` runs, then they pass.
+
+## Implementation Notes
+
+- Decision (Sergii 2026-11-18): the add dialog shows the draft's one reason as a paragraph under both fields, not routed to the field it concerns, because the flow gives one reason per draft; the cost, no `aria-invalid` on either field, is accepted.
+- Decision (Sergii 2026-11-18): the rename dialog selects the name on its first focus only, not on every focus, so a later click places the caret.
+- `Decision (build):` `eslint.config.ts` adds `parameters` to the folders whose UiActions are entries, not a renamed or used `_input`, because without it `pnpm exec eslint packages/editor/src/parameters` fails: `start-add-parameter.ts 22:9 error '_input' is defined but never used`; the list's own comment says "editor's UiActions are entries too". Structural, named at the look.
+- `Decision (build):` rows are keyed by position, not by name, because a rename would otherwise remount the row and its name element, and EXPERIENCE's "closing returns focus to the invoker, else the canvas" needs that element to survive; a row therefore updates `FocusedParameter` when its name changes under focus and clears it when it unmounts with focus.
+- `Decision (build):` Enter in either add-dialog field finishes through a `keydown.enter` handler, not implicit submission, because the HTML standard's implicit submission does nothing in a form with no submit button and more than one field that blocks it.
+- `Decision (build):` a duplicate row's name is plain text, not focusable, because Sergii's read-only decision leaves nothing to act on from it.
+- `Decision (build):` the slide-out header is 40 px (`h-10`, mockups/key-panels.html (d) `height:40px`), not the 42 px top-bar token, because DESIGN.md names no token for it.
+- `Decision (build):` `StartAddParameter` is available whenever a design is open, not gated on focus, because its one trigger, `+`, is shown only on the Parameters tab and it has no hotkey.
+- `Decision (build):` setting `tab` in devtools opens the slide-out on it, not a silent change of a closed slide-out's tab, because `SlideOut.open(tab)` is its only tab setter and adding one for devtools alone would shape code for a tool.
+- `Decision (build):` `DeleteParameterRefusal` holds the refusal of any `parameters.deleteParameter` invocation, not only the Delete key's, because `InvokeEvent` (`invoke/types.ts`) does not say who invoked.
+- `Decision (build, after review):` a duplicate row holding a plain literal reads `wall = 2mm` and one whose value fails to evaluate reads `wall = nope`, with no `= value` part, not a forced value, because EXPERIENCE's Expression field row says "plain literals show value and unit" and 14.10's field shows no suffix for a value that fails; both now come from one `evaluatedSuffix` (`expression-field/evaluated-suffix.ts`).
+- Review patches (pass 1): first-name focus selector fixed with a test (toggled: the old selector fails it in Chromium); `evaluatedSuffix` shared by the field and the duplicate rows; `parameter-rows.spec.ts` added; two test names corrected; literal `id-taken` texts; three restating comments and a dead `@submit` removed. Verification after the patches: `pnpm typecheck && pnpm check:fast && pnpm test` exit 0, 888 files / 6649 tests; after the look change, 888 files / 6654 tests.
+- Decision (Sergii 2026-11-18, at the look): the autocomplete list (14.10's `UiAutocompleteField`) hangs from the input box over the error, with `context-menu` overlay styling (panel, hairline border, `rounded-lg`, overlay shadow), not below the whole field in a field's look, because in the Parameters tab it read as one more field. Toggled: without the wrapper the position test fails in Chromium and Firefox.
+- `Decision (build):` the highlighted row carries the Mauve bar whether the keyboard or the pointer highlighted it, not keyboard only, because Reka's highlight is the active option Tab and Enter accept, and DESIGN.md gives the palette's active row the bar; its line 420 "hover … (no Mauve bar)" is for plain hover.
+- Matrix audit: every frozen I/O row has a passing test (`parameters-tab.spec.ts`); "Delete unused" gained its one-undo-entry assertion in step 3.
+- Toggled bugs (implementer, each watched red and restored): `DeleteSelection`'s parameter branch off; `ToggleSlideOutTab` never closing; `actsOnSelection` ignoring the tab; `StartRenameParameter` always available; the refusal clear inverted; `labelHidden` ignored.
+- Real-host run: no spec in the diff fakes a third-party host or boundary; the browser specs run real Reka, the real store and Vitest fake timers.
+- Verification (step 3, orchestrator): `pnpm typecheck && pnpm check:fast && pnpm test` exit 0, 885 files / 6635 tests.
+- Known, left: typing a parameter's own name in its row shows the `dependency-cycle` error and also a suffix evaluated against the current value (`= 3 mm`), from `ExpressionField`'s suffix (14.10).
+
+## Plan Change Log
+
+## Review Triage Log
+
+### Pass 1 (quick, test-reviewer; 0 findings dropped): high 0, medium 1, low 10, false 4, maybe-false 0
+
+- medium, patch: `SlideOutPanel.vue` focus selector `[role="listitem"] > …` never matches the implicit-role `<li>`, so opening Parameters focused the `aside`, against the plan's Decision; no test asserted it.
+- low, rejected: a focused editable row turning into a duplicate's read-only row (index keys) leaves `FocusedParameter` stale, so F2 elsewhere opens a rename; reachable only through a hand-edited duplicate plus a delete, and the fix adds a guard.
+- low, patch: `parameter-rows.ts` copies `ExpressionField`'s suffix rule; the two would drift.
+- low, patch: `parameter-rows.ts` has no unit test (AGENTS.md "Test calculations as units").
+- low, patch (both lenses): "…with gap x reading it" claims what no expect checks.
+- low, patch: "…each value with its evaluated suffix" asserts one suffix.
+- low, patch: `id-taken` expected text computed with `parameterTakenMessage` where the plan states it; the other message functions have their own unit specs and stay.
+- low, patch: comments restating code in `delete-selection.ts`, `show-slide-out-tab.ts`, `toggle-slide-out-tab.ts`.
+- false: `focused-parameter.ts` and `LeftRail.vue` comments restate code; each says a why (what F2 and Delete act on; why the icon name is the tab value).
+- low, patch: `AddParameterView.vue` `@submit.prevent` can never fire.
+- false: F2-on-canvas test passes before a dialog renders; its `keydown.defaultPrevented` expect failed under the toggled always-available bug.
+- low, rejected: the duplicate-row test's F2 half cannot fail, since the name is not focusable; the fix is not a direct correction.
+- low, rejected: the hidden-label test pins `sr-only`'s 1×1 box; a different hiding method is unlikely, and a robust check is not a direct fix.
+- false: the AddParameter id/label test restates its statics; the plan states that id and label, and the file's other commands assert the same way.
+- false: "no rows in its Tree panel" could pass vacuously; `UiTree` renders Reka `TreeItem`s, role `treeitem`, which the other Tree specs query.
+
+### Pass 2 (quick, test-reviewer, on the patches; 0 findings dropped): high 0, medium 0, low 4, false 0, maybe-false 0
+
+Nothing above low and no frozen line broken: the review ends; these lows are logged, not patched.
+- low: `focuses the first name when opened from its rail button` relies on `arrange`'s rail-button click, a helper step its assertion depends on.
+- low: `parameter-rows.spec.ts`'s literal and unevaluable duplicate rows (`wall = 2mm`, `wall = nope`) were an unlogged boundary; now logged as a `Decision (build):` in Implementation Notes.
+- low: the same rows re-test `evaluatedSuffix`'s no-suffix rule, which `expression-field.spec.ts` owns; one row would cover `parameterRows`' own part.
+- low: `sets the value of a parameter gap x reads, …` names an arrange detail no expect checks.
+
+### Pass 3 (quick, test-reviewer, on Sergii's look change: the autocomplete list; 0 findings dropped): high 0, medium 2, low 4, false 0, maybe-false 0
+
+- medium, patch: the list kept the field radius `rounded-sm`; DESIGN.md line 457 gives the Autocomplete dropdown `context-menu` styling (`{rounded.lg}`).
+- medium, patch: the highlighted row had no Mauve bar; `context-menu` styling "matches the command palette", whose active row is hover with a Mauve bar.
+- low, patch: the position test measured the inner input, not its box, and checked only top edges; rewritten to the box's bottom and an overlap with the error.
+- low, patch: the template comment restated the classes; trimmed.
+- low (test reviewer): the boolean pair hides the numbers on failure, and the `<=` sat exactly on two equal 4 px gaps; superseded by the rewrite.
+
+### Pass 4 (quick, test-reviewer, on the pass-3 patch; 0 findings dropped): high 0, medium 0, low 6, false 0, maybe-false 0
+
+Nothing above low: the loop ends; logged, not patched.
+- low: the trimmed comment no longer says why the extra `relative` wrapper exists (so `top-full` measures from the input box, not the whole field); the position test would catch its removal.
+- low: the Mauve bar also shows on a pointer-highlighted row; logged as a `Decision (build):`.
+- low: the position test reaches the box through `parentElement` with a `?? Number.NaN` fallback.
+- low: `coversError` proves overlap, not paint order, and passes on a 1 px overlap.
+- low: `belowBox` does not bound the gap under the box.
+- low: the expects compare booleans, not the measured numbers.
 
 ## Design Notes
 

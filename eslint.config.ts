@@ -298,7 +298,7 @@ export default defineConfigWithVueTs(
       'packages/commands/src/**/*.ts',
       'packages/design/src/**/*.spec.ts',
       // editor's UiActions are entries too.
-      'packages/editor/src/{workspace,landmarks,slide-out,viewport,selection,add-flow}/**/*.ts',
+      'packages/editor/src/{workspace,landmarks,slide-out,viewport,selection,add-flow,parameters}/**/*.ts',
       // So are the test entries the flow specs run.
       'packages/editor/src/testing/test-*.ts',
     ],

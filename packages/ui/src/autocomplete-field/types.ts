@@ -2,6 +2,9 @@ export type AutocompleteOption = { value: string; label: string }
 
 export type AutocompleteFieldProps = {
   label: string
+  // The label stays the input's name for screen readers only, where something beside the field
+  // already shows what it is.
+  labelHidden?: boolean
   error?: string
   // Muted text in the empty field.
   placeholder?: string
