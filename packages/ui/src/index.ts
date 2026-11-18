@@ -1,3 +1,9 @@
+export { default as UiAutocompleteField } from './autocomplete-field/UiAutocompleteField.vue'
+export type {
+  AutocompleteFieldEmits,
+  AutocompleteFieldProps,
+  AutocompleteOption,
+} from './autocomplete-field/types'
 export { default as UiButton } from './button/UiButton.vue'
 export type { ButtonEmits, ButtonProps } from './button/types'
 export { default as UiCanvasToggle } from './canvas-toggle/UiCanvasToggle.vue'

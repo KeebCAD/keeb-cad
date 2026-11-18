@@ -1,3 +1,4 @@
+import UiAutocompleteField from '../src/autocomplete-field/UiAutocompleteField.vue'
 import UiButton from '../src/button/UiButton.vue'
 import UiIcon from '../src/icon/UiIcon.vue'
 import UiKbd from '../src/kbd/UiKbd.vue'
@@ -10,6 +11,7 @@ import UiTooltip from '../src/tooltip/UiTooltip.vue'
 import UiTree from '../src/tree/UiTree.vue'
 import CanvasToggleHost from './CanvasToggleHost.vue'
 import DialogHost from './DialogHost.vue'
+import { autocompleteFieldStates } from './states/autocomplete-field-states'
 import { buttonStates } from './states/button-states'
 import { canvasToggleStates } from './states/canvas-toggle-states'
 import { dialogStates } from './states/dialog-states'
@@ -36,5 +38,6 @@ export const widgets: readonly Widget[] = [
   { title: 'Tree', component: UiTree, states: treeStates },
   { title: 'Dialog', component: DialogHost, states: dialogStates },
   { title: 'Text field', component: UiTextField, states: textFieldStates },
+  { title: 'Autocomplete field', component: UiAutocompleteField, states: autocompleteFieldStates },
   { title: 'Segmented control', component: UiSegmentedControl, states: segmentedControlStates },
 ]

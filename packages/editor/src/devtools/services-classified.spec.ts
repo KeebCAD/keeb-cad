@@ -4,6 +4,7 @@ import { workersModule } from '@keeb-cad/workers'
 import { describe, expect, it, onTestFinished } from 'vitest'
 
 import { editorModule } from '../editor-module'
+import { FieldSession } from '../expression-field/field-session'
 import { Flows } from '../flows/flows'
 import { HoveredNode } from '../hover/hovered-node'
 import { Invoke } from '../invoke/invoke'
@@ -40,6 +41,10 @@ const classified: readonly (readonly [new () => unknown, Classification])[] = [
     { notShown: 'the pointer, shown live by the borders, id labels and anchor links it draws' },
   ],
   [Flows, { shownAs: `${devtoolsPluginId}.flows` }],
+  [
+    FieldSession,
+    { notShown: "a random key, seen through the undo entries the focused field's commands share" },
+  ],
 ]
 
 // The base constructor registers its builtins before this class's fields exist, so `recorded`

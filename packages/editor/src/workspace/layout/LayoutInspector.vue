@@ -1,6 +1,10 @@
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script setup lang="ts">
+import { useSelection } from '../../selection/use-selection'
+import DesignSettings from './design-settings/DesignSettings.vue'
 
-// An empty template is no valid root, so a render function draws the nothing.
-export default defineComponent({ render: () => null })
+const { ids } = useSelection()
 </script>
+
+<template>
+  <DesignSettings v-if="ids.length === 0" />
+</template>

@@ -5,6 +5,7 @@ import {
   DesignStore,
   findDuplicateIds,
   parse,
+  type RunOptions,
   type Subscribable,
   type TypedEmitter,
 } from '@keeb-cad/design'
@@ -32,6 +33,7 @@ export class Invoke {
   invoke<H extends CommandHandle>(
     handle: H,
     input?: v.InferInput<H['input']>,
+    options?: RunOptions,
   ): AsyncResult<void, Rejection>
   invoke<H extends ActionHandle>(
     handle: H,
@@ -41,11 +43,11 @@ export class Invoke {
     handle: H,
     input?: v.InferInput<H['input']>,
   ): AsyncResult<void, Rejection>
-  invoke(handle: EntryHandle, input?: unknown): AsyncResult<void, unknown> {
+  invoke(handle: EntryHandle, input?: unknown, options?: RunOptions): AsyncResult<void, unknown> {
     return match(handle)
       .with(
         P.when((entry): entry is CommandHandle => entry.kind === 'command'),
-        (command) => this.#invokeCommand(command, input),
+        (command) => this.#invokeCommand(command, input, options),
       )
       .with(
         P.when((entry): entry is ActionHandle => entry.kind === 'action'),
@@ -90,13 +92,17 @@ export class Invoke {
 
   // Asking first keeps the store's no-design throw out of reach: with none committed, a command
   // is unavailable before its input is built.
-  #invokeCommand(handle: CommandHandle, input: unknown): AsyncResult<void, Rejection> {
+  #invokeCommand(
+    handle: CommandHandle,
+    input: unknown,
+    options: RunOptions | undefined,
+  ): AsyncResult<void, Rejection> {
     if (this.#store.current.isNone()) return this.#unavailable(handle, input)
     const entryInput = this.#inputFor(handle, input)
     return this.#reported(
       handle,
       entryInput,
-      AsyncResult.fromResult(this.#store.run(handle, entryInput)),
+      AsyncResult.fromResult(this.#store.run(handle, entryInput, options)),
     )
   }
 
