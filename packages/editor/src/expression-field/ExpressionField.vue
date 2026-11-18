@@ -153,6 +153,7 @@ function restore(): void {
     v-model:cursor="cursor"
     :model-value="text"
     :label="label"
+    :placeholder="placeholder"
     :error="error"
     :suffix="suffix"
     :options="options"

@@ -6,7 +6,9 @@ import { AddSlot } from './add-slot'
 import { DeleteNode } from './delete-node'
 import { DuplicateNode } from './duplicate-node'
 import { SetAnchor } from './set-anchor'
+import { SetArrangement } from './set-arrangement'
 import { SetGap } from './set-gap'
+import { SetOffset } from './set-offset'
 
 export const layoutCommandsModule: Module = {
   register(container) {
@@ -16,5 +18,7 @@ export const layoutCommandsModule: Module = {
     registerCommand(container, DeleteNode)
     registerCommand(container, SetAnchor)
     registerCommand(container, SetGap)
+    registerCommand(container, SetOffset)
+    registerCommand(container, SetArrangement)
   },
 }

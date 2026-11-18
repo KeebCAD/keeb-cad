@@ -20,5 +20,7 @@ export type ExpressionFieldProps = {
   expression: string
   // The field's value schema, whose metadata says what it evaluates to.
   schema: v.GenericSchema
+  // Shown while the field is empty.
+  placeholder?: string
   run: (expression: string, options: RunOptions) => AsyncResult<void, Rejection>
 }

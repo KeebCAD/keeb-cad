@@ -3,14 +3,14 @@ title: 'Inspector edits a node''s offset and chain'
 type: 'feature'
 ticket: '5'
 created: '2026-11-18'
-status: 'ready-for-dev'
-baseline_revision: ''
+status: 'built'
+baseline_revision: 'b1a7c5f3a3ed709370d34ad3ce58fdbb31570ac0'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: [quick, test-reviewer]
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/architecture-keeb-cad-layout-model/architecture-keeb-cad-layout-model.md'
@@ -79,19 +79,19 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `packages/model/src/dependencies/added-loop.ts` (function), `added-loop.spec.ts`, `check-structure.ts` -- the private `addedLoop(was, is)` moves to its own file, unchanged, imported by `checkCycles` (both layers) and `checkSetArrangement`; its rule's spec moves with it (a loop through an added edge is found; a loop already in `was` is not).
-- [ ] `packages/model/src/layout-editing/check-set-offset.ts` (function), `set-offset.ts` (function), `types.ts` (`OffsetEdit`) -- `checkSetOffset(design, ids, edit)`: every missing id in one `unknown-target`; then each given expression in `offsetSchema`'s order (position x, position y, rotation, pivot x, pivot y) through `evaluateFieldExpression` against `deltaSchema` / `angleSchema`, refusing the first fault with ids = every given id (deduplicated); one that reads a failed parameter passes, as `check-set-gap.ts:29` does. `setOffset(design, ids, edit): void`, unchecked like `model`'s `set-gap.ts`: `null` deletes that field; a position or pivot axis given where none is set fills the other axis with `0mm`; an offset left empty is deleted; an edit with no field, or `{}` for position or pivot, changes nothing.
-- [ ] `packages/model/src/layout-editing/check-set-arrangement.ts` (function), `set-arrangement.ts` (function), `arrange-group.ts` (function), `types.ts` (`ArrangementEdit`) -- `arrangeGroup(group, edit)` is the unchecked edit: `chain` sets `axis` and deletes every child's `anchor`; `free` deletes `axis`. `checkSetArrangement(design, ids, edit)`: missing or slot ids in one `unknown-target`; then applies `arrangeGroup` to each group of `structuredClone(design)` and refuses `addedLoop(resolvedDependencies(dependencyGraph(…)))` of before and after as `dependency-cycle` with `dependencyCycleMessage(ids, 'nodes')`. `setArrangement(design, ids, edit): void` is unchecked, calling `arrangeGroup` on each group. Both commands follow `commands`' `set-gap.ts:15-26`: `available` returns the check, `apply` runs the check and then the unchecked operation.
-- [ ] `packages/model/src/main.ts` -- exports the four functions, `findNode`, `isGroup`, `OffsetEdit`, `ArrangementEdit`.
-- [ ] `packages/commands/src/layout/set-offset.ts` (`SetOffset`, service), `set-offset-input-schema.ts`, `set-arrangement.ts` (`SetArrangement`, service), `set-arrangement-input-schema.ts`, `types.ts`, `layout-commands-module.ts`, `index.ts` -- `layout.setOffset` label `Set offset`, input `{ ids: Id[] ≥ 1, position?: { x?, y? } | null, rotation?: Angle | null, pivot?: { x?, y? } | null }`; `layout.setArrangement` label `Set arrangement`, input `v.variant('arrangement', [{ ids, arrangement: 'chain', axis }, { ids, arrangement: 'free' }])`.
-- [ ] `packages/ui/src/autocomplete-field/UiAutocompleteField.vue`, `types.ts`, `AutocompleteField.spec.ts`, `ui/workbench/states/autocomplete-field-states.ts` -- `placeholder?` prop on the input, UiTextField's look; a state `empty with a placeholder`, as `text-field-states.ts` has, mounted by the glue row.
-- [ ] `packages/ui/workbench/states/segmented-control-states.ts`, `ui/src/segmented-control/SegmentedControl.spec.ts` -- a state `none checked` (the mixed arrangement) and a named test mounting it that asserts every radio unchecked; `AutocompleteField.spec.ts` gains a named test asserting the input's placeholder is the state's `placeholder` prop.
-- [ ] `packages/editor/src/expression-field/ExpressionField.vue`, `types.ts` -- `placeholder?` passed through.
-- [ ] `packages/editor/src/workspace/layout/node-inspector/NodeInspector.vue` (component), `AnchorSection.vue`, `OffsetSection.vue`, `ChainSection.vue` (components), `common-text.ts` (function: one text if all equal, else `undefined`), `anchor-text.ts` (function), `chain-position.ts` (function: `chain <parent> · <n+1> of <count>`), `offset-texts.ts` (function: a node's shown x, y, rot, pivot x, pivot y, each unset one as its default text), `arrangement-option.ts` (function: the option `free`, `chain x` or `chain y` a group shows), `types.ts` -- `NodeInspector` owns the lookup: the selection's ids through `nodeIdOf`, deduplicated (`left/a` and `whole/a` name one node), each found with `findNode` over `useOpenDesign`; it passes each section `nodes: Frozen<Node>[]` (and, for the Anchor section, each node's chain parent from `findNode`'s `parent` and `index`), declared in `node-inspector/types.ts`; the sections run `invoke(SetOffset | SetArrangement, …, options)`.
-- [ ] `packages/editor/src/workspace/layout/LayoutInspector.vue` -- `NodeInspector` while ids are selected.
-- [ ] `app/src/node-editing.spec.ts` -- registration rows for both commands.
-- [ ] Specs per the Boundary Table. A refusal row asserts `kind` and `ids` and leaves the message to the model's message specs, not `unitMismatchMessage(...)` as the expected value as `set-gap.spec.ts` does. The browser rows test 14.5's wiring only; the pause, Esc and session behaviour stay tested where 14.10 defined them (`expression-field.spec.ts`).
-- [ ] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` (docs commit to main) -- precedent entry: `commands/src/layout/set-gap.spec.ts`'s `message: unitMismatchMessage([DESIGN_ID])` against AGENTS.md's "no expected value computed the way production computes it".
+- [x] `packages/model/src/dependencies/added-loop.ts` (function), `added-loop.spec.ts`, `check-structure.ts` -- the private `addedLoop(was, is)` moves to its own file, unchanged, imported by `checkCycles` (both layers) and `checkSetArrangement`; its rule's spec moves with it (a loop through an added edge is found; a loop already in `was` is not).
+- [x] `packages/model/src/layout-editing/check-set-offset.ts` (function), `set-offset.ts` (function), `types.ts` (`OffsetEdit`) -- `checkSetOffset(design, ids, edit)`: every missing id in one `unknown-target`; then each given expression in `offsetSchema`'s order (position x, position y, rotation, pivot x, pivot y) through `evaluateFieldExpression` against `deltaSchema` / `angleSchema`, refusing the first fault with ids = every given id (deduplicated); one that reads a failed parameter passes, as `check-set-gap.ts:29` does. `setOffset(design, ids, edit): void`, unchecked like `model`'s `set-gap.ts`: `null` deletes that field; a position or pivot axis given where none is set fills the other axis with `0mm`; an offset left empty is deleted; an edit with no field, or `{}` for position or pivot, changes nothing.
+- [x] `packages/model/src/layout-editing/check-set-arrangement.ts` (function), `set-arrangement.ts` (function), `arrange-group.ts` (function), `types.ts` (`ArrangementEdit`) -- `arrangeGroup(group, edit)` is the unchecked edit: `chain` sets `axis` and deletes every child's `anchor`; `free` deletes `axis`. `checkSetArrangement(design, ids, edit)`: missing or slot ids in one `unknown-target`; then applies `arrangeGroup` to each group of `structuredClone(design)` and refuses `addedLoop(resolvedDependencies(dependencyGraph(…)))` of before and after as `dependency-cycle` with `dependencyCycleMessage(ids, 'nodes')`. `setArrangement(design, ids, edit): void` is unchecked, calling `arrangeGroup` on each group. Both commands follow `commands`' `set-gap.ts:15-26`: `available` returns the check, `apply` runs the check and then the unchecked operation.
+- [x] `packages/model/src/main.ts` -- exports the four functions, `findNode`, `isGroup`, `OffsetEdit`, `ArrangementEdit`.
+- [x] `packages/commands/src/layout/set-offset.ts` (`SetOffset`, service), `set-offset-input-schema.ts`, `set-arrangement.ts` (`SetArrangement`, service), `set-arrangement-input-schema.ts`, `types.ts`, `layout-commands-module.ts`, `index.ts` -- `layout.setOffset` label `Set offset`, input `{ ids: Id[] ≥ 1, position?: { x?, y? } | null, rotation?: Angle | null, pivot?: { x?, y? } | null }`; `layout.setArrangement` label `Set arrangement`, input `v.variant('arrangement', [{ ids, arrangement: 'chain', axis }, { ids, arrangement: 'free' }])`.
+- [x] `packages/ui/src/autocomplete-field/UiAutocompleteField.vue`, `types.ts`, `AutocompleteField.spec.ts`, `ui/workbench/states/autocomplete-field-states.ts` -- `placeholder?` prop on the input, UiTextField's look; a state `empty with a placeholder`, as `text-field-states.ts` has, mounted by the glue row.
+- [x] `packages/ui/workbench/states/segmented-control-states.ts`, `ui/src/segmented-control/SegmentedControl.spec.ts` -- a state `none checked` (the mixed arrangement) and a named test mounting it that asserts every radio unchecked; `AutocompleteField.spec.ts` gains a named test asserting the input's placeholder is the state's `placeholder` prop.
+- [x] `packages/editor/src/expression-field/ExpressionField.vue`, `types.ts` -- `placeholder?` passed through.
+- [x] `packages/editor/src/workspace/layout/node-inspector/NodeInspector.vue` (component), `AnchorSection.vue`, `OffsetSection.vue`, `ChainSection.vue` (components), `common-text.ts` (function: one text if all equal, else `undefined`), `anchor-text.ts` (function), `chain-position.ts` (function: `chain <parent> · <n+1> of <count>`), `offset-texts.ts` (function: a node's shown x, y, rot, pivot x, pivot y, each unset one as its default text), `arrangement-option.ts` (function: the option `free`, `chain x` or `chain y` a group shows), `types.ts` -- `NodeInspector` owns the lookup: the selection's ids through `nodeIdOf`, deduplicated (`left/a` and `whole/a` name one node), each found with `findNode` over `useOpenDesign`; it passes each section `nodes: Frozen<Node>[]` (and, for the Anchor section, each node's chain parent from `findNode`'s `parent` and `index`), declared in `node-inspector/types.ts`; the sections run `invoke(SetOffset | SetArrangement, …, options)`.
+- [x] `packages/editor/src/workspace/layout/LayoutInspector.vue` -- `NodeInspector` while ids are selected.
+- [x] `app/src/node-editing.spec.ts` -- registration rows for both commands.
+- [x] Specs per the Boundary Table. A refusal row asserts `kind` and `ids` and leaves the message to the model's message specs, not `unitMismatchMessage(...)` as the expected value as `set-gap.spec.ts` does. The browser rows test 14.5's wiring only; the pause, Esc and session behaviour stay tested where 14.10 defined them (`expression-field.spec.ts`).
+- [x] `_bmad-output/initiative-keeb-cad-m1/deferred-work.md` (docs commit to main) -- precedent entry: `commands/src/layout/set-gap.spec.ts`'s `message: unitMismatchMessage([DESIGN_ID])` against AGENTS.md's "no expected value computed the way production computes it".
 
 **Acceptance Criteria:**
 - Given every existing spec, when `pnpm test` runs, then they pass.
@@ -99,9 +99,57 @@ context:
 
 ## Implementation Notes
 
+- The `deferred-work.md` precedent entry is written in the working tree but not committed: it belongs in a docs commit on main, apart from the PR branch.
+- Toggled bugs, each red then restored (chromium; the app row in node): no coalesce key in `OffsetSection` (session row), one id instead of all (multi row), `NodeInspector` ignoring right ids (right-id row), no refusal text in `ChainSection` (refused and cleared rows), no placeholder binding in `UiAutocompleteField` (ui glue row), `SetArrangement` unregistered (app registration row).
+- Verification: `pnpm typecheck && pnpm check:fast` clean; `pnpm test` 875 files / 6526 tests green. No priority package changed, so no Stryker run. The manual `pnpm dev` check with Corney is not run (left for the look halt).
+- `Decision (build):` `arrangeGroup` changes the group's arrangement in place through one cast, not by replacing the node object in its parent, because the patch then touches only the changed fields and `arrangeGroup` needs no parent.
+- `Decision (build):` checkSetArrangement's `unknown-target` reads `The design has no group with the id "s".`, inline as `checkAddNode`'s is, not `unknownNodeMessage`, because a slot id names a node the design has.
+- `Decision (build):` ids are deduplicated in first-seen order in both checks and both operations, not sorted, because the selection's order is the person's and the refusal names them as given.
+- Decision (Sergii 2026-11-18): the Anchor row is a `dl` (`dt` `anchor`, `dd` text, `mixed` muted), not a read-only text field, because nothing edits it in 14.5 and a field would offer focus with nothing to do.
+- `Decision (build):` unchecked `setOffset` and `setArrangement` skip an id that names no node (or no group), not throw, because both commands run the check first and refuse such ids (`unknown-target`); the operation alone is never called with them.
+- Orchestrator check: `checkAddNode`'s inline message (`check-add-node.ts:18`), the field error paragraph (`UiAutocompleteField.vue:140-142`) and Reka's `passive: props.modelValue === void 0` (`RadioGroupRoot.js:66-69`) read and confirmed; the first-seen order follows `selection.ts:8` ("In selection order"). Key order of `axis` after `children` does not reach the revision: `hashing`'s `encodeCanonical` sorts keys (`canonical-encoding.ts:3`).
+- Structural changes: none (no tsconfig, package.json, workspace, Vitest, ESLint, Stryker or dependency-cruiser change; no `declare global` or `declare module`).
+- Real-host run: no spec in the diff fakes a third-party host or boundary; browser specs run real Reka, a real `DesignStore` and Vitest fake timers.
+- Verification (step 3, orchestrator): `pnpm typecheck && pnpm check:fast && pnpm test` exit 0, 875 files / 6526 tests.
+- Matrix audit: Multi, Mixed, Chain clears anchors, Clear, Bad unit, One session have direct tests (`node-inspector.spec.ts`, `set-offset.spec.ts`, `set-arrangement.spec.ts`); Offset after pause by the session row with the `{ x, y: '0mm' }` fill in `set-offset.spec.ts` and the pause rows of 14.10's `expression-field.spec.ts`; Esc after apply by 14.10's Esc rows (`expression-field.spec.ts:100-102`, canvas focus), which this field reuses unchanged.
+- `Decision (build):` the Chain section's refusal is a plain paragraph below the control (`▲` and the text, as a field's error), not a live region, because the expression field's error is not one either; making refusals announced is a cross-surface question.
+- `Decision (build):` the mixed arrangement passes `''` as the control's value, not `undefined`, because Reka's `RadioGroupRoot` turns uncontrolled for an `undefined` model (`passive: props.modelValue === void 0`, `RadioGroup/RadioGroupRoot.js:66-69`) and would then keep a refused pick checked.
+
 ## Plan Change Log
 
+- checkSetArrangement copies the layout with a new `copyNodes` (`node-tree.ts`: every node shallow-copied, other fields shared), not `structuredClone(design)`, because `apply` passes the check an Immer draft and `structuredClone` throws on it (`#<Object> could not be cloned`, checked against `immer`'s `produce`); still not Immer, and still the shared `arrangeGroup`.
+- The two model check specs assert refusals inline (`expectErr`, then `toMatchObject({ kind, ids })`), not through a shared `expectRefused` helper, because `vitest/expect-expect` counts only the assertion names listed in `eslint.config.ts` and adding one is a lint-config change.
+- The browser refusal rows read the Chain section's `textContent` with `expect.poll`, not `toHaveTextContent` or `getByText`, because both miss text holding `"` (the loop message `"k" → "g" → "k"`): `toHaveTextContent('The nodes form a loop: "k"')` failed against that text while a regex matched.
+- `added-loop.spec.ts` holds the two rule rows; `check-structure.spec.ts`'s cycle rows stay, since they test `checkCycles`' use of the rule (layers, order against references).
+
 ## Review Triage Log
+
+### Pass 1 (quick, test-reviewer; 0 findings dropped): high 0, medium 1, low 7, false 2, maybe-false 0
+
+- medium, patch -- quick + test-reviewer 1: `clears the refusal when the selection changes` passes with ChainSection's clearing `watch` deleted; selecting slot `s` unmounts the section (`NodeInspector.vue` `v-if="groupsOnly"`), so the remount clears it.
+- low, patch -- quick + test-reviewer 5: `REFUSAL = dependencyCycleMessage([K, G], 'nodes')` computes the expected text as production does, against the plan's Specs task.
+- low, patch -- quick + test-reviewer 4: `runs nothing for a mixed field focused and left untouched` cannot fail: a run of `''` is `input-invalid` (`expression.ts`, "Not an expression.") and commits nothing either way; renamed to what it proves.
+- low, patch -- test-reviewer 1: `it.each` over a one-state filter disappears silently on a rename (`AutocompleteField.spec.ts`, `SegmentedControl.spec.ts`).
+- low, patch -- quick: `arrange-group.ts` declares an inline cast type outside `types.ts` with `unknown` fields.
+- low, patch -- quick: `node-inspector/types.ts` comments restate signatures; `OffsetField.edit` reaches through `SetOffset.input` while `SetOffsetInput` is exported.
+- low, logged -- test-reviewer 8: unchecked `setOffset` and `setArrangement` skip a missing or non-group id; recorded as a build decision (the command always checks first, `set-offset.ts`/`set-arrangement.ts` in `commands`).
+- low, reject -- quick: `unknown-target` text "with the id "s", "x"" reads badly for several ids; it repeats `unknownNodeMessage`'s and `checkAddNode`'s existing wording, and changing it is a guard-free rewording of shared text beyond this change.
+- false -- quick: acceptance criterion 2 unverified; it is a manual check the plan leaves to the look halt (Verification, Manual checks).
+- false -- test-reviewer 4: undo counted synchronously after blur; `store.run` commits synchronously (`design-store.ts` `#runCommand`, `invoke` wraps it with `AsyncResult.fromResult`), as 14.10's pass 1 established.
+
+
+### Pass 2 (quick, test-reviewer, on the patches; 0 findings dropped): high 0, medium 0, low 8, false 0, maybe-false 0
+
+- low, logged -- quick: pass 1's `OffsetField.edit` row is only half done: `SetOffsetInput` is `v.InferOutput` (branded quantities, `commands/src/layout/types.ts:18`) while `invoke` takes `v.InferInput<H['input']>` (`invoke.ts:35`); five `offset-fields.ts` entries failed to compile against it, so `Omit<v.InferInput<typeof SetOffset.input>, 'ids'>` stays (the comments were deleted).
+- low, logged -- quick + test-reviewer 1: the renamed mixed-field test still cannot catch a run on blur; only a transient `aria-invalid` would show it.
+- low, logged -- quick: the boundary row `refusal cleared` reads "select `s` then `g`"; the test selects group `h`, because selecting `s` unmounts the section and the row could not fail. Sergii 2026-11-18: the row now reads "select another group `h`".
+- low, logged -- quick: the Plan Change Log's `textContent`/`expect.poll` entry is superseded; the refusal rows now use `getByText(/form a loop/)`.
+- low, logged -- test-reviewer 2: `checks no option for groups that differ` would pass with no radios rendered.
+- low, logged -- test-reviewer 3: the refused-pick test proves the text is in the Chain section, not its position below the control.
+- low, logged -- test-reviewer 4: the placeholder glue test reads its expected value from the state.
+- low, logged -- test-reviewer 5: `stateNamed` is repeated in two ui specs.
+
+Review ends: pass 2 has nothing above low; its lows are logged, not patched. The `refusal cleared` row was changed by Sergii to match its test.
 
 ## Design Notes
 
@@ -182,7 +230,7 @@ context:
 | rules | arrangement shown | chain `g` axis `x` | `chain x` checked | browser, editor |
 | rules | arrangement mixed | free `g`, chain `h` | no option checked | browser, editor |
 | rules | arrangement refused | free `g` anchored to child `k`, `k` anchored to `s`; pick `chain x` | `free` checked, the refusal's text below the control, design unchanged | browser, editor |
-| rules | refusal cleared | after that refusal, select `s` then `g` | no refusal text | browser, editor |
+| rules | refusal cleared | after that refusal, select another group `h` | no refusal text | browser, editor |
 | rules | x checks a delta | `5deg` in x, Enter | `aria-invalid`, "Not a quantity in mm.", design unchanged | browser, editor |
 | glue | placeholder | state `empty with a placeholder` | input placeholder from the state | browser, ui |
 | glue | none checked | state `none checked` | no radio checked | browser, ui |

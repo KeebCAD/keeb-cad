@@ -55,3 +55,13 @@ export function subtreeIdsOf(root: Frozen<Node>, ids: readonly Id[]): Id[] {
     wanted.has(node.id) ? subtreeIds(node) : isGroup(node) ? node.children.flatMap(walk) : []
   return walk(root)
 }
+
+// Each node of the tree copied, its other fields shared, so an edit to nodes' own fields leaves
+// `root` alone. Reads through an Immer draft, which structuredClone refuses.
+export function copyNodes(root: Frozen<Group>): Mutable<Group> {
+  const copy = (node: Frozen<Node>): Mutable<Node> =>
+    (isGroup(node)
+      ? { ...node, children: node.children.map((child) => copy(child)) }
+      : { ...node }) as Mutable<Node>
+  return copy(root) as Mutable<Group>
+}

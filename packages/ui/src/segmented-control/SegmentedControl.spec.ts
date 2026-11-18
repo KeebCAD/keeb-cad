@@ -20,6 +20,13 @@ async function arrange(modelValue: string) {
   }
 }
 
+// Throws for a renamed state, so the test using it can't vanish.
+function stateNamed(name: string) {
+  const state = segmentedControlStates.find((candidate) => candidate.name === name)
+  if (state === undefined) throw new Error(`The workbench has no state named "${name}".`)
+  return state
+}
+
 describe('SegmentedControl', () => {
   it.each(segmentedControlStates)(
     'renders the $name state as a radio group named by its label',
@@ -38,6 +45,19 @@ describe('SegmentedControl', () => {
     await expect.element(group()).toBeVisible()
     await expect.element(radio('Column ↑')).toHaveAttribute('aria-checked', 'true')
     await expect.element(radio('Row →')).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('checks no option in the none checked state', async () => {
+    const state = stateNamed('none checked')
+    const screen = await render(UiSegmentedControl, { props: state.props })
+
+    await expect.element(screen.getByRole('radiogroup', { name: state.props.label })).toBeVisible()
+    expect(
+      screen
+        .getByRole('radio')
+        .elements()
+        .map((radio) => radio.getAttribute('aria-checked')),
+    ).toEqual(['false', 'false'])
   })
 
   it('emits the value of a pressed option', async () => {

@@ -1,16 +1,9 @@
-import { Option, Result } from '@keeb-cad/result'
-import {
-  compareCodeUnits,
-  type Design,
-  type Frozen,
-  type ItemId,
-  type Rejection,
-} from '@keeb-cad/schema'
+import { Result } from '@keeb-cad/result'
+import type { Design, Frozen, ItemId, Rejection } from '@keeb-cad/schema'
 
-import { anchorCycle } from './dependencies/anchor-cycle'
+import { addedLoop } from './dependencies/added-loop'
 import { dependencyGraph, resolvedDependencies } from './dependencies/dependency-graph'
 import { parameterDependencies } from './dependencies/parameter-dependencies'
-import type { Dependencies } from './dependencies/types'
 import { evaluateExpressions } from './evaluation/evaluate-expressions'
 import type { FieldViolation } from './evaluation/types'
 import { nodeIdOf } from './ids/side-qualified-id'
@@ -53,8 +46,7 @@ function checkReferences(previous: Frozen<Design>, next: Frozen<Design>): Result
   )
 }
 
-// Node loops before parameter loops; only a loop through an edge the edit added is refused, found
-// from the changed items in compareCodeUnits order and listed from the changed item.
+// Node loops before parameter loops; only a loop through an edge the edit added is refused.
 function checkCycles(previous: Frozen<Design>, next: Frozen<Design>): Result<void, Rejection> {
   const layers = [
     {
@@ -76,18 +68,6 @@ function checkCycles(previous: Frozen<Design>, next: Frozen<Design>): Result<voi
     }
   }
   return Result.ok()
-}
-
-function addedLoop(was: Dependencies<string>, is: Dependencies<string>): Option<string[]> {
-  for (const item of [...is.keys()].toSorted(compareCodeUnits)) {
-    const had = new Set(was.get(item))
-    for (const target of is.get(item) ?? []) {
-      if (had.has(target)) continue
-      const loop = anchorCycle(is, item, target)
-      if (loop.isSome()) return loop
-    }
-  }
-  return Option.none()
 }
 
 // The first field the edit made fail, in design order, named alone.

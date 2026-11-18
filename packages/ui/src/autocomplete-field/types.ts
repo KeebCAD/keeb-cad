@@ -3,6 +3,8 @@ export type AutocompleteOption = { value: string; label: string }
 export type AutocompleteFieldProps = {
   label: string
   error?: string
+  // Muted text in the empty field.
+  placeholder?: string
   // Muted text after the typed text, inside the field.
   suffix?: string
   // Already filtered: the field shows every option it is given.
