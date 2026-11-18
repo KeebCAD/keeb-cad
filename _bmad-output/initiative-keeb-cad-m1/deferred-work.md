@@ -748,3 +748,7 @@
   summary: For Sofia and Sally: EXPERIENCE's Expression field row lists "cycle" among invalid values, but 14.10's ticket and 14.8's decision make a field reading a failed parameter valid (no fault of its own), so the field applies it with no error.
   evidence: EXPERIENCE row "Invalid (parse, unit-mismatch, unresolvable reference, cycle)"; 14.10 ticket "An invalid value (parse, unit-mismatch, unresolvable-reference, a refusal from 8)"; 14.8 decision "an item that reads a failed parameter is unplaced with no violation of its own".
   resolved: 2026-11-18, Sergii: no change. A gap can't close a loop; one reading a parameter a loaded file broke shows that parameter's violation (14.8). "Cycle" stands for parameter value fields (14.13), where setParameter refuses a new loop.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-change-a-parameter/tickets/story-inspector-edits-a-node-s-offset-and-chain-plan.md`
+  summary: precedent to fix: `packages/commands/src/layout/set-gap.spec.ts`'s refusal row expects `message: unitMismatchMessage([DESIGN_ID])`, an expected value computed the way production computes it ("no expected value computed the way production computes it"); the message belongs to the model's message specs. 14.5's refusal rows assert `kind` and `ids` only.
+  evidence: AGENTS.md Tests section; 14.5's conformance pass 1 (precedent deferred).
+  owner: the next story that touches `packages/commands/src/layout/set-gap.spec.ts`.
