@@ -1,12 +1,14 @@
 import { useService } from '@keeb-cad/di/vue'
+import type { Option } from '@keeb-cad/result'
 import { type Ref, watchEffect } from 'vue'
 
 import { CanvasItems } from './canvas-items'
+import type { Bounds } from './types'
 
 export function useCanvasItemsRoot(
   svg: Readonly<Ref<SVGSVGElement | null>>,
   keys: Readonly<Ref<SVGGElement | null>>,
-): void {
+): { registrations: () => number; drawnBounds: () => Option<Bounds> } {
   const items = useService(CanvasItems)
   watchEffect(
     (onCleanup) => {
@@ -19,4 +21,5 @@ export function useCanvasItemsRoot(
     },
     { flush: 'post' },
   )
+  return { registrations: () => items.registrations, drawnBounds: () => items.allBounds() }
 }

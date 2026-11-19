@@ -13,28 +13,18 @@ import {
 
 import { FLATTEN_TOL } from './flatten-tolerance'
 import { normalisePolygonRegions } from './normalise-polygon-regions'
-import type { GrownEnvelope, Point, PolygonRegion } from './types'
+import type { GrownRegions, Point, PolygonRegion } from './types'
 
 const PRECISION = 6
 // Clipper's default; round joins never read it.
 const MITER_LIMIT = 2
 
 // Clipper throws on a coordinate it can't scale to an integer, so a failure of either kind is none.
-export function growAndUnite(envelopes: readonly GrownEnvelope[]): Option<PolygonRegion[]> {
+export function growAndUnite(grown: readonly GrownRegions[]): Option<PolygonRegion[]> {
   try {
     const clipper = new ClipperD(PRECISION)
-    for (const { envelope, distance } of envelopes) {
-      clipper.addSubjectPaths(
-        inflatePathsD(
-          [envelope.map(({ x, y }) => ({ x, y }))],
-          distance,
-          JoinType.Round,
-          EndType.Polygon,
-          MITER_LIMIT,
-          PRECISION,
-          FLATTEN_TOL,
-        ),
-      )
+    for (const { regions, distance } of grown) {
+      for (const region of regions) clipper.addSubjectPaths(inflated(region, distance))
     }
     const tree = new PolyTreeD()
     return clipper.execute(ClipType.Union, FillRule.NonZero, tree)
@@ -43,6 +33,19 @@ export function growAndUnite(envelopes: readonly GrownEnvelope[]): Option<Polygo
   } catch {
     return Option.none()
   }
+}
+
+// A region's loops go in one call, so its holes shrink as its outer loop grows.
+function inflated({ outer, holes }: PolygonRegion, distance: number): PathD[] {
+  return inflatePathsD(
+    [outer, ...holes].map((loop) => loop.map(({ x, y }) => ({ x, y }))),
+    distance,
+    JoinType.Round,
+    EndType.Polygon,
+    MITER_LIMIT,
+    PRECISION,
+    FLATTEN_TOL,
+  )
 }
 
 // A tree's children are outer loops, theirs are holes, and a hole's are outer loops again.

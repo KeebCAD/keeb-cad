@@ -1,11 +1,11 @@
 import { Option } from '@keeb-cad/result'
-import type { Border } from '@keeb-cad/schema'
+import type { PolygonRegion } from '@keeb-cad/schema'
 
 import type { Point } from '../viewport/types'
 
 // The topmost posted point of every region's outer loop, the leftmost of a tie. Points are posted
 // rounded, so a flat top edge's ends compare equal.
-export function tabPoint(border: Border): Option<Point> {
+export function tabPoint(border: readonly PolygonRegion[]): Option<Point> {
   const points = border.flatMap(({ outer }) => outer)
   const top = points.reduce<Point | undefined>(
     (best, point) =>

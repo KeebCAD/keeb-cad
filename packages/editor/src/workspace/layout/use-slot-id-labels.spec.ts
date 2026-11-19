@@ -1,4 +1,4 @@
-import { aLayoutRow, aPartsOutput } from '@keeb-cad/schema/testing'
+import { aLayoutRow, aPartsOutput, aSlotSpace } from '@keeb-cad/schema/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { userEvent } from 'vitest/browser'
 
@@ -57,7 +57,7 @@ function labelTopMiddle(placement: string): Point {
 
 // The key's middle and lowest point as the browser drew it, in client px.
 function keyBottomMiddle(placement: string): Point {
-  const { left, right, bottom } = drawnBox(key(placement).element().querySelector('rect'))
+  const { left, right, bottom } = drawnBox(key(placement).element().querySelector('path'))
   return { x: (left + right) / 2, y: bottom }
 }
 
@@ -94,7 +94,7 @@ describe("a pointed slot's id label", () => {
   it.each([0, 30, 90])(
     'sits under the lowest drawn point of a 1.5u key turned %i°',
     async (rot) => {
-      const wideKey = { w: 27, h: 18 }
+      const wideKey = aSlotSpace({ width: 27 })
       await arrangeIdsAndLinks(
         designWith('k'),
         layoutOf({ k: aLayoutRow({ frame: { x: 0, y: 0, rot, mirrored: false } }) }),

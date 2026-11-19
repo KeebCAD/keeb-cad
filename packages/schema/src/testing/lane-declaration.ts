@@ -4,7 +4,7 @@ export function aLaneDeclaration(overrides: Partial<LaneDeclaration> = {}): Lane
   return {
     pulls: [],
     queries: [],
-    outputs: [{ name: 'rectangle', role: 'rectangle', kind: 'shape', count: 'one' }],
+    outputs: [{ name: 'slot-space', role: 'slot-space', kind: 'shape', count: 'one' }],
     ...overrides,
   }
 }

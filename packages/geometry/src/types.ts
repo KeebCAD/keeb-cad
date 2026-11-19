@@ -13,10 +13,16 @@ export interface Point {
   y: number
 }
 
-// An envelope's loop and how far to grow it.
-export interface GrownEnvelope {
-  envelope: readonly Point[]
+export interface GrownRegions {
+  regions: readonly PolygonRegion[]
   distance: number
+}
+
+export interface Box {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
 }
 
 // An outer loop, counter-clockwise, with its holes, each clockwise (y up). No loop repeats its

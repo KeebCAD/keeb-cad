@@ -25,7 +25,7 @@ export function checkLaneOutputs(
   for (const { name, count } of contract.outputs) {
     if (!Object.hasOwn(outputs, name)) return Result.err(roleFailure(name))
     const output = outputs[name]
-    if (Array.isArray(output) === (count === 'one')) return Result.err(roleFailure(name))
+    if (count === 'any' && !Array.isArray(output)) return Result.err(roleFailure(name))
     checked[name] = output
   }
   return Result.ok({ outputs: checked, problems })

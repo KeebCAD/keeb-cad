@@ -1,9 +1,11 @@
-import { aQuantityInput, aQuantityInputValue } from '@keeb-cad/schema/testing'
+import { Result } from '@keeb-cad/result'
+import { aLaneDeclaration, aQuantityInput, aQuantityInputValue } from '@keeb-cad/schema/testing'
 import { describe, expect, it, onTestFinished } from 'vitest'
 
 import type { BlueprintContract, PinnedBlueprint, PinnedScript } from './types'
 import { BlueprintVm } from './blueprint-vm'
 import { EngineLoader } from '../sandbox/engine-loader'
+import { aContract } from '../testing/a-contract'
 import { aPin } from '../testing/a-pin'
 import { aScript, returning, STAGE } from '../testing/lane-script'
 import { MIB } from '../testing/mib'
@@ -277,6 +279,32 @@ describe('the sandbox, on the real engine', () => {
       }
       expect(outcomeOf(vm.runLane(STAGE, calls, noArgs))).toEqual(
         okValue(expect.stringContaining('no shape 42')),
+      )
+    })
+  })
+
+  describe('converting outputs', () => {
+    const wrapping = {
+      ...noCalls,
+      convertHandle: (_output: string, value: unknown) => Result.ok({ converted: value }),
+    }
+
+    it('converts a one output given a list once, as a whole', async () => {
+      const vm = await vmFor(aPin(returning('[1, 2]')))
+      expect(outcomeOf(vm.runLane(STAGE, wrapping, noArgs))).toEqual(okValue({ converted: [1, 2] }))
+    })
+
+    it('converts each item of an any output', async () => {
+      const anyOutput = aContract({
+        lanes: {
+          parts: aLaneDeclaration({
+            outputs: [{ name: 'value', role: 'value', kind: 'config', count: 'any' }],
+          }),
+        },
+      })
+      const vm = await vmFor(aPin(returning('[1, 2]'), anyOutput))
+      expect(outcomeOf(vm.runLane(STAGE, wrapping, noArgs))).toEqual(
+        okValue([{ converted: 1 }, { converted: 2 }]),
       )
     })
   })

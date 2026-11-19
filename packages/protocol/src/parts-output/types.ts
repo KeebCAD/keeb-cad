@@ -1,9 +1,7 @@
 import type { PartsOutput } from '@keeb-cad/schema'
 
-export type PackedPartsOutput = {
-  ids: string[]
-  w: Float64Array<ArrayBuffer>
-  h: Float64Array<ArrayBuffer>
-}
+import type { PolygonRegionColumns } from '../polygon-regions/types'
+
+export type PackedPartsOutput = { ids: string[] } & PolygonRegionColumns
 
 export type PartsRow = PartsOutput['rows'][number]

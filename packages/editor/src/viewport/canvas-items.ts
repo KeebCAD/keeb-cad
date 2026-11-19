@@ -22,12 +22,19 @@ export class CanvasItems {
 
   register(item: CanvasItem): void {
     this.#items.add(item)
+    this.#registrations += 1
     triggerRef(this.#changed)
   }
 
   unregister(item: CanvasItem): void {
     this.#items.delete(item)
     triggerRef(this.#changed)
+  }
+
+  // Counts every registration ever made, so a watcher sees a key drawn in place of another.
+  get registrations(): number {
+    this.#track()
+    return this.#registrations
   }
 
   get drawsAny(): boolean {
@@ -56,6 +63,7 @@ export class CanvasItems {
   }
 
   #root: CanvasRoot | undefined = undefined
+  #registrations = 0
   readonly #items = new Set<CanvasItem>()
   // Registering only triggers it, never reads it, so the effect that registers a key does not track
   // its own registration.

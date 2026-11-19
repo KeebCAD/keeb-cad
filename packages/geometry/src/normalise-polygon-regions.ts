@@ -1,3 +1,4 @@
+import { signedArea } from './signed-area'
 import type { Point, PolygonRegion } from './types'
 
 // Equal geometry gives equal arrays whatever order and winding the engine handed back.
@@ -19,15 +20,6 @@ function normaliseLoop(
     counterClockwise === (winding === 'counter-clockwise') ? [...loop] : loop.toReversed()
   const start = lowestThenLeftmost(wound)
   return [...wound.slice(start), ...wound.slice(0, start)]
-}
-
-function signedArea(loop: readonly Point[]): number {
-  let twice = 0
-  for (const [index, { x, y }] of loop.entries()) {
-    const next = loop[(index + 1) % loop.length] as Point
-    twice += x * next.y - next.x * y
-  }
-  return twice / 2
 }
 
 function lowestThenLeftmost(loop: readonly Point[]): number {

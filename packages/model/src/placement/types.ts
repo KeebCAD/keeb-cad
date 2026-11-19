@@ -2,7 +2,7 @@ import type { Matrix, Point } from '@keeb-cad/geometry'
 import type { Id, LayoutOutput, ResolvedParts } from '@keeb-cad/schema'
 
 import type { DependencyGraph } from '../dependencies/types'
-import type { Rectangle } from '../parts/types'
+import type { SlotSpace } from '../parts/types'
 
 export interface ReadOffset {
   position: Point
@@ -10,9 +10,10 @@ export interface ReadOffset {
   pivot: Point
 }
 
-// A rectangle placed by a frame, in some group's frame.
-export interface PlacedRectangle extends Rectangle {
+// A slot space placed by a frame, in some group's frame.
+export interface PlacedSlotSpace {
   frame: Matrix
+  slotSpace: SlotSpace
 }
 
 export interface Extent {
@@ -47,5 +48,5 @@ export type GroupFrames = ReadonlyMap<Id, RelativeFrames>
 export interface SlotPart {
   row: number
   fit: LayoutRow['fit']
-  rectangle: Rectangle
+  slotSpace: SlotSpace
 }

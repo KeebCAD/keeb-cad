@@ -1,5 +1,5 @@
 import { compareCodeUnits, type LayoutOutput } from '@keeb-cad/schema'
-import { aBorder, aBorderRegion, aLayoutOutput, aLayoutRow } from '@keeb-cad/schema/testing'
+import { aLayoutOutput, aLayoutRow, aPolygonRegion } from '@keeb-cad/schema/testing'
 
 import type { Point } from '../viewport/types'
 import type { LayoutRowOf } from './types'
@@ -42,7 +42,7 @@ export function groupRow(
   return aLayoutRow({
     kind: 'group',
     part: -1,
-    border: aBorder([aBorderRegion({ outer, holes })]),
+    border: [aPolygonRegion({ outer, holes })],
     ...fields,
   })
 }

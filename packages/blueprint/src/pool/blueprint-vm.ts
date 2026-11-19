@@ -10,6 +10,7 @@ import type {
   BuildLaneArgs,
   ConvertHandle,
   LaneArgs,
+  LaneContract,
   LaneFailed,
   LaneFailure,
   LaneOutput,
@@ -69,7 +70,9 @@ export class BlueprintVm {
       return run.failure === undefined
         ? decodeLaneResult(answer.value)
             .flatMap((value) => checkLaneOutputs(contract, value))
-            .flatMap((checked) => this.#convert(checked, calls.convertHandle, handles, run))
+            .flatMap((checked) =>
+              this.#convert(contract, checked, calls.convertHandle, handles, run),
+            )
         : Result.err(run.failure)
     } finally {
       handles.free()
@@ -243,16 +246,19 @@ export class BlueprintVm {
   }
 
   #convert(
+    contract: LaneContract,
     checked: LaneOutput,
     convertHandle: ConvertHandle,
     handles: HandleTable,
     run: LaneRun,
   ): Result<LaneOutput, LaneFailed> {
     const outputs: Record<string, unknown> = {}
-    for (const [name, value] of Object.entries(checked.outputs)) {
-      const converted = Array.isArray(value)
-        ? this.#convertEach(name, value as unknown[], convertHandle, handles)
-        : convertHandle(name, value, handles)
+    for (const { name, count } of contract.outputs) {
+      const value = checked.outputs[name]
+      const converted =
+        count === 'any'
+          ? this.#convertEach(name, value as unknown[], convertHandle, handles)
+          : convertHandle(name, value, handles)
       if (converted.isErr()) {
         return Result.err({ kind: 'lane-failed', cause: 'role', output: name })
       }

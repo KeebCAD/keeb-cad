@@ -21,11 +21,22 @@ export default defineBlueprint({
     parts: {
       pulls: [],
       queries: [],
-      outputs: [{ name: 'rectangle', role: 'rectangle', kind: 'shape', count: 'one' }],
+      outputs: [{ name: 'slot-space', role: 'slot-space', kind: 'shape', count: 'one' }],
       run: ({ inputs }) => {
         const factor = SIZE_FACTORS[inputs.size]
         if (factor === undefined) throw new Error(`No keycap size "${inputs.size}".`)
-        return { outputs: { rectangle: { w: KEYCAP_MM * factor, h: KEYCAP_MM } }, problems: [] }
+        const x = (KEYCAP_MM * factor) / 2
+        const y = KEYCAP_MM / 2
+        const keycap = {
+          outer: [
+            { x: -x, y: -y },
+            { x, y: -y },
+            { x, y },
+            { x: -x, y },
+          ],
+          holes: [],
+        }
+        return { outputs: { 'slot-space': [keycap] }, problems: [] }
       },
     },
   },

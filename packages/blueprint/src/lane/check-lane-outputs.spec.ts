@@ -10,13 +10,13 @@ const roleFailed = (output: string) => errOf({ kind: 'lane-failed', cause: 'role
 
 describe('checkLaneOutputs', () => {
   it.each([
-    ['0 values', [], roleFailed('hole')],
-    ['1 value', 7, okOf({ outputs: { hole: 7 }, problems: [] })],
-    ['2 values', [1, 2], roleFailed('hole')],
-    ['a list holding 1 value', [7], roleFailed('hole')],
-  ])('a one output given %s', (_role, value, expected) => {
+    ['a bare value', 7],
+    ['an empty list', []],
+    ['a list holding 1 value', [7]],
+    ['a list holding 2 values', [1, 2]],
+  ])('accepts a one output given %s as it is', (_role, value) => {
     expect(outcomeOf(checkLaneOutputs(one, { outputs: { hole: value }, problems: [] }))).toEqual(
-      expected,
+      okOf({ outputs: { hole: value }, problems: [] }),
     )
   })
 

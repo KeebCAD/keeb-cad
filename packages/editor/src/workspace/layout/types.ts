@@ -1,4 +1,4 @@
-import type { LayoutRow } from '@keeb-cad/protocol'
+import type { LayoutRow, PartsRow } from '@keeb-cad/protocol'
 import type { Id, PlacementId } from '@keeb-cad/schema'
 
 import type { GroupBorderShown } from '../../group-border/types'
@@ -13,8 +13,7 @@ type PlacedCommon = {
 
 export type PlacedSlot = PlacedCommon & {
   kind: 'slot'
-  w: number
-  h: number
+  slotSpace: PartsRow
   fit: LayoutRow['fit']
 }
 

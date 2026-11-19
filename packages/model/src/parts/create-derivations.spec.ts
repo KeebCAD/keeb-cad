@@ -41,6 +41,7 @@ import {
   aSidePartOverride,
   aSlot,
   aSlotAnchor,
+  aSlotSpace,
   aSplitForm,
   aUnibodyForm,
   aVersion,
@@ -61,8 +62,20 @@ const KEY_RUN = `key@${argumentHash({})}`
 const OTHER_RUN = `other@${argumentHash({})}`
 const CHOC_KEY = aBlueprintId('lib:blueprint/choc-key')
 
-const rectangle = (value: unknown): Answer => ({ value })
-const WIDE = { w: 27, h: 18 }
+const slotSpace = (value: unknown): Answer => ({ value })
+const WIDE = aSlotSpace({ width: 27 })
+// The app-defined stand-in run's slot space.
+const STAND_IN_RECTANGLE = [
+  {
+    outer: [
+      { x: -9, y: -9 },
+      { x: 9, y: -9 },
+      { x: 9, y: 9 },
+      { x: -9, y: 9 },
+    ],
+    holes: [],
+  },
+]
 // Borders are rounded to 1e-6 mm.
 const BORDER_DIGITS = 6
 
@@ -70,7 +83,7 @@ type Answer = { value: unknown } | { failure: LaneFailure }
 
 class FakeRunner extends LaneRunner {
   answers: Answer[] = []
-  fallback: Answer = rectangle({ w: 18, h: 18 })
+  fallback: Answer = slotSpace(aSlotSpace())
   runs: unknown[] = []
   readonly ready = shallowRef(0)
 
@@ -86,10 +99,10 @@ class FakeRunner extends LaneRunner {
     this.runs.push(canonical)
     const answer = this.answers.shift() ?? this.fallback
     if ('failure' in answer) return Result.err(answer.failure)
-    const converted = calls.convertHandle('rectangle', answer.value, {} as never)
+    const converted = calls.convertHandle('slot-space', answer.value, {} as never)
     return converted.isErr()
-      ? Result.err({ kind: 'lane-failed', cause: 'role', output: 'rectangle' })
-      : Result.ok({ outputs: { rectangle: converted.value }, problems: [] })
+      ? Result.err({ kind: 'lane-failed', cause: 'role', output: 'slot-space' })
+      : Result.ok({ outputs: { 'slot-space': converted.value }, problems: [] })
   }
 }
 
@@ -151,11 +164,11 @@ function unresolved(severity: 'warning' | 'error') {
 }
 
 describe('createDerivations', () => {
-  it('runs a part a slot uses and holds its rectangle', async () => {
+  it('runs a part a slot uses and holds its slot space', async () => {
     const { parts } = await arrange(withLayout(onSlots({ id: slotId })))
 
     expect(parts.value).toMatchObject({
-      output: { ids: [KEY_RUN], rows: [{ w: 18, h: 18 }] },
+      output: { ids: [KEY_RUN], rows: [aSlotSpace()] },
       slots: { [slotId]: { run: KEY_RUN, fit: 'fitted' } },
       violations: [],
     })
@@ -343,8 +356,37 @@ describe('createDerivations', () => {
       }),
     )
 
-    expect(parts.value.output).toEqual({ ids: ['stand-in'], rows: [{ w: 18, h: 18 }] })
+    expect(parts.value.output).toEqual({ ids: ['stand-in'], rows: [STAND_IN_RECTANGLE] })
     expect(parts.value.slots[slotId]).toEqual({ run: 'stand-in', fit: 'stand-in' })
+  })
+
+  it('steps a chain of slots on the app-defined stand-in by its 18 mm, when neither part nor default part resolves', async () => {
+    const expectedSecondX = 19
+    const layout = aLayout({
+      children: [
+        aChainGroup({
+          id: anId('row'),
+          children: [
+            aSlot({ id: anId('a'), part: aPartRef('gone') }),
+            aSlot({ id: anId('b'), part: aPartRef('gone') }),
+          ],
+        }),
+      ],
+    })
+    const { parts, placements } = await arrange(
+      withLayout(layout, { meta: aMeta({ defaultPart: aPartRef('missing') }), parts: [] }),
+    )
+
+    const rowOf = (id: string) => placements.value.rows[placements.value.ids.indexOf(id)]
+    expect({
+      output: parts.value.output,
+      a: rowOf('left/a')?.frame.x,
+      b: rowOf('left/b')?.frame.x,
+    }).toEqual({
+      output: { ids: ['stand-in'], rows: [STAND_IN_RECTANGLE] },
+      a: 0,
+      b: expectedSecondX,
+    })
   })
 
   it('sorts the runs by compareCodeUnits, each row at its id', async () => {
@@ -359,14 +401,11 @@ describe('createDerivations', () => {
         { parts: [aBlueprintDesignPart(), zed, abe] },
       ),
     )
-    runner.answers = [rectangle({ w: 30, h: 18 }), rectangle({ w: 10, h: 18 })]
+    runner.answers = [slotSpace(aSlotSpace({ width: 30 })), slotSpace(aSlotSpace({ width: 10 }))]
 
     expect(parts.value.output).toEqual({
       ids: [`abe@${argumentHash({})}`, `zed@${argumentHash({})}`],
-      rows: [
-        { w: 10, h: 18 },
-        { w: 30, h: 18 },
-      ],
+      rows: [aSlotSpace({ width: 10 }), aSlotSpace({ width: 30 })],
     })
   })
 
@@ -411,7 +450,7 @@ describe('createDerivations', () => {
         withLayout(onSlots({ id: slotId, inputs: { size: '1.5u' } })),
         chocKey(),
       )
-      runner.fallback = rectangle(WIDE)
+      runner.fallback = slotSpace(WIDE)
 
       const run = `key@${argumentHash({ size: '1.5u' })}`
       expect({
@@ -570,20 +609,13 @@ describe('createDerivations', () => {
     })
   })
 
-  describe('the rectangle value', () => {
+  describe('the slot space value', () => {
     it.each([
-      ['w just below 0', { w: -0.001, h: 18 }, ['stand-in'], ['lane-failed']],
-      ['w on 0', { w: 0, h: 18 }, ['stand-in'], ['lane-failed']],
-      ['w just above 0', { w: 0.001, h: 18 }, [KEY_RUN], []],
-      ['h just below 0', { w: 18, h: -0.001 }, ['stand-in'], ['lane-failed']],
-      ['h on 0', { w: 18, h: 0 }, ['stand-in'], ['lane-failed']],
-      ['h just above 0', { w: 18, h: 0.001 }, [KEY_RUN], []],
-      ['a non-number w', { w: 'x', h: 18 }, ['stand-in'], ['lane-failed']],
-      ['no h', { w: 18 }, ['stand-in'], ['lane-failed']],
-      ['an empty object', {}, ['stand-in'], ['lane-failed']],
+      ['well-formed regions', aSlotSpace(), [KEY_RUN], []],
+      ['the former rectangle', { w: 18, h: 18 }, ['stand-in'], ['lane-failed']],
     ])('on %s', async (_role, value, expectedIds, expectedKinds) => {
       const { parts, runner } = await arrange(withLayout(onSlots({ id: slotId })))
-      runner.fallback = rectangle(value)
+      runner.fallback = slotSpace(value)
 
       const rowIds = parts.value.output.ids
 

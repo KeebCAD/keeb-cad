@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 
 import { FLATTEN_TOL } from './flatten-tolerance'
 import { growAndUnite } from './grow-and-unite'
-import type { GrownEnvelope, Point, PolygonRegion } from './types'
+import { signedArea } from './signed-area'
+import type { GrownRegions, Point, PolygonRegion } from './types'
 
 const DIGITS = 6
 const DISTANCE = 1
@@ -12,20 +13,43 @@ const SIDE = 10
 // strays by the whole arc tolerance, so that rounding can carry a chord's midpoint past it too.
 const VERTEX_TOLERANCE = 1e-6
 
-function square(x: number, y: number, distance = DISTANCE): GrownEnvelope {
+function square(x: number, y: number, distance = DISTANCE): GrownRegions {
   return {
-    envelope: [
-      { x, y },
-      { x: x + SIDE, y },
-      { x: x + SIDE, y: y + SIDE },
-      { x, y: y + SIDE },
+    regions: [
+      {
+        outer: [
+          { x, y },
+          { x: x + SIDE, y },
+          { x: x + SIDE, y: y + SIDE },
+          { x, y: y + SIDE },
+        ],
+        holes: [],
+      },
     ],
     distance,
   }
 }
 
+// The 10 × 10 square at the origin with a clockwise 2 × 2 hole at its centre.
+const HOLED_SQUARE = {
+  outer: [
+    { x: 0, y: 0 },
+    { x: SIDE, y: 0 },
+    { x: SIDE, y: SIDE },
+    { x: 0, y: SIDE },
+  ],
+  holes: [
+    [
+      { x: 4, y: 4 },
+      { x: 4, y: 6 },
+      { x: 6, y: 6 },
+      { x: 6, y: 4 },
+    ],
+  ],
+}
+
 // The 10 × 10 squares filling (0, 0)–(width, height) but those at the given corners.
-function blockWithout(width: number, height: number, missing: readonly Point[]): GrownEnvelope[] {
+function blockWithout(width: number, height: number, missing: readonly Point[]): GrownRegions[] {
   const corners = Array.from({ length: (width / SIDE) * (height / SIDE) }, (_, index) => ({
     x: (index % (width / SIDE)) * SIDE,
     y: Math.floor(index / (width / SIDE)) * SIDE,
@@ -33,15 +57,6 @@ function blockWithout(width: number, height: number, missing: readonly Point[]):
   return corners
     .filter((corner) => missing.every(({ x, y }) => x !== corner.x || y !== corner.y))
     .map(({ x, y }) => square(x, y))
-}
-
-function signedArea(loop: readonly Point[]): number {
-  let twice = 0
-  for (const [index, { x, y }] of loop.entries()) {
-    const next = loop[(index + 1) % loop.length] as Point
-    twice += x * next.y - next.x * y
-  }
-  return twice / 2
 }
 
 function bounds(loop: readonly Point[]) {
@@ -71,8 +86,8 @@ function distanceToSquare({ x, y }: Point): number {
   return Math.hypot(dx, dy)
 }
 
-function regionsOf(envelopes: readonly GrownEnvelope[]): PolygonRegion[] {
-  return growAndUnite(envelopes).getOr([])
+function regionsOf(grown: readonly GrownRegions[]): PolygonRegion[] {
+  return growAndUnite(grown).getOr([])
 }
 
 describe('growAndUnite', () => {
@@ -147,13 +162,32 @@ describe('growAndUnite', () => {
     }).toEqual({ vertices: true, vertexWithinTolerance: true, chordsWithinTolerance: true })
   })
 
+  it('keeps a region with a hole as it is at distance 0', () => {
+    expect(growAndUnite([{ regions: [HOLED_SQUARE], distance: 0 }])).toEqual(
+      Option.some([HOLED_SQUARE]),
+    )
+  })
+
+  it('shrinks a hole by the distance its outer loop grows', () => {
+    const regions = regionsOf([{ regions: [HOLED_SQUARE], distance: 0.5 }])
+
+    expect(
+      regions.map(({ outer, holes }) => ({ outer: bounds(outer), holes: holes.map(bounds) })),
+    ).toEqual([
+      { outer: closeBounds(-0.5, -0.5, 10.5, 10.5), holes: [closeBounds(4.5, 4.5, 5.5, 5.5)] },
+    ])
+  })
+
   it('gives no regions for nothing to grow', () => {
     expect(growAndUnite([])).toEqual(Option.some([]))
   })
 
-  it('gives none for an envelope with a NaN coordinate', () => {
-    const envelope = square(0, 0)
-    const broken = { ...envelope, envelope: [{ x: NaN, y: 0 }, ...envelope.envelope.slice(1)] }
+  it('gives none for a region with a NaN coordinate', () => {
+    const [region] = square(0, 0).regions as [PolygonRegion]
+    const broken = {
+      regions: [{ ...region, outer: [{ x: NaN, y: 0 }, ...region.outer.slice(1)] }],
+      distance: DISTANCE,
+    }
 
     expect(growAndUnite([broken])).toEqual(Option.none())
   })

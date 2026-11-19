@@ -39,7 +39,7 @@ const usingA = { uses: [{ id: A, minVersion: min }] }
 const rules = (...declarations: BlueprintDeclaration[]) =>
   checkLibraryRules(declarations.map((declaration) => ({ declaration, visibleUses: [] })))
 
-const rectangle = { name: 'r', role: 'rectangle', kind: 'shape', count: 'one' } as const
+const slotSpace = { name: 's', role: 'slot-space', kind: 'shape', count: 'one' } as const
 
 const partsWith = (...counts: ('one' | 'any')[]) =>
   aBlueprintDeclaration({
@@ -47,28 +47,28 @@ const partsWith = (...counts: ('one' | 'any')[]) =>
     lanes: {
       parts: aLaneDeclaration({
         outputs: counts.map((count, index) => ({
-          ...rectangle,
+          ...slotSpace,
           count,
-          name: `r${String(index)}`,
+          name: `s${String(index)}`,
         })),
       }),
     },
   })
 
-const rectangleProblem = (found: string) =>
-  `lib:blueprint/a: a part blueprint declares exactly one rectangle of count one, found: ${found}`
+const slotSpaceProblem = (found: string) =>
+  `lib:blueprint/a: a part blueprint declares exactly one slot-space of count one, found: ${found}`
 
 describe('checkLibraryRules', () => {
   it.each<[string, ('one' | 'any')[], string[]]>([
-    ['no rectangle', [], [rectangleProblem('')]],
-    ['one rectangle', ['one'], []],
-    ['two rectangles', ['one', 'one'], [rectangleProblem('one, one')]],
-    ['one rectangle of count any', ['any'], [rectangleProblem('any')]],
+    ['no slot-space', [], [slotSpaceProblem('')]],
+    ['one slot-space', ['one'], []],
+    ['two slot-spaces', ['one', 'one'], [slotSpaceProblem('one, one')]],
+    ['one slot-space of count any', ['any'], [slotSpaceProblem('any')]],
   ])('on a part blueprint with %s', (_role, counts, expected) => {
     expect(rules(partsWith(...counts))).toEqual(expected)
   })
 
-  it('passes a blueprint with no parts lane and no rectangle', () => {
+  it('passes a blueprint with no parts lane and no slot-space', () => {
     expect(rules(noLanes(A))).toEqual([])
   })
 

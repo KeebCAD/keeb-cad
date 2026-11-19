@@ -1,5 +1,5 @@
 import type { PartsOutput } from '@keeb-cad/schema'
-import { aPartsOutput } from '@keeb-cad/schema/testing'
+import { aPartsOutput, aPolygonRegion, aSlotSpace } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { packPartsOutput, readPartsRow } from './parts-output-codec'
@@ -12,15 +12,32 @@ function roundTrip(output: PartsOutput): PartsOutput {
 describe('the parts output codec', () => {
   it.each([
     ['no rows', aPartsOutput({ ids: [], rows: [] })],
-    ['one row', aPartsOutput({ ids: ['key@a'], rows: [{ w: 18, h: 17 }] })],
+    ['one row', aPartsOutput({ ids: ['key@a'], rows: [aSlotSpace({ width: 18, height: 17 })] })],
     [
-      'three rows',
+      'three rows, one with a holed region beside another',
       aPartsOutput({
         ids: ['abe@a', 'key@a', 'stand-in'],
         rows: [
-          { w: 10, h: 18 },
-          { w: 22.728, h: 0.001 },
-          { w: 18, h: 18 },
+          aSlotSpace({ width: 10 }),
+          [
+            aPolygonRegion({
+              holes: [
+                [
+                  { x: 0.25, y: 0.25 },
+                  { x: 0.25, y: 0.5 },
+                  { x: 0.5, y: 0.5 },
+                ],
+              ],
+            }),
+            aPolygonRegion({
+              outer: [
+                { x: 5, y: 0 },
+                { x: 6, y: 0 },
+                { x: 22.728, y: 0.001 },
+              ],
+            }),
+          ],
+          aSlotSpace(),
         ],
       }),
     ],
@@ -34,7 +51,13 @@ describe('the parts output codec', () => {
     const first = packPartsOutput(output)
     const second = packPartsOutput(output)
 
-    expect(first.w.buffer).not.toBe(second.w.buffer)
-    expect(first.h.buffer).not.toBe(second.h.buffer)
+    const shared = (column: 'rowLoops' | 'loopPoints' | 'loopHole' | 'points') =>
+      first[column].buffer === second[column].buffer
+    expect({
+      rowLoops: shared('rowLoops'),
+      loopPoints: shared('loopPoints'),
+      loopHole: shared('loopHole'),
+      points: shared('points'),
+    }).toEqual({ rowLoops: false, loopPoints: false, loopHole: false, points: false })
   })
 })

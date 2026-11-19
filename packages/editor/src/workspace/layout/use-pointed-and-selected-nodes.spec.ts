@@ -7,6 +7,7 @@ import {
   aPartsOutput,
   aPlacementId,
   aSlot,
+  aSlotSpace,
 } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 import { createApp } from 'vue'
@@ -19,7 +20,7 @@ import { mountShell } from '../../testing/mount-shell'
 import { postLayoutSet } from '../../testing/post-layout-set'
 import { usePointedAndSelectedNodes } from './use-pointed-and-selected-nodes'
 
-const PARTS = aPartsOutput({ ids: ['key@a'], rows: [{ w: 18, h: 18 }] })
+const PARTS = aPartsOutput({ ids: ['key@a'], rows: [aSlotSpace()] })
 
 // Keys a and b and group g placed, on Outline so no canvas points at anything; the hovered and
 // selected ids are set as the canvas and the Tree set them.

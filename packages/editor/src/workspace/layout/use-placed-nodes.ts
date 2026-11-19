@@ -27,8 +27,8 @@ export function usePlacedNodes(): ComputedRef<PlacedNode[]> {
       if (!row.placed || id === rootId) return []
       const common = { id, key, frame: row.frame, anchorAt: row.anchorAt }
       if (row.kind === 'group') return [{ ...common, kind: 'group', border: row.border }]
-      const { w, h } = readPartsRow(parts, row.part)
-      return [{ ...common, kind: 'slot', w, h, fit: row.fit }]
+      const slotSpace = readPartsRow(parts, row.part)
+      return [{ ...common, kind: 'slot', slotSpace, fit: row.fit }]
     })
   })
 }

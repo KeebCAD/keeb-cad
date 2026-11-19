@@ -1,6 +1,6 @@
 import type { DesignStore } from '@keeb-cad/design'
 import type { Design, LayoutOutput, PartsOutput } from '@keeb-cad/schema'
-import { aPartsOutput } from '@keeb-cad/schema/testing'
+import { aPartsOutput, aSlotSpace } from '@keeb-cad/schema/testing'
 import type { FakeWorker } from '@keeb-cad/workers/testing'
 import { expect } from 'vitest'
 
@@ -11,7 +11,7 @@ import { mountShell } from './mount-shell'
 import { nextFrames } from './next-frames'
 import { postLayoutSet } from './post-layout-set'
 
-const PARTS = aPartsOutput({ ids: ['key@a'], rows: [{ w: 18, h: 18 }] })
+const PARTS = aPartsOutput({ ids: ['key@a'], rows: [aSlotSpace()] })
 
 export async function arrangeLayoutCanvas(design: Design) {
   const shell = await mountShell({ path: '/design/corne/layout', design, spawn: true })

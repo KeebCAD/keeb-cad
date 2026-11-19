@@ -2,8 +2,8 @@ import * as v from 'valibot'
 import { describe, expect, it } from 'vitest'
 
 import { layoutOutputSchema } from '../layout-output'
-import { aBorder } from './border'
 import { aLayoutOutput, aLayoutRow } from './layout-output'
+import { aPolygonRegion } from './polygon-region'
 
 describe('aLayoutOutput', () => {
   it('builds a value its schema accepts', () => {
@@ -39,7 +39,7 @@ describe('aLayoutRow', () => {
     ['part', { part: 7 }],
     ['fit', { fit: 'stand-in' as const }],
     ['placed', { placed: false }],
-    ['border', { border: aBorder() }],
+    ['border', { border: [aPolygonRegion()] }],
   ])('keeps the %s it is given', (_field, fields) => {
     expect(aLayoutRow(fields)).toMatchObject(fields)
   })

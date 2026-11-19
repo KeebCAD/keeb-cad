@@ -1,14 +1,7 @@
 import { AddSlot, DeleteNode } from '@keeb-cad/commands'
 import { expectOk } from '@keeb-cad/result/testing'
 import type { Node } from '@keeb-cad/schema'
-import {
-  aBorder,
-  aFreeGroup,
-  aLayoutRow,
-  anId,
-  aPlacementId,
-  aSlot,
-} from '@keeb-cad/schema/testing'
+import { aFreeGroup, aLayoutRow, anId, aPlacementId, aSlot } from '@keeb-cad/schema/testing'
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { page, userEvent } from 'vitest/browser'
 import { nextTick } from 'vue'
@@ -71,7 +64,7 @@ const group = (id: string, children: Node[]) => aFreeGroup({ id: anId(id), child
 const slot = (id: string) => aSlot({ id: anId(id) })
 
 function emptyGroupRow(fields: Partial<LayoutRowOf> = {}): LayoutRowOf {
-  return aLayoutRow({ kind: 'group', part: -1, border: aBorder([]), ...fields })
+  return aLayoutRow({ kind: 'group', part: -1, border: [], ...fields })
 }
 
 const HOVERED_C = {

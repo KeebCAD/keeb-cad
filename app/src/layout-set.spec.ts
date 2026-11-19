@@ -82,7 +82,7 @@ describe('the Layout set on main', () => {
     const { seq } = committed(store)
     expect({
       seqs: seqs(lifecycle),
-      parts: lifecycle.parts.map(({ output }) => [output.ids, output.w.length]),
+      parts: lifecycle.parts.map(({ output }) => [output.ids, output.rowLoops.length - 1]),
       layout: lifecycle.layout.map(({ output }) => [output.ids, output.x.length]),
     }).toEqual({
       seqs: { parts: Option.some(seq), layout: Option.some(seq) },

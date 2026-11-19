@@ -1,8 +1,9 @@
 import type { PartsOutput, ResolvedParts } from '../types'
+import { aSlotSpace } from './polygon-region'
 
 export function aPartsOutput({
   ids = ['stand-in'],
-  rows = [{ w: 18, h: 18 }],
+  rows = [aSlotSpace()],
 }: Partial<PartsOutput> = {}): PartsOutput {
   return { ids, rows }
 }
