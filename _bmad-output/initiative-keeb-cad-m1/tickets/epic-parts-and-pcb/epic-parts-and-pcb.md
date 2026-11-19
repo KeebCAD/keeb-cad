@@ -14,7 +14,7 @@ risk: medium
 
 ## Description
 
-The rest of Corney Island's library parts and footprints and Corney's key part (the library key blueprint, which gains its footprints, pins and fixed tracks here) place every footprint and keep-out on the PCB, whose edge is composed from the outline; changing the keys' part or its inputs updates every key's footprints; part cutouts move with their part in plate, PCB and case; the PCB follows key moves live and exports a KiCad 10 project as the escape hatch.
+The rest of Corney Island's library parts and footprints and Corney's key part (the library key blueprint, which gains its footprints, pins and fixed tracks here) place every footprint and clearance volume on the PCB, whose edge is composed from the outline; changing the keys' part or its inputs updates every key's footprints; part cutouts move with their part in plate, PCB and case; the PCB follows key moves live and exports a KiCad 10 project as the escape hatch.
 
 ## Outcome
 
@@ -22,7 +22,7 @@ For Sergii: Corney's PCB shows every footprint placed from its parts, follows ke
 
 ## Done when
 
-- Every footprint and keep-out is placed from the slots' parts; the PCB edge comes from the outline.
+- Every footprint and clearance volume is placed from the slots' parts; the PCB edge comes from the outline.
 - Changing the keys' part, or its inputs, updates every key's footprints.
 - The KiCad 10 project export opens in KiCad.
 - The slice scenario and one e2e journey pass.

@@ -83,7 +83,7 @@ after = [{ epic = 18, needs = "drawn shapes for the MCU cover and any exact outl
 id = 6
 slug = "epic-parts-and-pcb"
 title = "Footprints on the PCB"
-description = "The rest of Corney Island's library parts and footprints and Corney's design-local key part place every footprint and keep-out on the PCB, whose edge is composed from the outline; isolated part mode edits a design-local part's components and tracks, and changing the key's part updates every key's footprints; part cutouts move with their part in plate, PCB and case; the PCB follows key moves live and exports a KiCad 10 project as the escape hatch."
+description = "The rest of Corney Island's library parts and footprints and Corney's design-local key part place every footprint and clearance volume on the PCB, whose edge is composed from the outline; isolated part mode edits a design-local part's components and tracks, and changing the key's part updates every key's footprints; part cutouts move with their part in plate, PCB and case; the PCB follows key moves live and exports a KiCad 10 project as the escape hatch."
 covers = ["R3", "R8", "R9", "R11", "R13"]
 after = [{ epic = 19, needs = "the part schema and part cutouts" }]
 

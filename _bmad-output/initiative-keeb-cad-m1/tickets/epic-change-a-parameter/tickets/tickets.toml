@@ -1,6 +1,6 @@
 # Stories of epic-change-a-parameter. Table order is build order.
 
-next_id = 18
+next_id = 19
 
 [[entry]]
 id = 1
@@ -58,22 +58,34 @@ hitl = false
 risk = "low"
 
 [[entry]]
+id = 18
+type = "story"
+title = "Slot space replaces the rectangle"
+description = "The built code moves from the rectangle role and plain { w, h } to the slot-space role and PolygonRegion[] (spine AD-5, AD-3, AD-16, Data Schema PartsOutput and PolygonRegion; Sergii with Winston 2026-11-19, e1fc4b0): lib:blueprint/choc-key's source declares and returns its keycap as a slot-space output, and the library build's check (library/compile/check-library-rules.ts, today exactly one rectangle of count one) requires exactly one slot-space; the parts lane pulls the one slot-space output (model's parts-lane-calls.ts); PartsOutput.rows become PolygonRegion[][], packed by one shared PolygonRegion[] codec in protocol, extracted from the layout output's border packing (packBorders and readBorder in layout-output-codec.ts, today private to it), which both outputs then use, not a second copy; a chain steps by the extent of each child's slot space along its axis in the child's frame before its rotation; attach points sit on the slot space's bounding box; the slot's frame origin is the part's own origin, the slot space drawn in that frame, not centred by definition; the canvas draws each slot space as its polygon at the slot's frame; group borders grow each slot's slot space; the lane-declaration test builder declares slot-space. The app-defined stand-in run's slot space is the 18 x 18 mm rectangle. No design-file change."
+verify = "Corney's placements, group borders and canvas keys are unchanged (choc keycaps are rectangles centred on their frames); a slot whose part declares an L-shaped slot space steps its next chain sibling by the L's extent along the axis, puts corner-bl on the L's bounding box, and draws as an L; a part whose slot space sits off its origin turns about that origin, so rotating it keeps its origin in place; a slot whose part doesn't resolve still steps by the 18 x 18 mm stand-in."
+covers = ["R3", "R6"]
+after = []
+hitl = false
+risk = "medium"
+
+[[entry]]
 id = 7
 type = "story"
 title = "Library parts pinned by version, with setPart"
-description = "A library part that isn't a blueprint (the M2 screw) pinned in library-versions by id and version; it ships its rectangle as plain data { w, h } and the parts lane outputs it as a fixed run. The setPart command (one undo step) sets a slot's part: it pins the newest released version when the part is unpinned and leaves other pins; unused pins stay; it clears slot inputs the new part doesn't mark per-slot; null clears the slot to inherit. 19.2's Part picker calls it. Cutouts, keep-outs and pins arrive with the plates and PCB stories (spine Data Schema, Recorded, not typed; 2026-11-01)."
-verify = "setPart puts the M2 screw in a slot as one undo step, pinning its newest version in library-versions and leaving the key's pin; the screw's slot steps by its plain rectangle; a slot input the new part doesn't mark per-slot is cleared; setPart null makes the slot inherit again and the screw's pin stays; save and reopen are byte-identical."
+description = "A library part without a blueprint (the M2 screw, lib:part/m2-screw v1) ships as plain data, LibraryPart { id, version, outputs }: the role-tagged outputs a lane declares, with their values, here its one slot-space output (PolygonRegion[]); library's LibraryData gains parts, and the parts lane outputs it as a fixed run under its PartId alone. layout.setPart { ids, part | null } is one command and one undo step for any number of slots: it sets each listed slot's part, pinning the library's highest version of a library part when it is unpinned and never moving an existing pin; unused pins stay; it clears each listed slot's inputs its resolved part (with null, the part it now inherits) doesn't mark per-slot; null clears the slot to inherit; an id naming no slot, or a part the design or the library lacks, refuses the whole command with unknown-target. 19.2's Part picker calls it. The screw's volumes, cutouts and pins arrive with the stories that first read them (spine AD-2, AD-5, Data Schema LibraryPart and PartsOutput; Sergii with Winston 2026-11-19, e1fc4b0)."
+verify = "setPart puts the M2 screw in two slots as one undo step, pinning lib:part/m2-screw at the library's highest version in library-versions and leaving the key's pin; each screw slot steps its next chain sibling by the extent of the screw's slot space; a slot input the screw doesn't mark per-slot is cleared; setPart null makes the slot inherit again and the screw's pin stays; a group id, and a part the library lacks, are each refused with unknown-target; save and reopen are byte-identical."
 covers = ["R3", "R5", "R6"]
-after = ["13.18"]
+after = [18, "13.18"]
 hitl = false
 risk = "medium"
+unknown = "The M2 screw's slot-space size: Sergii picks its source (the screw head's or the standoff's diameter, from a cited datasheet) before this story is planned (Sofia 2026-11-19)."
 
 [[entry]]
 id = 4
 type = "story"
 title = "Overlapping keys report overlap"
-description = "The layout stage reports overlap between part envelopes, recomputed live on every resolve. The M1 envelope is the part's rectangle with no height range, typed here (spine Data Schema). An intersection deeper than 0.001 mm is an overlap error reporting the separating depth; closer than the 0.5 mm clearance, touching included, is an overlap warning reporting the gap; the clearance is a design-rules constant now, a design rule later (AD-20). Pairs are checked within a side and across the centre, fitted and stand-in slots alike, empty slots skipped; ids are side-qualified, and the violation's region holds the intersection, or the gap strip for a warning (polygon, model mm). The message comes from model's one function for the kind. 14.6 shows its violations."
-verify = "Rotating Corney's thumb fan into its neighbour reports an overlap error naming both side-qualified ids, the separating depth and its region; undoing removes it. Rows on each threshold: intersections of 0.0009, 0.001 and 0.0011 mm (error only above 0.001); gaps of 0.49, 0.5 and 0.51 mm (warning below 0.5); touching caps a warning with gap 0; a stand-in overlapping a key reported; an empty slot skipped; an overlap across the centre reported."
+description = "The layout stage reports overlap between parts, recomputed live on every resolve: a part's body volumes against another part's body or clearance volumes, their regions intersecting and their height ranges meeting (spine AD-5 Volumes, Data Schema Volume; Sergii with Winston 2026-11-19, e1fc4b0). schema's lane output kind 'envelope' becomes 'volume' and the overlap violation kind and its region are typed here (spine Data Schema); lib:blueprint/choc-key v1 gains its body volumes (keycap above the plate, switch body below it, hotswap socket under the PCB), measured from the Kailh Choc v2 datasheet and its keycap's spec, cited in the plan. An intersection deeper than 0.001 mm is an overlap error reporting the separating depth; closer than the 0.5 mm clearance, touching included, is an overlap warning reporting the gap; the clearance is a design-rules constant now, a design rule later (AD-20). Pairs are checked within a side and across the centre; a stand-in slot uses its default part's volumes; the app-defined stand-in and slots emptied by an override have no volumes and are skipped; ids are side-qualified, and the violation's region holds the intersection, or the gap strip for a warning (polygon, model mm). The message comes from model's one function for the kind. 14.6 shows its violations."
+verify = "Rotating Corney's thumb fan into its neighbour reports an overlap error naming both side-qualified ids, the separating depth and its region; undoing removes it. Rows on each threshold: intersections of 0.0009, 0.001 and 0.0011 mm (error only above 0.001); gaps of 0.49, 0.5 and 0.51 mm (warning below 0.5); touching caps a warning with gap 0; two bodies whose regions intersect but whose height ranges don't meet report nothing; a stand-in borrowing the default part overlapping a key reported; an app-defined stand-in and an emptied slot skipped; an overlap across the centre reported."
 covers = ["R6"]
 after = ["13.4"]
 hitl = false
@@ -106,7 +118,7 @@ id = 11
 type = "story"
 title = "Design settings and a group's default part"
 description = "With nothing selected, Design settings show the form read-only (split, reversible board) and the default part (key, created by the NewDesign action, 13.18) beside 10's gap fields; a selected group shows an optional default-part override showing inherits <value>, typed to override and cleared to inherit (EXPERIENCE.md, Design settings row). This story builds layout.setDefaultPart { part } for the design's default part, its input taking no null, and layout.setGroupDefaultPart { ids, part | null } for groups, null clearing a group's to inherit; both pin a library part as setPart does and clear, in the same command, the inputs the new part doesn't mark per-slot on every slot inheriting the changed default (spine AD-2, Sergii 2026-11-18). Uses 13.18's part resolution, group override included. Split from the old 14.5 (Sergii 2026-11-18)."
-verify = "With nothing selected the inspector shows the form read-only and the default part key; setting a group's default part re-resolves its slots with no part of their own and is one undo step; clearing the design's default part is refused (input-invalid) and setGroupDefaultPart null on a group clears it to inherit, the field showing inherits <value>; a library part not yet pinned is pinned at its newest released version."
+verify = "With nothing selected the inspector shows the form read-only and the default part key; setting a group's default part re-resolves its slots with no part of their own and is one undo step; clearing the design's default part is refused (input-invalid) and setGroupDefaultPart null on a group clears it to inherit, the field showing inherits <value>; a library part not yet pinned is pinned at the library's highest version."
 covers = ["R4", "R8"]
 after = [10, 7]
 hitl = false

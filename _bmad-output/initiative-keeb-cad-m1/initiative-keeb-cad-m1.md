@@ -36,7 +36,7 @@ For Sergii as builder: one layout edit updates every output of a design, and bot
   - A key or part that sticks out of the outline is reported, never clipped.
   - Corney Island's outline is reproduced as the same shape within ±0.05 mm, by a drawn shape if derived shapes can't match it.
 - R8 (prd FR-8): Place curated library parts in slots anchored to any node. The library covers everything Corney Island needs, with footprints from keeb-cad's own library carrying attribution.
-- R9 (prd FR-9): Parts bring their cutouts and keep-outs for plate, PCB and case; user cutouts are shapes subtracted with booleans. Moving a part moves its cutouts in every output together.
+- R9 (prd FR-9): Parts bring their cutouts and clearance volumes (the PRD's keep-outs) for plate, PCB and case; user cutouts are shapes subtracted with booleans. Moving a part moves its cutouts in every output together.
 - R10 (prd FR-10): Define several plates (Corney: switch plate, backplate, MCU cover) as shapes that update live. Each exports as DXF/SVG or as gerbers.
 - R11 (prd FR-11): The PCB edge comes from the outline, footprints from slot parts, and nets and matrix from layout, parts and per-side overrides. Moving a key updates its footprints and nets. The user can override matrix rows/columns, MCU pins and LED chain order.
 - R12 (prd FR-12): Parts' fixed tracks follow keys live, and other connections route in the browser, in the background, with progress.
