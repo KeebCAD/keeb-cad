@@ -1,6 +1,6 @@
 # Stories of epic-change-a-parameter. Table order is build order.
 
-next_id = 17
+next_id = 18
 
 [[entry]]
 id = 1
@@ -146,10 +146,21 @@ hitl = false
 risk = "medium"
 
 [[entry]]
+id = 17
+type = "story"
+title = "Rename and delete buttons on parameter rows"
+description = "Each Parameters row ends in two always-visible icon buttons, Rename (opens 13's Rename parameter dialog) and Delete (deleteParameter, its refusal shown under the row naming its users), each with a tooltip giving its name and key; the name is no longer a tab stop: per row Tab goes value field, Rename, Delete, F2 and Delete act while focus is on either of the row's buttons, and double-clicking the name still renames; a duplicate name's read-only row has no buttons (EXPERIENCE.md Left rail + slide-out row, DESIGN.md Left rail + slide-out; Sally, Sergii 2026-11-18, after 13's look found focus-then-F2 and Delete hidden)."
+verify = "Clicking Rename on wall opens the Rename parameter dialog filled with wall; clicking Delete removes an unused parameter and shows the refusal under a used one; Tab through a row goes value field, Rename, Delete; F2 with focus on a row's Delete button opens rename; the name takes no focus on Tab."
+covers = ["R5"]
+after = [13]
+hitl = false
+risk = "low"
+
+[[entry]]
 id = 14
 type = "story"
 title = "Parts tab"
-description = "The slide-out's Parts tab: rows name · N slots, one per design part; selecting one shows its inspector, the blueprint and version, then its part-wide inputs, a quantity input in 10's expression field; + picks a library part blueprint and creates a design part with its default inputs; Ctrl+D duplicates one; deleting the part meta.defaultPart names is refused with default-part-required (parts.deletePart, 13.18) (EXPERIENCE.md, Left rail + slide-out row). This story builds parts.addPart { blueprint, id? } (inputs: {}, the declared defaults applying when the part resolves; an omitted id minted, a taken one id-taken), parts.duplicatePart { id } (DuplicateNode's -N suffix) and parts.setPartInputs { id, inputs } (merged; null restores a default) (spine AD-2, Sergii 2026-11-18). Added at the epic's refinement (Sergii 2026-11-18): the tab was unowned (component-ownership, to plan) and 15's key › link selects a part in it."
+description = "The slide-out's Parts tab: rows name · N slots, one per design part; selecting one shows its inspector, the blueprint and version, then its part-wide inputs, each in EXPERIENCE.md's Blueprint input fields control (a quantity in 10's expression field, an option or boolean in the Select field whose first entry reads default <value>; the first of 14 and 15 to need the Select field builds it); + picks a library part blueprint and creates a design part with its default inputs; Ctrl+D duplicates one; deleting the part meta.defaultPart names is refused with default-part-required (parts.deletePart, 13.18) (EXPERIENCE.md, Left rail + slide-out row). This story builds parts.addPart { blueprint, id? } (inputs: {}, the declared defaults applying when the part resolves; an omitted id minted, a taken one id-taken), parts.duplicatePart { id } (DuplicateNode's -N suffix) and parts.setPartInputs { id, inputs } (merged; null restores a default) (spine AD-2, Sergii 2026-11-18). Added at the epic's refinement (Sergii 2026-11-18): the tab was unowned (component-ownership, to plan) and 15's key › link selects a part in it."
 verify = "The tab lists key · N slots for Corney; selecting key shows its blueprint, version and inputs, and changing an input re-derives its slots in one undo step; + with a library part blueprint adds a design part with its default inputs; Ctrl+D adds a copy; deleting key is refused with default-part-required."
 covers = ["R3", "R6"]
 after = [10, 7]
@@ -160,13 +171,12 @@ risk = "medium"
 id = 15
 type = "story"
 title = "Slot inspector"
-description = "A selected slot shows its Part field (the picker it opens is 19.2's), a key › link that selects its part in 14's Parts tab, and a This slot section with only the inputs its part blueprint marks per-slot (e.g. size), a quantity input in 10's expression field (an option, boolean or text input, such as size, is not a length or angle: spine, 'labels, never a length'), each showing inherits <part value> until typed, clearing it inheriting again; a part with no per-slot inputs has no such section (EXPERIENCE.md, Inspector and Part field rows, 2026-11-01). This story builds the Part field and layout.setSlotInputs { ids, inputs } (merged into each listed slot's inputs, null clearing one to inherit again; the whole command refused with blueprint-input-invalid when a listed slot's part doesn't mark a named input per-slot; spine AD-2, Sergii 2026-11-18). Uses 13.18's part resolution. Split from the old 14.5 (Sergii 2026-11-18)."
-verify = "A slot shows its resolved part in the Part field; key › selects key in the Parts tab; setting a size in This slot overrides it for that slot only, one undo step, and clearing it shows inherits <part value> again; setSlotInputs with an input the part doesn't mark per-slot is refused with blueprint-input-invalid; a slot whose part has no per-slot inputs shows no This slot section."
+description = "A selected slot shows its Part field (the picker it opens is 19.2's), a key › link that selects its part in 14's Parts tab, and a This slot section with only the inputs its part blueprint marks per-slot (e.g. size), a quantity input in 10's expression field (an option, boolean or text input, such as size, is not a length or angle: spine, 'labels, never a length'), each showing inherits <part value> until typed, clearing it inheriting again; a part with no per-slot inputs has no such section (EXPERIENCE.md, Inspector and Part field rows, 2026-11-01). Each input's control follows EXPERIENCE.md's Blueprint input fields row (Sally, Sergii 2026-11-18): a length or angle in the expression field, an option or boolean in DESIGN.md's Select field whose first entry, inherits <value>, clears it, a text input as an expression field without suffix or autocomplete; the first of 14 and 15 to need the Select field builds it. This story builds the Part field and layout.setSlotInputs { ids, inputs } (merged into each listed slot's inputs, null clearing one to inherit again; the whole command refused with blueprint-input-invalid when a listed slot's part doesn't mark a named input per-slot; spine AD-2, Sergii 2026-11-18). Uses 13.18's part resolution. Split from the old 14.5 (Sergii 2026-11-18)."
+verify = "A slot shows its resolved part in the Part field; key › selects key in the Parts tab; setting a size in This slot overrides it for that slot only, and picking inherits <value> clears it again, one undo step, and clearing it shows inherits <part value> again; setSlotInputs with an input the part doesn't mark per-slot is refused with blueprint-input-invalid; a slot whose part has no per-slot inputs shows no This slot section."
 covers = ["R4", "R6", "R8"]
 after = [5, 14]
 hitl = false
 risk = "medium"
-unknown = "Which control an option, boolean or text blueprint input gets in the This slot section (EXPERIENCE.md gives the expression field only to lengths and angles): Sally writes the EXPERIENCE.md and DESIGN.md row, with a preview, before this story is planned (Sergii 2026-11-18)."
 
 [[entry]]
 id = 6
