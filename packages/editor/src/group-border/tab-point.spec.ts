@@ -1,11 +1,11 @@
 import { Option } from '@keeb-cad/result'
-import { aBorder, aBorderRegion } from '@keeb-cad/schema/testing'
+import { aPolygonRegion } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { tabPoint } from './tab-point'
 
 function outerOf(...outer: { x: number; y: number }[]) {
-  return aBorder([aBorderRegion({ outer })])
+  return [aPolygonRegion({ outer })]
 }
 
 describe('tabPoint', () => {
@@ -30,15 +30,15 @@ describe('tabPoint', () => {
   })
 
   it("takes the second region's top when it is higher than the first's", () => {
-    const border = aBorder([
-      aBorderRegion({ outer: [{ x: 0, y: 5 }] }),
-      aBorderRegion({ outer: [{ x: 10, y: 8 }] }),
-    ])
+    const border = [
+      aPolygonRegion({ outer: [{ x: 0, y: 5 }] }),
+      aPolygonRegion({ outer: [{ x: 10, y: 8 }] }),
+    ]
 
     expect(tabPoint(border)).toEqual(Option.some({ x: 10, y: 8 }))
   })
 
   it('gives no point for an empty border', () => {
-    expect(tabPoint(aBorder([]))).toEqual(Option.none())
+    expect(tabPoint([])).toEqual(Option.none())
   })
 })

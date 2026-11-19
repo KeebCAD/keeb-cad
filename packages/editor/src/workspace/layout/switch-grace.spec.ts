@@ -9,6 +9,7 @@ import {
   anId,
   aPartsOutput,
   aSlot,
+  aSlotSpace,
 } from '@keeb-cad/schema/testing'
 import type { FakeWorker } from '@keeb-cad/workers/testing'
 import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
@@ -26,7 +27,7 @@ const LAYOUT = aLayoutOutput({
   ids: ['left/a', 'left/root'],
   rows: [aLayoutRow(), aLayoutRow({ kind: 'group', part: -1 })],
 })
-const PARTS = aPartsOutput({ ids: ['key@a'], rows: [{ w: 18, h: 18 }] })
+const PARTS = aPartsOutput({ ids: ['key@a'], rows: [aSlotSpace()] })
 // Frappé's stale, key-body and key-top-face tokens.
 const STALE = 'rgb(115, 121, 148)'
 const KEY_BODY = 'rgb(98, 104, 128)'
@@ -92,7 +93,7 @@ async function pointAtA(): Promise<void> {
 function shown() {
   const key = page.getByRole('button', { name: 'left/a', exact: true }).element()
   const strip = page.getByRole('contentinfo', { name: 'Status strip' }).element()
-  const [, topFace] = key.querySelectorAll('rect')
+  const [, topFace] = key.querySelectorAll('path')
   if (topFace === undefined) throw new Error('Expected a keycap top face.')
   const link = page
     .getByRole('img', { name: 'left/a anchor link', exact: true })

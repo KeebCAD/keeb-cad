@@ -38,7 +38,7 @@ const grayed = useSwitchGrace()
 const arrived = useLayoutSetArrived()
 const { transform, modelToScreen, fitOnce } = useViewport(size)
 useViewportControls(svg, size)
-useCanvasItemsRoot(svg, keys)
+const { registrations, drawnBounds } = useCanvasItemsRoot(svg, keys)
 const borders = useGroupBorders()
 const mirrorAxis = useMirrorAxis()
 const axisFrame = computed(() => mirrorAxis.value.getOrUndefined())
@@ -72,15 +72,15 @@ const marks = computed(() =>
   }),
 )
 
-// The board extent is what the browser drew, so the fit waits for the keys to be in the DOM; and
-// only the open design's own set fits it, never one posted for the design before.
+// The board extent is what the browser drew of the keys' bodies, so the fit waits for them to be
+// registered; and only the open design's own set fits it, never one posted for the design before.
+// Not the keys group's box, which Firefox grows by the top face's CSS transform.
 watch(
-  [slots, size, () => openDesign.value?.meta.id, arrived],
+  [slots, size, () => openDesign.value?.meta.id, arrived, registrations],
   ([drawn, , designId, current]) => {
     if (!current || drawn.length === 0 || showsHint.value || designId === undefined) return
-    const group = keys.value
-    if (group === null) return
-    fitOnce(group.getBBox())
+    const bounds = drawnBounds()
+    if (bounds.isSome()) fitOnce(bounds.value)
   },
   { flush: 'post', immediate: true },
 )

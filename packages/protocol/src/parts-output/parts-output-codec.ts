@@ -1,16 +1,12 @@
 import type { PartsOutput } from '@keeb-cad/schema'
 
-import { valueAt } from '../packed-column/value-at'
+import { packPolygonRegions, readPolygonRegions } from '../polygon-regions/polygon-regions-codec'
 import type { PackedPartsOutput, PartsRow } from './types'
 
 export function packPartsOutput({ ids, rows }: PartsOutput): PackedPartsOutput {
-  return {
-    ids,
-    w: Float64Array.from(rows, ({ w }) => w),
-    h: Float64Array.from(rows, ({ h }) => h),
-  }
+  return { ids, ...packPolygonRegions(rows) }
 }
 
 export function readPartsRow(packed: PackedPartsOutput, row: number): PartsRow {
-  return { w: valueAt(packed.w, row), h: valueAt(packed.h, row) }
+  return readPolygonRegions(packed, row)
 }

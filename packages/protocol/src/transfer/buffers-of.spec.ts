@@ -1,10 +1,4 @@
-import {
-  aBorder,
-  aBorderRegion,
-  aLayoutOutput,
-  aLayoutRow,
-  aPartsOutput,
-} from '@keeb-cad/schema/testing'
+import { aLayoutOutput, aLayoutRow, aPartsOutput, aPolygonRegion } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { packLayoutOutput, readLayoutRow } from '../layout-output/layout-output-codec'
@@ -19,20 +13,26 @@ const layoutOutput = () =>
         kind: 'group',
         frame: { x: 1, y: 2, rot: 3, mirrored: false },
         part: -1,
-        border: aBorder([aBorderRegion({ holes: [[{ x: 0.5, y: 0.5 }]] })]),
+        border: [aPolygonRegion({ holes: [[{ x: 0.5, y: 0.5 }]] })],
       }),
     ],
   })
 
 describe('buffersOf', () => {
   it('lists every column of a packed parts output, so a transfer detaches all of them', () => {
-    const output = aPartsOutput({ ids: ['key@a'], rows: [{ w: 18, h: 17 }] })
+    const output = aPartsOutput({
+      ids: ['key@a'],
+      rows: [[aPolygonRegion({ holes: [[{ x: 0.5, y: 0.5 }]] })]],
+    })
     const packed = packPartsOutput(output)
 
     const clone = structuredClone(packed, { transfer: buffersOf(packed) })
 
     expect({ ids: clone.ids, rows: [readPartsRow(clone, 0)] }).toEqual(output)
-    expect([packed.w.length, packed.h.length]).toEqual([0, 0])
+    const { rowLoops, loopPoints, loopHole, points } = packed
+    expect([rowLoops, loopPoints, loopHole, points].map(({ length }) => length)).toEqual([
+      0, 0, 0, 0,
+    ])
   })
 
   it('lists every column of a packed layout output, so a transfer detaches all of them', () => {

@@ -1,4 +1,4 @@
-import { compose, type Matrix, translation } from '@keeb-cad/geometry'
+import { boundingBox, compose, type Matrix, translation } from '@keeb-cad/geometry'
 import { InvariantError } from '@keeb-cad/result'
 import type { Id } from '@keeb-cad/schema'
 import { match } from 'ts-pattern'
@@ -46,7 +46,7 @@ function moveFrom(placing: Placing, node: Id, dependency: Dependency, inner: Gro
       if (anchor.type === 'group') return IDENTITY
       const { x, y } = attachPointAt(
         anchor.attach ?? 'center',
-        slotPart(target, placing.parts).rectangle,
+        boundingBox(slotPart(target, placing.parts).slotSpace),
       )
       return translation(x, y)
     })

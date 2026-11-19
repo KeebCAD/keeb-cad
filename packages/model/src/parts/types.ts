@@ -13,7 +13,7 @@ import type { Result } from '@keeb-cad/result'
 
 import type { BlueprintInputInvalid } from '../inputs/types'
 
-export type Rectangle = PartsOutput['rows'][number]
+export type SlotSpace = PartsOutput['rows'][number]
 
 export interface Derivations {
   parts: ReadonlyRef<ResolvedParts>

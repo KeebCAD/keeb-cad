@@ -3,7 +3,14 @@ import { Container, InjectorToken } from '@keeb-cad/di'
 import { provideInjectorOnApp } from '@keeb-cad/di/vue'
 import { expectOk } from '@keeb-cad/result/testing'
 import type { Design, LayoutOutput } from '@keeb-cad/schema'
-import { aFreeGroup, anId, aPartsOutput, aPlacementId, aSlot } from '@keeb-cad/schema/testing'
+import {
+  aFreeGroup,
+  anId,
+  aPartsOutput,
+  aPlacementId,
+  aSlot,
+  aSlotSpace,
+} from '@keeb-cad/schema/testing'
 import { ModelWorkerLifecycle, workersModule } from '@keeb-cad/workers'
 import { FakeWorker } from '@keeb-cad/workers/testing'
 import { describe, expect, it, onTestFinished } from 'vitest'
@@ -34,7 +41,7 @@ async function arrange(design?: Design) {
     postLayoutSet(worker, {
       seq: store.current.map(({ seq }) => seq).getOr(-1),
       layout,
-      parts: aPartsOutput({ ids: ['key@a'], rows: [{ w: 18, h: 18 }] }),
+      parts: aPartsOutput({ ids: ['key@a'], rows: [aSlotSpace()] }),
     })
   }
   return { app, post, hovered: container.resolve(HoveredNode) }

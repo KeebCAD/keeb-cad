@@ -51,7 +51,7 @@ export { angleSchema } from './angle'
 export { vec2Schema } from './vec2'
 export { offsetSchema } from './offset'
 export { gapSchema } from './gap'
-export { borderSchema } from './border'
+export { polygonRegionSchema } from './polygon-region'
 export { layoutOutputSchema } from './layout-output'
 export { sideIdSchema } from './side-id'
 export { placementIdSchema } from './placement-id'
@@ -67,7 +67,6 @@ export type {
   BlueprintDesignPart,
   BlueprintId,
   BlueprintInputs,
-  Border,
   BundleFile,
   ChainChild,
   ChainGroup,
@@ -115,6 +114,7 @@ export type {
   PartRef,
   PartsOutput,
   PlacementId,
+  PolygonRegion,
   PlainInput,
   Quantity,
   QuantityInput,

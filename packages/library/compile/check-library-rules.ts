@@ -4,15 +4,15 @@ import type { LibraryRuleEntry } from './types'
 
 const label = ({ id, version }: BlueprintDeclaration) => `${id}@${String(version)}`
 
-function rectangleProblems({ lanes, id }: BlueprintDeclaration): string[] {
+function slotSpaceProblems({ lanes, id }: BlueprintDeclaration): string[] {
   if (lanes.parts === undefined) return []
   const counts = lanes.parts.outputs
-    .filter(({ role }) => role === 'rectangle')
+    .filter(({ role }) => role === 'slot-space')
     .map(({ count }) => count)
     .join(', ')
   return counts === 'one'
     ? []
-    : [`${id}: a part blueprint declares exactly one rectangle of count one, found: ${counts}`]
+    : [`${id}: a part blueprint declares exactly one slot-space of count one, found: ${counts}`]
 }
 
 const candidates = (library: readonly BlueprintDeclaration[], id: string, minVersion: number) =>
@@ -72,7 +72,7 @@ export function checkLibraryRules(entries: readonly LibraryRuleEntry[]): string[
   const library = entries.map(({ declaration }) => declaration)
   return [
     ...duplicateProblems(library),
-    ...library.flatMap((declaration) => rectangleProblems(declaration)),
+    ...library.flatMap((declaration) => slotSpaceProblems(declaration)),
     ...library.flatMap((declaration) => targetProblems(library, declaration)),
     ...cycleProblems(library),
     ...entries.flatMap((entry) => visibleUseProblems(entry)),

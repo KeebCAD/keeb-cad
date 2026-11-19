@@ -1,4 +1,4 @@
-import type { Group, Id, LayoutOutput, Node, ResolvedParts } from '@keeb-cad/schema'
+import type { Group, Id, LayoutOutput, Node, PolygonRegion, ResolvedParts } from '@keeb-cad/schema'
 import {
   aChainGroup,
   aDelta,
@@ -13,6 +13,7 @@ import {
   aGroupAnchor,
   aSlot,
   aSlotAnchor,
+  aSlotSpace,
   aVec2,
 } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
@@ -25,7 +26,7 @@ const DIGITS = 9
 // The boundary table gives carried frames to four decimals.
 const TABLE_DIGITS = 4
 const RUN = 'key@h'
-const KEY = { w: 18, h: 18 }
+const KEY = aSlotSpace()
 // The 1 mm gap's evaluated numbers.
 const GAP_VALUES = { 'meta/gap/x': 1, 'meta/gap/y': 1 }
 
@@ -33,12 +34,12 @@ function slotIds(node: Node): string[] {
   return 'children' in node ? node.children.flatMap(slotIds) : [node.id]
 }
 
-// Every slot on one run, 18 by 18 mm unless the test gives a rectangle or parts of its own.
+// Every slot on one run, 18 by 18 mm unless the test gives a slot space or parts of its own.
 function arrange(
   layout: Group,
   {
     parts,
-    rectangle = KEY,
+    slotSpace = KEY,
     unplaced = new Set(),
     removed = new Set(),
     values = {},
@@ -47,7 +48,7 @@ function arrange(
   const resolved =
     parts ??
     aResolvedParts({
-      output: aPartsOutput({ ids: [RUN], rows: [rectangle] }),
+      output: aPartsOutput({ ids: [RUN], rows: [slotSpace] }),
       slots: Object.fromEntries(slotIds(layout).map((id) => [id, { run: RUN, fit: 'fitted' }])),
     })
   const evaluated = new Map(Object.entries({ ...GAP_VALUES, ...values }))
@@ -56,7 +57,7 @@ function arrange(
 
 interface Arrangement {
   parts?: ResolvedParts
-  rectangle?: { w: number; h: number }
+  slotSpace?: PolygonRegion[]
   unplaced?: ReadonlySet<Id>
   removed?: ReadonlySet<string>
   // Each offset field's evaluated number, keyed as placement reads it.
@@ -273,7 +274,7 @@ describe('placeLayout', () => {
       ])
     })
 
-    it('steps a wide slot from a turned sibling by its own rectangle, then applies its offset', () => {
+    it('steps a wide slot from a turned sibling by its own slot space, then applies its offset', () => {
       const wide = slot('d', {
         offset: anOffset({
           position: aVec2({ x: aDelta('-1.037mm'), y: aDelta('2.122mm') }),
@@ -286,7 +287,7 @@ describe('placeLayout', () => {
         children: [slot('a'), slot('b', { offset: turned('-15deg') }), wide],
       })
       const parts = aResolvedParts({
-        output: aPartsOutput({ ids: [RUN, 'wide@h'], rows: [KEY, { w: 27, h: 18 }] }),
+        output: aPartsOutput({ ids: [RUN, 'wide@h'], rows: [KEY, aSlotSpace({ width: 27 })] }),
         slots: {
           [anId('a')]: { run: RUN, fit: 'fitted' },
           [anId('b')]: { run: RUN, fit: 'fitted' },
@@ -367,7 +368,7 @@ describe('placeLayout', () => {
   })
 
   describe('an explicit anchor', () => {
-    const RECTANGLE = { w: 18, h: 17 }
+    const SHORT_KEY = aSlotSpace({ height: 17 })
 
     const anchorAtOf = (output: LayoutOutput, id: string) => rowAt(output, id)?.anchorAt
 
@@ -389,7 +390,7 @@ describe('placeLayout', () => {
           ref: anId('k'),
           ...(attach === undefined ? {} : { attach: anAttachPoint(attach) }),
         })
-        const output = arrange(inRoot(slot('k'), slot('n', { anchor })), { rectangle: RECTANGLE })
+        const output = arrange(inRoot(slot('k'), slot('n', { anchor })), { slotSpace: SHORT_KEY })
 
         expect(anchorAtOf(output, 'n')).toEqual(point(expectedX, expectedY))
       },
@@ -401,7 +402,7 @@ describe('placeLayout', () => {
         anchor: aSlotAnchor({ ref: anId('k'), attach: anAttachPoint('edge-top') }),
       })
       const output = arrange(inRoot(turned, anchored), {
-        rectangle: RECTANGLE,
+        slotSpace: SHORT_KEY,
         values: offsetValues('layout/children/0', { rotation: 90 }),
       })
 
@@ -686,6 +687,97 @@ describe('placeLayout', () => {
         frameAt(output, 's', 'right'),
         frameAt(output, 'g', 'right'),
       ]).toEqual([at(-30, 0, 90), at(30, 0, -90, true), at(20, 0, -90, true)])
+    })
+  })
+
+  describe('a slot space that is not a rectangle centred on its frame', () => {
+    // An L whose arms are 18 wide, its corner square from (−9, −9) to (9, 9).
+    const L_SHAPE = [
+      {
+        outer: [
+          { x: -9, y: -9 },
+          { x: 27, y: -9 },
+          { x: 27, y: 9 },
+          { x: 9, y: 9 },
+          { x: 9, y: 27 },
+          { x: -9, y: 27 },
+        ],
+        holes: [],
+      },
+    ]
+    // An 18 mm square whose left edge is on its frame's origin.
+    const OFF_CENTRE = [
+      {
+        outer: [
+          { x: 0, y: -9 },
+          { x: 18, y: -9 },
+          { x: 18, y: 9 },
+          { x: 0, y: 9 },
+        ],
+        holes: [],
+      },
+    ]
+    const SHAPED_RUN = 'shaped@h'
+
+    // The slot `s` on a run of the given slot space, every other slot on the 18 × 18 mm key.
+    function partsWith(slotSpace: PolygonRegion[], layout: Group): ResolvedParts {
+      return aResolvedParts({
+        output: aPartsOutput({ ids: [RUN, SHAPED_RUN], rows: [KEY, slotSpace] }),
+        slots: Object.fromEntries(
+          slotIds(layout).map((id) => [
+            id,
+            { run: id === anId('s') ? SHAPED_RUN : RUN, fit: 'fitted' },
+          ]),
+        ),
+      })
+    }
+
+    const xChain = () =>
+      inRoot(aChainGroup({ id: anId('c'), axis: 'x', children: [slot('s'), slot('n')] }))
+
+    it.each([
+      ['an L by its far arm', L_SHAPE, 37],
+      ['an off-centre square by its far edge', OFF_CENTRE, 28],
+    ])('steps the sibling after %s', (_role, slotSpace, expectedX) => {
+      const layout = xChain()
+
+      const output = arrange(layout, { parts: partsWith(slotSpace, layout) })
+
+      expect(frameAt(output, 'n')).toEqual(at(expectedX, 0))
+    })
+
+    it.each([
+      ['corner-bl', 'corner-bl', -9, -9],
+      ['corner-tr', 'corner-tr', 27, 27],
+      ['center, the bounding box centre', 'center', 9, 9],
+    ])("puts anchorAt on the L's %s", (_role, attach, expectedX, expectedY) => {
+      const lAt = { x: 5, y: 3 }
+      const layout = inRoot(
+        slot('s', { offset: moved('5mm', '3mm') }),
+        slot('n', { anchor: aSlotAnchor({ ref: anId('s'), attach: anAttachPoint(attach) }) }),
+      )
+
+      const output = arrange(layout, {
+        parts: partsWith(L_SHAPE, layout),
+        values: offsetValues('layout/children/0', { 'position/x': lAt.x, 'position/y': lAt.y }),
+      })
+
+      expect(rowAt(output, 'n')?.anchorAt).toEqual(point(lAt.x + expectedX, lAt.y + expectedY))
+    })
+
+    it('turns an off-centre slot about its own origin when no pivot is set', () => {
+      const layout = inRoot(slot('s', { offset: moved('5mm', '3mm', '90deg') }))
+
+      const output = arrange(layout, {
+        parts: partsWith(OFF_CENTRE, layout),
+        values: offsetValues('layout/children/0', {
+          'position/x': 5,
+          'position/y': 3,
+          rotation: 90,
+        }),
+      })
+
+      expect(frameAt(output, 's')).toEqual(at(5, 3, 90))
     })
   })
 })

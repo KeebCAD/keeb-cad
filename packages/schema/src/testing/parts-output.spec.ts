@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { partsOutputSchema } from '../parts-output'
 import { aPartsOutput, aResolvedParts } from './parts-output'
+import { aSlotSpace } from './polygon-region'
 
 describe('aPartsOutput', () => {
   it('builds a value its schema accepts', () => {
@@ -11,7 +12,7 @@ describe('aPartsOutput', () => {
 
   it.each([
     ['ids', () => ({ ids: ['key@h'] })],
-    ['rows', () => ({ rows: [{ w: 1, h: 2 }] })],
+    ['rows', () => ({ rows: [aSlotSpace({ width: 1, height: 2 })] })],
   ])('keeps the %s it is given', (_field, makeFields) => {
     const fields = makeFields()
 

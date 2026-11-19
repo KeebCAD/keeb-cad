@@ -11,6 +11,7 @@ import {
   aPartsOutput,
   aSlot,
   aSlotAnchor,
+  aSlotSpace,
 } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
@@ -22,7 +23,7 @@ type Point = Loop[number]
 
 const DIGITS = 6
 const MARGIN = 1
-const KEY = { w: 18, h: 18 }
+const KEY = aSlotSpace()
 
 // The layout and its rows by side-qualified id, every slot on one 18 × 18 mm run unless the test
 // gives parts of its own.
@@ -400,7 +401,10 @@ describe('groupBorders', () => {
         'left/g': groupAt(0, 0),
         'left/k': slotAt(0, 0, { part: 1, fit: 'stand-in' }),
       },
-      aPartsOutput({ ids: ['key@h', 'stand-in'], rows: [{ w: 27, h: 27 }, KEY] }),
+      aPartsOutput({
+        ids: ['key@h', 'stand-in'],
+        rows: [aSlotSpace({ width: 27, height: 27 }), KEY],
+      }),
     )
 
     const output = groupBorders(layout, placed, parts, MARGIN)
@@ -426,5 +430,81 @@ describe('groupBorders', () => {
       group: borderOf(output, 'left/g'),
       key: output.rows[output.ids.indexOf('left/k')],
     }).toEqual({ group: [], key })
+  })
+
+  describe('on a slot space that is not a rectangle centred on its frame', () => {
+    const oneSlotGroup = () =>
+      aLayout({
+        children: [aFreeGroup({ id: anId('g'), children: [aSlot({ id: anId('k') })] })],
+      })
+
+    it("grows an L into one region that keeps the L's notch outside", () => {
+      // An L whose arms are 18 wide, its corner square from (−9, −9) to (9, 9).
+      const lShape = [
+        {
+          outer: [
+            { x: -9, y: -9 },
+            { x: 27, y: -9 },
+            { x: 27, y: 9 },
+            { x: 9, y: 9 },
+            { x: 9, y: 27 },
+            { x: -9, y: 27 },
+          ],
+          holes: [],
+        },
+      ]
+      // 9 mm from both arms, so 8 mm past the margin.
+      const inNotch = { x: 18, y: 18 }
+      const layout = oneSlotGroup()
+      const { placed, parts } = arrange(
+        layout,
+        { 'left/root': groupAt(0, 0), 'left/g': groupAt(0, 0), 'left/k': slotAt(0, 0) },
+        aPartsOutput({ ids: ['key@h'], rows: [lShape] }),
+      )
+
+      const output = groupBorders(layout, placed, parts, MARGIN)
+
+      const border = borderOf(output, 'left/g')
+      expect({
+        regions: regionsOf(border),
+        notchInside: isInside(inNotch, border[0]?.outer ?? []),
+      }).toEqual({ regions: [noHoles(-10, -10, 28, 28)], notchInside: false })
+    })
+
+    it('grows an off-centre slot space mirrored with its right-side row', () => {
+      // An 18 mm square whose left edge is on its frame's origin.
+      const offCentre = [
+        {
+          outer: [
+            { x: 0, y: -9 },
+            { x: 18, y: -9 },
+            { x: 18, y: 9 },
+            { x: 0, y: 9 },
+          ],
+          holes: [],
+        },
+      ]
+      const leftX = -30
+      const layout = oneSlotGroup()
+      const { placed, parts } = arrange(
+        layout,
+        {
+          'left/root': groupAt(0, 0),
+          'left/g': groupAt(leftX, 0),
+          'left/k': slotAt(leftX, 0),
+          'right/root': groupAt(0, 0, true),
+          'right/g': groupAt(-leftX, 0, true),
+          'right/k': mirroredSlotAt(-leftX, 0),
+        },
+        aPartsOutput({ ids: ['key@h'], rows: [offCentre] }),
+      )
+
+      const output = groupBorders(layout, placed, parts, MARGIN)
+
+      expect({
+        left: regionsOf(borderOf(output, 'left/g')),
+        right: regionsOf(borderOf(output, 'right/g')),
+      }).toEqual({ left: [noHoles(-31, -10, -11, 10)], right: [noHoles(11, -10, 31, 10)] })
+    })
   })
 })

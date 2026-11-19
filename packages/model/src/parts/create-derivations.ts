@@ -35,14 +35,14 @@ import { inputInvalidViolation } from './input-invalid-violation'
 import { laneFailureViolation } from './lane-failure-violation'
 import { partsLaneCalls } from './parts-lane-calls'
 import { partsOutputOf } from './parts-output-of'
-import { rectangleOf } from './rectangle-of'
+import { slotSpaceOf } from './slot-space-of'
+import { STAND_IN_SLOT_SPACE } from './stand-in-slot-space'
 import { unresolvedViolation } from './unresolved-violation'
 import { pinsOf } from './pins-of'
-import type { Derivations, PartRun, Rectangle } from './types'
+import type { Derivations, PartRun, SlotSpace } from './types'
 
 const STAGE_VERSION = 1
 const STAND_IN_RUN = 'stand-in'
-const STAND_IN_SIZE = 18
 
 export function createDerivations(
   design: ReadonlyRef<Frozen<Design>>,
@@ -72,7 +72,7 @@ export function createDerivations(
       declarations: library.declarations,
     }
     const runs = new Map<string, PartRun>()
-    const rectangles = new Map<string, Rectangle>()
+    const slotSpaces = new Map<string, SlotSpace>()
     // Main's checkInputs reads the same list, so both threads name the same faults.
     const violations: Violation[] = firstPerOwner(designFaults(lookups, slotRuns.value)).map(
       inputInvalidViolation,
@@ -104,11 +104,11 @@ export function createDerivations(
         )
         run = { part: found.part.id, result, slots: [] }
         runs.set(id, run)
-        const rectangle = rectangleOf(result, found)
-        if (rectangle !== undefined) rectangles.set(id, rectangle)
+        const slotSpace = slotSpaceOf(result, found)
+        if (slotSpace !== undefined) slotSpaces.set(id, slotSpace)
       }
       run.slots.push(slot.slot)
-      return { id, rectangle: rectangleOf(run.result, found) }
+      return { id, slotSpace: slotSpaceOf(run.result, found) }
     }
 
     const slots: ResolvedParts['slots'] = {}
@@ -132,8 +132,8 @@ export function createDerivations(
           reported = true
           continue
         }
-        const { id, rectangle } = runOf(resolution, slot, inputs.value)
-        if (rectangle !== undefined) {
+        const { id, slotSpace } = runOf(resolution, slot, inputs.value)
+        if (slotSpace !== undefined) {
           chosen = id
           chosenIndex = index
           break
@@ -148,14 +148,14 @@ export function createDerivations(
           : { run: chosen, fit: chosenIndex === 0 ? 'fitted' : 'stand-in' }
     }
 
-    if (standInUsed) rectangles.set(STAND_IN_RUN, { w: STAND_IN_SIZE, h: STAND_IN_SIZE })
+    if (standInUsed) slotSpaces.set(STAND_IN_RUN, STAND_IN_SLOT_SPACE)
     for (const run of runs.values()) {
       const { result } = run
       if (result.isErr() && result.error.kind !== 'unavailable') {
         violations.push(laneFailureViolation(run, result.error))
       }
     }
-    return { output: partsOutputOf(rectangles), slots, violations }
+    return { output: partsOutputOf(slotSpaces), slots, violations }
   })
 
   const anchors = computed(() => checkAnchors(layout.value))

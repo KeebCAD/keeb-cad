@@ -21,11 +21,17 @@ export default defineBlueprint({
     parts: {
       pulls: [],
       queries: [],
-      outputs: [{ name: 'rectangle', role: 'rectangle', kind: 'shape', count: 'one' }],
-      run: ({ inputs }) => ({
-        outputs: { rectangle: { w: half(inputs.width), h: half(inputs.width) } },
-        problems: [],
-      }),
+      outputs: [{ name: 'slot-space', role: 'slot-space', kind: 'shape', count: 'one' }],
+      run: ({ inputs }) => {
+        const side = half(inputs.width)
+        const outer = [
+          { x: 0, y: 0 },
+          { x: side, y: 0 },
+          { x: side, y: side },
+          { x: 0, y: side },
+        ]
+        return { outputs: { 'slot-space': [{ outer, holes: [] }] }, problems: [] }
+      },
     },
     shapes: {
       pulls: [],

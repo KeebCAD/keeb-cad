@@ -19,7 +19,8 @@ function tempDir(): string {
   return dir
 }
 
-const KEYCAP_HEIGHT = 18
+// Half the keycap's 18 mm height, the edge's distance from the frame origin.
+const HALF_HEIGHT = 9
 
 const evaluate = (script: string) =>
   new Function(`'use strict';\nreturn (${script}\n)`)() as {
@@ -32,7 +33,7 @@ async function compiledChocKey() {
 }
 
 describe('lib:blueprint/choc-key v1', { timeout: SLOW_BUILD_TIMEOUT }, () => {
-  it('declares one rectangle output and a per-slot size input defaulting to 1u', async () => {
+  it('declares one slot-space output and a per-slot size input defaulting to 1u', async () => {
     const key = await compiledChocKey()
 
     expect(
@@ -53,22 +54,34 @@ describe('lib:blueprint/choc-key v1', { timeout: SLOW_BUILD_TIMEOUT }, () => {
             perSlot: true,
           },
         },
-        outputs: [{ role: 'rectangle', count: 'one' }],
+        outputs: [{ role: 'slot-space', count: 'one' }],
       },
     ])
   })
 
   it.each([
-    ['1u', 18],
-    ['1.5u', 27],
-  ])('answers the keycap rectangle for size %s', async (size, expectedWidth) => {
+    ['1u', 9],
+    ['1.5u', 13.5],
+  ])('answers the keycap slot space for size %s, centred on its frame', async (size, halfWidth) => {
     const runs = (await compiledChocKey()).map(({ script }) =>
       evaluate(script).lanes.parts({ inputs: { size }, pulls: {}, queries: {} }),
     )
 
     expect(runs).toEqual([
       {
-        outputs: { rectangle: { w: expectedWidth, h: KEYCAP_HEIGHT } },
+        outputs: {
+          'slot-space': [
+            {
+              outer: [
+                { x: -halfWidth, y: -HALF_HEIGHT },
+                { x: halfWidth, y: -HALF_HEIGHT },
+                { x: halfWidth, y: HALF_HEIGHT },
+                { x: -halfWidth, y: HALF_HEIGHT },
+              ],
+              holes: [],
+            },
+          ],
+        },
         problems: [],
       },
     ])

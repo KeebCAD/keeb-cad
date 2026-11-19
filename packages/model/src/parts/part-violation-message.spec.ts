@@ -44,8 +44,8 @@ describe('partViolationMessage', () => {
     ],
     [
       'a bad role',
-      { kind: 'lane-failed', cause: 'role', output: 'rectangle' },
-      'The part "key" failed: the output "rectangle" is not what it declares.',
+      { kind: 'lane-failed', cause: 'role', output: 'slot-space' },
+      'The part "key" failed: the output "slot-space" is not what it declares.',
     ],
     [
       'a nested input',

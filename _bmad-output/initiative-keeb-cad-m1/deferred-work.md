@@ -774,3 +774,6 @@
   evidence: 14.8 names `meta` in rejection `ids` by `meta.id`, and the `model/src/violations/*-message.ts` functions print those ids into the text; seen in the Parameters tab's value field when an edit would break gap x. The `ids` may stay as they are; only the human text needs a name for the gap (and likely for other non-node users).
   owner: Sofia (a ticket), the spine (14.8's message wording, Data Schema rejection notes).
   resolved: 2026-11-18, Sofia: an Open question in epic-change-a-parameter's Notes; the spine settles how messages name meta's fields before a story.
+- source_plan: `_bmad-output/initiative-keeb-cad-m1/tickets/epic-change-a-parameter/tickets/story-slot-space-replaces-the-rectangle-plan.md`
+  summary: `packages/geometry/src/grow-and-unite.spec.ts` narrows to booleans inside tests (`repeatsFirst: outer.at(-1)?.x === outer[0]?.x && …`, `area: signedArea(outer) > 0`, `toEqual({ vertices: true, vertexWithinTolerance: true, chordsWithinTolerance: true })`) instead of asserting whole values.
+  evidence: AGENTS.md "assert whole values (`toEqual`, `toMatchObject`) instead of narrowing in the test" and "no expected value computed the way production computes it"; found by 14.18's final conformance pass. 14.18 adds whole-value rows and imports `signedArea`, but does not rewrite the older tests.

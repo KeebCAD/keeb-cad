@@ -5,7 +5,7 @@ import { sideQualifiedId } from '../ids/side-qualified-id'
 import type { PlacementSide } from '../ids/types'
 import { isGroup } from '../layout-editing/node-tree'
 import type { LayoutRow } from '../placement/types'
-import { envelopeCorners } from './envelope-corners'
+import { placedSlotSpace } from './placed-slot-space'
 import type { SlotAtLevel } from './types'
 
 const SIDES: readonly PlacementSide[] = ['left', 'right']
@@ -27,11 +27,11 @@ export function groupBorders(
     for (const group of nonRootGroups(layout)) {
       const index = rowAt.get(sideQualifiedId(side, group.id))
       if (index === undefined || placed.rows[index]?.placed !== true) continue
-      const envelopes = placedSlotsUnder(group, side, rowOf).map(({ row, levels }) => ({
-        envelope: envelopeCorners(row.frame, parts.rows[row.part] as PartsOutput['rows'][number]),
+      const grown = placedSlotsUnder(group, side, rowOf).map(({ row, levels }) => ({
+        regions: placedSlotSpace(row.frame, parts.rows[row.part] as PartsOutput['rows'][number]),
         distance: margin * levels,
       }))
-      borders.set(index, growAndUnite(envelopes).getOr([]))
+      borders.set(index, growAndUnite(grown).getOr([]))
     }
   }
   return {

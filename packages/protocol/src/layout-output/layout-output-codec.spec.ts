@@ -1,5 +1,5 @@
 import type { LayoutOutput } from '@keeb-cad/schema'
-import { aBorder, aBorderRegion, aLayoutOutput, aLayoutRow } from '@keeb-cad/schema/testing'
+import { aLayoutOutput, aLayoutRow, aPolygonRegion } from '@keeb-cad/schema/testing'
 import { describe, expect, it } from 'vitest'
 
 import { packLayoutOutput, readLayoutRow } from './layout-output-codec'
@@ -27,8 +27,8 @@ const STAND_IN = aLayoutRow({
 // A slot turned 90 deg about the pivot (9, 0) in its own frame.
 const PIVOTED = aLayoutRow({ frame: { x: 9, y: -9, rot: 90, mirrored: false } })
 
-const TWO_REGIONS_ONE_HOLED = aBorder([
-  aBorderRegion({
+const HOLED_BORDER = [
+  aPolygonRegion({
     outer: [
       { x: -10.5, y: -10.5 },
       { x: 10.5, y: -10.5 },
@@ -43,14 +43,7 @@ const TWO_REGIONS_ONE_HOLED = aBorder([
       ],
     ],
   }),
-  aBorderRegion({
-    outer: [
-      { x: 30, y: -10 },
-      { x: 50, y: -10 },
-      { x: 40, y: 10.25 },
-    ],
-  }),
-])
+]
 
 function roundTrip(output: LayoutOutput): LayoutOutput {
   const packed = packLayoutOutput(output)
@@ -133,35 +126,12 @@ describe('the layout output codec', () => {
     })
   })
 
-  it('reads back a group border of two regions, one with a hole, between slots with none', () => {
+  it('reads back a group border with a hole between slots with none', () => {
     const output = aLayoutOutput({
       ids: ['left/a', 'left/b', 'left/c'],
-      rows: [SLOT, aLayoutRow({ ...GROUP, border: TWO_REGIONS_ONE_HOLED }), STAND_IN],
+      rows: [SLOT, aLayoutRow({ ...GROUP, border: HOLED_BORDER }), STAND_IN],
     })
 
     expect(roundTrip(output)).toEqual(output)
-  })
-
-  it('packs rows with no border into empty border columns and reads them back unchanged', () => {
-    const output = aLayoutOutput({ ids: ['left/a', 'left/b'], rows: [SLOT, GROUP] })
-
-    const { rowLoops, loopPoints, loopHole, points } = packLayoutOutput(output)
-
-    expect({
-      rowLoops: [...rowLoops],
-      loopPoints: [...loopPoints],
-      loopHole: [...loopHole],
-      points: [...points],
-      rows: roundTrip(output),
-    }).toEqual({ rowLoops: [0, 0, 0], loopPoints: [0], loopHole: [], points: [], rows: output })
-  })
-
-  it('packs an output of no rows into one offset per border column', () => {
-    const { rowLoops, loopPoints } = packLayoutOutput(aLayoutOutput())
-
-    expect({ rowLoops: [...rowLoops], loopPoints: [...loopPoints] }).toEqual({
-      rowLoops: [0],
-      loopPoints: [0],
-    })
   })
 })

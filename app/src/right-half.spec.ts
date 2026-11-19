@@ -112,7 +112,7 @@ describe('the right half on main', () => {
       expect({
         violations: lifecycle.issues.map(({ violations }) => violations),
         seqs: seqs(lifecycle),
-        parts: lifecycle.parts.map(({ output }) => [output.ids, output.w.length]),
+        parts: lifecycle.parts.map(({ output }) => [output.ids, output.rowLoops.length - 1]),
         layout: lifecycle.layout.map(({ output }) => [output.ids, output.x.length]),
       }).toEqual({
         violations: Option.some([

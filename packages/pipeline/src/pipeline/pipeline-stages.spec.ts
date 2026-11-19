@@ -23,6 +23,7 @@ import {
   aResolvedParts,
   aRevision,
   aRoutingFile,
+  aSlotSpace,
   aVersion,
   aViolation,
   aWorkspace,
@@ -263,11 +264,13 @@ describe('Pipeline stages', () => {
 
     it('carries the parts and placements held at its own seq', async () => {
       const first = {
-        parts: aResolvedParts({ output: aPartsOutput({ ids: ['a@h'], rows: [{ w: 18, h: 18 }] }) }),
+        parts: aResolvedParts({ output: aPartsOutput({ ids: ['a@h'], rows: [aSlotSpace()] }) }),
         placements: aLayoutOutput({ ids: ['left/a'], rows: [slotRow(0)] }),
       }
       const second = {
-        parts: aResolvedParts({ output: aPartsOutput({ ids: ['b@h'], rows: [{ w: 9, h: 9 }] }) }),
+        parts: aResolvedParts({
+          output: aPartsOutput({ ids: ['b@h'], rows: [aSlotSpace({ width: 9, height: 9 })] }),
+        }),
         placements: aLayoutOutput({ ids: ['left/b'], rows: [slotRow(19)] }),
       }
       const parts = { value: first.parts }
@@ -290,7 +293,7 @@ describe('Pipeline stages', () => {
 
     it('posts the same derivation values intact at two seqs, leaving the values whole', async () => {
       const parts = aResolvedParts({
-        output: aPartsOutput({ ids: ['key@h'], rows: [{ w: 22.728, h: 18 }] }),
+        output: aPartsOutput({ ids: ['key@h'], rows: [aSlotSpace({ width: 22.728 })] }),
       })
       const placements = aLayoutOutput({ ids: ['left/a'], rows: [slotRow(22.728)] })
       const { runner, port2 } = await arrange({
@@ -318,7 +321,22 @@ describe('Pipeline stages', () => {
             layout: { ids: set.layout.ids, rows: [readLayoutRow(set.layout, 0)] },
           }
         })
-      const expectedParts = { ids: ['key@h'], rows: [{ w: 22.728, h: 18 }] }
+      const expectedParts = {
+        ids: ['key@h'],
+        rows: [
+          [
+            {
+              outer: [
+                { x: -11.364, y: -9 },
+                { x: 11.364, y: -9 },
+                { x: 11.364, y: 9 },
+                { x: -11.364, y: 9 },
+              ],
+              holes: [],
+            },
+          ],
+        ],
+      }
       const expectedLayout = {
         ids: ['left/a'],
         rows: [
@@ -352,7 +370,13 @@ describe('Pipeline stages', () => {
         kind: 'layout-set',
         epoch: EPOCH,
         seq: 1,
-        parts: { ids: [], w: new Float64Array(), h: new Float64Array() },
+        parts: {
+          ids: [],
+          rowLoops: Uint32Array.from([0]),
+          loopPoints: Uint32Array.from([0]),
+          loopHole: new Uint8Array(),
+          points: new Float64Array(),
+        },
         layout: {
           ids: [],
           kind: new Uint8Array(),
@@ -397,7 +421,7 @@ describe('Pipeline stages', () => {
         parts: columnLengths(sent?.parts),
         layout: columnLengths(sent?.layout),
       }).toEqual({
-        parts: { w: 0, h: 0 },
+        parts: { rowLoops: 0, loopPoints: 0, loopHole: 0, points: 0 },
         layout: {
           kind: 0,
           x: 0,

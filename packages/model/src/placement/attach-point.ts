@@ -1,20 +1,20 @@
-import type { Point } from '@keeb-cad/geometry'
+import type { Box, Point } from '@keeb-cad/geometry'
 import type { AttachPoint } from '@keeb-cad/schema'
 import { match } from 'ts-pattern'
 
-import type { Rectangle } from '../parts/types'
-
-// A named point on a slot's rectangle, in the slot's own frame, y up.
-export function attachPointAt(attach: AttachPoint, { w, h }: Rectangle): Point {
+// A named point on the bounding box of a slot's slot space, in the slot's own frame, y up.
+export function attachPointAt(attach: AttachPoint, { minX, minY, maxX, maxY }: Box): Point {
+  const midX = (minX + maxX) / 2
+  const midY = (minY + maxY) / 2
   return match(attach)
-    .with('center', () => ({ x: 0, y: 0 }))
-    .with('edge-top', () => ({ x: 0, y: h / 2 }))
-    .with('edge-bottom', () => ({ x: 0, y: -h / 2 }))
-    .with('edge-left', () => ({ x: -w / 2, y: 0 }))
-    .with('edge-right', () => ({ x: w / 2, y: 0 }))
-    .with('corner-tl', () => ({ x: -w / 2, y: h / 2 }))
-    .with('corner-tr', () => ({ x: w / 2, y: h / 2 }))
-    .with('corner-bl', () => ({ x: -w / 2, y: -h / 2 }))
-    .with('corner-br', () => ({ x: w / 2, y: -h / 2 }))
+    .with('center', () => ({ x: midX, y: midY }))
+    .with('edge-top', () => ({ x: midX, y: maxY }))
+    .with('edge-bottom', () => ({ x: midX, y: minY }))
+    .with('edge-left', () => ({ x: minX, y: midY }))
+    .with('edge-right', () => ({ x: maxX, y: midY }))
+    .with('corner-tl', () => ({ x: minX, y: maxY }))
+    .with('corner-tr', () => ({ x: maxX, y: maxY }))
+    .with('corner-bl', () => ({ x: minX, y: minY }))
+    .with('corner-br', () => ({ x: maxX, y: minY }))
     .exhaustive()
 }

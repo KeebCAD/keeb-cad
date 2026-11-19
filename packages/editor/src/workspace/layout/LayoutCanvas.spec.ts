@@ -6,6 +6,7 @@ import {
   aLayoutRow,
   aMeta,
   anId,
+  aPartsOutput,
   aPlacementId,
   aSlot,
 } from '@keeb-cad/schema/testing'
@@ -35,6 +36,25 @@ const STALE = 'rgb(115, 121, 148)'
 const RIGHT_HALF_BODY_ALPHA = 0.7
 const FULL_ALPHA = 1
 
+// The keycap face of key-rendering-1.html on an 18 mm key: 44 and 42 of its 56, 10 from the front.
+const EXPECTED_FACE_WIDTH = (44 / 56) * 18
+const EXPECTED_FACE_HEIGHT = (42 / 56) * 18
+const EXPECTED_FACE_BOTTOM = (-18 / 56) * 18
+// An L whose arms are 18 wide, its corner square from (−9, −9) to (9, 9).
+const L_SHAPE = [
+  {
+    outer: [
+      { x: -9, y: -9 },
+      { x: 27, y: -9 },
+      { x: 27, y: 9 },
+      { x: 9, y: 9 },
+      { x: 9, y: 27 },
+      { x: -9, y: 27 },
+    ],
+    holes: [],
+  },
+]
+
 const treeRow = (id: string) => page.getByRole('treeitem', { name: id, exact: true })
 
 function expectNoKeyAndViewport(viewport: Viewport, expected: ViewportValue): void {
@@ -54,6 +74,47 @@ function twoKeys() {
 function keyElement(id: string): SVGGElement {
   return key(id).element() as SVGGElement
 }
+
+function keyPaths(id: string): [SVGPathElement, SVGPathElement] {
+  const [body, topFace] = keyElement(id).querySelectorAll('path')
+  if (body === undefined || topFace === undefined) throw new Error('A fitted key draws two paths.')
+  return [body, topFace]
+}
+
+// A path's fill box in the key's own model mm, as its geometry gives it.
+function fillBox(path: SVGPathElement) {
+  const { x, y, width, height } = path.getBBox()
+  return { minX: x, minY: y, maxX: x + width, maxY: y + height }
+}
+
+// An unstroked path's box as the browser drew it, CSS transforms included, in the key's own
+// model mm; Firefox counts a stroke into a client rect, so a stroked path reads fillBox instead.
+function drawnBox(id: string, path: SVGPathElement) {
+  const toKey = keyElement(id).getScreenCTM()?.inverse()
+  if (toKey === undefined) throw new Error('The key is not rendered.')
+  const { left, right, top, bottom } = path.getBoundingClientRect()
+  const corners = [new DOMPoint(left, top), new DOMPoint(right, bottom)].map((corner) =>
+    corner.matrixTransform(toKey),
+  )
+  const xs = corners.map(({ x }) => x)
+  const ys = corners.map(({ y }) => y)
+  return {
+    minX: Math.min(...xs),
+    minY: Math.min(...ys),
+    maxX: Math.max(...xs),
+    maxY: Math.max(...ys),
+  }
+}
+
+// Client rects are whole device pixels apart at best; at the test's zoom that is under 0.005 mm.
+const BOX_DIGITS = 2
+
+const box = (minX: number, minY: number, maxX: number, maxY: number) => ({
+  minX: expect.closeTo(minX, BOX_DIGITS),
+  minY: expect.closeTo(minY, BOX_DIGITS),
+  maxX: expect.closeTo(maxX, BOX_DIGITS),
+  maxY: expect.closeTo(maxY, BOX_DIGITS),
+})
 
 // The key's turn as drawn on screen, in degrees, positive clockwise as screen y points down.
 function screenAngle(id: string): number {
@@ -85,8 +146,8 @@ function alphaOf(color: string): number {
 
 // The alpha of a key's body and top-face fills and of its edge.
 function keyAlphas(id: string) {
-  const [body, topFace] = keyElement(id).querySelectorAll('rect')
-  if (body === undefined || topFace === undefined) throw new Error('A fitted key draws two rects.')
+  const [body, topFace] = keyElement(id).querySelectorAll('path')
+  if (body === undefined || topFace === undefined) throw new Error('A fitted key draws two paths.')
   return {
     body: alphaOf(getComputedStyle(body).fill),
     topFace: alphaOf(getComputedStyle(topFace).fill),
@@ -144,6 +205,43 @@ describe('the Layout canvas', () => {
         e: expect.closeTo(5, DIGITS),
         f: expect.closeTo(7, DIGITS),
       })
+    })
+
+    it("draws a 1u key's body as its 18 mm slot space and its top face inside it", async () => {
+      const shell = await arrange(designWith('a'))
+
+      shell.post(layoutOf({ a: aLayoutRow() }))
+
+      await expect.element(key('left/a')).toBeInTheDocument()
+      const [body, topFace] = keyPaths('left/a')
+      expect({ body: fillBox(body), topFace: drawnBox('left/a', topFace) }).toEqual({
+        body: box(-9, -9, 9, 9),
+        topFace: box(
+          -EXPECTED_FACE_WIDTH / 2,
+          EXPECTED_FACE_BOTTOM,
+          EXPECTED_FACE_WIDTH / 2,
+          EXPECTED_FACE_BOTTOM + EXPECTED_FACE_HEIGHT,
+        ),
+      })
+    })
+
+    it("draws an L slot space's body over its bounding box, its corner inside and its notch outside", async () => {
+      const shell = await arrange(designWith('a'))
+      // The L's bounding box, 36 × 36 mm from (−9, −9).
+      const expectedBody = box(-9, -9, 27, 27)
+      // 9 mm from both arms, and the middle of the corner square.
+      const notch = new DOMPoint(18, 18)
+      const corner = new DOMPoint(0, 0)
+
+      shell.post(layoutOf({ a: aLayoutRow() }), aPartsOutput({ ids: ['l@a'], rows: [L_SHAPE] }))
+
+      await expect.element(key('left/a')).toBeInTheDocument()
+      const [body] = keyPaths('left/a')
+      expect({
+        body: fillBox(body),
+        notch: body.isPointInFill(notch),
+        corner: body.isPointInFill(corner),
+      }).toEqual({ body: expectedBody, notch: false, corner: true })
     })
 
     it('draws only the placed row of a placed and an unplaced one', async () => {
@@ -311,7 +409,7 @@ describe('the Layout canvas', () => {
       vi.advanceTimersByTime(switchGraceDelayMs + 1)
       await nextTick()
 
-      const [body] = keyElement('right/k').querySelectorAll('rect')
+      const [body] = keyElement('right/k').querySelectorAll('path')
       expect(body === undefined ? undefined : getComputedStyle(body).fill).toBe(STALE)
     })
 

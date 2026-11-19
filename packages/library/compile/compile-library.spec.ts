@@ -70,7 +70,24 @@ describe('compileLibrary', { timeout: SLOW_BUILD_TIMEOUT }, () => {
     expect(compiled).toEqual([
       expect.objectContaining({ script: expect.not.stringMatching(/\bimport\b/) as unknown }),
     ])
-    expect(runs).toEqual([{ outputs: { rectangle: { w: 9, h: 9 } }, problems: [] }])
+    expect(runs).toEqual([
+      {
+        outputs: {
+          'slot-space': [
+            {
+              outer: [
+                { x: 0, y: 0 },
+                { x: 9, y: 0 },
+                { x: 9, y: 9 },
+                { x: 0, y: 9 },
+              ],
+              holes: [],
+            },
+          ],
+        },
+        problems: [],
+      },
+    ])
   })
 
   it('writes both versions, whose declarations group under one id', async () => {

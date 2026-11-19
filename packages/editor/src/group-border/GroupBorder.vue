@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import { useHoveredNode } from '../hover/use-hovered-node'
 import { useSelection } from '../selection/use-selection'
-import { borderPath } from './border-path'
+import { loopPath } from '../viewport/loop-path'
 import type { GroupBorderProps } from './types'
 
 const props = defineProps<GroupBorderProps>()
@@ -11,7 +11,7 @@ const { select } = useSelection()
 const { pointAt, leave } = useHoveredNode()
 
 // Outer loops only: a hole is neither drawn nor hit-tested apart, so it points at the group too.
-const paths = computed(() => props.row.outers.map(borderPath))
+const paths = computed(() => props.row.outers.map(loopPath))
 const stroke = computed(() =>
   props.grayed
     ? 'stroke-stale'

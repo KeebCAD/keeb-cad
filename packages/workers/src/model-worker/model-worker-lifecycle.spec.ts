@@ -27,9 +27,10 @@ import {
   aPartsOutput,
   aRevision,
   aRoutingFile,
+  aSlotSpace,
   aStageId,
-  aWorkspace,
   aViolation,
+  aWorkspace,
 } from '@keeb-cad/schema/testing'
 import * as v from 'valibot'
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
@@ -734,7 +735,7 @@ describe('ModelWorkerLifecycle', () => {
       const posted = layoutSetAt(
         1,
         seq,
-        aPartsOutput({ ids: ['key@h'], rows: [{ w: 18, h: 18 }] }),
+        aPartsOutput({ ids: ['key@h'], rows: [aSlotSpace()] }),
         aLayoutOutput({ ids: ['left/a'], rows: [SLOT_ROW] }),
       )
 
@@ -757,7 +758,7 @@ describe('ModelWorkerLifecycle', () => {
         layoutSetAt(
           1,
           committed(store).seq,
-          aPartsOutput({ ids: ['key@h'], rows: [{ w: 18, h: 18 }] }),
+          aPartsOutput({ ids: ['key@h'], rows: [aSlotSpace()] }),
           aLayoutOutput({ ids: ['left/a'], rows: [SLOT_ROW] }),
         ),
       )
